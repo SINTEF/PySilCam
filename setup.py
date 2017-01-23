@@ -8,7 +8,6 @@ from pysilcam import __version__
 
 REQUIRES = [
     'docopt',
-    'matplotlib',
     'pymba',
 ]
 
