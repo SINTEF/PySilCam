@@ -1,3 +1,3 @@
-pytest
-invoke==0.14.0
-tox
+docopt
+numpy
+git+https://github.com/mabl/pymba@python3

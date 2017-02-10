@@ -2,7 +2,7 @@
 PySilCam
 ===============================
 
-.. image:: https://pypip.in/d/silcam-aquire/badge.png
+.. image:: docs/silcam.png
 
 
 A Python interface to the SilCam.
@@ -15,7 +15,13 @@ Features
 Requirements
 ------------
 
-- Python >= 3.3
+* Python = 3.4
+
+* numpy
+
+* Pymba with Python 3 support. Install using
+
+    pip install git+https://github.com/mabl/pymba@python3
 
 License
 -------

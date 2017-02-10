@@ -8,6 +8,7 @@ from pysilcam import __version__
 
 REQUIRES = [
     'docopt',
+    'numpy',
     'pymba',
 ]
 
@@ -38,7 +39,7 @@ setup(
     author_email='emlyn.davies@sintef.no',
     install_requires=REQUIRES,
     # Use Python 3 branch on alternate repo for Pymba
-    dependency_links=['https://github.com/mabl/pymba@python3'],
+    dependency_links=['git+https://github.com/mabl/pymba@python3'],
     license=read('LICENSE'),
     zip_safe=False,
     keywords='silcam',
