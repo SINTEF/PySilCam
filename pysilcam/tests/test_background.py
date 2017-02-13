@@ -13,8 +13,8 @@ def test_background_aquire():
         #Check that frames (images) have non-zero size
         assert imgc.size > 0, 'Image size was not positive'
 
-        #Check that images are 2D (m x n)
-        assert(len(imgc.shape) == 2)
+        #Check that images are 2D (m x n x 3)
+        assert(len(imgc.shape) == 3)
 
         #Check that we only get one channel
         #Check that corrected image is float64
@@ -22,7 +22,7 @@ def test_background_aquire():
 
         #Check that we got different image data
         if prev_imgc is not None:
-            assert(np.abs(prev_imgc - imgc).sum() < 1e-10)
+            assert(np.abs(prev_imgc - imgc).sum() > 1e-10)
         prev_imgc = imgc
 
         #Try five frames, then break

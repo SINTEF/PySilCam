@@ -24,15 +24,15 @@ def test_acquire_five_frames():
         #Check that frames (images) have non-zero size
         assert(img.size > 0)
 
-        #Check that images are 3D (m x n x 1)
+        #Check that images are 3D (m x n x 3)
         assert(len(img.shape) == 3)
 
-        #Check that we only get one channel
-        assert(img.shape[2] == 1)
+        #Check that we only get three channels
+        assert(img.shape[2] == 3)
 
         #Check that we got different image data
         if prev_img is not None:
-            assert(np.abs(prev_img - img).sum() < 1e-10)
+            assert(np.abs(prev_img - img).sum() > 1e-10)
         prev_img = img
 
         #Try five frames, then break

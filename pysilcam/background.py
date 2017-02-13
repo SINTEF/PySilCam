@@ -109,10 +109,11 @@ def backgrounder(av_window):
     '''
 
     #Initialize the image acquisition generator
-    acquire = acquisition.acquire_gray64()
+    acquire = acquisition.acquire()
 
     #Set up initial background image stack
     bgstack, imbg = ini_background(av_window, acquire)
+
     
     #Aquire images, apply background correction and yield result
     for imraw in acquire:

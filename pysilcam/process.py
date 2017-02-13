@@ -10,6 +10,11 @@ import cv2
 
 '''
 module for processing SilCam data
+
+TODO: Make stats DataFrame
+TODO: sort out settings
+TODO: add tests for this module
+
 '''
 
 SETTINGS = dict(THRESH = 0.98, # higher THRESH is higher sensitivity
@@ -57,7 +62,7 @@ def clean_bw(imbw,min_area):
 
     TODO: fix the first line of this function!!!!
     '''
-    imbw = segmentation.clear_border(imbw, buffer_size=1) # do this properly to
+    #imbw = segmentation.clear_border(imbw, buffer_size=1) # do this properly to
 #    remove particles, not pixels!
 
     # remove objects smaller the min_area
@@ -72,9 +77,6 @@ def props(iml,image_index,im):
     returns:
       partstats
 
-
-    TODO: something has broken and made the for loop go very slowly - I can't figure
-    out why....
     '''
     # this is crazy - i only want some of these attributes.....
     print('rprops')
@@ -85,7 +87,6 @@ def props(iml,image_index,im):
     partstats = []
     for i, el in enumerate (region_properties):
         hsv = get_color_stats(im,el.bbox,el.image)
-        print(i)
 
         image_data = Partstats(get_spine_length(el.image),image_index, el.area,
                 el.major_axis_length, el.minor_axis_length,
@@ -160,6 +161,8 @@ def measure_particles(imbw,imc,image_index):
 
     if (iml.max()>SETTINGS['max_particles']):
         print('....that''s way too many particles! Skipping image.')
+        stats = np.nan
+    elif (iml.max()==0):
         stats = np.nan
     else:
         stats = props(iml,image_index,imc)

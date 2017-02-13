@@ -66,12 +66,12 @@ class Frame:
 
     def getBufferByteData(self):
         if self.files is not None:
-            frame = imageio.imread(self.files[self.img_idx])[:, :, 0]
+            frame = imageio.imread(self.files[self.img_idx])
             self.img_idx += 1
             print('Getting buffer byte data from file {0}, {1}/{2}'.format(frame.shape, 
                                                                            self.img_idx, len(self.files)))
         else:
-            frame = np.random.random((self.width, self.height, 1))
+            frame = np.random.random((self.width, self.height, 3))
             print('Getting buffer byte data, {0}'.format(frame.shape))
             time.sleep(1.0/FPS)
         return frame.tobytes()

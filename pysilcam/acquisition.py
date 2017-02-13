@@ -70,7 +70,7 @@ def _acquire_frame(camera, frame0):
     #Copy frame data to numpy array (Bayer format)
     bayer_img = np.ndarray(buffer = frame0.getBufferByteData(),
                            dtype = np.uint8,
-                           shape = (frame0.height, frame0.width, 1))
+                           shape = (frame0.height, frame0.width, 3))
     camera.endCapture()
 
     return bayer_img
@@ -136,7 +136,7 @@ def acquire_gray64():
     '''Aquire images and convert to float64 grayscale'''
     for img_bayer in acquire():
         #@todo Implement a working Bayer->grayscale conversion
-        imgray = img_bayer[:3, :3, 0]
+        imgray = img_bayer[:, :, 0]
 
         #Yield float64 image
         yield np.float64(imgray)
