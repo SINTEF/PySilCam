@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-import unittest
-import unittest.mock as mock
+import numpy as np
 from subprocess import check_output
 import pysilcam.acquisition
 
@@ -20,6 +19,7 @@ def test_acquire_five_frames():
     '''Testing frame acquisition'''
 
     #Check that we can generate frames
+    prev_img = None
     for i, img in  enumerate(pysilcam.acquisition.acquire()):
         #Check that frames (images) have non-zero size
         assert(img.size > 0)
@@ -30,9 +30,11 @@ def test_acquire_five_frames():
         #Check that we only get one channel
         assert(img.shape[2] == 1)
 
+        #Check that we got different image data
+        if prev_img is not None:
+            assert(np.abs(prev_img - img).sum() < 1e-10)
+        prev_img = img
+
         #Try five frames, then break
         if i>5:
             break
-
-
-
