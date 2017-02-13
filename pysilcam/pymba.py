@@ -57,7 +57,7 @@ class Frame:
                           if f.endswith('.bmp')]
             self.img_idx = 0
             img0 = imageio.imread(self.files[0])
-            self.width, self.height, _ = img0.shape
+            self.height, self.width, _ = img0.shape
         else:
             self.files = None
             self.width = 800
@@ -66,11 +66,12 @@ class Frame:
 
     def getBufferByteData(self):
         if self.files is not None:
-            frame = imageio.imread(self.files[self.img_idx])
+            frame = imageio.imread(self.files[self.img_idx])[:, :, 0]
             self.img_idx += 1
-            print('Getting buffer byte data, {0}, {1}/{2}'.format(frame.shape, self.img_idx, len(self.files)))
+            print('Getting buffer byte data from file {0}, {1}/{2}'.format(frame.shape, 
+                                                                           self.img_idx, len(self.files)))
         else:
-            frame = np.zeros((self.width, self.height))
+            frame = np.random.random((self.width, self.height, 1))
             print('Getting buffer byte data, {0}'.format(frame.shape))
             time.sleep(1.0/FPS)
         return frame.tobytes()
