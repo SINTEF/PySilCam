@@ -87,8 +87,8 @@ def shift_and_correct(bgstack,imbg,imraw):
       imc (corrcted image)
     '''
 
-    bgstack, imbg = shift_bgstack(bgstack,imbg,imraw)
     imc = correct_im(imbg,imraw)
+    bgstack, imbg = shift_bgstack(bgstack,imbg,imraw)
     
     return bgstack, imbg, imc
 
