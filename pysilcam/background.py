@@ -1,35 +1,36 @@
 # -*- coding: utf-8 -*-
-
-import numpy as np
-
 '''
-module for moving background correction
+Moving background correction
 
 use the backgrounder function!
 
 acquire() must produce a float64 np array
 '''
+import numpy as np
+from pysilcam import acquisition
 
 
 #def acquire(): # to be replaced by proper acquire
 #    im = np.zeros((2048,2448),dtype=np.float64)
 #    return im
 
-def ini_background(av_window):
+def ini_background(av_window, acquire):
     '''av_window is the number of images to use in creating the background
     function returns:
       bgstack (list of all background iamges)
       imbg (the actual background image)
     '''
     bgstack = []
-    bgstack.append(acquire()) # get the first image
+    bgstack.append(next(acquire)) # get the first image
     
     for i in range(av_window-1): # loop through the rest, appending to bgstack
-        bgstack.append(acquire())
+        bgstack.append(next(acquire))
     
     imbg = np.mean(bgstack,0) # average the iamges in the stack
     
     return bgstack, imbg
+
+
 
 def shift_bgstack(bgstack,imbg,imnew):
     '''shofts the background by popping the oldest and added a new image
@@ -92,6 +93,7 @@ def shift_and_correct(bgstack,imbg,imraw):
     
     return bgstack, imbg, imc
 
+
 def backgrounder(av_window):
     '''generator which interracts with acquire to return a corrcted image
     given av_window number of frame to use in creating a moving background
@@ -106,9 +108,13 @@ def backgrounder(av_window):
           print(i)
     '''
 
-    bgstack, imbg = ini_background(av_window)
+    #Initialize the image acquisition generator
+    acquire = acquisition.acquire_gray64()
+
+    #Set up initial background image stack
+    bgstack, imbg = ini_background(av_window, acquire)
     
-    while True:
-        imraw = acquire()
-        bgstack, imbg, imc = shift_and_correct(bgstack,imbg,imraw)
+    #Aquire images, apply background correction and yield result
+    for imraw in acquire:
+        bgstack, imbg, imc = shift_and_correct(bgstack, imbg, imraw)
         yield imc

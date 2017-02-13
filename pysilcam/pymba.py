@@ -2,8 +2,11 @@
 '''
 Partial drop-in replacement for Pymba, for testing purposes.
 '''
-import numpy as np
+import os
+import sys
 import time
+import numpy as np
+import imageio
 
 #Handle potential Python 2.7 and Python 3
 try:
@@ -26,7 +29,7 @@ class Camera:
 
     def startCapture(self):
         print('Starting capture')
-        time.sleep(1.0/FPS)
+        #time.sleep(1.0/FPS)
 
     def runFeatureCommand(self, cmd):
         print('Camera command: {0}'.format(cmd))
@@ -35,23 +38,42 @@ class Camera:
         print('Ending camera capture')
 
     def getFrame(self):
-        time.sleep(1.0/FPS)
+        #time.sleep(1.0/FPS)
         return Frame()
 
     def revokeAllFrames(self):
         print('\nCleaning up: revoking all frames')
         pass
 
+
 class Frame:
     def __init__(self):
-        self.frame = np.zeros((5, 4))
-        self.height = 5
-        self.width = 4
+        #If the environment variable PYSILCAM_TESTDATA is defined, read images
+        #from that location.
+        if 'PYSILCAM_TESTDATA' in os.environ.keys():
+            path = os.environ['PYSILCAM_TESTDATA']
+            self.files = [os.path.join(path, f) 
+                          for f in sorted(os.listdir(path)) 
+                          if f.endswith('.bmp')]
+            self.img_idx = 0
+            img0 = imageio.imread(self.files[0])
+            self.width, self.height, _ = img0.shape
+        else:
+            self.files = None
+            self.width = 800
+            self.height = 600
         print('Frame acquired')
 
     def getBufferByteData(self):
-        print('Getting buffer byte data')
-        return self.frame.tobytes()
+        if self.files is not None:
+            frame = imageio.imread(self.files[self.img_idx])
+            self.img_idx += 1
+            print('Getting buffer byte data, {0}, {1}/{2}'.format(frame.shape, self.img_idx, len(self.files)))
+        else:
+            frame = np.zeros((self.width, self.height))
+            print('Getting buffer byte data, {0}'.format(frame.shape))
+            time.sleep(1.0/FPS)
+        return frame.tobytes()
 
     def announceFrame(self):
         print('Frame acquired')

@@ -121,7 +121,25 @@ def acquire():
             #Clean up after capture
             camera.revokeAllFrames()
     
-            # close camera
+            #Close camera
+            #@todo
+
+
+def acquire_rgb():
+    '''Aquire images and convert to RGB color space'''
+    for img_bayer in acquire():
+        #@todo Implement a working Bayer->RGB conversion
+        yield img_bayer
+
+
+def acquire_gray64():
+    '''Aquire images and convert to float64 grayscale'''
+    for img_bayer in acquire():
+        #@todo Implement a working Bayer->grayscale conversion
+        imgray = img_bayer[:3, :3, 0]
+
+        #Yield float64 image
+        yield np.float64(imgray)
 
 
 def acquire_disk():
