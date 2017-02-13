@@ -1,3 +1,2 @@
 docopt
 numpy
-git+https://github.com/mabl/pymba@python3

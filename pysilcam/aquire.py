@@ -1,10 +1,18 @@
 # -*- coding: utf-8 -*-
-import pymba
+import warnings
 import time
+import numpy as np
+
+#Try import pymba, if not available, revert to in-package mockup
+try:
+    import pymba
+except:
+    warnings.warn('Pymba not available, using mocked version', ImportWarning)
+    import pysilcam.pymba as pymba
 
 
 def _init_camera(vimba):
-    '''Initialize the camera system'''
+    '''Initialize the camera system from vimba object'''
 
     # get system object
     system = vimba.getSystem()
@@ -18,10 +26,10 @@ def _init_camera(vimba):
         print('Camera ID:', cameraId)
     
     # get and open a camera
-    camera0 = vimba.getCamera(cameraIds[0])
-    camera0.openCamera()
+    camera = vimba.getCamera(cameraIds[0])
+    camera.openCamera()
 
-    return camera0
+    return camera
 
 
 def _configure_camera(camera, config=dict()):
@@ -50,27 +58,26 @@ def _configure_camera(camera, config=dict()):
 
 
 def _aquire_frame(camera, frame0):
-    '''Aquire a single frame'''
+    '''Aquire a single frame in Bayer format'''
 
     #Aquire single fram from camera
     camera.startCapture()
     frame0.queueFrameCapture()
-    camera0.runFeatureCommand('AcquisitionStart')
-    camera0.runFeatureCommand('AcquisitionStop')
+    camera.runFeatureCommand('AcquisitionStart')
+    camera.runFeatureCommand('AcquisitionStop')
     frame0.waitFrameCapture()
     
-    #Copy frame data to numpy array
-    moreUsefulImgData = np.ndarray(buffer = frame0.getBufferByteData(),
-                                   dtype = np.uint8,
-                                   shape = (frame0.height,
-                                            frame0.width,
-                                            1))
-    cmaera.endCapture()
+    #Copy frame data to numpy array (Bayer format)
+    bayer_img = np.ndarray(buffer = frame0.getBufferByteData(),
+                           dtype = np.uint8,
+                           shape = (frame0.height, frame0.width, 1))
+    camera.endCapture()
 
-    return moreUsefulImgData
+    return bayer_img
 
 
 def print_camera_config(camera):
+    '''Print the camera configuration'''
     config_info_map = {
         'AquisitionFrameRateAbs': 'Frame rate',
         'ExposureTimeAbs': 'Exposure time',
@@ -98,13 +105,28 @@ def aquire():
         camera = _init_camera(vimba)
 
         #Configure camera
-        camera = _configure_camera(cmaera)
+        camera = _configure_camera(camera)
 
         #Prepare for image aquisition and create a frame
         pymba.query_start()
         frame0 = camera.getFrame()
         frame0.announceFrame()
 
-        count = 0
-        while count < 20:
-            img = _aquire(camera, frame0)
+        #Aquire raw images and yield to calling context
+        try:
+            while True:
+                img = _aquire_frame(camera, frame0)
+                yield img
+        finally:
+            #Clean up after capture
+            camera.revokeAllFrames()
+    
+            # close camera
+
+
+def aquire_disk():
+    '''Aquire images from SilCam and write them to disk.'''
+    for count, img in enumerate(aquire()):
+        filename = 'data/foo{0}.bmp'.format(count)
+        imageio.imwrite(filename, img)
+        print("Stored image image {0} to file {1}.".format(count, filename))
