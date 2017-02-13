@@ -2,7 +2,7 @@
 import unittest
 import unittest.mock as mock
 from subprocess import check_output
-import pysilcam.aquire
+import pysilcam.acquisition
 
 
 def test_echo():
@@ -16,11 +16,11 @@ def run_cmd(cmd):
     return check_output(cmd, shell=True).decode('utf-8')
 
 
-def test_aquire_five_frames():
-    '''Testing frame aquisition'''
+def test_acquire_five_frames():
+    '''Testing frame acquisition'''
 
     #Check that we can generate frames
-    for i, img in  enumerate(pysilcam.aquire.aquire()):
+    for i, img in  enumerate(pysilcam.acquisition.acquire()):
         #Check that frames (images) have non-zero size
         assert(img.size > 0)
 

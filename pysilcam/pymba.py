@@ -47,16 +47,14 @@ class Frame:
         self.frame = np.zeros((5, 4))
         self.height = 5
         self.width = 4
-        print('Frame aquired')
+        print('Frame acquired')
 
     def getBufferByteData(self):
+        print('Getting buffer byte data')
         return self.frame.tobytes()
 
     def announceFrame(self):
-        print('Frame aquired')
-
-    def getBufferByteData(self):
-        return self.frame.tobytes()
+        print('Frame acquired')
 
     def announceFrame(self):
         print('Announcing frame')
@@ -69,16 +67,20 @@ class Frame:
 
 class System:
     def __init__(self):
+        print('System initialize')
         self.GeVTLIsPresent = False
 
 class Vimba:
     def getSystem(self):
+        print('Getting Vimba system')
         return System()
 
     def getCameraIds(self):
+        print('Getting camera IDs')
         return [0]
 
     def getCamera(self, camera_id):
+        print('Getting camera: {0}'.format(camera_id))
         return Camera()
 
     def __enter__(self):

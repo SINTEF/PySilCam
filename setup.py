@@ -56,7 +56,7 @@ setup(
     packages=['pysilcam'],
     entry_points={
         'console_scripts': [
-            'silcam-aquire = pysilcam.__main__:silcam_aquire',
+            'silcam-acquire = pysilcam.__main__:silcam_acquire',
             'silcam-process-rt = pysilcam.__main__:silcam_process_realtime',
             'silcam-process-batch = pysilcam.__main__:silcam_process_batch',
         ]

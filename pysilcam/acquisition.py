@@ -57,7 +57,7 @@ def _configure_camera(camera, config=dict()):
     return camera
 
 
-def _aquire_frame(camera, frame0):
+def _acquire_frame(camera, frame0):
     '''Aquire a single frame in Bayer format'''
 
     #Aquire single fram from camera
@@ -97,7 +97,7 @@ def print_camera_config(camera):
     print(config_info)
 
 
-def aquire():
+def acquire():
     '''Aquire images from SilCam'''
 
     with pymba.Vimba() as vimba:
@@ -107,7 +107,7 @@ def aquire():
         #Configure camera
         camera = _configure_camera(camera)
 
-        #Prepare for image aquisition and create a frame
+        #Prepare for image acquisition and create a frame
         pymba.query_start()
         frame0 = camera.getFrame()
         frame0.announceFrame()
@@ -115,7 +115,7 @@ def aquire():
         #Aquire raw images and yield to calling context
         try:
             while True:
-                img = _aquire_frame(camera, frame0)
+                img = _acquire_frame(camera, frame0)
                 yield img
         finally:
             #Clean up after capture
@@ -124,9 +124,9 @@ def aquire():
             # close camera
 
 
-def aquire_disk():
+def acquire_disk():
     '''Aquire images from SilCam and write them to disk.'''
-    for count, img in enumerate(aquire()):
+    for count, img in enumerate(acquire()):
         filename = 'data/foo{0}.bmp'.format(count)
         imageio.imwrite(filename, img)
         print("Stored image image {0} to file {1}.".format(count, filename))
