@@ -9,36 +9,18 @@ from skimage import measure
 import pandas as pd
 import cv2
 
+import matplotlib.pyplot as plt
+
 '''
 module for processing SilCam data
 
-TODO: Make stats DataFrame
 TODO: sort out settings
 TODO: add tests for this module
-
 '''
 
-SETTINGS = dict(THRESH = 0.98, # higher THRESH is higher sensitivity
+SETTINGS = dict(THRESH = 0.9, # higher THRESH is higher sensitivity
                 min_area = 12,
                 max_particles = 8000)
-
-class Partstats():
-    ''' defines class for particle statistics
-    '''
-    def __init__(self, spine_length, image_index, area, major_axis_length,
-            minor_axis_length, convex_area, equivalent_diameter, bbox,
-            perimeter, filled_area, hsv):
-        self.spine_length = spine_length
-        self.image_index = image_index
-        self.area = area
-        self.major_axis_length = major_axis_length
-        self.minor_axis_length = minor_axis_length
-        self.convex_area = convex_area
-        self.equivalent_diameter = equivalent_diameter
-        self.bbox = bbox
-        self.perimeter = perimeter
-        self.hsv = hsv
-        self.filled_area = filled_area
 
 def im2bw(imc,greythresh):
     ''' converts corrected image (imc) to a binary image
@@ -48,23 +30,23 @@ def im2bw(imc,greythresh):
       imbw (binary image)
     '''
     img = np.uint8(np.min(imc,2)) # sensibly squash RGB color space
-    img = median(img, disk(4)) # apply median filter to remove noise
+    #img = median(img, disk(4)) # apply median filter to remove noise
     thresh = np.uint8(greythresh * np.median(img)) # determine auto-amazing theshold estimate
+
     imbw = np.invert(img > thresh) # segment the image
     # correct(ish) for blur in median filter for disk(4) - requires 2
     # iterations of a single pixel dilation for a disk size of 4
-    imbw = morphology.binary_erosion(imbw)
-    imbw = morphology.binary_erosion(imbw)
+    #imbw = morphology.binary_erosion(imbw)
+    #imbw = morphology.binary_erosion(imbw)
+
     return imbw
 
 def clean_bw(imbw,min_area):
     '''cleans up particles which are too small and particles touching the
     border
-
-    TODO: fix the first line of this function!!!!
     '''
-    #imbw = segmentation.clear_border(imbw, buffer_size=1) # do this properly to
-#    remove particles, not pixels!
+    imbw = segmentation.clear_border(imbw) # remove particles touching the
+    # border of the image
 
     # remove objects smaller the min_area
     imbw = morphology.remove_small_objects(imbw>0,min_size=min_area)
