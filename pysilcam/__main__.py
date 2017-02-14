@@ -65,6 +65,8 @@ def silcam_process_realtime():
 
         if stats is not np.nan:
             print('data has arrived!')
+            print(stats)
+            break
         
 
 #    print('Placeholder for silcam-process-rt entry point')

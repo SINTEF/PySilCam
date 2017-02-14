@@ -6,6 +6,7 @@ from skimage import segmentation
 from skimage.filters.rank import median
 from skimage.morphology import disk
 from skimage import measure
+import pandas as pd
 import cv2
 
 '''
@@ -84,16 +85,47 @@ def props(iml,image_index,im):
     print('  ok')
 #     minor_axis = np.array([el.minor_axis_length for el in stats])
 
-    partstats = []
+
+    partstats = pd.DataFrame(index=range(len(region_properties)), columns=['H',
+        'S','V','spine length','area','major axis','minor axis',
+        'convex area','equiv diam','bbox rmin','bbox cmin','bbox rmax',
+        'bbox cmax','perimeter','filled area'] )
     for i, el in enumerate (region_properties):
         hsv = get_color_stats(im,el.bbox,el.image)
+        partstats['H'][i] = hsv[0]
+        partstats['S'][i] = hsv[1]
+        partstats['V'][i] = hsv[2]
 
-        image_data = Partstats(get_spine_length(el.image),image_index, el.area,
-                el.major_axis_length, el.minor_axis_length,
-                el.convex_area, el.equivalent_diameter,
-                el.bbox,el.perimeter, el.filled_area,
-                hsv)
-        partstats.append(image_data)
+        partstats['spine length'][i] = get_spine_length(el.image)
+        partstats['area'][i] = el.area
+        partstats['major axis'][i] = el.major_axis_length
+        partstats['minor axis'][i] = el.minor_axis_length
+        partstats['convex area'][i] = el.convex_area
+        partstats['equiv diam'][i] = el.equivalent_diameter
+        partstats['bbox rmin'][i] = el.bbox[0]
+        partstats['bbox cmin'][i] = el.bbox[1]
+        partstats['bbox rmax'][i] = el.bbox[2]
+        partstats['bbox cmax'][i] = el.bbox[3]
+        partstats['perimeter'][i] = el.perimeter
+        partstats['filled area'][i] = el.filled_area
+
+#        image_data = Partstats(get_spine_length(el.image),image_index, el.area,
+#                el.major_axis_length, el.minor_axis_length,
+#                el.convex_area, el.equivalent_diameter,
+#                el.bbox,el.perimeter, el.filled_area,
+#                hsv)
+#        partstats.append(image_data)
+
+#    partstats = []
+#    for i, el in enumerate (region_properties):
+#        hsv = get_color_stats(im,el.bbox,el.image)
+#
+#        image_data = Partstats(get_spine_length(el.image),image_index, el.area,
+#                el.major_axis_length, el.minor_axis_length,
+#                el.convex_area, el.equivalent_diameter,
+#                el.bbox,el.perimeter, el.filled_area,
+#                hsv)
+#        partstats.append(image_data)
 
     return partstats
 
