@@ -7,6 +7,7 @@ from pysilcam import __version__
 from pysilcam.acquisition import acquire
 from pysilcam.background import backgrounder
 from pysilcam.process import statextract
+import pysilcam.postprocess as sc_pp
 import pandas as pd
 
 
@@ -58,21 +59,30 @@ def silcam_acquire():
 
 
 def silcam_process_realtime():
-    for i, imc in enumerate(backgrounder(60)):
+
+    #Initialize the image acquisition generator
+    aqgen = acquire()
+
+    for i, imc in enumerate(backgrounder(60, aqgen)):
     #for i, imc in enumerate(acquire()):
 #        plt.imshow(np.uint8(imc))
 #        plt.show()
         print('PROCESSING....')
         start_time = time.clock()
-        stats = statextract(imc,i)
+        stats = statextract(imc, i)
         proc_time = time.clock() - start_time
-        print('PROCESSING DONE in',proc_time,'sec.')
-        stats.to_csv('/home/emlynd/Desktop/data/test-' + str(i) + '.csv')
+        print('PROCESSING DONE in', proc_time, 'sec.')
+
+
+#        stats.to_csv('/home/emlynd/Desktop/data/test-' + str(i) + '.csv')
 
         if stats is not np.nan:
             print('data has arrived!')
 #            print(stats)
 #            break
+        d50 = sc_pp.d50_from_stats(stats)
+        print('d50:', d50)
+        break
 
 #    print('Placeholder for silcam-process-rt entry point')
 

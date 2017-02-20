@@ -7,7 +7,7 @@ use the backgrounder function!
 acquire() must produce a float64 np array
 '''
 import numpy as np
-from pysilcam import acquisition
+#from pysilcam import acquisition
 
 
 #def acquire(): # to be replaced by proper acquire
@@ -94,13 +94,13 @@ def shift_and_correct(bgstack,imbg,imraw):
     return bgstack, imbg, imc
 
 
-def backgrounder(av_window):
+def backgrounder(av_window,acquire):
     '''generator which interracts with acquire to return a corrcted image
     given av_window number of frame to use in creating a moving background
 
     example useage:
       avwind = 10 # number of images used for background
-      imgen = backgrounder(avwind) # setup generator
+      imgen = backgrounder(avwind,acquire) # setup generator
 
       n = 10 # acquire 10 images and correct them with a sliding background:
       for i in range(n):
@@ -109,7 +109,7 @@ def backgrounder(av_window):
     '''
 
     #Initialize the image acquisition generator
-    acquire = acquisition.acquire()
+#    acquire = acquisition.acquire()
 
     #Set up initial background image stack
     bgstack, imbg = ini_background(av_window, acquire)
