@@ -52,10 +52,11 @@ class Frame:
         #If the environment variable PYSILCAM_TESTDATA is defined, read images
         #from that location.
         if 'PYSILCAM_TESTDATA' in os.environ.keys():
+            offset = os.environ.get('PYSILCAM_OFFSET', 0)
             path = os.environ['PYSILCAM_TESTDATA']
             self.files = [os.path.join(path, f) 
                           for f in sorted(os.listdir(path)) 
-                          if f.endswith('.bmp')]
+                          if f.endswith('.bmp')][offset:]
             self.img_idx = 0
             img0 = imageio.imread(self.files[0])
             self.height, self.width, _ = img0.shape
