@@ -8,6 +8,7 @@ import sys
 import time
 import numpy as np
 import imageio
+import logging
 
 #Handle potential Python 2.7 and Python 3
 try:
@@ -18,8 +19,12 @@ except ImportError:
 #Fake aqusition frequency
 FPS = 15
 
+#Module-wide logger
+logger = logging.getLogger(__name__.replace('pymba', 'fakepymba'))
 def print(*args, **kwargs):
-        __builtin__.print('FakePymba: ', *args, **kwargs)
+    #__builtin__.print('FakePymba: ', *args, **kwargs)
+    logger.debug(*args, **kwargs)
+
 
 def query_start():
     print('Starting query')

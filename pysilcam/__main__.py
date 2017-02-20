@@ -8,6 +8,7 @@ import pandas as pd
 import cProfile
 import pstats
 from io import StringIO
+import logging
 from pysilcam import __version__
 from pysilcam.acquisition import acquire
 from pysilcam.background import backgrounder
@@ -15,6 +16,23 @@ import pysilcam.process
 from pysilcam.process import statextract
 import pysilcam.postprocess as sc_pp
 from pysilcam.config import load_config, PySilcamSettings
+
+title = '''
+ ____        ____  _ _  ____                
+|  _ \ _   _/ ___|(_) |/ ___|__ _ _ __ ___  
+| |_) | | | \___ \| | | |   / _` | '_ ` _ \ 
+|  __/| |_| |___) | | | |__| (_| | | | | | |
+|_|    \__, |____/|_|_|\____\__,_|_| |_| |_|
+       |___/                                
+'''
+
+def configure_logger(settings):
+    if settings.logfile:
+        logging.basicConfig(filename=settings.logfile,
+                            level=getattr(logging, settings.loglevel))
+    else:
+        logging.basicConfig(level=getattr(logging, settings.loglevel))
+
 
 def silcam_acquire():
     '''Aquire images from the SilCam
@@ -74,32 +92,40 @@ def silcam_acquire():
 def silcam_process_realtime(config_filename):
     '''Run processing of SilCam images in real time'''
 
-    print('PYSILCAM REALTIME MODE')
-    print('======================\n')
-
+    print(title)
+    print('REALTIME MODE')
+    print()
+    print('----------------------\n')
     #Load the configuration, create settings object
     conf = load_config(config_filename)
     conf.write(sys.stdout)
     print('----------------------\n')
     settings = PySilcamSettings(conf)
 
+    #Configure logging
+    configure_logger(settings.General)
+    logger = logging.getLogger(__name__ + '.silcam_process_realtime')
+
     #Initialize the image acquisition generator
     aqgen = acquire()
 
     #Get number of images to use for background correction from config
-    n = settings.Background.num_images
+    print('* Initializing background image handler')
+    bggen = backgrounder(settings.Background.num_images, aqgen)
 
-    for i, imc in enumerate(backgrounder(n, aqgen)):
-        print('PROCESSING....')
+    print('* Commencing image acquisition and processing')
+    for i, imc in enumerate(bggen):
+        #logger.debug('PROCESSING....')
         start_time = time.clock()
         stats = statextract(imc, i, settings.Process)
         proc_time = time.clock() - start_time
-        print('PROCESSING DONE in', proc_time, 'sec.')
+        #logger.info('PROCESSING DONE in {0} sec.'.format(proc_time))
+        print('  Processing image {0} took {1} sec.'.format(i, proc_time))
 
         if stats is not np.nan:
-            print('data has arrived!')
+            logger.debug('data has arrived!')
         d50 = sc_pp.d50_from_stats(stats)
-        print('d50:', d50)
+        print('    d50:', d50)
         break
 
     

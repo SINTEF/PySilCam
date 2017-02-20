@@ -7,8 +7,8 @@ from skimage.filters.rank import median
 from skimage.morphology import disk
 from skimage import measure
 import pandas as pd
-#import cv2
 import matplotlib.pyplot as plt
+import logging
 
 '''
 module for processing SilCam data
@@ -17,9 +17,8 @@ TODO: sort out settings
 TODO: add tests for this module
 '''
 
-#SETTINGS = dict(THRESH = 0.9, # higher THRESH is higher sensitivity
-#                min_area = 12,
-#                max_particles = 8000)
+#Get module-level logger
+logger = logging.getLogger(__name__)
 
 
 def im2bw(imc, greythresh):
@@ -75,9 +74,9 @@ def props(iml, image_index,im):
 
     '''
     # this is crazy - i only want some of these attributes.....
-    print('rprops')
+    logger.debug('rprops')
     region_properties = measure.regionprops(iml, cache=False)
-    print('  ok')
+    logger.debug('  ok')
 #     minor_axis = np.array([el.minor_axis_length for el in stats])
 
     partstats = pd.DataFrame(index=range(len(region_properties)), columns=['H',
@@ -192,10 +191,10 @@ def measure_particles(imbw, imc, image_index, max_particles):
     '''
 
     iml = morphology.label(imbw > 0)
-    print('  ', iml.max(), 'particles found')
+    logger.info('  {0} particles found'.format(iml.max()))
 
     if (iml.max()>max_particles):
-        print('....that''s way too many particles! Skipping image.')
+        logger.warn('....that''s way too many particles! Skipping image.')
         stats = np.nan
     elif (iml.max() == 0):
         stats = np.nan
@@ -213,13 +212,13 @@ def statextract(imc, image_index, settings):
       stats (list of particle statistics for every particle, according to
       Partstats class)
     '''
-    print('segment')
+    logger.debug('segment')
     imbw = im2bw(imc, settings.threshold)
 
-    print('clean')
+    logger.debug('clean')
     imbw = clean_bw(imbw, settings.minimum_area)
 
-    print('measure')
+    logger.debug('measure')
     stats = measure_particles(imbw, imc, image_index, settings.max_particles)
 
     return stats
