@@ -44,12 +44,30 @@ def clean_bw(imbw,min_area):
     '''cleans up particles which are too small and particles touching the
     border
     '''
-    imbw = segmentation.clear_border(imbw) # remove particles touching the
+    imbw = morphology.remove_small_objects(imbw>0,min_size=min_area)
+    imbw = segmentation.clear_border(imbw, in_place=True) # remove particles touching the
     # border of the image
 
     # remove objects smaller the min_area
-    imbw = morphology.remove_small_objects(imbw>0,min_size=min_area)
     return imbw
+
+
+def fast_props(iml):
+
+    propnames = ['major_axis_length','minor_axis_length',
+        'equivalent_diameter']
+
+    region_properties = measure.regionprops(iml,cache=False)
+
+    data = np.zeros((len(region_properties), 3), dtype=np.float64)
+
+    for i, el in enumerate (region_properties):
+        data[i,:] = [getattr(el, p) for p in propnames]
+        
+
+    partstats = pd.DataFrame(columns=propnames, data=data)
+
+    return partstats
 
 def props(iml,image_index,im):
     '''population the Partstats class with partstats given a labelled iamge
@@ -77,7 +95,8 @@ def props(iml,image_index,im):
         partstats['S'][i] = hsv[1]
         partstats['V'][i] = hsv[2]
 
-        partstats['spine length'][i] = get_spine_length(el.image)
+        #partstats['spine length'][i] = get_spine_length(el.image)
+        partstats['spine length'][i] = np.nan
         partstats['area'][i] = el.area
         partstats['major axis'][i] = el.major_axis_length
         partstats['minor axis'][i] = el.minor_axis_length
@@ -141,18 +160,20 @@ def get_color_stats(im,bbox,imbw):
       bbox (bounding box of the particle image)
       imbw (segmented particle image - of shape determined by bbox)
     '''
-    roi = np.uint8(extract_roi(im,bbox))
+    hsv = np.array([np.nan, np.nan, np.nan])
+
+    #roi = np.uint8(extract_roi(im,bbox))
     #hsv_roi = cv2.cvtColor(roi, cv2.COLOR_RGB2HSV)
-    hsv_roi = roi
+    #hsv_roi = roi
 
-    hsv_mask = imbw[:,:,None] * hsv_roi
-    hsv_mask = np.float64(hsv_mask)
-    hsv_mask[hsv_mask==0] = np.nan
+    #hsv_mask = imbw[:,:,None] * hsv_roi
+    #hsv_mask = np.float64(hsv_mask)
+    #hsv_mask[hsv_mask==0] = np.nan
 
-    hsv = np.array([0, 0, 0])
-    hsv[0] = np.nanmedian(hsv_mask[:,:,0])
-    hsv[1] = np.nanmedian(hsv_mask[:,:,1])
-    hsv[2] = np.nanmedian(hsv_mask[:,:,2])
+    #hsv = np.array([0, 0, 0])
+    #hsv[0] = np.nanmedian(hsv_mask[:,:,0])
+    #hsv[1] = np.nanmedian(hsv_mask[:,:,1])
+    #hsv[2] = np.nanmedian(hsv_mask[:,:,2])
     return hsv
 
 def measure_particles(imbw,imc,image_index):
@@ -179,7 +200,7 @@ def measure_particles(imbw,imc,image_index):
     elif (iml.max()==0):
         stats = np.nan
     else:
-        stats = props(iml,image_index,imc)
+        stats = fast_props(iml)
     
     return stats
 

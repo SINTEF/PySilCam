@@ -8,7 +8,7 @@ def stats_from_csv(filename):
     return stats
 
 def d50_from_stats(stats):
-    ecd = stats['equiv diam']
+    ecd = stats['equivalent_diameter']
     ved = 4/3 * np.pi * (ecd/2)**3
     mved= np.median(ved)
     md = 2 * ((mved * 3) / (np.pi * 4))**(1/3)

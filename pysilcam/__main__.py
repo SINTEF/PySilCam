@@ -44,7 +44,7 @@ def silcam_acquire():
         pr.disable()
         ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
         ps.print_stats()
-        print(s.getvalue())
+#        print(s.getvalue())
         ps.dump_stats('process_profile.cprof')
 
     elif args['liveview']:
@@ -56,9 +56,9 @@ def silcam_acquire():
             aq_freq = np.round(1.0/(t2 - t1), 1)
             print('Image {0} acquired at frequency {1:.1f} Hz'.format(i, aq_freq))
             t1 = t2
-        ax.imshow(img[:,:,0], cmap=plt.cm.gray)
-        plt.draw()
-        plt.pause(0.05)
+            ax.imshow(img[:,:,0], cmap=plt.cm.gray)
+            plt.draw()
+            plt.pause(0.05)
 
     else:
         t1 = time.time()
