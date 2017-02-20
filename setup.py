@@ -9,6 +9,8 @@ from pysilcam import __version__
 REQUIRES = [
     'docopt',
     'numpy',
+    'pandas',
+    'matplotlib',
     'imageio',
 #    'pymba',
 ]

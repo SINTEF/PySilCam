@@ -1,32 +1,33 @@
 # -*- coding: utf-8 -*-
+import sys
 import time
 from docopt import docopt
 import numpy as np
 import matplotlib.pyplot as plt
-from pysilcam import __version__
-from pysilcam.acquisition import acquire
-from pysilcam.background import backgrounder
-from pysilcam.process import statextract
-import pysilcam.postprocess as sc_pp
 import pandas as pd
 import cProfile
 import pstats
 from io import StringIO
-
+from pysilcam import __version__
+from pysilcam.acquisition import acquire
+from pysilcam.background import backgrounder
+import pysilcam.process
+from pysilcam.process import statextract
+import pysilcam.postprocess as sc_pp
+from pysilcam.config import load_config, PySilcamSettings
 
 def silcam_acquire():
     '''Aquire images from the SilCam
 
     Usage:
-      silcam-acquire
+      silcam-acquire liveview
+      silcam-acquire process <configfile>
       silcam-acquire -h | --help
       silcam-acquire --version
-      silcam-acquire liveview
-      silcam-acquire process
 
     Arguments:
         liveview    Display acquired images
-        process     Process acquired images
+        process     Process acquired images in real time
 
     Options:
       -h --help     Show this screen.
@@ -40,7 +41,7 @@ def silcam_acquire():
         pr.enable()
         s = StringIO()
         sortby = 'cumulative'
-        silcam_process_realtime()
+        silcam_process_realtime(args['<configfile>'])
         pr.disable()
         ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
         ps.print_stats()
@@ -70,33 +71,36 @@ def silcam_acquire():
 
 
 
-def silcam_process_realtime():
+def silcam_process_realtime(config_filename):
+    '''Run processing of SilCam images in real time'''
+
+    print('PYSILCAM REALTIME MODE')
+    print('======================\n')
+
+    #Load the configuration, create settings object
+    conf = load_config(config_filename)
+    conf.write(sys.stdout)
+    print('----------------------\n')
+    settings = PySilcamSettings(conf)
 
     #Initialize the image acquisition generator
     aqgen = acquire()
 
-    for i, imc in enumerate(backgrounder(10, aqgen)):
-    #for i, imc in enumerate(acquire()):
-#        plt.imshow(np.uint8(imc))
-#        plt.show()
+    #Get number of images to use for background correction from config
+    n = settings.Background.num_images
+
+    for i, imc in enumerate(backgrounder(n, aqgen)):
         print('PROCESSING....')
         start_time = time.clock()
-        stats = statextract(imc, i)
+        stats = statextract(imc, i, settings.Process)
         proc_time = time.clock() - start_time
         print('PROCESSING DONE in', proc_time, 'sec.')
 
-
-#        stats.to_csv('/home/emlynd/Desktop/data/test-' + str(i) + '.csv')
-
         if stats is not np.nan:
             print('data has arrived!')
-#            print(stats)
-#            break
         d50 = sc_pp.d50_from_stats(stats)
         print('d50:', d50)
         break
-
-#    print('Placeholder for silcam-process-rt entry point')
 
     
 def silcam_process_batch():

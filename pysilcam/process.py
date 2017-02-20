@@ -17,9 +17,9 @@ TODO: sort out settings
 TODO: add tests for this module
 '''
 
-SETTINGS = dict(THRESH = 0.9, # higher THRESH is higher sensitivity
-                min_area = 12,
-                max_particles = 8000)
+#SETTINGS = dict(THRESH = 0.9, # higher THRESH is higher sensitivity
+#                min_area = 12,
+#                max_particles = 8000)
 
 def im2bw(imc,greythresh):
     ''' converts corrected image (imc) to a binary image
@@ -176,7 +176,7 @@ def get_color_stats(im,bbox,imbw):
     #hsv[2] = np.nanmedian(hsv_mask[:,:,2])
     return hsv
 
-def measure_particles(imbw,imc,image_index):
+def measure_particles(imbw, imc, image_index, max_particles):
     '''measures properties of particles
     requries:
       imbw (full-frame binary image)
@@ -194,7 +194,7 @@ def measure_particles(imbw,imc,image_index):
     iml = morphology.label(imbw>0)
     print('  ',iml.max(),'particles found')
 
-    if (iml.max()>SETTINGS['max_particles']):
+    if (iml.max()>max_particles):
         print('....that''s way too many particles! Skipping image.')
         stats = np.nan
     elif (iml.max()==0):
@@ -204,7 +204,7 @@ def measure_particles(imbw,imc,image_index):
     
     return stats
 
-def statextract(imc,image_index):
+def statextract(imc, image_index, settings):
     '''extracts statistics of particles in imc (raw corrected image) with some
     sort of tag (image_index) used for location matching later
 
@@ -213,12 +213,12 @@ def statextract(imc,image_index):
       Partstats class)
     '''
     print('segment')
-    imbw = im2bw(imc,SETTINGS['THRESH'])
+    imbw = im2bw(imc, settings.threshold)
 
     print('clean')
-    imbw = clean_bw(imbw,SETTINGS['min_area'])
+    imbw = clean_bw(imbw, settings.minimum_area)
 
     print('measure')
-    stats = measure_particles(imbw,imc,image_index)
+    stats = measure_particles(imbw, imc, image_index, settings.max_particles)
 
     return stats
