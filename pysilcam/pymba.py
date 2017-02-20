@@ -52,7 +52,7 @@ class Frame:
         #If the environment variable PYSILCAM_TESTDATA is defined, read images
         #from that location.
         if 'PYSILCAM_TESTDATA' in os.environ.keys():
-            offset = os.environ.get('PYSILCAM_OFFSET', 0)
+            offset = int(os.environ.get('PYSILCAM_OFFSET', 0))
             path = os.environ['PYSILCAM_TESTDATA']
             self.files = [os.path.join(path, f) 
                           for f in sorted(os.listdir(path)) 
