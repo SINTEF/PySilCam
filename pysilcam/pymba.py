@@ -19,7 +19,8 @@ except ImportError:
 FPS = 15
 
 def print(*args, **kwargs):
-        __builtin__.print('FakePymba: ', *args, **kwargs)
+        # __builtin__.print('FakePymba: ', *args, **kwargs)
+        pass
 
 def query_start():
     print('Starting query')

@@ -13,13 +13,8 @@ import matplotlib.pyplot as plt
 '''
 module for processing SilCam data
 
-TODO: sort out settings
 TODO: add tests for this module
 '''
-
-#SETTINGS = dict(THRESH = 0.9, # higher THRESH is higher sensitivity
-#                min_area = 12,
-#                max_particles = 8000)
 
 
 def im2bw(imc, greythresh):
@@ -51,11 +46,11 @@ def clean_bw(imbw, min_area):
 def fast_props(iml):
 
     propnames = ['major_axis_length', 'minor_axis_length',
-                 'equivalent_diameter']
+                 'equivalent_diameter', 'solidity']
 
     region_properties = measure.regionprops(iml, cache=False)
 
-    data = np.zeros((len(region_properties), 3), dtype=np.float64)
+    data = np.zeros((len(region_properties), len(propnames)), dtype=np.float64)
 
     for i, el in enumerate(region_properties):
         data[i, :] = [getattr(el, p) for p in propnames]

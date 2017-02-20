@@ -16,6 +16,7 @@ from pysilcam.process import statextract
 import pysilcam.postprocess as sc_pp
 from pysilcam.config import load_config, PySilcamSettings
 
+
 def silcam_acquire():
     '''Aquire images from the SilCam
 
@@ -89,6 +90,8 @@ def silcam_process_realtime(config_filename):
     #Get number of images to use for background correction from config
     n = settings.Background.num_images
 
+    d50_ts = []
+
     for i, imc in enumerate(backgrounder(n, aqgen)):
         print('PROCESSING....')
         start_time = time.clock()
@@ -98,9 +101,20 @@ def silcam_process_realtime(config_filename):
 
         if stats is not np.nan:
             print('data has arrived!')
+        stats = sc_pp.filter_stats(stats, settings.PostProcess)
         d50 = sc_pp.d50_from_stats(stats)
         print('d50:', d50)
-        break
+
+        d50_ts.append(d50)
+
+        plt.cla()
+        plt.plot(d50_ts,'.')
+        plt.draw()
+        plt.pause(0.05)
+
+        if (i == 10):
+            plt.show()
+            break
 
     
 def silcam_process_batch():
