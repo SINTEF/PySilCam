@@ -11,10 +11,7 @@ import pysilcam.postprocess as sc_pp
 import pandas as pd
 import cProfile
 import pstats
-try:
-    from  StringIO import StringIO
-except ModuleNotFoundError:
-    from io import StringIO
+from io import StringIO
 
 
 def silcam_acquire():
@@ -48,6 +45,7 @@ def silcam_acquire():
         ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
         ps.print_stats()
         print(s.getvalue())
+        ps.dump_stats('process_profile.cprof')
 
     elif args['liveview']:
         plt.ion()
