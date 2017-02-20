@@ -1,15 +1,18 @@
 # -*- coding: utf-8 -*-
 import numpy as np
+from pysilcam.acquisition import acquire
 from pysilcam.background import backgrounder
 
 
 def test_background_aquire():
     '''Testing background-corrected frame acquisition'''
+    
+    aqgen = acquire()
 
     #Check that we can generate background-corredted frames. 
     #Use 5 frames for correction.
     prev_imgc = None
-    for i, imgc in  enumerate(backgrounder(5)):
+    for i, imgc in  enumerate(backgrounder(5, aqgen)):
         #Check that frames (images) have non-zero size
         assert imgc.size > 0, 'Image size was not positive'
 
