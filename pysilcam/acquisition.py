@@ -2,6 +2,7 @@
 import warnings
 import time
 import numpy as np
+import logging
 
 #Try import pymba, if not available, revert to in-package mockup
 try:
@@ -9,6 +10,9 @@ try:
 except:
     warnings.warn('Pymba not available, using mocked version', ImportWarning)
     import pysilcam.pymba as pymba
+
+
+logger = logging.getLogger(__name__)
 
 
 def _init_camera(vimba):
@@ -23,7 +27,7 @@ def _init_camera(vimba):
         time.sleep(0.2)
     cameraIds = vimba.getCameraIds()
     for cameraId in cameraIds:
-        print('Camera ID:', cameraId)
+        logger.debug('Camera ID:', cameraId)
     
     # get and open a camera
     camera = vimba.getCamera(cameraIds[0])
@@ -147,4 +151,4 @@ def acquire_disk():
     for count, img in enumerate(acquire()):
         filename = 'data/foo{0}.bmp'.format(count)
         imageio.imwrite(filename, img)
-        print("Stored image image {0} to file {1}.".format(count, filename))
+        logger.debug("Stored image image {0} to file {1}.".format(count, filename))
