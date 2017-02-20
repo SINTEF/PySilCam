@@ -7,12 +7,7 @@ use the backgrounder function!
 acquire() must produce a float64 np array
 '''
 import numpy as np
-#from pysilcam import acquisition
 
-
-#def acquire(): # to be replaced by proper acquire
-#    im = np.zeros((2048,2448),dtype=np.float64)
-#    return im
 
 def ini_background(av_window, acquire):
     '''av_window is the number of images to use in creating the background
@@ -21,18 +16,17 @@ def ini_background(av_window, acquire):
       imbg (the actual background image)
     '''
     bgstack = []
-    bgstack.append(next(acquire)) # get the first image
+    bgstack.append(next(acquire))  # get the first image
     
-    for i in range(av_window-1): # loop through the rest, appending to bgstack
+    for i in range(av_window-1):  # loop through the rest, appending to bgstack
         bgstack.append(next(acquire))
     
-    imbg = np.mean(bgstack,0) # average the iamges in the stack
+    imbg = np.mean(bgstack, 0)  # average the iamges in the stack
     
     return bgstack, imbg
 
 
-
-def shift_bgstack(bgstack,imbg,imnew):
+def shift_bgstack(bgstack, imbg, imnew):
     '''shofts the background by popping the oldest and added a new image
     returns:
       bgstack (updated list of all background images)
@@ -43,19 +37,20 @@ def shift_bgstack(bgstack,imbg,imnew):
     av_window = np.shape(bgstack)
     av_window = av_window[0]
     
-    imold = bgstack.pop(0) # pop the oldest image from the stack,
+    imold = bgstack.pop(0)  # pop the oldest image from the stack,
     # but keep it for subtraction from imbg later
 
-    bgstack.append(imnew) # append the new image to the stack
+    bgstack.append(imnew)  # append the new image to the stack
     
-    imbg = imbg * av_window # rescale imbg
-    imbg -= imold # subtract oldest image
-    imbg += imnew # add new image
-    imbg /= av_window # convert back to proper average
+    imbg = imbg * av_window  # rescale imbg
+    imbg -= imold  # subtract oldest image
+    imbg += imnew  # add new image
+    imbg /= av_window  # convert back to proper average
     
     return bgstack, imbg
 
-def correct_im(imbg,imraw):
+
+def correct_im(imbg, imraw):
     '''corrects raw image by subtracting the background
     inputs:
       imbg (the actual background averaged image)
@@ -71,7 +66,8 @@ def correct_im(imbg,imraw):
     
     return imc
 
-def shift_and_correct(bgstack,imbg,imraw):
+
+def shift_and_correct(bgstack, imbg, imraw):
     '''shitfts the background stack and averaged image and corrects the new
     raw image.
     
@@ -88,13 +84,13 @@ def shift_and_correct(bgstack,imbg,imraw):
       imc (corrcted image)
     '''
 
-    imc = correct_im(imbg,imraw)
-    bgstack, imbg = shift_bgstack(bgstack,imbg,imraw)
+    imc = correct_im(imbg, imraw)
+    bgstack, imbg = shift_bgstack(bgstack, imbg, imraw)
     
     return bgstack, imbg, imc
 
 
-def backgrounder(av_window,acquire):
+def backgrounder(av_window, acquire):
     '''generator which interracts with acquire to return a corrcted image
     given av_window number of frame to use in creating a moving background
 
@@ -108,14 +104,10 @@ def backgrounder(av_window,acquire):
           print(i)
     '''
 
-    #Initialize the image acquisition generator
-#    acquire = acquisition.acquire()
-
-    #Set up initial background image stack
+    # Set up initial background image stack
     bgstack, imbg = ini_background(av_window, acquire)
 
-    
-    #Aquire images, apply background correction and yield result
+    # Aquire images, apply background correction and yield result
     for imraw in acquire:
         bgstack, imbg, imc = shift_and_correct(bgstack, imbg, imraw)
         yield imc

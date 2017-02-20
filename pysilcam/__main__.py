@@ -81,6 +81,7 @@ def silcam_process_realtime():
 #        plt.show()
         print('PROCESSING....')
         start_time = time.clock()
+        plt.figure()
         stats = statextract(imc, i)
         proc_time = time.clock() - start_time
         print('PROCESSING DONE in', proc_time, 'sec.')
@@ -94,6 +95,10 @@ def silcam_process_realtime():
 #            break
         d50 = sc_pp.d50_from_stats(stats)
         print('d50:', d50)
+        plt.figure()
+        plt.imshow(np.uint8(imc))
+        plt.draw()
+        plt.show()
         break
 
 #    print('Placeholder for silcam-process-rt entry point')
