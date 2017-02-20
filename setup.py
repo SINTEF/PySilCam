@@ -9,6 +9,7 @@ from pysilcam import __version__
 REQUIRES = [
     'docopt',
     'numpy',
+    'imageio',
 #    'pymba',
 ]
 

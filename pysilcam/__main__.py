@@ -9,6 +9,12 @@ from pysilcam.background import backgrounder
 from pysilcam.process import statextract
 import pysilcam.postprocess as sc_pp
 import pandas as pd
+import cProfile
+import pstats
+try:
+    from  StringIO import StringIO
+except ModuleNotFoundError:
+    from io import StringIO
 
 
 def silcam_acquire():
@@ -33,7 +39,15 @@ def silcam_acquire():
     #print('Type \'silcam-acquire -h\' for help')
 
     if args['process']:
+        pr = cProfile.Profile()
+        pr.enable()
+        s = StringIO()
+        sortby = 'cumulative'
         silcam_process_realtime()
+        pr.disable()
+        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        ps.print_stats()
+        print(s.getvalue())
 
     elif args['liveview']:
         plt.ion()
@@ -63,7 +77,7 @@ def silcam_process_realtime():
     #Initialize the image acquisition generator
     aqgen = acquire()
 
-    for i, imc in enumerate(backgrounder(60, aqgen)):
+    for i, imc in enumerate(backgrounder(10, aqgen)):
     #for i, imc in enumerate(acquire()):
 #        plt.imshow(np.uint8(imc))
 #        plt.show()

@@ -7,8 +7,7 @@ from skimage.filters.rank import median
 from skimage.morphology import disk
 from skimage import measure
 import pandas as pd
-import cv2
-
+#import cv2
 import matplotlib.pyplot as plt
 
 '''
@@ -143,7 +142,8 @@ def get_color_stats(im,bbox,imbw):
       imbw (segmented particle image - of shape determined by bbox)
     '''
     roi = np.uint8(extract_roi(im,bbox))
-    hsv_roi = cv2.cvtColor(roi, cv2.COLOR_RGB2HSV)
+    #hsv_roi = cv2.cvtColor(roi, cv2.COLOR_RGB2HSV)
+    hsv_roi = roi
 
     hsv_mask = imbw[:,:,None] * hsv_roi
     hsv_mask = np.float64(hsv_mask)
