@@ -2,6 +2,7 @@
 '''
 Partial drop-in replacement for Pymba, for testing purposes.
 '''
+from __future__ import print_function
 import os
 import sys
 import time
