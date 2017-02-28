@@ -2,9 +2,9 @@ import matplotlib.pyplot as plt
 import pysilcam.postprocess as sc_pp
 import numpy as np
 
-def psd(stats):
+def psd(stats, settings):
     
-    dias, vd = sc_pp.vd_from_stats(stats)
+    dias, vd = sc_pp.vd_from_stats(stats, settings)
 
     plt.plot(dias,vd/np.sum(vd)*100)
     plt.xscale('log')

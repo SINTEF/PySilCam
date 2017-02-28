@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-PIX_SIZE = 35.2 / 2448 * 1000 # pixel size in microns (Med. mag)
+# PIX_SIZE = 35.2 / 2448 * 1000 # pixel size in microns (Med. mag)
 
 def stats_from_csv(filename):
     stats = pd.read_csv(filename,index_col=0)
@@ -17,9 +17,9 @@ def filter_stats(stats, settings):
     print(endparts,' particles measured.')
     return stats
 
-def d50_from_stats(stats):
+def d50_from_stats(stats, settings):
 
-    dias, vd = vd_from_stats(stats)
+    dias, vd = vd_from_stats(stats, settings)
 
     d50 = d50_from_vd(vd,dias)
     return d50
@@ -64,8 +64,8 @@ def vc_from_nd(count,psize,sv=1):
     
     return vc
 
-def vd_from_stats(stats):
-    ecd = stats['equivalent_diameter'] * PIX_SIZE
+def vd_from_stats(stats, settings):
+    ecd = stats['equivalent_diameter'] * settings.pix_size
 
     dias, bin_limits_um = get_size_bins()
 

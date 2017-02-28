@@ -133,7 +133,7 @@ def silcam_process_realtime(config_filename):
         else:
             continue
         stats = sc_pp.filter_stats(stats, settings.PostProcess)
-        d50 = sc_pp.d50_from_stats(stats)
+        d50 = sc_pp.d50_from_stats(stats, settings.PostProcess)
         print('d50:', d50)
 
         d50_ts.append(d50)
