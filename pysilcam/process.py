@@ -83,8 +83,8 @@ def props(iml, image_index,im):
 #     minor_axis = np.array([el.minor_axis_length for el in stats])
 
     partstats = pd.DataFrame(index=range(len(region_properties)), columns=['H',
-        'S','V','spine length','area','major axis','minor axis',
-        'convex area','equiv diam','bbox rmin','bbox cmin','bbox rmax',
+        'S','V','spine length','area','major_axis_length','minor_axis_length',
+        'convex area','equivalent_diameter','bbox rmin','bbox cmin','bbox rmax',
         'bbox cmax','perimeter','filled area'] )
     for i, el in enumerate (region_properties):
         hsv = get_color_stats(im,el.bbox,el.image)
@@ -95,10 +95,10 @@ def props(iml, image_index,im):
         #partstats['spine length'][i] = get_spine_length(el.image)
         partstats['spine length'][i] = np.nan
         partstats['area'][i] = el.area
-        partstats['major axis'][i] = el.major_axis_length
-        partstats['minor axis'][i] = el.minor_axis_length
+        partstats['major_axis_length'][i] = el.major_axis_length
+        partstats['minor_axis_length'][i] = el.minor_axis_length
         partstats['convex area'][i] = el.convex_area
-        partstats['equiv diam'][i] = el.equivalent_diameter
+        partstats['equivalent_diameter'][i] = el.equivalent_diameter
         partstats['bbox rmin'][i] = el.bbox[0]
         partstats['bbox cmin'][i] = el.bbox[1]
         partstats['bbox rmax'][i] = el.bbox[2]
