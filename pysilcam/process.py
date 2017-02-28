@@ -9,6 +9,7 @@ from skimage import measure
 import pandas as pd
 import matplotlib.pyplot as plt
 import logging
+from scipy import  ndimage as ndi
 
 '''
 module for processing SilCam data
@@ -27,8 +28,11 @@ def im2bw(imc, greythresh):
     returns:
       imbw (binary image)
     '''
-    img = np.uint8(np.min(imc, 2))  # sensibly squash RGB color space
-    thresh = np.uint8(greythresh * np.median(img))  # determine auto-amazing theshold estimate
+    #img = np.uint8(np.min(imc, 2))  # sensibly squash RGB color space
+    img = np.uint8(imc[:,:,0])  # sensibly squash RGB color space
+
+    #thresh = np.uint8(greythresh * np.median(img))  # determine auto-amazing theshold estimate
+    thresh = np.uint8(greythresh * 230)  # determine auto-amazing theshold estimate
 
     imbw = img < thresh  # segment the image
 
@@ -49,7 +53,7 @@ def clean_bw(imbw, min_area):
 def fast_props(iml):
 
     propnames = ['major_axis_length', 'minor_axis_length',
-                 'equivalent_diameter', 'solidity']
+                 'equivalent_diameter']
 
     region_properties = measure.regionprops(iml, cache=False)
 
@@ -192,7 +196,7 @@ def measure_particles(imbw, imc, image_index, max_particles):
     iml = morphology.label(imbw > 0)
     logger.info('  {0} particles found'.format(iml.max()))
 
-    if (iml.max()>max_particles):
+    if (iml.max() > max_particles):
         logger.warn('....that''s way too many particles! Skipping image.')
         stats = np.nan
     elif (iml.max() == 0):
@@ -216,6 +220,8 @@ def statextract(imc, image_index, settings):
 
     logger.debug('clean')
     imbw = clean_bw(imbw, settings.minimum_area)
+
+    imbw = ndi.binary_fill_holes(imbw)
 
     logger.debug('measure')
     stats = measure_particles(imbw, imc, image_index, settings.max_particles)

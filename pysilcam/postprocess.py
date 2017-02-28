@@ -18,11 +18,59 @@ def filter_stats(stats, settings):
     return stats
 
 def d50_from_stats(stats):
-    ecd = stats['equivalent_diameter']
-    ved = 4/3 * np.pi * (ecd/2)**3
-    mved= np.median(ved)
-    md = 2 * ((mved * 3) / (np.pi * 4))**(1/3)
-    d50 = md * PIX_SIZE
+
+    dias, vd = vd_from_stats(stats)
+
+    d50 = d50_from_vd(vd,dias)
     return d50
 
+def d50_from_vd(vd,dias):
+    csvd = np.cumsum(vd/np.sum(vd))
+    d50 = np.interp(0.5,csvd,dias)
+    return d50
 
+def get_size_bins():
+    bin_limits_um = np.zeros((53),dtype=np.float64)
+    bin_limits_um[0] = 2.72 * 0.91
+
+    for I in np.arange(1,53,1):
+        bin_limits_um[I] = bin_limits_um[I-1] * 1.180
+
+    bin_mids_um = np.zeros((52),dtype=np.float64)
+    bin_mids_um[0] = 2.72
+
+    for I in np.arange(1,52,1):
+        bin_mids_um[I]=bin_mids_um[I-1]*1.180
+
+    return bin_mids_um, bin_limits_um
+
+def vc_from_nd(count,psize,sv=1):
+    ''' calculate volume concentration from particle count
+    
+    sv = sample volume size (litres)
+     
+    e.g:
+    sample_vol_size=25*1e-3*(1200*4.4e-6*1600*4.4e-6); %size of sample volume in m^3
+    sv=sample_vol_size*1e3; %size of sample volume in litres
+    '''
+
+    psize = psize *1e-6  # convert to m
+
+    pvol = 4/3 *np.pi * (psize/2)**3  # volume in m^3
+    
+    tpvol = pvol * count * 1e9  # volume in micro-litres
+
+    vc = tpvol / sv  # micro-litres / litre
+    
+    return vc
+
+def vd_from_stats(stats):
+    ecd = stats['equivalent_diameter'] * PIX_SIZE
+
+    dias, bin_limits_um = get_size_bins()
+
+    necd, edges = np.histogram(ecd,bin_limits_um)
+
+    vd = vc_from_nd(necd,dias)
+
+    return dias, vd

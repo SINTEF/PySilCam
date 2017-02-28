@@ -15,6 +15,7 @@ from pysilcam.background import backgrounder
 import pysilcam.process
 from pysilcam.process import statextract
 import pysilcam.postprocess as sc_pp
+import pysilcam.plotting as scplt
 from pysilcam.config import load_config, PySilcamSettings
 
 title = '''
@@ -115,6 +116,9 @@ def silcam_process_realtime(config_filename):
 
     d50_ts = []
 
+    plt.ion()
+    fig, ax = plt.subplots(2,2)
+
     print('* Commencing image acquisition and processing')
     for i, imc in enumerate(bggen):
         #logger.debug('PROCESSING....')
@@ -126,19 +130,33 @@ def silcam_process_realtime(config_filename):
 
         if stats is not np.nan:
             logger.debug('data has arrived!')
+        else:
+            continue
         stats = sc_pp.filter_stats(stats, settings.PostProcess)
         d50 = sc_pp.d50_from_stats(stats)
         print('d50:', d50)
 
         d50_ts.append(d50)
 
+        plt.axes(ax[0,0])
+        plt.cla()
+
+        scplt.show_imc(imc)
+
+        plt.axes(ax[1,0])
         plt.cla()
         plt.plot(d50_ts,'.')
+        plt.xlabel('image #')
+        plt.ylabel('d50 (um)')
         plt.draw()
         plt.pause(0.05)
 
-        if (i == 10):
-            plt.show()
+        plt.axes(ax[1,1])
+        plt.cla()
+        scplt.psd(stats)
+
+        if (i == 6000):
+            plt.savefig('/home/emlynd/Desktop/dump.png')
             break
 
     
