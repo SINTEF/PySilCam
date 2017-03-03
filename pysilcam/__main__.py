@@ -116,47 +116,62 @@ def silcam_process_realtime(config_filename):
 
     d50_ts = []
 
-    plt.ion()
+#    plt.ion()
     fig, ax = plt.subplots(2,2)
 
     print('* Commencing image acquisition and processing')
     for i, imc in enumerate(bggen):
         #logger.debug('PROCESSING....')
         start_time = time.clock()
-        stats = statextract(imc, i, settings.Process)
+        stats = statextract(imc, settings.Process)
         proc_time = time.clock() - start_time
-        #logger.info('PROCESSING DONE in {0} sec.'.format(proc_time))
-        print('  Processing image {0} took {1} sec.'.format(i, proc_time))
+
+        plt.axes(ax[0,0])
+#        plt.cla()
+#        scplt.show_imc(imc)
+        if i == 0:
+            image = plt.imshow(np.uint8(imc), interpolation='nearest', animated=True)
+        image.set_data(np.uint8(imc))
 
         if stats is not np.nan:
             logger.debug('data has arrived!')
         else:
+#            plt.pause(0.05)
+#            plt.draw()
+#            tot_time = time.clock() - start_time
+#            print('  Processing image {0} took {1} sec. out of {2} sec.'.format(i, proc_time, tot_time))
+
             continue
         stats = sc_pp.filter_stats(stats, settings.PostProcess)
         d50 = sc_pp.d50_from_stats(stats, settings.PostProcess)
         print('d50:', d50)
 
+#        tot_time = time.clock() - start_time
+#        print('  Processing image {0} took {1} sec. out of {2} sec.'.format(i,
+#            proc_time, tot_time))
+#        continue
+
         d50_ts.append(d50)
-
-        plt.axes(ax[0,0])
-        plt.cla()
-
-        scplt.show_imc(imc)
 
         plt.axes(ax[1,0])
         plt.cla()
         plt.plot(d50_ts,'.')
         plt.xlabel('image #')
         plt.ylabel('d50 (um)')
-        plt.draw()
-        plt.pause(0.05)
 
         plt.axes(ax[1,1])
         plt.cla()
-        scplt.psd(stats)
+        scplt.psd(stats, settings.PostProcess)
+        plt.pause(0.01)
+        plt.draw()
+        tot_time = time.clock() - start_time
+
+        #logger.info('PROCESSING DONE in {0} sec.'.format(proc_time))
+        print('  Processing image {0} took {1} sec. out of {2} sec.'.format(i,
+            proc_time, tot_time))
 
         if (i == 6000):
-            plt.savefig('/home/emlynd/Desktop/dump.png')
+#            plt.savefig('/home/emlynd/Desktop/dump.png')
             break
 
     

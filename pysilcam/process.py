@@ -177,7 +177,7 @@ def get_color_stats(im, bbox, imbw):
     return hsv
 
 
-def measure_particles(imbw, imc, image_index, max_particles):
+def measure_particles(imbw, imc, max_particles):
     '''Measures properties of particles
 
     Parameters:
@@ -207,9 +207,8 @@ def measure_particles(imbw, imc, image_index, max_particles):
     return stats
 
 
-def statextract(imc, image_index, settings):
-    '''extracts statistics of particles in imc (raw corrected image) with some
-    sort of tag (image_index) used for location matching later
+def statextract(imc, settings):
+    '''extracts statistics of particles in imc (raw corrected image)
 
     returns:
       stats (list of particle statistics for every particle, according to
@@ -224,6 +223,6 @@ def statextract(imc, image_index, settings):
     imbw = ndi.binary_fill_holes(imbw)
 
     logger.debug('measure')
-    stats = measure_particles(imbw, imc, image_index, settings.max_particles)
+    stats = measure_particles(imbw, imc, settings.max_particles)
 
     return stats

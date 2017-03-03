@@ -15,14 +15,15 @@ def psd(stats, settings):
 
     return
 
-def show_imc(imc,mag=2):
+def show_imc(imc, mag=2):
     PIX_SIZE = 35.2 / 2448 * 1000
 
     if mag==1:
         PIX_SIZE = 67.4 / 2448 * 1000
-
     
-    plt.imshow(np.uint8(imc), extent=[0,2448*PIX_SIZE/1000, 0,2048*PIX_SIZE/1000])
+    plt.imshow(np.uint8(imc),
+            extent=[0,2448*PIX_SIZE/1000,0,2048*PIX_SIZE/1000],
+            interpolation='nearest')
     plt.xlabel('mm')
     plt.ylabel('mm')
 
