@@ -68,7 +68,7 @@ def fast_props(iml):
 
 
 def props(iml, image_index,im):
-    '''population the Partstats class with partstats given a labelled iamge
+    '''populates stats dataframe with partstats given a labelled iamge
     (iml), some sort of image-specific tag for future location matching
     (image_index), and the corrected raw image (im)
 
