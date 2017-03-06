@@ -198,11 +198,9 @@ def measure_particles(imbw, imc, max_particles):
 
     if (iml.max() > max_particles):
         logger.warn('....that''s way too many particles! Skipping image.')
-        stats = np.nan
-    elif (iml.max() == 0):
-        stats = np.nan
-    else:
-        stats = fast_props(iml)
+        iml *= 0
+
+    stats = fast_props(iml)
     
     return stats
 

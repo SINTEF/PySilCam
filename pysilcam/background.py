@@ -21,7 +21,7 @@ def ini_background(av_window, acquire):
     for i in range(av_window-1):  # loop through the rest, appending to bgstack
         bgstack.append(next(acquire))
     
-    imbg = np.mean(bgstack, 0)  # average the iamges in the stack
+    imbg = np.mean(bgstack, 0)  # average the images in the stack
     
     return bgstack, imbg
 
