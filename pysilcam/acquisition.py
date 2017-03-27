@@ -9,6 +9,7 @@ try:
     import pymba
 except:
     warnings.warn('Pymba not available, using mocked version', ImportWarning)
+    print('Pymba not available, using mocked version')
     import pysilcam.fakepymba as pymba
 
 
@@ -28,10 +29,17 @@ def _init_camera(vimba):
     cameraIds = vimba.getCameraIds()
     for cameraId in cameraIds:
         logger.debug('Camera ID:', cameraId)
-    
-    # get and open a camera
-    camera = vimba.getCamera(cameraIds[0])
-    camera.openCamera()
+
+    #Check that we found a camera, if not, raise an error
+    print('')
+    print(cameraIds)
+    if len(cameraIds) == 0:
+        raise RuntimeError('No cameras detected!')
+        camera = None
+    else:
+        # get and open a camera
+        camera = vimba.getCamera(cameraIds[0])
+        camera.openCamera()
 
     return camera
 
@@ -105,8 +113,14 @@ def acquire():
     '''Aquire images from SilCam'''
 
     with pymba.Vimba() as vimba:
-        #Initialize the camera interface
-        camera = _init_camera(vimba)
+        #Initialize the camera interface, retry every five seconds if camera not found
+        camera = None
+        while not camera:
+            try:
+                camera = _init_camera(vimba)
+            except RuntimeError:
+                print('Could not connect to camera, sleeping five seconds and then retrying')
+                time.sleep(5)
 
         #Configure camera
         camera = _configure_camera(camera)
