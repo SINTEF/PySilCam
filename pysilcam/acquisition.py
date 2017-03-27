@@ -9,7 +9,7 @@ try:
     import pymba
 except:
     warnings.warn('Pymba not available, using mocked version', ImportWarning)
-    import pysilcam.pymba as pymba
+    import pysilcam.fakepymba as pymba
 
 
 logger = logging.getLogger(__name__)

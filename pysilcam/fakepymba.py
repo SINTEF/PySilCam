@@ -20,7 +20,8 @@ except ImportError:
 FPS = 15
 
 #Module-wide logger
-logger = logging.getLogger(__name__.replace('pymba', 'fakepymba'))
+#logger = logging.getLogger(__name__.replace('pymba', 'fakepymba'))
+logger = logging.getLogger(__name__)
 def print(*args, **kwargs):
     #__builtin__.print('FakePymba: ', *args, **kwargs)
     logger.debug(*args, **kwargs)
