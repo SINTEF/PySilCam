@@ -8,6 +8,7 @@ from pysilcam import __version__
 
 REQUIRES = [
     'docopt',
+    'configparser',
     'numpy',
     'pandas',
     'matplotlib',
