@@ -52,6 +52,8 @@ def silcam_acquire():
       -h --help     Show this screen.
       --version     Show version.
     '''
+    print(title)
+    print('')
     args = docopt(silcam_acquire.__doc__, version='PySilCam {0}'.format(__version__))
     #print('Type \'silcam-acquire -h\' for help')
 
@@ -68,6 +70,9 @@ def silcam_acquire():
         ps.dump_stats('process_profile.cprof')
 
     elif args['liveview']:
+        print('LIVEVIEW MODE')
+        print('')
+        print('----------------------\n')
         plt.ion()
         fig, ax = plt.subplots()
         t1 = time.time()
@@ -93,7 +98,6 @@ def silcam_acquire():
 def silcam_process_realtime(config_filename):
     '''Run processing of SilCam images in real time'''
 
-    print(title)
     print('REALTIME MODE')
     print()
     print('----------------------\n')
