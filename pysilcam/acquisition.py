@@ -44,15 +44,21 @@ def _configure_camera(camera, config=dict()):
 
     #Default settings
     camera.AcquisitionFrameRateAbs = 15
-    camera.ExposureTimeAbs = 300
+    camera.TriggerSource = 'FixedRate'
+    camera.AcquisitionMode = 'SingleFrame'
+    camera.ExposureTimeAbs = 150
     camera.PixelFormat = 'BayerRG8'
-    camera.StrobeDuration = 600
+    camera.StrobeDuration = 150
     camera.StrobeDelay = 0
     camera.StrobeDurationMode = 'Controlled'
-    camera.StrobeSource = 'Exposing'
+    camera.StrobeSource = 'FrameTriggerReady'
     camera.SyncOutPolarity = 'Normal'
     camera.SyncOutSelector = 'SyncOut1'
     camera.SyncOutSource = 'Strobe1'
+    
+    #camera.GVSPPacketSize = 9194
+    camera.GVSPPacketSize = 1500
+
 
     #If a config is specified, override those values
     for k, v in config.items():
@@ -72,12 +78,16 @@ def _acquire_frame(camera, frame0):
     frame0.waitFrameCapture()
     
     #Copy frame data to numpy array (Bayer format)
-    bayer_img = np.ndarray(buffer = frame0.getBufferByteData(),
-                           dtype = np.uint8,
-                           shape = (frame0.height, frame0.width, 3))
+    #bayer_img = np.ndarray(buffer = frame0.getBufferByteData(),
+    #                       dtype = np.uint8,
+    #                       shape = (frame0.height, frame0.width, 3))
+    img = np.ndarray(buffer = frame0.getBufferByteData(),
+                    dtype = np.uint8,
+                    shape = (frame0.height, frame0.width, 1))
+ 
     camera.endCapture()
 
-    return bayer_img
+    return img
 
 
 def print_camera_config(camera):
@@ -112,7 +122,6 @@ def acquire():
         camera = _configure_camera(camera)
 
         #Prepare for image acquisition and create a frame
-        pymba.query_start()
         frame0 = camera.getFrame()
         frame0.announceFrame()
 
