@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 import warnings
 import time
 import numpy as np
@@ -31,9 +32,8 @@ def _init_camera(vimba):
         logger.debug('Camera ID:', cameraId)
 
     #Check that we found a camera, if not, raise an error
-    print('')
-    print(cameraIds)
     if len(cameraIds) == 0:
+        logger.debug('No cameras detected')
         raise RuntimeError('No cameras detected!')
         camera = None
     else:
@@ -54,7 +54,7 @@ def _configure_camera(camera, config=dict()):
     camera.AcquisitionFrameRateAbs = 15
     camera.TriggerSource = 'FixedRate'
     camera.AcquisitionMode = 'SingleFrame'
-    camera.ExposureTimeAbs = 150
+    camera.ExposureTimeAbs = 120
     camera.PixelFormat = 'BayerRG8'
     camera.StrobeDuration = 150
     camera.StrobeDelay = 0
@@ -119,18 +119,46 @@ def print_camera_config(camera):
     print(config_info)
 
 
-def acquire():
-    '''Aquire images from SilCam'''
+def camera_awake_check():
+    with pymba.Vimba() as vimba_check:
+        cameraIds = []
+        # get system object
+        system_check = vimba_check.getSystem()
+    
+        # list available cameras (after enabling discovery for GigE cameras)
+        if system_check.GeVTLIsPresent:
+            system_check.runFeatureCommand("GeVDiscoveryAllOnce")
+            time.sleep(0.2)
+        cameraId_check = vimba_check.getCameraIds()
 
-    with pymba.Vimba() as vimba:
-        #Initialize the camera interface, retry every five seconds if camera not found
-        camera = None
-        while not camera:
+    lcid = len(cameraId_check)
+    return lcid
+
+
+def wait_for_camera():
+    camera = None
+    while not camera: 
+        with pymba.Vimba() as vimba:
             try:
                 camera = _init_camera(vimba)
             except RuntimeError:
                 print('Could not connect to camera, sleeping five seconds and then retrying')
                 time.sleep(5)
+
+
+def acquire():
+    '''Aquire images from SilCam'''
+
+    #Initialize the camera interface, retry every five seconds if camera not found
+    #while not camera_awake_check():
+    #    print('Could not connect to camera, sleeping five seconds and then retrying')
+    #    time.sleep(5)
+
+    #Wait until camera wakes up
+    wait_for_camera()
+
+    with pymba.Vimba() as vimba:
+        camera = _init_camera(vimba)
 
         #Configure camera
         camera = _configure_camera(camera)

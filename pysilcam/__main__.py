@@ -17,6 +17,7 @@ from pysilcam.process import statextract
 import pysilcam.postprocess as sc_pp
 import pysilcam.plotting as scplt
 from pysilcam.config import load_config, PySilcamSettings
+import imageio
 
 title = '''
  ____        ____  _ _  ____                
@@ -39,6 +40,7 @@ def silcam_acquire():
     '''Aquire images from the SilCam
 
     Usage:
+      silcam-acquire
       silcam-acquire liveview
       silcam-acquire process <configfile>
       silcam-acquire -h | --help
@@ -76,18 +78,25 @@ def silcam_acquire():
         plt.ion()
         fig, ax = plt.subplots()
         t1 = time.time()
+
         for i, img in enumerate(acquire()):
             t2 = time.time()
             aq_freq = np.round(1.0/(t2 - t1), 1)
             print('Image {0} acquired at frequency {1:.1f} Hz'.format(i, aq_freq))
             t1 = t2
             ax.imshow(img[:,:,0], cmap=plt.cm.gray)
-            plt.draw()
+            #plt.draw()
             plt.pause(0.05)
 
     else:
         t1 = time.time()
+
+        count = 0
         for i, img in enumerate(acquire()):
+            #imageio.imwrite('../data/foo{0}.bmp'.format(count), img)
+            #print("image {} ".format(count))
+            count += 1
+
             t2 = time.time()
             aq_freq = np.round(1.0/(t2 - t1), 1)
             print('Image {0} acquired at frequency {1:.1f} Hz'.format(i, aq_freq))
@@ -95,8 +104,11 @@ def silcam_acquire():
 
 
 
+
+
 def silcam_process_realtime(config_filename):
     '''Run processing of SilCam images in real time'''
+    print(config_filename)
 
     print('REALTIME MODE')
     print()
