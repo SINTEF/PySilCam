@@ -11,7 +11,9 @@ def filter_stats(stats, settings):
     iniparts = len(stats)
     mmr = stats['minor_axis_length'] / stats['major_axis_length']
     stats = stats[mmr > settings.min_deformation]
-#    stats = stats[stats['solidity'] > settings.min_solidity]
+
+    stats = stats[stats['solidity'] > settings.min_solidity]
+
     endparts = len(stats)
     print(iniparts - endparts,' particles removed.')
     print(endparts,' particles measured.')

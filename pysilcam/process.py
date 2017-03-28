@@ -28,13 +28,11 @@ def im2bw(imc, greythresh):
     returns:
       imbw (binary image)
     '''
-    #img = np.uint8(np.min(imc, 2))  # sensibly squash RGB color space
-    img = np.uint8(imc[:,:,0])  # sensibly squash RGB color space
 
     #thresh = np.uint8(greythresh * np.median(img))  # determine auto-amazing theshold estimate
-    thresh = np.uint8(greythresh * 230)  # determine auto-amazing theshold estimate
+    thresh = np.uint8(greythresh * 230)  # or use a faster less-good version
 
-    imbw = img < thresh  # segment the image
+    imbw = imc < thresh  # segment the image
 
     return imbw
 
@@ -53,7 +51,7 @@ def clean_bw(imbw, min_area):
 def fast_props(iml):
 
     propnames = ['major_axis_length', 'minor_axis_length',
-                 'equivalent_diameter']
+                 'equivalent_diameter', 'solidity']
 
     region_properties = measure.regionprops(iml, cache=False)
 

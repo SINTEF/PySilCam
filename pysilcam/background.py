@@ -21,7 +21,8 @@ def ini_background(av_window, acquire):
     for i in range(av_window-1):  # loop through the rest, appending to bgstack
         bgstack.append(next(acquire))
     
-    imbg = np.mean(bgstack, 0)  # average the images in the stack
+    imbg = np.mean(bgstack, axis=0)  # average the images in the stack
+#    imbg = np.amax(bgstack, axis=0)  # average the images in the stack
     
     return bgstack, imbg
 
@@ -42,10 +43,11 @@ def shift_bgstack(bgstack, imbg, imnew):
 
     bgstack.append(imnew)  # append the new image to the stack
     
-    imbg = imbg * av_window  # rescale imbg
-    imbg -= imold  # subtract oldest image
-    imbg += imnew  # add new image
-    imbg /= av_window  # convert back to proper average
+#    imbg = imbg * av_window  # rescale imbg
+#    imbg -= imold  # subtract oldest image
+#    imbg += imnew  # add new image
+#    imbg /= av_window  # convert back to proper average
+    imbg = np.mean(bgstack, axis=0)
     
     return bgstack, imbg
 
@@ -68,7 +70,7 @@ def correct_im(imbg, imraw):
 
 
 def shift_and_correct(bgstack, imbg, imraw):
-    '''shitfts the background stack and averaged image and corrects the new
+    '''shifts the background stack and averaged image and corrects the new
     raw image.
     
     This is a wrapper for shift_bgstack and correct_im

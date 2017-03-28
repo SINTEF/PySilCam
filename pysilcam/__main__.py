@@ -18,6 +18,7 @@ import pysilcam.postprocess as sc_pp
 import pysilcam.plotting as scplt
 from pysilcam.config import load_config, PySilcamSettings
 import imageio
+from skimage import color
 
 title = '''
  ____        ____  _ _  ____                
@@ -137,16 +138,20 @@ def silcam_process_realtime(config_filename):
     fig, ax = plt.subplots(2,2)
 
     print('* Commencing image acquisition and processing')
-    #for i, imc in enumerate(bggen):
-    for i, imc in enumerate(aqgen):
+    for i, imc in enumerate(bggen):
         #logger.debug('PROCESSING....')
         start_time = time.clock()
+
+        nc = color.guess_spatial_dimensions(imc)
+        if nc == None: # if there are ambiguous dimentions, assume RGB color space
+            imc = imc[:,:,1] # and just use green
+
         stats, imbw = statextract(imc, settings.Process)
         proc_time = time.clock() - start_time
 
         plt.axes(ax[0,0])
         if i == 0:
-            image = plt.imshow(np.uint8(imc), interpolation='nearest', animated=True)
+            image = plt.imshow(np.uint8(imc), cmap='gray', interpolation='nearest', animated=True)
         image.set_data(np.uint8(imc))
 
         plt.axes(ax[0,1])
