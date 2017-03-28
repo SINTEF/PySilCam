@@ -51,11 +51,12 @@ def _configure_camera(camera, config=dict()):
     '''
 
     #Default settings
-    camera.AcquisitionFrameRateAbs = 15
+    camera.AcquisitionFrameRateAbs = 1
     camera.TriggerSource = 'FixedRate'
     camera.AcquisitionMode = 'SingleFrame'
-    camera.ExposureTimeAbs = 120
-    camera.PixelFormat = 'BayerRG8'
+    camera.ExposureTimeAbs = 150
+    #camera.PixelFormat = 'BayerRG8'
+    camera.PixelFormat = 'RGB8Packed'
     camera.StrobeDuration = 150
     camera.StrobeDelay = 0
     camera.StrobeDurationMode = 'Controlled'
@@ -91,7 +92,7 @@ def _acquire_frame(camera, frame0):
     #                       shape = (frame0.height, frame0.width, 3))
     img = np.ndarray(buffer = frame0.getBufferByteData(),
                     dtype = np.uint8,
-                    shape = (frame0.height, frame0.width, 1))
+                    shape = (frame0.height, frame0.width, 3))
  
     camera.endCapture()
 

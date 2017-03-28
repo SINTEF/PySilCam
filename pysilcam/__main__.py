@@ -84,7 +84,8 @@ def silcam_acquire():
             aq_freq = np.round(1.0/(t2 - t1), 1)
             print('Image {0} acquired at frequency {1:.1f} Hz'.format(i, aq_freq))
             t1 = t2
-            ax.imshow(img[:,:,0], cmap=plt.cm.gray)
+            #ax.imshow(img[:,:,0], cmap=plt.cm.gray)
+            ax.imshow(np.uint8(img))
             #plt.draw()
             plt.pause(0.05)
 
