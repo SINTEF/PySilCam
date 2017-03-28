@@ -223,4 +223,4 @@ def statextract(imc, settings):
     logger.debug('measure')
     stats = measure_particles(imbw, imc, settings.max_particles)
 
-    return stats
+    return stats, imbw

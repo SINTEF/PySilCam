@@ -137,18 +137,23 @@ def silcam_process_realtime(config_filename):
     fig, ax = plt.subplots(2,2)
 
     print('* Commencing image acquisition and processing')
-    for i, imc in enumerate(bggen):
+    #for i, imc in enumerate(bggen):
+    for i, imc in enumerate(aqgen):
         #logger.debug('PROCESSING....')
         start_time = time.clock()
-        stats = statextract(imc, settings.Process)
+        stats, imbw = statextract(imc, settings.Process)
         proc_time = time.clock() - start_time
 
         plt.axes(ax[0,0])
-#        plt.cla()
-#        scplt.show_imc(imc)
         if i == 0:
             image = plt.imshow(np.uint8(imc), interpolation='nearest', animated=True)
         image.set_data(np.uint8(imc))
+
+        plt.axes(ax[0,1])
+        if i==0:
+            image_bw = plt.imshow(np.uint8(imbw > 0), cmap='gray', interpolation='nearest', animated=True)
+        image_bw.set_data(np.uint8(imbw > 0))
+
 
         if stats is not np.nan:
             logger.debug('data has arrived!')
@@ -186,10 +191,6 @@ def silcam_process_realtime(config_filename):
         #logger.info('PROCESSING DONE in {0} sec.'.format(proc_time))
         print('  Processing image {0} took {1} sec. out of {2} sec.'.format(i,
             proc_time, tot_time))
-
-        if (i == 6000):
-#            plt.savefig('/home/emlynd/Desktop/dump.png')
-            break
 
     
 def silcam_process_batch():
