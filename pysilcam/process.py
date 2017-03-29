@@ -51,7 +51,7 @@ def clean_bw(imbw, min_area):
 def fast_props(iml):
 
     propnames = ['major_axis_length', 'minor_axis_length',
-                 'equivalent_diameter', 'solidity']
+                 'equivalent_diameter']
 
     region_properties = measure.regionprops(iml, cache=False)
 
@@ -61,6 +61,31 @@ def fast_props(iml):
         data[i, :] = [getattr(el, p) for p in propnames]
 
     partstats = pd.DataFrame(columns=propnames, data=data)
+
+    return partstats
+
+
+def props_og(iml):
+
+    region_properties = measure.regionprops(iml, cache=False)
+
+#    partstats = pd.DataFrame(columns=['major_axis_length',
+#        'minor_axis_length','equivalent_diameter','bbox rmin','bbox cmin','bbox rmax',
+#        'bbox cmax','solidity'] )
+
+    partstats = pd.DataFrame(index=range(len(region_properties)), columns=['major_axis_length',
+        'minor_axis_length','equivalent_diameter','bbox rmin','bbox cmin','bbox rmax',
+        'bbox cmax','solidity'] )
+
+    for i, el in enumerate (region_properties):
+        partstats['major_axis_length'][i] = el.major_axis_length
+        partstats['minor_axis_length'][i] = el.minor_axis_length
+        partstats['equivalent_diameter'][i] = el.equivalent_diameter
+        partstats['bbox rmin'][i] = el.bbox[0]
+        partstats['bbox cmin'][i] = el.bbox[1]
+        partstats['bbox rmax'][i] = el.bbox[2]
+        partstats['bbox cmax'][i] = el.bbox[3]
+        partstats['solidity'][i] = el.solidity
 
     return partstats
 
@@ -198,9 +223,18 @@ def measure_particles(imbw, imc, max_particles):
         logger.warn('....that''s way too many particles! Skipping image.')
         iml *= 0
 
-    stats = fast_props(iml)
+    #stats = fast_props(iml)
+    stats = props_og(iml)
     
     return stats
+
+
+def find_gas(imbw, imc, stats):
+    pass
+
+
+def is_gas():
+    pass
 
 
 def statextract(imc, settings):

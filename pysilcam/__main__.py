@@ -135,7 +135,8 @@ def silcam_process_realtime(config_filename):
     d50_ts = []
 
 #    plt.ion()
-    fig, ax = plt.subplots(2,2)
+    if settings.Process.display:
+        fig, ax = plt.subplots(2,2)
 
     print('* Commencing image acquisition and processing')
     for i, imc in enumerate(bggen):
@@ -149,15 +150,16 @@ def silcam_process_realtime(config_filename):
         stats, imbw = statextract(imc, settings.Process)
         proc_time = time.clock() - start_time
 
-        plt.axes(ax[0,0])
-        if i == 0:
-            image = plt.imshow(np.uint8(imc), cmap='gray', interpolation='nearest', animated=True)
-        image.set_data(np.uint8(imc))
+        if settings.Process.display:
+            plt.axes(ax[0,0])
+            if i == 0:
+                image = plt.imshow(np.uint8(imc), cmap='gray', interpolation='nearest', animated=True)
+            image.set_data(np.uint8(imc))
 
-        plt.axes(ax[0,1])
-        if i==0:
-            image_bw = plt.imshow(np.uint8(imbw > 0), cmap='gray', interpolation='nearest', animated=True)
-        image_bw.set_data(np.uint8(imbw > 0))
+            plt.axes(ax[0,1])
+            if i==0:
+                image_bw = plt.imshow(np.uint8(imbw > 0), cmap='gray', interpolation='nearest', animated=True)
+            image_bw.set_data(np.uint8(imbw > 0))
 
 
         if stats is not np.nan:
@@ -180,17 +182,19 @@ def silcam_process_realtime(config_filename):
 
         d50_ts.append(d50)
 
-        plt.axes(ax[1,0])
-        plt.cla()
-        plt.plot(d50_ts,'.')
-        plt.xlabel('image #')
-        plt.ylabel('d50 (um)')
+        if settings.Process.display:
+            plt.axes(ax[1,0])
+            plt.cla()
+            plt.plot(d50_ts,'.')
+            plt.xlabel('image #')
+            plt.ylabel('d50 (um)')
 
-        plt.axes(ax[1,1])
-        plt.cla()
-        scplt.psd(stats, settings.PostProcess)
-        plt.pause(0.01)
-        plt.draw()
+            plt.axes(ax[1,1])
+            plt.cla()
+            scplt.psd(stats, settings.PostProcess)
+            plt.pause(0.01)
+            plt.draw()
+
         tot_time = time.clock() - start_time
 
         #logger.info('PROCESSING DONE in {0} sec.'.format(proc_time))
