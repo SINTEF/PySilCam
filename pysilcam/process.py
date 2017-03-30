@@ -10,6 +10,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import logging
 from scipy import  ndimage as ndi
+from scipy import signal
+from scipy import interpolate
 
 '''
 module for processing SilCam data
@@ -65,29 +67,79 @@ def fast_props(iml):
     return partstats
 
 
-def props_og(iml):
+def props_og(iml, imc, settings):
 
     region_properties = measure.regionprops(iml, cache=False)
 
-#    partstats = pd.DataFrame(columns=['major_axis_length',
-#        'minor_axis_length','equivalent_diameter','bbox rmin','bbox cmin','bbox rmax',
-#        'bbox cmax','solidity'] )
-
-    partstats = pd.DataFrame(index=range(len(region_properties)), columns=['major_axis_length',
-        'minor_axis_length','equivalent_diameter','bbox rmin','bbox cmin','bbox rmax',
-        'bbox cmax','solidity'] )
+    ecd = np.zeros(settings.Process.max_particles, dtype=np.float64)
+    gas = np.copy(ecd)
 
     for i, el in enumerate (region_properties):
-        partstats['major_axis_length'][i] = el.major_axis_length
-        partstats['minor_axis_length'][i] = el.minor_axis_length
-        partstats['equivalent_diameter'][i] = el.equivalent_diameter
-        partstats['bbox rmin'][i] = el.bbox[0]
-        partstats['bbox cmin'][i] = el.bbox[1]
-        partstats['bbox rmax'][i] = el.bbox[2]
-        partstats['bbox cmax'][i] = el.bbox[3]
-        partstats['solidity'][i] = el.solidity
+
+        mmr = el.minor_axis_length / el.major_axis_length
+        if mmr < settings.Process.min_deformation:
+            continue
+
+        if el.solidity < settings.Process.min_solidity:
+            continue
+
+        ecd[i] = el.equivalent_diameter
+
+        if settings.PostProcess.pix_size * ecd[i] > 150 and i > 246:
+            roi = extract_roi(imc, el.bbox)
+
+            prof = 1 / np.sum(roi, axis=0)
+            y = np.copy(prof)
+            x = np.arange(0, len(y))
+
+            spl = interpolate.UnivariateSpline(x, y, s=1e-10, k=4)
+            xs = np.linspace(0, len(y), 1000)
+
+            yi = spl(xs)
+
+            pinds = spl.derivative().roots()
+
+            print('pinds:', pinds)
+
+            if len(pinds)>1 and len(pinds)<4:
+                gas[i] = 1
+
+            plt.close('all')
+            f, a = plt.subplots(2,1)
+            a[0].plot(x, prof, 'k--')
+            if gas[i]==1:
+                a[0].plot(xs, yi, color='g')
+            else:
+                a[0].plot(xs, yi, color='r')
+            a[1].imshow(roi, cmap='gray')
+            print('particle',i)
+            plt.show()
+
+    ecd = ecd[ecd>0]
+
+    partstats = pd.DataFrame(columns=['equivalent_diameter'], data=ecd)
 
     return partstats
+
+
+def find_peaks(x, f):
+    '''Find peaks in signal f(x)'''
+    #wsize = 400
+    wsize = np.max([5, len(x)/6]) * 4
+    finterp = interpolate.UnivariateSpline(x, f, s=0.0, k=3)
+    xi = np.linspace(x[0], x[-1], x.size*4)
+    fi = finterp(xi)
+
+    num_windows = max(1, xi.size//wsize)
+
+    offset = 0
+    peaks = []
+    for xk, fk in zip(np.array_split(xi, num_windows), 
+                      np.array_split(fi, num_windows)):
+        peaks += [i+offset for i in signal.find_peaks_cwt(fk, np.arange(10,50))]
+        offset += len(xk)
+
+    return xi, fi, peaks
 
 
 def props(iml, image_index,im):
@@ -200,7 +252,7 @@ def get_color_stats(im, bbox, imbw):
     return hsv
 
 
-def measure_particles(imbw, imc, max_particles):
+def measure_particles(imbw, imc, settings):
     '''Measures properties of particles
 
     Parameters:
@@ -219,12 +271,12 @@ def measure_particles(imbw, imc, max_particles):
     iml = morphology.label(imbw > 0)
     logger.info('  {0} particles found'.format(iml.max()))
 
-    if (iml.max() > max_particles):
+    if (iml.max() > settings.Process.max_particles):
         logger.warn('....that''s way too many particles! Skipping image.')
         iml *= 0
 
     #stats = fast_props(iml)
-    stats = props_og(iml)
+    stats = props_og(iml, imc, settings)
     
     return stats
 
@@ -245,14 +297,14 @@ def statextract(imc, settings):
       Partstats class)
     '''
     logger.debug('segment')
-    imbw = im2bw(imc, settings.threshold)
+    imbw = im2bw(imc, settings.Process.threshold)
 
     logger.debug('clean')
-    imbw = clean_bw(imbw, settings.minimum_area)
+    imbw = clean_bw(imbw, settings.Process.minimum_area)
 
     imbw = ndi.binary_fill_holes(imbw)
 
     logger.debug('measure')
-    stats = measure_particles(imbw, imc, settings.max_particles)
+    stats = measure_particles(imbw, imc, settings)
 
     return stats, imbw

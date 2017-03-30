@@ -147,7 +147,7 @@ def silcam_process_realtime(config_filename):
         if nc == None: # if there are ambiguous dimentions, assume RGB color space
             imc = imc[:,:,1] # and just use green
 
-        stats, imbw = statextract(imc, settings.Process)
+        stats, imbw = statextract(imc, settings)
         proc_time = time.clock() - start_time
 
         if settings.Process.display:
@@ -171,7 +171,7 @@ def silcam_process_realtime(config_filename):
 #            print('  Processing image {0} took {1} sec. out of {2} sec.'.format(i, proc_time, tot_time))
 
             continue
-        stats = sc_pp.filter_stats(stats, settings.PostProcess)
+        #stats = sc_pp.filter_stats(stats, settings.PostProcess)
         d50 = sc_pp.d50_from_stats(stats, settings.PostProcess)
         print('d50:', d50)
 
