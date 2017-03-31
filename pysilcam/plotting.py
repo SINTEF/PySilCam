@@ -2,14 +2,14 @@ import matplotlib.pyplot as plt
 import pysilcam.postprocess as sc_pp
 import numpy as np
 
-def psd(stats, settings):
+def psd(stats, settings, c='k'):
     
     dias, vd = sc_pp.vd_from_stats(stats, settings)
 
-    plt.plot(dias,vd/np.sum(vd)*100)
+    plt.plot(dias,vd/np.sum(vd)*100, color=c)
     plt.xscale('log')
 
-    plt.axvline(sc_pp.d50_from_vd(vd,dias), color='k')
+    plt.axvline(sc_pp.d50_from_vd(vd,dias), color=c)
     plt.xlabel('Equiv. diam (um)')
     plt.ylabel('Volume concentration (%/sizebin)')
 

@@ -148,6 +148,10 @@ def silcam_process_realtime(config_filename):
             imc = imc[:,:,1] # and just use green
 
         stats, imbw = statextract(imc, settings)
+
+        oil = stats[stats['gas']==0]
+        gas = stats[stats['gas']==1]
+
         proc_time = time.clock() - start_time
 
         if settings.Process.display:
@@ -173,7 +177,9 @@ def silcam_process_realtime(config_filename):
             continue
         #stats = sc_pp.filter_stats(stats, settings.PostProcess)
         d50 = sc_pp.d50_from_stats(stats, settings.PostProcess)
-        print('d50:', d50)
+        d50_oil = sc_pp.d50_from_stats(oil, settings.PostProcess)
+        d50_gas = sc_pp.d50_from_stats(gas, settings.PostProcess)
+        print('d50:', d50, 'd50 oil:', d50_oil, 'd50 gas:', d50_gas)
 
 #        tot_time = time.clock() - start_time
 #        print('  Processing image {0} took {1} sec. out of {2} sec.'.format(i,
@@ -191,7 +197,9 @@ def silcam_process_realtime(config_filename):
 
             plt.axes(ax[1,1])
             plt.cla()
-            scplt.psd(stats, settings.PostProcess)
+            scplt.psd(stats, settings.PostProcess,'k')
+            scplt.psd(oil, settings.PostProcess,'r')
+            scplt.psd(gas, settings.PostProcess, 'b')
             plt.pause(0.01)
             plt.draw()
 

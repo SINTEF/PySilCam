@@ -72,11 +72,12 @@ def props_og(iml, imc, settings):
     region_properties = measure.regionprops(iml, cache=False)
 
     ecd = np.zeros(settings.Process.max_particles, dtype=np.float64)
-    gas = np.copy(ecd)
+    gas = np.copy(ecd) - 10
 
     for i, el in enumerate (region_properties):
 
-        mmr = el.minor_axis_length / el.major_axis_length
+        minax = el.minor_axis_length
+        mmr = minax / el.major_axis_length
         if mmr < settings.Process.min_deformation:
             continue
 
@@ -84,63 +85,65 @@ def props_og(iml, imc, settings):
             continue
 
         ecd[i] = el.equivalent_diameter
+        gas[i] = 0
 
-        if settings.PostProcess.pix_size * ecd[i] > 150 and i > 246:
-            roi = extract_roi(imc, el.bbox)
+        # minor axis must exceed minarea number of pixels for gas identification
+        if minax < settings.Process.minimum_area:
+            continue
 
-            prof = 1 / np.sum(roi, axis=0)
-            y = np.copy(prof)
-            x = np.arange(0, len(y))
+#        print('particle ID:', i, 'ECD[um]:', ecd[i] *
+#                settings.PostProcess.pix_size, 'bboxw[px]', el.bbox[3]-el.bbox[1],
+#                'minax[px]', el.minor_axis_length)
 
-            spl = interpolate.UnivariateSpline(x, y, s=1e-10, k=4)
-            xs = np.linspace(0, len(y), 1000)
+        roi = extract_roi(imc, el.bbox)
 
-            yi = spl(xs)
+        prof = 1 / np.sum(roi, axis=0)
+        y = np.copy(prof)
+        x = np.arange(0, len(y))
 
-            pinds = spl.derivative().roots()
 
-            print('pinds:', pinds)
+        spl = interpolate.UnivariateSpline(x, y, s=1e-10, k=4)
+        xs = np.linspace(0, len(y), 1000)
 
-            if len(pinds)>1 and len(pinds)<4:
-                gas[i] = 1
+        yi = spl(xs)
 
+        pinds = spl.derivative().roots()
+
+        if len(pinds)>1 and len(pinds)<4:
+            gas[i] = 1
+
+
+        if False:
             plt.close('all')
             f, a = plt.subplots(2,1)
-            a[0].plot(x, prof, 'k--')
-            if gas[i]==1:
-                a[0].plot(xs, yi, color='g')
-            else:
-                a[0].plot(xs, yi, color='r')
+            a[0].plot(x, y, 'k--')
             a[1].imshow(roi, cmap='gray')
-            print('particle',i)
             plt.show()
 
-    ecd = ecd[ecd>0]
+#        print('gas', gas[i])
 
-    partstats = pd.DataFrame(columns=['equivalent_diameter'], data=ecd)
+    ecd = ecd[ecd>0]
+    gas = gas[gas > (-1)]
+
+    partstats = pd.DataFrame(columns=['equivalent_diameter', 'gas'])
+
+    partstats['equivalent_diameter'] = ecd
+    partstats['gas'] = gas
 
     return partstats
 
+def concentration_check(imbw, settings):
+    covered_area = imbw.sum()
+    r, c = np.shape(imbw)
+    covered_pcent = covered_area / (r * c) * 100
 
-def find_peaks(x, f):
-    '''Find peaks in signal f(x)'''
-    #wsize = 400
-    wsize = np.max([5, len(x)/6]) * 4
-    finterp = interpolate.UnivariateSpline(x, f, s=0.0, k=3)
-    xi = np.linspace(x[0], x[-1], x.size*4)
-    fi = finterp(xi)
+    saturation = covered_pcent / settings.Process.max_coverage * 100
 
-    num_windows = max(1, xi.size//wsize)
+    print(saturation, '% saturation')
 
-    offset = 0
-    peaks = []
-    for xk, fk in zip(np.array_split(xi, num_windows), 
-                      np.array_split(fi, num_windows)):
-        peaks += [i+offset for i in signal.find_peaks_cwt(fk, np.arange(10,50))]
-        offset += len(xk)
+    sat_check = saturation < 100
 
-    return xi, fi, peaks
-
+    return sat_check
 
 def props(iml, image_index,im):
     '''populates stats dataframe with partstats given a labelled iamge
@@ -267,6 +270,10 @@ def measure_particles(imbw, imc, settings):
     TODO: handle situation when too many particles are found
     TODO: handle situation when zero particles are found
     '''
+    sat_check = concentration_check(imbw, settings)
+    if sat_check == False:
+        logger.warn('....breached concentration limit! Skipping image.')
+        imbw *= False
 
     iml = morphology.label(imbw > 0)
     logger.info('  {0} particles found'.format(iml.max()))
@@ -303,6 +310,7 @@ def statextract(imc, settings):
     imbw = clean_bw(imbw, settings.Process.minimum_area)
 
     imbw = ndi.binary_fill_holes(imbw)
+
 
     logger.debug('measure')
     stats = measure_particles(imbw, imc, settings)
