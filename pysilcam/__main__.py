@@ -129,6 +129,10 @@ def silcam_process_realtime(config_filename):
     times = []
     d50_ts = []
 
+    vd_mean = sc_pp.TimeIntegratedVolumeDist(settings.PostProcess)
+    vd_mean_oil = sc_pp.TimeIntegratedVolumeDist(settings.PostProcess)
+    vd_mean_gas = sc_pp.TimeIntegratedVolumeDist(settings.PostProcess)
+
     plt.ion()
     if settings.Process.display:
         fig, ax = plt.subplots(2,2)
@@ -166,10 +170,15 @@ def silcam_process_realtime(config_filename):
         else:
             continue
 
+        #Calculate time-averaged volume distributions
+        vd_mean.update_from_stats(stats, timestamp)
+        vd_mean_oil.update_from_stats(oil, timestamp)
+        vd_mean_gas.update_from_stats(gas, timestamp)
+
         #Calculate D50s from particle statistics
-        d50 = sc_pp.d50_from_stats(stats, settings.PostProcess)
-        d50_oil = sc_pp.d50_from_stats(oil, settings.PostProcess)
-        d50_gas = sc_pp.d50_from_stats(gas, settings.PostProcess)
+        d50 = sc_pp.d50_from_vd(vd_mean.vd_mean, vd_mean.dias)
+        d50_oil = sc_pp.d50_from_vd(vd_mean_oil.vd_mean, vd_mean_oil.dias)
+        d50_gas = sc_pp.d50_from_vd(vd_mean_gas.vd_mean, vd_mean_gas.dias)
         logger.info('d50: {0:.1f}, d50 oil: {1:.1f}, d50 gas: {2:1f}'.format(d50, d50_oil, d50_gas))
         d50_ts.append(d50)
         times.append(i)
@@ -184,13 +193,22 @@ def silcam_process_realtime(config_filename):
             ax[1, 0].set_xlim(0, times[-1])
             ax[1, 0].set_ylim(0, max(100, np.max(d50_ts)))
 
+            norm = np.sum(vd_mean.vd_mean)/100
             if i == 0:
-                line_t = None
-                line_oil = None
-                line_gas = None
-            line_t = scplt.psd(stats, settings.PostProcess, ax=ax[1, 1], line=line_t, c='k')
-            line_oil = scplt.psd(oil, settings.PostProcess, ax=ax[1, 1], line=line_oil, c='r')
-            line_gas = scplt.psd(gas, settings.PostProcess, ax=ax[1, 1], line=line_gas, c='b')
+                line, = ax[1, 1].plot(vd_mean.dias, vd_mean.vd_mean, color='k')
+                line_oil, = ax[1, 1].plot(vd_mean_oil.dias, 
+                                          vd_mean_oil.vd_mean, color='darkred')
+                line_gas, = ax[1, 1].plot(vd_mean_gas.dias,
+                                          vd_mean_gas.vd_mean, color='royalblue')
+                ax[1,1].set_xscale('log')
+                ax[1,1].set_xlabel('Equiv. diam (um)')
+                ax[1,1].set_ylabel('Volume concentration (%/sizebin)')
+            else:
+                line.set_data(vd_mean.dias, vd_mean.vd_mean/norm)
+                line_oil.set_data(vd_mean_oil.dias, vd_mean_oil.vd_mean/norm)
+                line_gas.set_data(vd_mean_gas.dias, vd_mean_gas.vd_mean/norm)
+            ax[1,1].set_xlim(1, 10000)
+            ax[1,1].set_ylim(0, np.max(vd_mean.vd_mean/norm))
 
             plt.pause(0.01)
             fig.canvas.draw()

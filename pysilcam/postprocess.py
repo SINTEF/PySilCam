@@ -76,3 +76,34 @@ def vd_from_stats(stats, settings):
     vd = vc_from_nd(necd,dias)
 
     return dias, vd
+
+
+class TimeIntegratedVolumeDist:
+    def __init__(self, settings):
+        self.settings = settings
+        self.window_size = settings.window_size
+        self.times = []
+        self.vdlist = []
+
+        self.vd_mean = None
+        self.dias = None
+
+    def update_from_stats(self, stats, timestamp):
+        '''Update size distribution from stats'''
+        dias, vd = vd_from_stats(stats, self.settings)
+        self.dias = dias
+
+        #Add the new data
+        self.times.append(timestamp)
+        self.vdlist.append(vd)
+
+        #Remove data until we are within window size
+        while (timestamp - self.times[0]).seconds > self.window_size:
+            self.times.pop(0)
+            self.vdlist.pop(0)
+
+        #Calculate time-integrated volume distribution
+        if len(self.vdlist)>1:
+            self.vd_mean = np.mean(self.vdlist, axis=0)
+        else:
+            self.vd_mean = self.vdlist[0]
