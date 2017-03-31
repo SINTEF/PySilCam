@@ -17,7 +17,6 @@ from pysilcam.process import statextract
 import pysilcam.postprocess as sc_pp
 import pysilcam.plotting as scplt
 from pysilcam.config import load_config, PySilcamSettings
-import imageio
 from skimage import color
 
 title = '''
@@ -95,8 +94,6 @@ def silcam_acquire():
 
         count = 0
         for i, img in enumerate(acquire()):
-            #imageio.imwrite('../data/foo{0}.bmp'.format(count), img)
-            #print("image {} ".format(count))
             count += 1
 
             t2 = time.time()
@@ -105,15 +102,12 @@ def silcam_acquire():
             t1 = t2
 
 
-
-
-
 def silcam_process_realtime(config_filename):
     '''Run processing of SilCam images in real time'''
     print(config_filename)
 
     print('REALTIME MODE')
-    print()
+    print('')
     print('----------------------\n')
     #Load the configuration, create settings object
     conf = load_config(config_filename)
@@ -132,19 +126,21 @@ def silcam_process_realtime(config_filename):
     print('* Initializing background image handler')
     bggen = backgrounder(settings.Background.num_images, aqgen)
 
+    times = []
     d50_ts = []
 
-#    plt.ion()
+    plt.ion()
     if settings.Process.display:
         fig, ax = plt.subplots(2,2)
 
     print('* Commencing image acquisition and processing')
-    for i, imc in enumerate(bggen):
+    for i, (timestamp, imc) in enumerate(bggen):
+        logger.info('Processing time stamp {0}'.format(timestamp))
         #logger.debug('PROCESSING....')
         start_time = time.clock()
 
         nc = color.guess_spatial_dimensions(imc)
-        if nc == None: # if there are ambiguous dimentions, assume RGB color space
+        if nc == None: # @todo FIX if there are ambiguous dimentions, assume RGB color space
             imc = imc[:,:,1] # and just use green
 
         stats, imbw = statextract(imc, settings)
@@ -165,43 +161,39 @@ def silcam_process_realtime(config_filename):
                 image_bw = plt.imshow(np.uint8(imbw > 0), cmap='gray', interpolation='nearest', animated=True)
             image_bw.set_data(np.uint8(imbw > 0))
 
-
         if stats is not np.nan:
             logger.debug('data has arrived!')
         else:
-#            plt.pause(0.05)
-#            plt.draw()
-#            tot_time = time.clock() - start_time
-#            print('  Processing image {0} took {1} sec. out of {2} sec.'.format(i, proc_time, tot_time))
-
             continue
-        #stats = sc_pp.filter_stats(stats, settings.PostProcess)
+
+        #Calculate D50s from particle statistics
         d50 = sc_pp.d50_from_stats(stats, settings.PostProcess)
         d50_oil = sc_pp.d50_from_stats(oil, settings.PostProcess)
         d50_gas = sc_pp.d50_from_stats(gas, settings.PostProcess)
-        print('d50:', d50, 'd50 oil:', d50_oil, 'd50 gas:', d50_gas)
-
-#        tot_time = time.clock() - start_time
-#        print('  Processing image {0} took {1} sec. out of {2} sec.'.format(i,
-#            proc_time, tot_time))
-#        continue
-
+        logger.info('d50: {0:.1f}, d50 oil: {1:.1f}, d50 gas: {2:1f}'.format(d50, d50_oil, d50_gas))
         d50_ts.append(d50)
+        times.append(i)
 
         if settings.Process.display:
-            plt.axes(ax[1,0])
-            plt.cla()
-            plt.plot(d50_ts,'.')
-            plt.xlabel('image #')
-            plt.ylabel('d50 (um)')
+            if i == 0:
+                d50_plot, = ax[1, 0].plot(times, d50_ts, '.')
+            else:
+                d50_plot.set_data(times, d50_ts)
+            ax[1, 0].set_xlabel('image #')
+            ax[1, 0].set_ylabel('d50 (um)')
+            ax[1, 0].set_xlim(0, times[-1])
+            ax[1, 0].set_ylim(0, max(100, np.max(d50_ts)))
 
-            plt.axes(ax[1,1])
-            plt.cla()
-            scplt.psd(stats, settings.PostProcess,'k')
-            scplt.psd(oil, settings.PostProcess,'r')
-            scplt.psd(gas, settings.PostProcess, 'b')
+            if i == 0:
+                line_t = None
+                line_oil = None
+                line_gas = None
+            line_t = scplt.psd(stats, settings.PostProcess, ax=ax[1, 1], line=line_t, c='k')
+            line_oil = scplt.psd(oil, settings.PostProcess, ax=ax[1, 1], line=line_oil, c='r')
+            line_gas = scplt.psd(gas, settings.PostProcess, ax=ax[1, 1], line=line_gas, c='b')
+
             plt.pause(0.01)
-            plt.draw()
+            fig.canvas.draw()
 
         tot_time = time.clock() - start_time
 

@@ -4,6 +4,7 @@ import warnings
 import time
 import numpy as np
 import logging
+import pandas as pd
 
 #Try import pymba, if not available, revert to in-package mockup
 try:
@@ -12,6 +13,10 @@ except:
     warnings.warn('Pymba not available, using mocked version', ImportWarning)
     print('Pymba not available, using mocked version')
     import pysilcam.fakepymba as pymba
+else:
+    #Monkey-patch in a real-time timestamp getter to be consistent with
+    #FakePymba
+    pymba.get_time_stamp = lambda x: pd.Timestamp.now()
 
 
 logger = logging.getLogger(__name__)
@@ -94,9 +99,11 @@ def _acquire_frame(camera, frame0):
                     dtype = np.uint8,
                     shape = (frame0.height, frame0.width, 3))
  
+    timestamp = pymba.get_time_stamp(frame0)
+
     camera.endCapture()
 
-    return img
+    return timestamp, img
 
 
 def print_camera_config(camera):
@@ -171,8 +178,8 @@ def acquire():
         #Aquire raw images and yield to calling context
         try:
             while True:
-                img = _acquire_frame(camera, frame0)
-                yield img
+                timestamp, img = _acquire_frame(camera, frame0)
+                yield timestamp, img
         finally:
             #Clean up after capture
             camera.revokeAllFrames()
@@ -183,24 +190,24 @@ def acquire():
 
 def acquire_rgb():
     '''Aquire images and convert to RGB color space'''
-    for img_bayer in acquire():
+    for timestamp, img_bayer in acquire():
         #@todo Implement a working Bayer->RGB conversion
-        yield img_bayer
+        yield timestamp, img_bayer
 
 
 def acquire_gray64():
     '''Aquire images and convert to float64 grayscale'''
-    for img_bayer in acquire():
+    for timestamp, img_bayer in acquire():
         #@todo Implement a working Bayer->grayscale conversion
         imgray = img_bayer[:, :, 0]
 
         #Yield float64 image
-        yield np.float64(imgray)
+        yield timestamp, np.float64(imgray)
 
 
 def acquire_disk():
     '''Aquire images from SilCam and write them to disk.'''
-    for count, img in enumerate(acquire()):
+    for count, (timestamp, img) in enumerate(acquire()):
         filename = 'data/foo{0}.bmp'.format(count)
         imageio.imwrite(filename, img)
         logger.debug("Stored image image {0} to file {1}.".format(count, filename))

@@ -89,7 +89,7 @@ def props_og(iml, imc, settings):
     ecd = np.zeros(settings.Process.max_particles, dtype=np.float64)
     gas = np.zeros(settings.Process.max_particles, dtype=np.bool)
     ecd[:] = np.nan
-    gas[:] = np.nan
+    gas[:] = False
 
     for i, el in enumerate(region_properties):
 
@@ -129,29 +129,26 @@ def props_og(iml, imc, settings):
         if len(pinds)>1 and len(pinds)<4:
             gas[i] = True
 
-    #Nans in array are skipped particles, filter these out
-    ecd_nans = np.sum(np.isnan(ecd))
-    gas_nans = np.sum(np.isnan(gas))
-    if ecd_nans != gas_nans:
-        raise RuntimeError('Mismatching number of processed OG particles!')
-    ecd = ecd[~np.isinan(ecd)]
-    gas = gas[~np.isnan(gas)]
+    #Nans in ecd array are skipped particles, filter these out
+    gas = gas[~np.isnan(ecd)]
+    ecd = ecd[~np.isnan(ecd)]
+    logger.info('Number of oil and gas particles found: {0}'.format(ecd.size))
 
     #Create Pandas DataFrame for particle stats
     partstats = pd.DataFrame(columns=['equivalent_diameter', 'gas'], 
-                             data=np.stack(ecd, gas).T)
+                             data=np.stack((ecd, gas)).T)
 
     return partstats
 
 
 def concentration_check(imbw, settings):
-    covered_area = imbw.sum()
+    covered_area = float(imbw.sum())
     r, c = np.shape(imbw)
     covered_pcent = covered_area / (r * c) * 100
 
     saturation = covered_pcent / settings.Process.max_coverage * 100
 
-    print(saturation, '% saturation')
+    logger.info('{0:.1f}% saturation'.format(saturation))
 
     sat_check = saturation < 100
 

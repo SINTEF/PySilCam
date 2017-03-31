@@ -16,10 +16,10 @@ def ini_background(av_window, acquire):
       imbg (the actual background image)
     '''
     bgstack = []
-    bgstack.append(next(acquire))  # get the first image
+    bgstack.append(next(acquire)[1])  # get the first image
     
     for i in range(av_window-1):  # loop through the rest, appending to bgstack
-        bgstack.append(next(acquire))
+        bgstack.append(next(acquire)[1])
     
     imbg = np.mean(bgstack, axis=0)  # average the images in the stack
 #    imbg = np.amax(bgstack, axis=0)  # average the images in the stack
@@ -110,6 +110,6 @@ def backgrounder(av_window, acquire):
     bgstack, imbg = ini_background(av_window, acquire)
 
     # Aquire images, apply background correction and yield result
-    for imraw in acquire:
+    for timestamp, imraw in acquire:
         bgstack, imbg, imc = shift_and_correct(bgstack, imbg, imraw)
-        yield imc
+        yield timestamp, imc

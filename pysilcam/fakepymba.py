@@ -9,6 +9,7 @@ import time
 import numpy as np
 import imageio
 import logging
+import pandas as pd
 
 #Handle potential Python 2.7 and Python 3
 try:
@@ -26,6 +27,8 @@ def print(*args, **kwargs):
     #__builtin__.print('FakePymba: ', *args, **kwargs)
     logger.debug(*args, **kwargs)
 
+def get_time_stamp(frame):
+    return frame.timestamp
 
 def query_start():
     print('Starting query')
@@ -69,10 +72,12 @@ class Frame:
                 self.height, self.width = img0.shape
             else:
                 self.height, self.width, _ = img0.shape
+
         else:
             self.files = None
             self.width = 800
             self.height = 600
+
         print('Frame acquired')
 
     def getBufferByteData(self):
@@ -83,10 +88,13 @@ class Frame:
                 for i in range(3):
                     frame2[:, :, i] = frame[:, :]
                 frame = frame2
+            fname = os.path.basename(self.files[self.img_idx])
+            self.timestamp = pd.to_datetime(fname[1:-4])
             self.img_idx += 1
             print('Getting buffer byte data from file {0}, {1}/{2}'.format(frame.shape, 
                                                                            self.img_idx, len(self.files)))
         else:
+            self.timestamp = '0:0:0'
             frame = np.random.random((self.height, self.width, 3))
             print('Getting buffer byte data, {0}'.format(frame.shape))
             time.sleep(1.0/FPS)
