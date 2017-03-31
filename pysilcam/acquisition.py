@@ -29,7 +29,7 @@ def _init_camera(vimba):
         time.sleep(0.2)
     cameraIds = vimba.getCameraIds()
     for cameraId in cameraIds:
-        logger.debug('Camera ID:', cameraId)
+        logger.debug('Camera ID: {0}'.format(cameraId))
 
     #Check that we found a camera, if not, raise an error
     if len(cameraIds) == 0:

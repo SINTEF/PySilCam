@@ -89,7 +89,7 @@ def props_og(iml, imc, settings):
     ecd = np.zeros(settings.Process.max_particles, dtype=np.float64)
     gas = np.zeros(settings.Process.max_particles, dtype=np.bool)
     ecd[:] = np.nan
-    gas[:] = np.nan
+    gas[:] = np.nan
 
     for i, el in enumerate(region_properties):
 
