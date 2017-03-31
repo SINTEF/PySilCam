@@ -68,69 +68,81 @@ def fast_props(iml):
 
 
 def props_og(iml, imc, settings):
+    '''Calculates particle properties of oil and gas.
+    
+    Properties calculated: equivalent diameter and a flag for oil or gas per
+    particle.
 
+    Input
+    -----
+        iml: labeled image, small particles removed
+        imc: corrected image
+        settings: global PySilCam settings object
+
+    Returns: pandas.DataFrame
+    '''
+
+    #Fast (lazy eval) calculation of region properties for oil and gas
     region_properties = measure.regionprops(iml, cache=False)
 
+    #Pre-allocate equiv. circular diameter and gas flag arrays
     ecd = np.zeros(settings.Process.max_particles, dtype=np.float64)
-    gas = np.copy(ecd) - 10
+    gas = np.zeros(settings.Process.max_particles, dtype=np.bool)
+    ecd[:] = np.nan
+    gas[:] = np.nan
 
-    for i, el in enumerate (region_properties):
+    for i, el in enumerate(region_properties):
 
+        #Discard very eccentric particles
         minax = el.minor_axis_length
         mmr = minax / el.major_axis_length
         if mmr < settings.Process.min_deformation:
             continue
 
+        #Discard overlapping particles (approximate by solidity requirement)
         if el.solidity < settings.Process.min_solidity:
             continue
 
+        #Particle is initially assumed to be oil
         ecd[i] = el.equivalent_diameter
-        gas[i] = 0
+        gas[i] = False
 
         # minor axis must exceed minarea number of pixels for gas identification
+        #Valid particles with too few pixels for gas identification algorithm
+        #are assumed to be oil.
         if minax < settings.Process.minimum_area:
             continue
 
-#        print('particle ID:', i, 'ECD[um]:', ecd[i] *
-#                settings.PostProcess.pix_size, 'bboxw[px]', el.bbox[3]-el.bbox[1],
-#                'minax[px]', el.minor_axis_length)
-
         roi = extract_roi(imc, el.bbox)
 
-        prof = 1 / np.sum(roi, axis=0)
-        y = np.copy(prof)
+        #Extract intensity profile
+        y = 1 / np.sum(roi, axis=0)
         x = np.arange(0, len(y))
 
-
+        #Interpolate profile with smoothed spline
         spl = interpolate.UnivariateSpline(x, y, s=1e-10, k=4)
-        xs = np.linspace(0, len(y), 1000)
 
-        yi = spl(xs)
-
+        #Find peaks in profile for gas identification purpose
         pinds = spl.derivative().roots()
 
+        #Gas if profile contains 2 or 3 peaks
         if len(pinds)>1 and len(pinds)<4:
-            gas[i] = 1
+            gas[i] = True
 
+    #Nans in array are skipped particles, filter these out
+    ecd_nans = np.sum(np.isnan(ecd))
+    gas_nans = np.sum(np.isnan(gas))
+    if ecd_nans != gas_nans:
+        raise RuntimeError('Mismatching number of processed OG particles!')
+    ecd = ecd[~np.isinan(ecd)]
+    gas = gas[~np.isnan(gas)]
 
-        if False:
-            plt.close('all')
-            f, a = plt.subplots(2,1)
-            a[0].plot(x, y, 'k--')
-            a[1].imshow(roi, cmap='gray')
-            plt.show()
-
-#        print('gas', gas[i])
-
-    ecd = ecd[ecd>0]
-    gas = gas[gas > (-1)]
-
-    partstats = pd.DataFrame(columns=['equivalent_diameter', 'gas'])
-
-    partstats['equivalent_diameter'] = ecd
-    partstats['gas'] = gas
+    #Create Pandas DataFrame for particle stats
+    partstats = pd.DataFrame(columns=['equivalent_diameter', 'gas'], 
+                             data=np.stack(ecd, gas).T)
 
     return partstats
+
 
 def concentration_check(imbw, settings):
     covered_area = imbw.sum()
