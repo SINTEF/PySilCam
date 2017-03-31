@@ -20,7 +20,7 @@ def test_acquire_five_frames():
 
     #Check that we can generate frames
     prev_img = None
-    for i, img in  enumerate(pysilcam.acquisition.acquire()):
+    for i, (timestamp, img) in  enumerate(pysilcam.acquisition.acquire()):
         #Check that frames (images) have non-zero size
         assert(img.size > 0)
 

@@ -12,7 +12,7 @@ def test_background_aquire():
     #Check that we can generate background-corredted frames. 
     #Use 5 frames for correction.
     prev_imgc = None
-    for i, imgc in  enumerate(backgrounder(5, aqgen)):
+    for i, (timestamp, imgc) in  enumerate(backgrounder(5, aqgen)):
         #Check that frames (images) have non-zero size
         assert imgc.size > 0, 'Image size was not positive'
 
