@@ -1,4 +1,3 @@
-
 class DataLogger:
     def __init__(self, filename, header):
         self.filename = filename
@@ -9,7 +8,7 @@ class DataLogger:
 
     def append_data(self, data):
         #Append data line to file
-        with open(filename, 'a') as fh:
+        with open(self.filename, 'a') as fh:
             #Generate data line string for data list
             line = ','.join([str(el) for el in data])
 

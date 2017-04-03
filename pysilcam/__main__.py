@@ -16,6 +16,8 @@ import pysilcam.process
 from pysilcam.process import statextract
 import pysilcam.postprocess as sc_pp
 import pysilcam.plotting as scplt
+import pysilcam.datalogger as datalogger
+import pysilcam.oilgas as oilgas
 from pysilcam.config import load_config, PySilcamSettings
 from skimage import color
 
@@ -137,8 +139,10 @@ def silcam_process_realtime(config_filename):
     if settings.Process.display:
         fig, ax = plt.subplots(2,2)
 
-    ogdatafile = datalogger.Datalogger('filename.csv', ogmodule.ogdataheader)
-    ogdatafile.append_data(datalist)
+    ogdatafile = datalogger.DataLogger('/home/emlynd/Desktop/testdata.csv',
+            oilgas.ogdataheader())
+    ogdatafile_gas = datalogger.DataLogger('/home/emlynd/Desktop/testdata-GAS.csv',
+            oilgas.ogdataheader())
 
     print('* Commencing image acquisition and processing')
     for i, (timestamp, imc) in enumerate(bggen):
@@ -187,7 +191,6 @@ def silcam_process_realtime(config_filename):
         d50_ts.append(d50)
         times.append(i)
 
-# sc.datalogger.append_csv()
 
         if settings.Process.display:
             if i == 0:
@@ -221,7 +224,10 @@ def silcam_process_realtime(config_filename):
 
         tot_time = time.clock() - start_time
 
-        ogdatafile.append_data(datalist)
+        data_all = oilgas.cat_data(timestamp, stats, settings)
+        ogdatafile.append_data(data_all)
+        data_gas = oilgas.cat_data(timestamp, gas, settings)
+        ogdatafile_gas.append_data(data_gas)
 
         #logger.info('PROCESSING DONE in {0} sec.'.format(proc_time))
         print('  Processing image {0} took {1} sec. out of {2} sec.'.format(i,
