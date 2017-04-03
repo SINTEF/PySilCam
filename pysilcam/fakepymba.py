@@ -49,7 +49,10 @@ class Camera:
 
     def getFrame(self):
         #time.sleep(1.0/FPS)
-        return Frame()
+        if 'PYSILCAM_REALTIME_DATA' in os.environ.keys():
+            return RealtimeFrame()
+        else:
+            return Frame()
 
     def revokeAllFrames(self):
         print('\nCleaning up: revoking all frames')
@@ -111,6 +114,47 @@ class Frame:
 
     def waitFrameCapture(self):
         print('Waiting for frame capture')
+
+
+class RealtimeFrame(Frame):
+    '''For faster real-time processing from disk'''
+
+    def _list_images(self):
+        self.files = [os.path.join(self.path, f) 
+                      for f in sorted(os.listdir(self.path)) 
+                      if f.endswith('.bmp')]
+ 
+    def __init__(self): 
+        #Read files from this location
+        self.path = os.environ['PYSILCAM_REALTIME_DATA']
+        self._list_images()
+        self.img_idx = 0
+        self.filename = self.files[0]
+        img0 = imageio.imread(self.filename)
+        self.height = img0.shape[0]
+        self.width = img0.shape[1]
+        print('Realtime frame acquired')
+
+    def getBufferByteData(self):
+        self._list_images()
+        while self.files[-3] == self.filename:
+            print('No new images ({0}), waiting 1s and then retrying'.format(len(self.files)))
+            time.sleep(1)
+            self._list_images()
+
+        self.filename = self.files[-3]
+        frame = imageio.imread(self.filename)
+        if len(frame.shape) == 2:
+            frame2 = np.zeros((self.height, self.width, 3), dtype=frame.dtype)
+            for i in range(3):
+                frame2[:, :, i] = frame[:, :]
+            frame = frame2
+        fname = os.path.basename(self.filename)
+        self.timestamp = pd.to_datetime(fname[1:-4])
+        self.img_idx += 1
+        print('Getting buffer byte data from file {0}, #{1}'.format(frame.shape, self.img_idx))
+        return frame.tobytes()
+
 
 class System:
     def __init__(self):
