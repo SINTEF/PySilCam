@@ -133,9 +133,8 @@ def silcam_process_realtime(config_filename):
     vd_mean_oil = sc_pp.TimeIntegratedVolumeDist(settings.PostProcess)
     vd_mean_gas = sc_pp.TimeIntegratedVolumeDist(settings.PostProcess)
 
-    plt.ion()
     if settings.Process.display:
-        fig, ax = plt.subplots(2,2)
+        rtplot = plotting.ParticleSizeDistPlot()
 
     print('* Commencing image acquisition and processing')
     for i, (timestamp, imc) in enumerate(bggen):

@@ -3,43 +3,53 @@ import pysilcam.postprocess as sc_pp
 import numpy as np
 
 class ParticleSizeDistPlot:
+    '''Plot particle size distribution information on 2x2 layout'''
+
     def __init__(self):
-        pass
         self.figure, self.ax = plt.subplots(2, 2)
+        plt.ion()
 
-    def update_plot(self, ):
-        pass
-        if settings.Process.display:
-            plt.axes(ax[0,0])
-            if i == 0:
-                image = plt.imshow(np.uint8(imc), cmap='gray', interpolation='nearest', animated=True)
-            image.set_data(np.uint8(imc))
+    def plot(self, imc, times, times, d50_ts, vd_mean, vd_mean_oil, vd_mean_gas):
+        '''Create plots from data'''
+        ax = self.ax[0, 0]
+        self.image = ax.imshow(np.uint8(imc), cmap='gray', 
+                               interpolation='nearest', animated=True)
+        self.image_bw = ax.imshow(np.uint8(imbw > 0), cmap='gray', 
+                                  interpolation='nearest', animated=True)
 
-            plt.axes(ax[0,1])
-            if i==0:
-                image_bw = plt.imshow(np.uint8(imbw > 0), cmap='gray', interpolation='nearest', animated=True)
-            image_bw.set_data(np.uint8(imbw > 0))
+        ax = self.ax[1, 0]
+        self.d50_plot, = ax.plot(times, d50_ts, '.')
+        ax.set_xlabel('image #')
+        ax.set_ylabel('d50 (um)')
+        ax.set_xlim(0, times[-1])
+        ax.set_ylim(0, max(100, np.max(d50_ts)))
 
-            if i == 0:
-                d50_plot, = ax[1, 0].plot(times, d50_ts, '.')
-            else:
-                d50_plot.set_data(times, d50_ts)
-            ax[1, 0].set_xlabel('image #')
-            ax[1, 0].set_ylabel('d50 (um)')
-            ax[1, 0].set_xlim(0, times[-1])
-            ax[1, 0].set_ylim(0, max(100, np.max(d50_ts)))
+        ax = self.ax[1, 1]
+        norm = np.sum(vd_mean.vd_mean)/100
+        self.line, = ax.plot(vd_mean.dias, vd_mean.vd_mean, color='k')
+        self.line_oil, = ax.plot(vd_mean_oil.dias, 
+                                  vd_mean_oil.vd_mean, color='darkred')
+        self.line_gas, = ax.plot(vd_mean_gas.dias,
+                                  vd_mean_gas.vd_mean, color='royalblue')
+        ax[1,1].set_xscale('log')
+        ax[1,1].set_xlabel('Equiv. diam (um)')
+        ax[1,1].set_ylabel('Volume concentration (%/sizebin)')
+ 
+ 
+    def update_plot(self, imc, times, d50_ts, vd_mean, vd_mean_oil, vd_mean_gas):
+        '''Update plot data without full replotting for speed'''
+        self.image.set_data(np.uint8(imc))
+        self.image_bw.set_data(np.uint8(imc > 0))
+        self.d50_plot.set_data(times, d50_ts)
 
-            if i == 0:
-                line_t = None
-                line_oil = None
-                line_gas = None
-            line_t = scplt.psd(stats, settings.PostProcess, ax=ax[1, 1], line=line_t, c='k')
-            line_oil = scplt.psd(oil, settings.PostProcess, ax=ax[1, 1], line=line_oil, c='r')
-            line_gas = scplt.psd(gas, settings.PostProcess, ax=ax[1, 1], line=line_gas, c='b')
+        self.line.set_data(vd_mean.dias, vd_mean.vd_mean/norm)
+        self.line_oil.set_data(vd_mean_oil.dias, vd_mean_oil.vd_mean/norm)
+        self.line_gas.set_data(vd_mean_gas.dias, vd_mean_gas.vd_mean/norm)
+        self.ax[1,1].set_xlim(1, 10000)
+        self.ax[1,1].set_ylim(0, np.max(vd_mean.vd_mean/norm))
 
-            plt.pause(0.01)
-            fig.canvas.draw()
-
+        plt.pause(0.01)
+        fig.canvas.draw()
 
 
 def psd(stats, settings, ax, line=None, c='k'):
