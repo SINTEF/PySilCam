@@ -1,45 +1,83 @@
+# -*- coding: utf-8 -*-
+'''
+Particle plotting functionality: PSD, D50, etc.
+'''
 import matplotlib.pyplot as plt
 import pysilcam.postprocess as sc_pp
 import numpy as np
+import seaborn as sns
 
 class ParticleSizeDistPlot:
+    '''Plot particle size distribution information on 2x2 layout'''
+
     def __init__(self):
-        pass
+        sns.set_style('white')
+        sns.set_context('notebook', font_scale=0.8)
+
+        plt.ion()
         self.figure, self.ax = plt.subplots(2, 2)
 
-    def update_plot(self, ):
-        pass
-        if settings.Process.display:
-            plt.axes(ax[0,0])
-            if i == 0:
-                image = plt.imshow(np.uint8(imc), cmap='gray', interpolation='nearest', animated=True)
-            image.set_data(np.uint8(imc))
+    def plot(self, imc, imbw, times, d50_ts, vd_mean):
+        '''Create plots from data'''
 
-            plt.axes(ax[0,1])
-            if i==0:
-                image_bw = plt.imshow(np.uint8(imbw > 0), cmap='gray', interpolation='nearest', animated=True)
-            image_bw.set_data(np.uint8(imbw > 0))
+        #Plot image in upper left axis
+        ax = self.ax[0, 0]
+        self.image = ax.imshow(np.uint8(imc), cmap='gray', 
+                               interpolation='None', animated=True)
 
-            if i == 0:
-                d50_plot, = ax[1, 0].plot(times, d50_ts, '.')
-            else:
-                d50_plot.set_data(times, d50_ts)
-            ax[1, 0].set_xlabel('image #')
-            ax[1, 0].set_ylabel('d50 (um)')
-            ax[1, 0].set_xlim(0, times[-1])
-            ax[1, 0].set_ylim(0, max(100, np.max(d50_ts)))
+        #Plot segmented image in upper right axis
+        ax = self.ax[0, 1]
+        self.image_bw = ax.imshow(np.uint8(imbw > 0), cmap='gray', 
+                                  interpolation='None', animated=True)
 
-            if i == 0:
-                line_t = None
-                line_oil = None
-                line_gas = None
-            line_t = scplt.psd(stats, settings.PostProcess, ax=ax[1, 1], line=line_t, c='k')
-            line_oil = scplt.psd(oil, settings.PostProcess, ax=ax[1, 1], line=line_oil, c='r')
-            line_gas = scplt.psd(gas, settings.PostProcess, ax=ax[1, 1], line=line_gas, c='b')
+        #Plot D50 time series in lower left axis
+        ax = self.ax[1, 0]
+        self.d50_plot, = ax.plot(times, d50_ts, '.')
+        ax.set_xlabel('image #')
+        ax.set_ylabel('d50 (um)')
+        ax.set_xlim(0, 50)
+        ax.set_ylim(0, 1000)
 
-            plt.pause(0.01)
-            fig.canvas.draw()
+        #Plot PSD in lower right axis
+        norm = np.sum(vd_mean['total'].vd_mean)/100
+        ax = self.ax[1, 1]
+        self.line, = ax.plot(vd_mean['total'].dias, vd_mean['total'].vd_mean, color='k')
+        self.line_oil, = ax.plot(vd_mean['oil'].dias, 
+                                  vd_mean['oil'].vd_mean, color='darkred')
+        self.line_gas, = ax.plot(vd_mean['gas'].dias,
+                                  vd_mean['gas'].vd_mean, color='royalblue')
+        ax.set_xlim(1, 10000)
+        ax.set_ylim(0, 20)
+        ax.set_xscale('log')
+        ax.set_xlabel('Equiv. diam (um)')
+        ax.set_ylabel('Volume concentration (%/sizebin)')
 
+        #Trigger initial full draw of the figure
+        self.figure.canvas.draw()
+
+ 
+    def update(self, imc, imbw, times, d50_ts, vd_mean):
+        '''Update plot data without full replotting for speed'''
+        self.image.set_data(np.uint8(imc))
+
+        self.image_bw.set_data(np.uint8(imbw>0))
+
+        #Show the last 50 D50 values
+        self.d50_plot.set_data(times[-50:], d50_ts[-50:])
+
+        norm = np.sum(vd_mean['total'].vd_mean)/100
+        self.line.set_data(vd_mean['total'].dias, vd_mean['total'].vd_mean/norm)
+        self.line_oil.set_data(vd_mean['oil'].dias, vd_mean['oil'].vd_mean/norm)
+        self.line_gas.set_data(vd_mean['gas'].dias, vd_mean['gas'].vd_mean/norm)
+
+        #Fast redraw of dynamic figure elements only
+        self.ax[0, 0].draw_artist(self.image)
+        self.ax[0, 1].draw_artist(self.image_bw)
+        self.ax[1, 0].draw_artist(self.d50_plot)
+        self.ax[1, 1].draw_artist(self.line)
+        self.ax[1, 1].draw_artist(self.line_oil)
+        self.ax[1, 1].draw_artist(self.line_gas)
+        self.figure.canvas.flush_events()
 
 
 def psd(stats, settings, ax, line=None, c='k'):

@@ -110,12 +110,15 @@ def silcam_process_realtime(config_filename):
 
     print('REALTIME MODE')
     print('')
-    print('----------------------\n')
+
     #Load the configuration, create settings object
     conf = load_config(config_filename)
-    conf.write(sys.stdout)
-    print('----------------------\n')
     settings = PySilcamSettings(conf)
+
+    #Print configuration to screen
+    print('---- CONFIGURATION ----\n')
+    conf.write(sys.stdout)
+    print('-----------------------\n')
 
     #Configure logging
     configure_logger(settings.General)
@@ -131,13 +134,15 @@ def silcam_process_realtime(config_filename):
     times = []
     d50_ts = []
 
-    vd_mean = sc_pp.TimeIntegratedVolumeDist(settings.PostProcess)
-    vd_mean_oil = sc_pp.TimeIntegratedVolumeDist(settings.PostProcess)
-    vd_mean_gas = sc_pp.TimeIntegratedVolumeDist(settings.PostProcess)
+    #Volume size distribution for total, oil and gas
+    vd_mean = dict(total=sc_pp.TimeIntegratedVolumeDist(settings.PostProcess),
+                   oil=sc_pp.TimeIntegratedVolumeDist(settings.PostProcess),
+                   gas=sc_pp.TimeIntegratedVolumeDist(settings.PostProcess))
+    d50_ts = dict(total=[], oil=[], gas=[])
 
-    plt.ion()
     if settings.Process.display:
-        fig, ax = plt.subplots(2,2)
+        logger.info('Initializing real-time plotting')
+        rtplot = scplt.ParticleSizeDistPlot()
 
     ogdatafile = datalogger.DataLogger('/home/emlynd/Desktop/testdata.csv',
             oilgas.ogdataheader())
@@ -147,91 +152,51 @@ def silcam_process_realtime(config_filename):
     print('* Commencing image acquisition and processing')
     for i, (timestamp, imc) in enumerate(bggen):
         logger.info('Processing time stamp {0}'.format(timestamp))
-        #logger.debug('PROCESSING....')
+
+        #Time the full acquisition and processing loop
         start_time = time.clock()
 
         nc = color.guess_spatial_dimensions(imc)
         if nc == None: # @todo FIX if there are ambiguous dimentions, assume RGB color space
             imc = imc[:,:,1] # and just use green
 
-        stats, imbw = statextract(imc, settings)
+        #Calculate particle statistics
+        stats_all, imbw = statextract(imc, settings)
+        stats = dict(total=stats_all,
+                     oil=stats_all[stats_all['gas']==0],
+                     gas=stats_all[stats_all['gas']==1])
 
-        # @todo - FIX this!
-        oil = stats[stats['gas']==0]
-        gas = stats[stats['gas']==1]
-
+        #Time the particle statistics processing step
         proc_time = time.clock() - start_time
 
-        if settings.Process.display:
-            plt.axes(ax[0,0])
-            if i == 0:
-                image = plt.imshow(np.uint8(imc), cmap='gray', interpolation='nearest', animated=True)
-            image.set_data(np.uint8(imc))
-
-            plt.axes(ax[0,1])
-            if i==0:
-                image_bw = plt.imshow(np.uint8(imbw > 0), cmap='gray', interpolation='nearest', animated=True)
-            image_bw.set_data(np.uint8(imbw > 0))
-
-        if stats is not np.nan:
-            logger.debug('data has arrived!')
-        else:
-            continue
-
-        #Calculate time-averaged volume distributions
-        vd_mean.update_from_stats(stats, timestamp)
-        vd_mean_oil.update_from_stats(oil, timestamp)
-        vd_mean_gas.update_from_stats(gas, timestamp)
-
-        #Calculate D50s from particle statistics
-        d50 = sc_pp.d50_from_vd(vd_mean.vd_mean, vd_mean.dias)
-        d50_oil = sc_pp.d50_from_vd(vd_mean_oil.vd_mean, vd_mean_oil.dias)
-        d50_gas = sc_pp.d50_from_vd(vd_mean_gas.vd_mean, vd_mean_gas.dias)
-        logger.info('d50: {0:.1f}, d50 oil: {1:.1f}, d50 gas: {2:1f}'.format(d50, d50_oil, d50_gas))
-        d50_ts.append(d50)
+        #Calculate time-averaged volume distributions and D50 from particle stats
+        for key in stats.keys():
+            vd_mean[key].update_from_stats(stats[key], timestamp)
+            d50_ts[key].append(sc_pp.d50_from_vd(vd_mean[key].vd_mean, 
+                                                 vd_mean[key].dias))
         times.append(i)
 
-
+        #If real-time plotting is enabled, update the plots
         if settings.Process.display:
             if i == 0:
-                d50_plot, = ax[1, 0].plot(times, d50_ts, '.')
+                rtplot.plot(imc, imbw, times, d50_ts['total'], vd_mean)
             else:
-                d50_plot.set_data(times, d50_ts)
-            ax[1, 0].set_xlabel('image #')
-            ax[1, 0].set_ylabel('d50 (um)')
-            ax[1, 0].set_xlim(0, times[-1])
-            ax[1, 0].set_ylim(0, max(100, np.max(d50_ts)))
-
-            norm = np.sum(vd_mean.vd_mean)/100
-            if i == 0:
-                line, = ax[1, 1].plot(vd_mean.dias, vd_mean.vd_mean, color='k')
-                line_oil, = ax[1, 1].plot(vd_mean_oil.dias, 
-                                          vd_mean_oil.vd_mean, color='darkred')
-                line_gas, = ax[1, 1].plot(vd_mean_gas.dias,
-                                          vd_mean_gas.vd_mean, color='royalblue')
-                ax[1,1].set_xscale('log')
-                ax[1,1].set_xlabel('Equiv. diam (um)')
-                ax[1,1].set_ylabel('Volume concentration (%/sizebin)')
-            else:
-                line.set_data(vd_mean.dias, vd_mean.vd_mean/norm)
-                line_oil.set_data(vd_mean_oil.dias, vd_mean_oil.vd_mean/norm)
-                line_gas.set_data(vd_mean_gas.dias, vd_mean_gas.vd_mean/norm)
-            ax[1,1].set_xlim(1, 10000)
-            ax[1,1].set_ylim(0, np.max(vd_mean.vd_mean/norm))
-
-            plt.pause(0.01)
-            fig.canvas.draw()
+                rtplot.update(imc, imbw, times, d50_ts['total'], vd_mean)
 
         tot_time = time.clock() - start_time
 
-        data_all = oilgas.cat_data(timestamp, stats, settings)
+        #Log particle stats data to file
+        data_all = oilgas.cat_data(timestamp, stats['total'], settings)
         ogdatafile.append_data(data_all)
-        data_gas = oilgas.cat_data(timestamp, gas, settings)
+        data_gas = oilgas.cat_data(timestamp, stats['gas'], settings)
         ogdatafile_gas.append_data(data_gas)
 
-        #logger.info('PROCESSING DONE in {0} sec.'.format(proc_time))
-        print('  Processing image {0} took {1} sec. out of {2} sec.'.format(i,
-            proc_time, tot_time))
+        #Print timing information for this iteration
+        plot_time = tot_time - proc_time
+        infostr = '  Image {0} processed in {1:.2f} sec. '
+        infostr += 'Statextract: {2:.2f}s ({3:.0f}%) Plot: {4:.2f}s ({5:.0f}%)'
+        print(infostr.format(i, tot_time, proc_time, proc_time/tot_time*100, 
+                             plot_time, plot_time/tot_time*100))
 
     
 def silcam_process_batch():
