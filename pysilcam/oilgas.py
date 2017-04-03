@@ -22,7 +22,6 @@ def ogdataheader():
 
 
 def cat_data(timestamp, stats, settings):
-    timestr = timestamp.strftime('%Y, %m, %d, %H, %M, %S.%f')
     dias, vd = sc_pp.vd_from_stats(stats, settings.PostProcess)
     d50 = sc_pp.d50_from_vd(vd, dias)
 

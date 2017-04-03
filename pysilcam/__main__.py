@@ -20,6 +20,7 @@ import pysilcam.datalogger as datalogger
 import pysilcam.oilgas as oilgas
 from pysilcam.config import load_config, PySilcamSettings
 from skimage import color
+import imageio
 
 title = '''
  ____        ____  _ _  ____                
@@ -94,15 +95,17 @@ def silcam_acquire():
     else:
         t1 = time.time()
 
-        count = 0
-        for i, img in enumerate(acquire()):
-            count += 1
+    	aqgen = acquire()
+    	for i, (timestamp, imraw) in enumerate(aqgen):
+
+    	    filename = timestamp.strftime('D%Y%m%dT%H%M%S.%f.bmp')
+	    imageio.imwrite(filename, imraw)
+            print('Written', filename)
 
             t2 = time.time()
             aq_freq = np.round(1.0/(t2 - t1), 1)
             print('Image {0} acquired at frequency {1:.1f} Hz'.format(i, aq_freq))
             t1 = t2
-
 
 def silcam_process_realtime(config_filename):
     '''Run processing of SilCam images in real time'''
