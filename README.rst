@@ -10,7 +10,16 @@ A Python interface to the SilCam.
 Features
 --------
 
-* TODO
+* Acqusition of images from SilCam
+* Real-time processing of SilCam images, particle statistics
+* Processing images from disk (batch or real-time)
+
+Quick start
+-----------
+To process images from disk in real time (watching a folder for new images):
+
+    > PYSILCAM_REALTIME_DATA='<path>' MPLBACKEND='TkAgg' silcam-acquire process pysilcam/config_example.ini
+
 
 Requirements
 ------------
