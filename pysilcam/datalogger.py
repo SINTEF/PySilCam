@@ -4,7 +4,7 @@ class DataLogger:
 
         #Generate file with header
         with open(filename, 'w') as fh:
-            fh.write(header)
+            fh.write(header + '\n')
 
     def append_data(self, data):
         #Append data line to file
