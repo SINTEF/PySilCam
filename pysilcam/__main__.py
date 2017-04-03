@@ -108,12 +108,15 @@ def silcam_process_realtime(config_filename):
 
     print('REALTIME MODE')
     print('')
-    print('----------------------\n')
+
     #Load the configuration, create settings object
     conf = load_config(config_filename)
-    conf.write(sys.stdout)
-    print('----------------------\n')
     settings = PySilcamSettings(conf)
+
+    #Print configuration to screen
+    print('---- CONFIGURATION ----\n')
+    conf.write(sys.stdout)
+    print('-----------------------\n')
 
     #Configure logging
     configure_logger(settings.General)
@@ -134,12 +137,14 @@ def silcam_process_realtime(config_filename):
     vd_mean_gas = sc_pp.TimeIntegratedVolumeDist(settings.PostProcess)
 
     if settings.Process.display:
-        rtplot = plotting.ParticleSizeDistPlot()
+        logger.info('Initializing real-time plotting')
+        rtplot = scplt.ParticleSizeDistPlot()
 
     print('* Commencing image acquisition and processing')
     for i, (timestamp, imc) in enumerate(bggen):
         logger.info('Processing time stamp {0}'.format(timestamp))
-        #logger.debug('PROCESSING....')
+
+        #Time the full acquisition and processing loop
         start_time = time.clock()
 
         nc = color.guess_spatial_dimensions(imc)
@@ -151,23 +156,8 @@ def silcam_process_realtime(config_filename):
         oil = stats[stats['gas']==0]
         gas = stats[stats['gas']==1]
 
+        #Time the processing step
         proc_time = time.clock() - start_time
-
-        if settings.Process.display:
-            plt.axes(ax[0,0])
-            if i == 0:
-                image = plt.imshow(np.uint8(imc), cmap='gray', interpolation='nearest', animated=True)
-            image.set_data(np.uint8(imc))
-
-            plt.axes(ax[0,1])
-            if i==0:
-                image_bw = plt.imshow(np.uint8(imbw > 0), cmap='gray', interpolation='nearest', animated=True)
-            image_bw.set_data(np.uint8(imbw > 0))
-
-        if stats is not np.nan:
-            logger.debug('data has arrived!')
-        else:
-            continue
 
         #Calculate time-averaged volume distributions
         vd_mean.update_from_stats(stats, timestamp)
@@ -182,41 +172,23 @@ def silcam_process_realtime(config_filename):
         d50_ts.append(d50)
         times.append(i)
 
+        #If real-time plotting is enabled, update the plots
         if settings.Process.display:
             if i == 0:
-                d50_plot, = ax[1, 0].plot(times, d50_ts, '.')
+                rtplot.plot(imc, imbw, times, d50_ts, vd_mean, vd_mean_oil, vd_mean_gas)
             else:
-                d50_plot.set_data(times, d50_ts)
-            ax[1, 0].set_xlabel('image #')
-            ax[1, 0].set_ylabel('d50 (um)')
-            ax[1, 0].set_xlim(0, times[-1])
-            ax[1, 0].set_ylim(0, max(100, np.max(d50_ts)))
-
-            norm = np.sum(vd_mean.vd_mean)/100
-            if i == 0:
-                line, = ax[1, 1].plot(vd_mean.dias, vd_mean.vd_mean, color='k')
-                line_oil, = ax[1, 1].plot(vd_mean_oil.dias, 
-                                          vd_mean_oil.vd_mean, color='darkred')
-                line_gas, = ax[1, 1].plot(vd_mean_gas.dias,
-                                          vd_mean_gas.vd_mean, color='royalblue')
-                ax[1,1].set_xscale('log')
-                ax[1,1].set_xlabel('Equiv. diam (um)')
-                ax[1,1].set_ylabel('Volume concentration (%/sizebin)')
-            else:
-                line.set_data(vd_mean.dias, vd_mean.vd_mean/norm)
-                line_oil.set_data(vd_mean_oil.dias, vd_mean_oil.vd_mean/norm)
-                line_gas.set_data(vd_mean_gas.dias, vd_mean_gas.vd_mean/norm)
-            ax[1,1].set_xlim(1, 10000)
-            ax[1,1].set_ylim(0, np.max(vd_mean.vd_mean/norm))
-
-            plt.pause(0.01)
-            fig.canvas.draw()
+                rtplot.update(imc, imbw, times, d50_ts, vd_mean, vd_mean_oil, vd_mean_gas)
 
         tot_time = time.clock() - start_time
 
         #logger.info('PROCESSING DONE in {0} sec.'.format(proc_time))
-        print('  Processing image {0} took {1} sec. out of {2} sec.'.format(i,
-            proc_time, tot_time))
+        plot_time = tot_time - proc_time
+        #print('  Processing image {0} took {1} sec. out of {2} sec.'.format(i,
+        #    proc_time, tot_time))
+        infostr = '  Image {0} processed in {1:.2f} sec. '
+        infostr += 'Statextract: {2:.2f}s ({3:.0f}%) Plot: {4:.2f}s ({5:.0f}%)'
+        print(infostr.format(i, tot_time, proc_time, proc_time/tot_time*100, 
+                             plot_time, plot_time/tot_time*100))
 
     
 def silcam_process_batch():
