@@ -200,12 +200,16 @@ def silcam_process_realtime(config_filename):
 
     print('* Commencing image acquisition and processing')
     for i, (timestamp, imc) in enumerate(bggen):
+        loop(i, timestamp, imc)
+        continue
         try:
             loop(i, timestamp, imc)
         except:
             infostr = 'Failed to process frame {0}, skipping.'.format(i)
             logger.warning(infostr)
             print(infostr)
+        if i == 10:
+            break
     
 
 def silcam_process_batch():

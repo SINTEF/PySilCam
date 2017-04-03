@@ -99,12 +99,17 @@ def props_og(iml, imc, settings):
         if mmr < settings.Process.min_deformation:
             continue
 
+        ecd_ = el.equivalent_diameter
+
+        bbox = el.bbox
+        bbox_area = (bbox[2]-bbox[0]) * (bbox[3]-bbox[1])
+
         #Discard overlapping particles (approximate by solidity requirement)
-        if el.solidity < settings.Process.min_solidity:
+        if (ecd_ ** 2 / bbox_area) < (settings.Process.min_solidity):
             continue
 
         #Particle is initially assumed to be oil
-        ecd[i] = el.equivalent_diameter
+        ecd[i] = ecd_
         gas[i] = False
 
         # minor axis must exceed minarea number of pixels for gas identification
@@ -113,7 +118,7 @@ def props_og(iml, imc, settings):
         if minax < settings.Process.minimum_area:
             continue
 
-        roi = extract_roi(imc, el.bbox)
+        roi = extract_roi(imc, bbox)
 
         #Extract intensity profile
         y = 1 / np.sum(roi, axis=0)
