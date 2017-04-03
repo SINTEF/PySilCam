@@ -132,9 +132,11 @@ def silcam_process_realtime(config_filename):
     times = []
     d50_ts = []
 
-    vd_mean = sc_pp.TimeIntegratedVolumeDist(settings.PostProcess)
-    vd_mean_oil = sc_pp.TimeIntegratedVolumeDist(settings.PostProcess)
-    vd_mean_gas = sc_pp.TimeIntegratedVolumeDist(settings.PostProcess)
+    #Volume size distribution for total, oil and gas
+    vd_mean = dict(total=sc_pp.TimeIntegratedVolumeDist(settings.PostProcess),
+                   oil=sc_pp.TimeIntegratedVolumeDist(settings.PostProcess),
+                   gas=sc_pp.TimeIntegratedVolumeDist(settings.PostProcess))
+    d50_ts = dict(total=[], oil=[], gas=[])
 
     if settings.Process.display:
         logger.info('Initializing real-time plotting')
@@ -151,40 +153,33 @@ def silcam_process_realtime(config_filename):
         if nc == None: # @todo FIX if there are ambiguous dimentions, assume RGB color space
             imc = imc[:,:,1] # and just use green
 
-        stats, imbw = statextract(imc, settings)
+        #Calculate particle statistics
+        stats_all, imbw = statextract(imc, settings)
+        stats = dict(total=stats_all,
+                     oil=stats_all[stats_all['gas']==0],
+                     gas=stats_all[stats_all['gas']==1])
 
-        oil = stats[stats['gas']==0]
-        gas = stats[stats['gas']==1]
-
-        #Time the processing step
+        #Time the particle statistics processing step
         proc_time = time.clock() - start_time
 
-        #Calculate time-averaged volume distributions
-        vd_mean.update_from_stats(stats, timestamp)
-        vd_mean_oil.update_from_stats(oil, timestamp)
-        vd_mean_gas.update_from_stats(gas, timestamp)
-
-        #Calculate D50s from particle statistics
-        d50 = sc_pp.d50_from_vd(vd_mean.vd_mean, vd_mean.dias)
-        d50_oil = sc_pp.d50_from_vd(vd_mean_oil.vd_mean, vd_mean_oil.dias)
-        d50_gas = sc_pp.d50_from_vd(vd_mean_gas.vd_mean, vd_mean_gas.dias)
-        logger.info('d50: {0:.1f}, d50 oil: {1:.1f}, d50 gas: {2:1f}'.format(d50, d50_oil, d50_gas))
-        d50_ts.append(d50)
+        #Calculate time-averaged volume distributions and D50 from particle stats
+        for key in stats.keys():
+            vd_mean[key].update_from_stats(stats[key], timestamp)
+            d50_ts[key].append(sc_pp.d50_from_vd(vd_mean[key].vd_mean, 
+                                                 vd_mean[key].dias))
         times.append(i)
 
         #If real-time plotting is enabled, update the plots
         if settings.Process.display:
             if i == 0:
-                rtplot.plot(imc, imbw, times, d50_ts, vd_mean, vd_mean_oil, vd_mean_gas)
+                rtplot.plot(imc, imbw, times, d50_ts['total'], vd_mean)
             else:
-                rtplot.update(imc, imbw, times, d50_ts, vd_mean, vd_mean_oil, vd_mean_gas)
+                rtplot.update(imc, imbw, times, d50_ts['total'], vd_mean)
 
         tot_time = time.clock() - start_time
 
-        #logger.info('PROCESSING DONE in {0} sec.'.format(proc_time))
+        #Print timing information for this iteration
         plot_time = tot_time - proc_time
-        #print('  Processing image {0} took {1} sec. out of {2} sec.'.format(i,
-        #    proc_time, tot_time))
         infostr = '  Image {0} processed in {1:.2f} sec. '
         infostr += 'Statextract: {2:.2f}s ({3:.0f}%) Plot: {4:.2f}s ({5:.0f}%)'
         print(infostr.format(i, tot_time, proc_time, proc_time/tot_time*100, 

@@ -17,18 +17,18 @@ class ParticleSizeDistPlot:
         plt.ion()
         self.figure, self.ax = plt.subplots(2, 2)
 
-    def plot(self, imc, imbw, times, d50_ts, vd_mean, vd_mean_oil, vd_mean_gas):
+    def plot(self, imc, imbw, times, d50_ts, vd_mean):
         '''Create plots from data'''
 
         #Plot image in upper left axis
         ax = self.ax[0, 0]
         self.image = ax.imshow(np.uint8(imc), cmap='gray', 
-                               interpolation='nearest', animated=True)
+                               interpolation='None', animated=True)
 
         #Plot segmented image in upper right axis
         ax = self.ax[0, 1]
         self.image_bw = ax.imshow(np.uint8(imbw > 0), cmap='gray', 
-                                  interpolation='nearest', animated=True)
+                                  interpolation='None', animated=True)
 
         #Plot D50 time series in lower left axis
         ax = self.ax[1, 0]
@@ -39,13 +39,13 @@ class ParticleSizeDistPlot:
         ax.set_ylim(0, 1000)
 
         #Plot PSD in lower right axis
-        norm = np.sum(vd_mean.vd_mean)/100
+        norm = np.sum(vd_mean['total'].vd_mean)/100
         ax = self.ax[1, 1]
-        self.line, = ax.plot(vd_mean.dias, vd_mean.vd_mean, color='k')
-        self.line_oil, = ax.plot(vd_mean_oil.dias, 
-                                  vd_mean_oil.vd_mean, color='darkred')
-        self.line_gas, = ax.plot(vd_mean_gas.dias,
-                                  vd_mean_gas.vd_mean, color='royalblue')
+        self.line, = ax.plot(vd_mean['total'].dias, vd_mean['total'].vd_mean, color='k')
+        self.line_oil, = ax.plot(vd_mean['oil'].dias, 
+                                  vd_mean['oil'].vd_mean, color='darkred')
+        self.line_gas, = ax.plot(vd_mean['gas'].dias,
+                                  vd_mean['gas'].vd_mean, color='royalblue')
         ax.set_xlim(1, 10000)
         ax.set_ylim(0, 20)
         ax.set_xscale('log')
@@ -56,18 +56,19 @@ class ParticleSizeDistPlot:
         self.figure.canvas.draw()
 
  
-    def update(self, imc, imbw, times, d50_ts, vd_mean, vd_mean_oil, vd_mean_gas):
+    def update(self, imc, imbw, times, d50_ts, vd_mean):
         '''Update plot data without full replotting for speed'''
         self.image.set_data(np.uint8(imc))
 
         self.image_bw.set_data(np.uint8(imbw>0))
 
-        self.d50_plot.set_data(times, d50_ts)
+        #Show the last 50 D50 values
+        self.d50_plot.set_data(times[-50:], d50_ts[-50:])
 
-        norm = np.sum(vd_mean.vd_mean)/100
-        self.line.set_data(vd_mean.dias, vd_mean.vd_mean/norm)
-        self.line_oil.set_data(vd_mean_oil.dias, vd_mean_oil.vd_mean/norm)
-        self.line_gas.set_data(vd_mean_gas.dias, vd_mean_gas.vd_mean/norm)
+        norm = np.sum(vd_mean['total'].vd_mean)/100
+        self.line.set_data(vd_mean['total'].dias, vd_mean['total'].vd_mean/norm)
+        self.line_oil.set_data(vd_mean['oil'].dias, vd_mean['oil'].vd_mean/norm)
+        self.line_gas.set_data(vd_mean['gas'].dias, vd_mean['gas'].vd_mean/norm)
 
         #Fast redraw of dynamic figure elements only
         self.ax[0, 0].draw_artist(self.image)
