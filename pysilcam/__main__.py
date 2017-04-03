@@ -144,9 +144,9 @@ def silcam_process_realtime(config_filename):
         logger.info('Initializing real-time plotting')
         rtplot = scplt.ParticleSizeDistPlot()
 
-    ogdatafile = datalogger.DataLogger('/home/emlynd/Desktop/testdata.csv',
+    ogdatafile = datalogger.DataLogger(settings.General.datafile + '.csv',
             oilgas.ogdataheader())
-    ogdatafile_gas = datalogger.DataLogger('/home/emlynd/Desktop/testdata-GAS.csv',
+    ogdatafile_gas = datalogger.DataLogger(settings.General.datafile + '-GAS.csv',
             oilgas.ogdataheader())
 
     print('* Commencing image acquisition and processing')
