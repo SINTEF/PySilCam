@@ -137,6 +137,9 @@ def silcam_process_realtime(config_filename):
     if settings.Process.display:
         fig, ax = plt.subplots(2,2)
 
+    ogdatafile = datalogger.Datalogger('filename.csv', ogmodule.ogdataheader)
+    ogdatafile.append_data(datalist)
+
     print('* Commencing image acquisition and processing')
     for i, (timestamp, imc) in enumerate(bggen):
         logger.info('Processing time stamp {0}'.format(timestamp))
@@ -149,6 +152,7 @@ def silcam_process_realtime(config_filename):
 
         stats, imbw = statextract(imc, settings)
 
+        # @todo - FIX this!
         oil = stats[stats['gas']==0]
         gas = stats[stats['gas']==1]
 
@@ -183,6 +187,8 @@ def silcam_process_realtime(config_filename):
         d50_ts.append(d50)
         times.append(i)
 
+# sc.datalogger.append_csv()
+
         if settings.Process.display:
             if i == 0:
                 d50_plot, = ax[1, 0].plot(times, d50_ts, '.')
@@ -214,6 +220,8 @@ def silcam_process_realtime(config_filename):
             fig.canvas.draw()
 
         tot_time = time.clock() - start_time
+
+        ogdatafile.append_data(datalist)
 
         #logger.info('PROCESSING DONE in {0} sec.'.format(proc_time))
         print('  Processing image {0} took {1} sec. out of {2} sec.'.format(i,
