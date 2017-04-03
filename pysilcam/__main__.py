@@ -149,8 +149,7 @@ def silcam_process_realtime(config_filename):
     ogdatafile_gas = datalogger.DataLogger(settings.General.datafile + '-GAS.csv',
             oilgas.ogdataheader())
 
-    print('* Commencing image acquisition and processing')
-    for i, (timestamp, imc) in enumerate(bggen):
+    def loop(i, timestamp, imc):
         logger.info('Processing time stamp {0}'.format(timestamp))
 
         #Time the full acquisition and processing loop
@@ -198,6 +197,16 @@ def silcam_process_realtime(config_filename):
         print(infostr.format(i, tot_time, proc_time, proc_time/tot_time*100, 
                              plot_time, plot_time/tot_time*100))
 
+
+    print('* Commencing image acquisition and processing')
+    for i, (timestamp, imc) in enumerate(bggen):
+        try:
+            loop(i, timestamp, imc)
+        except:
+            infostr = 'Failed to process frame {0}, skipping.'.format(i)
+            logger.warning(infostr)
+            print(infostr)
     
+
 def silcam_process_batch():
     print('Placeholder for silcam-process-batch entry point')
