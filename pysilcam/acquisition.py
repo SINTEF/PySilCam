@@ -7,17 +7,20 @@ import logging
 import pandas as pd
 
 #Try import pymba, if not available, revert to in-package mockup
-try:
-    import pymba
-except:
-    warnings.warn('Pymba not available, using mocked version', ImportWarning)
-    print('Pymba not available, using mocked version')
+if 'PYSILCAM_REALTIME_DATA' in os.environ.keys():
     import pysilcam.fakepymba as pymba
-else:
-    #Monkey-patch in a real-time timestamp getter to be consistent with
-    #FakePymba
     pymba.get_time_stamp = lambda x: pd.Timestamp.now()
-
+else:
+    try:
+        import pymba
+    except:
+        warnings.warn('Pymba not available, using mocked version', ImportWarning)
+        print('Pymba not available, using mocked version')
+        import pysilcam.fakepymba as pymba
+    else:
+        #Monkey-patch in a real-time timestamp getter to be consistent with
+        #FakePymba
+        pymba.get_time_stamp = lambda x: pd.Timestamp.now()
 
 logger = logging.getLogger(__name__)
 

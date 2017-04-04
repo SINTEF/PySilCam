@@ -63,16 +63,16 @@ def silcam_acquire():
     #print('Type \'silcam-acquire -h\' for help')
 
     if args['process']:
-        pr = cProfile.Profile()
-        pr.enable()
-        s = StringIO()
-        sortby = 'cumulative'
+        #pr = cProfile.Profile()
+        #pr.enable()
+        #s = StringIO()
+        #sortby = 'cumulative'
         silcam_process_realtime(args['<configfile>'])
-        pr.disable()
-        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-        ps.print_stats()
-#        print(s.getvalue())
-        ps.dump_stats('process_profile.cprof')
+        #pr.disable()
+        #ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        #ps.print_stats()
+#       # print(s.getvalue())
+        #ps.dump_stats('process_profile.cprof')
 
     elif args['liveview']:
         print('LIVEVIEW MODE')
@@ -93,19 +93,24 @@ def silcam_acquire():
             plt.pause(0.05)
 
     else:
-        t1 = time.time()
+	while True:
+            t1 = time.time()
+	    try:
+                aqgen = acquire()
+    	        for i, (timestamp, imraw) in enumerate(aqgen):
+    	            filename = timestamp.strftime('D%Y%m%dT%H%M%S.%f.bmp')
+	            imageio.imwrite(filename, imraw)
+                    print('Written', filename)
 
-    	aqgen = acquire()
-    	for i, (timestamp, imraw) in enumerate(aqgen):
-
-    	    filename = timestamp.strftime('D%Y%m%dT%H%M%S.%f.bmp')
-	    imageio.imwrite(filename, imraw)
-            print('Written', filename)
-
-            t2 = time.time()
-            aq_freq = np.round(1.0/(t2 - t1), 1)
-            print('Image {0} acquired at frequency {1:.1f} Hz'.format(i, aq_freq))
-            t1 = t2
+                    t2 = time.time()
+                    aq_freq = np.round(1.0/(t2 - t1), 1)
+                    print('Image {0} acquired at frequency {1:.1f} Hz'.format(i, aq_freq))
+                    t1 = t2
+            except:
+                infostr = 'Failed to acquire frame, restarting.'
+                #logger.warning(infostr)
+                print(infostr)
+ 
 
 def silcam_process_realtime(config_filename):
     '''Run processing of SilCam images in real time'''
@@ -203,17 +208,12 @@ def silcam_process_realtime(config_filename):
 
     print('* Commencing image acquisition and processing')
     for i, (timestamp, imc) in enumerate(bggen):
-        loop(i, timestamp, imc)
-        continue
         try:
             loop(i, timestamp, imc)
         except:
             infostr = 'Failed to process frame {0}, skipping.'.format(i)
             logger.warning(infostr)
             print(infostr)
-        if i == 10:
-            break
-    
 
 def silcam_process_batch():
     print('Placeholder for silcam-process-batch entry point')
