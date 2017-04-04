@@ -7,7 +7,9 @@ import logging
 import pandas as pd
 
 #Try import pymba, if not available, revert to in-package mockup
-if 'PYSILCAM_REALTIME_DATA' in os.environ.keys():
+#If environment variable PYSILCAM_FAKEPYMBA is defined, use
+#in-package mockup regardless.
+if 'PYSILCAM_FAKEPYMBA' in os.environ.keys():
     import pysilcam.fakepymba as pymba
     pymba.get_time_stamp = lambda x: pd.Timestamp.now()
 else:

@@ -6,6 +6,7 @@ from __future__ import print_function
 import os
 import sys
 import time
+from datetime import datetime
 import numpy as np
 import imageio
 import logging
@@ -97,7 +98,7 @@ class Frame:
             print('Getting buffer byte data from file {0}, {1}/{2}'.format(frame.shape, 
                                                                            self.img_idx, len(self.files)))
         else:
-            self.timestamp = '0:0:0'
+            self.timestamp = datetime.now()
             frame = np.random.random((self.height, self.width, 3))
             print('Getting buffer byte data, {0}'.format(frame.shape))
             time.sleep(1.0/FPS)

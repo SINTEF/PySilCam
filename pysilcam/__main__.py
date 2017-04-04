@@ -106,10 +106,14 @@ def silcam_acquire():
                     aq_freq = np.round(1.0/(t2 - t1), 1)
                     print('Image {0} acquired at frequency {1:.1f} Hz'.format(i, aq_freq))
                     t1 = t2
+            except KeyboardInterrupt:
+                print('User interrupt with ctrl+c, terminating PySilCam.')
+                sys.exit(0)
             except:
-                infostr = 'Failed to acquire frame, restarting.'
-                #logger.warning(infostr)
-                print(infostr)
+                #infostr = 'Failed to acquire frame, restarting.'
+                #print(infostr)
+                etype, emsg, etrace = sys.exc_info()
+                print('Exception occurred: {0}. Restarting acquisition.'.format(emsg))
  
 
 def silcam_process_realtime(config_filename):
@@ -158,10 +162,10 @@ def silcam_process_realtime(config_filename):
             oilgas.ogdataheader())
 
     def loop(i, timestamp, imc):
-        logger.info('Processing time stamp {0}'.format(timestamp))
-
         #Time the full acquisition and processing loop
         start_time = time.clock()
+
+        logger.info('Processing time stamp {0}'.format(timestamp))
 
         nc = color.guess_spatial_dimensions(imc)
         if nc == None: # @todo FIX if there are ambiguous dimentions, assume RGB color space
@@ -190,7 +194,6 @@ def silcam_process_realtime(config_filename):
             else:
                 rtplot.update(imc, imbw, times, d50_ts['total'], vd_mean)
 
-        tot_time = time.clock() - start_time
 
         #Log particle stats data to file
         data_all = oilgas.cat_data(timestamp, stats['total'], settings)
@@ -198,12 +201,14 @@ def silcam_process_realtime(config_filename):
         data_gas = oilgas.cat_data(timestamp, stats['gas'], settings)
         ogdatafile_gas.append_data(data_gas)
 
+        tot_time = time.clock() - start_time
+
         #Print timing information for this iteration
         plot_time = tot_time - proc_time
-        infostr = '  Image {0} processed in {1:.2f} sec. '
+        infostr = '  Image {0} processed in {1:.2f} sec ({6:.1f} Hz). '
         infostr += 'Statextract: {2:.2f}s ({3:.0f}%) Plot: {4:.2f}s ({5:.0f}%)'
         print(infostr.format(i, tot_time, proc_time, proc_time/tot_time*100, 
-                             plot_time, plot_time/tot_time*100))
+                             plot_time, plot_time/tot_time*100, 1.0/tot_time))
 
 
     print('* Commencing image acquisition and processing')
