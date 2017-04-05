@@ -93,13 +93,13 @@ def silcam_acquire():
             plt.pause(0.05)
 
     else:
-	while True:
+        while True:
             t1 = time.time()
-	    try:
+            try:
                 aqgen = acquire()
-    	        for i, (timestamp, imraw) in enumerate(aqgen):
-    	            filename = timestamp.strftime('D%Y%m%dT%H%M%S.%f.bmp')
-	            imageio.imwrite(filename, imraw)
+                for i, (timestamp, imraw) in enumerate(aqgen):
+                    filename = timestamp.strftime('D%Y%m%dT%H%M%S.%f.bmp')
+                    imageio.imwrite(filename, imraw)
                     print('Written', filename)
 
                     t2 = time.time()
@@ -190,10 +190,11 @@ def silcam_process_realtime(config_filename):
         #If real-time plotting is enabled, update the plots
         if settings.Process.display:
             if i == 0:
-                rtplot.plot(imc, imbw, times, d50_ts['total'], vd_mean)
+                rtplot.plot(imc, imbw, times, d50_ts['total'], vd_mean,
+                        settings.Process.display)
             else:
-                rtplot.update(imc, imbw, times, d50_ts['total'], vd_mean)
-
+                rtplot.update(imc, imbw, times, d50_ts['total'], vd_mean,
+                        settings.Process.display)
 
         #Log particle stats data to file
         data_all = oilgas.cat_data(timestamp, stats['total'], settings)
@@ -213,6 +214,8 @@ def silcam_process_realtime(config_filename):
 
     print('* Commencing image acquisition and processing')
     for i, (timestamp, imc) in enumerate(bggen):
+        loop(i, timestamp, imc)
+        continue
         try:
             loop(i, timestamp, imc)
         except:

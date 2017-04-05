@@ -17,18 +17,20 @@ class ParticleSizeDistPlot:
         plt.ion()
         self.figure, self.ax = plt.subplots(2, 2)
 
-    def plot(self, imc, imbw, times, d50_ts, vd_mean):
+    def plot(self, imc, imbw, times, d50_ts, vd_mean, display):
         '''Create plots from data'''
 
         #Plot image in upper left axis
         ax = self.ax[0, 0]
-        self.image = ax.imshow(np.uint8(imc), cmap='gray', 
-                               interpolation='None', animated=True)
+        if display==True:
+            self.image = ax.imshow(np.uint8(imc), cmap='gray', 
+                                   interpolation='None', animated=True)
 
         #Plot segmented image in upper right axis
         ax = self.ax[0, 1]
-        self.image_bw = ax.imshow(np.uint8(imbw > 0), cmap='gray', 
-                                  interpolation='None', animated=True)
+        if display==True:
+            self.image_bw = ax.imshow(np.uint8(imbw > 0), cmap='gray', 
+                                      interpolation='None', animated=True)
 
         #Plot D50 time series in lower left axis
         ax = self.ax[1, 0]
@@ -56,11 +58,12 @@ class ParticleSizeDistPlot:
         self.figure.canvas.draw()
 
  
-    def update(self, imc, imbw, times, d50_ts, vd_mean):
+    def update(self, imc, imbw, times, d50_ts, vd_mean, display):
         '''Update plot data without full replotting for speed'''
-        self.image.set_data(np.uint8(imc))
 
-        self.image_bw.set_data(np.uint8(imbw>0))
+        if display==True:
+            self.image.set_data(np.uint8(imc))
+            self.image_bw.set_data(np.uint8(imbw>0))
 
         #Show the last 50 D50 values
         self.d50_plot.set_data(times[-50:], d50_ts[-50:])
@@ -71,8 +74,9 @@ class ParticleSizeDistPlot:
         self.line_gas.set_data(vd_mean['gas'].dias, vd_mean['gas'].vd_mean/norm)
 
         #Fast redraw of dynamic figure elements only
-        self.ax[0, 0].draw_artist(self.image)
-        self.ax[0, 1].draw_artist(self.image_bw)
+        if display==True:
+            self.ax[0, 0].draw_artist(self.image)
+            self.ax[0, 1].draw_artist(self.image_bw)
         self.ax[1, 0].draw_artist(self.d50_plot)
         self.ax[1, 1].draw_artist(self.line)
         self.ax[1, 1].draw_artist(self.line_oil)
