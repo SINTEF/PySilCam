@@ -16,10 +16,21 @@ Features
 
 Quick start
 -----------
+
+some setup:
+    > conda create -n pysilcam python=2.7
+    > source activate pysilcam
+    > python setup.py install
+
 To process images from disk in real time (watching a folder for new images):
 
     > PYSILCAM_REALTIME_DATA='<path>' MPLBACKEND='TkAgg' silcam-acquire process pysilcam/config_example.ini
 
+for real-time listening processing:
+    > PYSILCAM_FAKEPYMBA=ON PYSILCAM_REALTIME_DATA='<path>' MPLBACKEND='TkAgg' silcam-acquire process pysilcam/config_example.ini
+
+for fast acquisition only (no processing):
+    > silcam-acquire
 
 Requirements
 ------------
