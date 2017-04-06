@@ -95,9 +95,14 @@ def props_og(iml, imc, settings):
 
         #Discard very eccentric particles
         minax = el.minor_axis_length
-        mmr = minax / el.major_axis_length
+        majax = el.major_axis_length
+        mmr = minax / majax
         if mmr < settings.Process.min_deformation:
             continue
+
+        if ((majax * settings.PostProcess.pix_size) >
+            settings.Process.max_length):
+                continue
 
         ecd_ = el.equivalent_diameter
 
@@ -111,6 +116,9 @@ def props_og(iml, imc, settings):
         #Particle is initially assumed to be oil
         ecd[i] = ecd_
         gas[i] = False
+
+        if settings.Process.find_gas==False:
+            continue
 
         # minor axis must exceed minarea number of pixels for gas identification
         #Valid particles with too few pixels for gas identification algorithm
