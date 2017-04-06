@@ -165,7 +165,7 @@ def concentration_check(imbw, settings):
 
     sat_check = saturation < 100
 
-    return sat_check
+    return sat_check, saturation
 
 def props(iml, image_index,im):
     '''populates stats dataframe with partstats given a labelled iamge
@@ -292,7 +292,7 @@ def measure_particles(imbw, imc, settings):
     TODO: handle situation when too many particles are found
     TODO: handle situation when zero particles are found
     '''
-    sat_check = concentration_check(imbw, settings)
+    sat_check, saturation = concentration_check(imbw, settings)
     if sat_check == False:
         logger.warn('....breached concentration limit! Skipping image.')
         imbw *= False
@@ -307,7 +307,7 @@ def measure_particles(imbw, imc, settings):
     #stats = fast_props(iml)
     stats = props_og(iml, imc, settings)
     
-    return stats
+    return stats, saturation
 
 
 def find_gas(imbw, imc, stats):
@@ -335,6 +335,6 @@ def statextract(imc, settings):
 
 
     logger.debug('measure')
-    stats = measure_particles(imbw, imc, settings)
+    stats, saturation = measure_particles(imbw, imc, settings)
 
-    return stats, imbw
+    return stats, imbw, saturation

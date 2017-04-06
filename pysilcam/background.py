@@ -65,6 +65,8 @@ def correct_im(imbg, imraw):
     
     m = imc.max()
     imc += 255-m
+    imc[imc<0] = 0
+    imc[imc>255] = 255
     
     return imc
 

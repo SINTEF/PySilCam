@@ -34,11 +34,12 @@ class ParticleSizeDistPlot:
 
         #Plot D50 time series in lower left axis
         ax = self.ax[1, 0]
-        self.d50_plot, = ax.plot(times, d50_ts, '.')
+        self.d50_plot, = ax.plot(range(len(d50_ts)), d50_ts, '.')
         ax.set_xlabel('image #')
         ax.set_ylabel('d50 (um)')
         ax.set_xlim(0, 50)
-        ax.set_ylim(0, 1000)
+        ax.set_ylim(10, 10000)
+        ax.set_yscale('log')
 
         #Plot PSD in lower right axis
         norm = np.sum(vd_mean['total'].vd_mean)/100
@@ -66,7 +67,7 @@ class ParticleSizeDistPlot:
             self.image_bw.set_data(np.uint8(imbw>0))
 
         #Show the last 50 D50 values
-        self.d50_plot.set_data(times[-50:], d50_ts[-50:])
+        self.d50_plot.set_data(range(len(d50_ts[-50:])), d50_ts[-50:])
 
         norm = np.sum(vd_mean['total'].vd_mean)/100
         self.line.set_data(vd_mean['total'].dias, vd_mean['total'].vd_mean/norm)

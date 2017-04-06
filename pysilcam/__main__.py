@@ -161,7 +161,7 @@ def silcam_process_realtime(config_filename):
     ogdatafile_gas = datalogger.DataLogger(settings.General.datafile + '-GAS.csv',
             oilgas.ogdataheader())
     tavoilfile = datalogger.DataLogger(settings.General.datafile + '-tavoil.csv',
-            oilgas.ogdataheader())
+            'tavd50, sat')
 
     def loop(i, timestamp, imc):
         #Time the full acquisition and processing loop
@@ -174,7 +174,7 @@ def silcam_process_realtime(config_filename):
             imc = imc[:,:,1] # and just use green
 
         #Calculate particle statistics
-        stats_all, imbw = statextract(imc, settings)
+        stats_all, imbw, saturation = statextract(imc, settings)
         stats = dict(total=stats_all,
                      oil=stats_all[stats_all['gas']==0],
                      gas=stats_all[stats_all['gas']==1])
@@ -205,8 +205,7 @@ def silcam_process_realtime(config_filename):
         data_gas = oilgas.cat_data(timestamp, stats['gas'], settings)
         ogdatafile_gas.append_data(data_gas)
 
-        data_tavoil = oilgas.cat_data(timestamp, stats['total'], settings)
-        tavoilfile.append_data(data_tavoil)
+        tavoilfile.append_data([d50_ts['total'][-1], saturation])
 
         tot_time = time.clock() - start_time
 
