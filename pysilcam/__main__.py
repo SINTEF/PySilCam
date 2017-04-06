@@ -160,6 +160,8 @@ def silcam_process_realtime(config_filename):
             oilgas.ogdataheader())
     ogdatafile_gas = datalogger.DataLogger(settings.General.datafile + '-GAS.csv',
             oilgas.ogdataheader())
+    tavoilfile = datalogger.DataLogger(settings.General.datafile + '-tavoil.csv',
+            oilgas.ogdataheader())
 
     def loop(i, timestamp, imc):
         #Time the full acquisition and processing loop
@@ -185,6 +187,7 @@ def silcam_process_realtime(config_filename):
             vd_mean[key].update_from_stats(stats[key], timestamp)
             d50_ts[key].append(sc_pp.d50_from_vd(vd_mean[key].vd_mean, 
                                                  vd_mean[key].dias))
+
         times.append(i)
 
         #If real-time plotting is enabled, update the plots
@@ -201,6 +204,9 @@ def silcam_process_realtime(config_filename):
         ogdatafile.append_data(data_all)
         data_gas = oilgas.cat_data(timestamp, stats['gas'], settings)
         ogdatafile_gas.append_data(data_gas)
+
+        data_tavoil = oilgas.cat_data(timestamp, stats['total'], settings)
+        tavoilfile.append_data(data_tavoil)
 
         tot_time = time.clock() - start_time
 
