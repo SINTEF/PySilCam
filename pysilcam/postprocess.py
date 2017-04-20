@@ -104,6 +104,6 @@ class TimeIntegratedVolumeDist:
 
         #Calculate time-integrated volume distribution
         if len(self.vdlist)>1:
-            self.vd_mean = np.mean(self.vdlist, axis=0)
+            self.vd_mean = np.nanmean(self.vdlist, axis=0)
         else:
             self.vd_mean = self.vdlist[0]

@@ -67,7 +67,12 @@ def silcam_acquire():
         #pr.enable()
         #s = StringIO()
         #sortby = 'cumulative'
-        silcam_process_realtime(args['<configfile>'])
+        while True:
+	    try:
+	        silcam_process_realtime(args['<configfile>'])
+            except:
+                print('probably image loading error....')
+                time.sleep(1)
         #pr.disable()
         #ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
         #ps.print_stats()
@@ -104,8 +109,14 @@ def silcam_acquire():
 
                     t2 = time.time()
                     aq_freq = np.round(1.0/(t2 - t1), 1)
-                    print('Image {0} acquired at frequency {1:.1f} Hz'.format(i, aq_freq))
-                    t1 = t2
+                    requested_freq = 16.0
+                    rest_time = (1 / requested_freq) - (1 / aq_freq)
+                    rest_time = np.max([rest_time, 0.])
+                    time.sleep(rest_time)
+                    actual_aq_freq = 1/(1/aq_freq + rest_time)
+                    print('Image {0} acquired at frequency {1:.1f} Hz'.format(i, actual_aq_freq))
+                    #t1 = t2
+                    t1 = time.time()
             except KeyboardInterrupt:
                 print('User interrupt with ctrl+c, terminating PySilCam.')
                 sys.exit(0)
@@ -219,8 +230,6 @@ def silcam_process_realtime(config_filename):
 
     print('* Commencing image acquisition and processing')
     for i, (timestamp, imc) in enumerate(bggen):
-        loop(i, timestamp, imc)
-        continue
         try:
             loop(i, timestamp, imc)
         except:
