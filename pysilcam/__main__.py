@@ -67,12 +67,12 @@ def silcam_acquire():
         #pr.enable()
         #s = StringIO()
         #sortby = 'cumulative'
-        while True:
-	    try:
-	        silcam_process_realtime(args['<configfile>'])
-            except:
-                print('probably image loading error....')
-                time.sleep(1)
+#        while True:
+#            try:
+        silcam_process_realtime(args['<configfile>'])
+#            except:
+#                print('probably image loading error....')
+#                time.sleep(1)
         #pr.disable()
         #ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
         #ps.print_stats()

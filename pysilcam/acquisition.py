@@ -103,7 +103,7 @@ def _acquire_frame(camera, frame0):
     img = np.ndarray(buffer = frame0.getBufferByteData(),
                     dtype = np.uint8,
                     shape = (frame0.height, frame0.width, 3))
- 
+
     timestamp = pymba.get_time_stamp(frame0)
 
     camera.endCapture()
@@ -183,8 +183,12 @@ def acquire():
         #Aquire raw images and yield to calling context
         try:
             while True:
-                timestamp, img = _acquire_frame(camera, frame0)
-                yield timestamp, img
+                try:
+                    timestamp, img = _acquire_frame(camera, frame0)
+                    yield timestamp, img
+                except:
+                    print('  FAILED CAPTURE!')
+                    frame0.img_idx += 1
         finally:
             #Clean up after capture
             camera.revokeAllFrames()
