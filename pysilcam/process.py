@@ -50,6 +50,28 @@ def clean_bw(imbw, min_area):
     return imbw
 
 
+def fancy_props(iml, imc, settings):
+    propnames = ['major_axis_length', 'minor_axis_length',
+                 'equivalent_diameter']
+
+    region_properties = measure.regionprops(iml, cache=False)
+
+    data = np.zeros((len(region_properties), len(propnames)), dtype=np.float64)
+    bboxes = np.zeros((len(region_properties), 4), dtype=np.float64)
+
+    for i, el in enumerate(region_properties):
+        data[i, :] = [getattr(el, p) for p in propnames]
+        bboxes[i, :] = el.bbox
+
+
+    column_names = np.hstack(([propnames, 'minr', 'minc', 'maxr', 'maxc']))
+    #cat_data = np.stack((data, bboxes)).T 
+    cat_data = np.hstack((data, bboxes))
+    partstats = pd.DataFrame(columns=column_names, data=cat_data)
+
+    return partstats
+
+
 def fast_props(iml):
 
     propnames = ['major_axis_length', 'minor_axis_length',
@@ -305,7 +327,9 @@ def measure_particles(imbw, imc, settings):
         iml *= 0
 
     #stats = fast_props(iml)
-    stats = props_og(iml, imc, settings)
+    #stats = props_og(iml, imc, settings)
+
+    stats = fancy_props(iml, imc, settings)
     
     return stats, saturation
 

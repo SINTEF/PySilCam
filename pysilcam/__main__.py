@@ -18,6 +18,7 @@ import pysilcam.postprocess as sc_pp
 import pysilcam.plotting as scplt
 import pysilcam.datalogger as datalogger
 import pysilcam.oilgas as oilgas
+import pysilcam.exportparticles as exportparts
 from pysilcam.config import load_config, PySilcamSettings
 from skimage import color
 import imageio
@@ -46,6 +47,7 @@ def silcam_acquire():
       silcam-acquire
       silcam-acquire liveview
       silcam-acquire process <configfile>
+      silcam-acquire fancyprocess <configfile>
       silcam-acquire -h | --help
       silcam-acquire --version
 
@@ -78,6 +80,8 @@ def silcam_acquire():
         #ps.print_stats()
 #       # print(s.getvalue())
         #ps.dump_stats('process_profile.cprof')
+    elif args['fancyprocess']:
+        silcam_process_fancy(args['<configfile>'])
 
     elif args['liveview']:
         print('LIVEVIEW MODE')
@@ -126,6 +130,117 @@ def silcam_acquire():
                 etype, emsg, etrace = sys.exc_info()
                 print('Exception occurred: {0}. Restarting acquisition.'.format(emsg))
  
+def silcam_process_fancy(config_filename):
+    '''Run processing of SilCam images in real time'''
+    print(config_filename)
+
+    print('REALTIME MODE')
+    print('')
+
+    #Load the configuration, create settings object
+    conf = load_config(config_filename)
+    settings = PySilcamSettings(conf)
+
+    #Print configuration to screen
+    print('---- CONFIGURATION ----\n')
+    conf.write(sys.stdout)
+    print('-----------------------\n')
+
+    #Configure logging
+    configure_logger(settings.General)
+    logger = logging.getLogger(__name__ + '.silcam_process_fancy')
+
+    #Initialize the image acquisition generator
+    aqgen = acquire()
+
+    #Get number of images to use for background correction from config
+    print('* Initializing background image handler')
+    bggen = backgrounder(settings.Background.num_images, aqgen)
+
+    times = []
+    d50_ts = []
+
+    #Volume size distribution for total, oil and gas
+    vd_mean = dict(total=sc_pp.TimeIntegratedVolumeDist(settings.PostProcess),
+                   oil=sc_pp.TimeIntegratedVolumeDist(settings.PostProcess),
+                   gas=sc_pp.TimeIntegratedVolumeDist(settings.PostProcess))
+    d50_ts = dict(total=[], oil=[], gas=[])
+
+    if settings.Process.display:
+        logger.info('Initializing real-time plotting')
+        rtplot = scplt.ParticleSizeDistPlot()
+
+    psddatafile = datalogger.DataLogger(settings.General.datafile + '.csv',
+            oilgas.ogdataheader())
+
+    def loop(i, timestamp, imc):
+        #Time the full acquisition and processing loop
+        start_time = time.clock()
+
+        logger.info('Processing time stamp {0}'.format(timestamp))
+
+        nc = color.guess_spatial_dimensions(imc)
+        if nc == None: # @todo FIX if there are ambiguous dimentions, assume RGB color space
+        #    imc = imc[:,:,1] # and just use green
+            #Calculate particle statistics
+            stats_all, imbw, saturation = statextract(imc[:,:,1], settings)
+        else:
+            stats_all, imbw, saturation = statextract(imc, settings)
+
+        stats = dict(total=stats_all)
+        #stats_all, imbw, saturation = statextract(imc, settings)
+        #stats = dict(total=stats_all,
+        #             oil=stats_all[stats_all['gas']==0],
+        #             gas=stats_all[stats_all['gas']==1])
+
+        #Time the particle statistics processing step
+        proc_time = time.clock() - start_time
+
+        #Calculate time-averaged volume distributions and D50 from particle stats
+        for key in stats.keys():
+            vd_mean[key].update_from_stats(stats[key], timestamp)
+            d50_ts[key].append(sc_pp.d50_from_vd(vd_mean[key].vd_mean, 
+                                                 vd_mean[key].dias))
+
+        times.append(i)
+
+        #If real-time plotting is enabled, update the plots
+        if settings.Process.display:
+            if i == 0:
+                rtplot.plot(imc, imbw, times, d50_ts['total'], vd_mean,
+                        settings.Process.display)
+            else:
+                rtplot.update(imc, imbw, times, d50_ts['total'], vd_mean,
+                        settings.Process.display)
+
+        #Log particle stats data to file
+        data_all = oilgas.cat_data(timestamp, stats['total'], settings)
+        psddatafile.append_data(data_all)
+
+        if settings.ExportParticles.export_images:
+            exportparts.export_particles(imc,timestamp,stats_all,settings)
+
+        tot_time = time.clock() - start_time
+
+        #Print timing information for this iteration
+        plot_time = tot_time - proc_time
+        infostr = '  Image {0} processed in {1:.2f} sec ({6:.1f} Hz). '
+        infostr += 'Statextract: {2:.2f}s ({3:.0f}%) Plot: {4:.2f}s ({5:.0f}%)'
+        print(infostr.format(i, tot_time, proc_time, proc_time/tot_time*100, 
+                             plot_time, plot_time/tot_time*100, 1.0/tot_time))
+
+
+    print('* Commencing image acquisition and processing')
+    for i, (timestamp, imc) in enumerate(bggen):
+        loop(i, timestamp, imc)
+        continue
+        try:
+            loop(i, timestamp, imc)
+        except:
+            infostr = 'Failed to process frame {0}, skipping.'.format(i)
+            logger.warning(infostr)
+            print(infostr)
+
 
 def silcam_process_realtime(config_filename):
     '''Run processing of SilCam images in real time'''
@@ -230,6 +345,8 @@ def silcam_process_realtime(config_filename):
 
     print('* Commencing image acquisition and processing')
     for i, (timestamp, imc) in enumerate(bggen):
+        loop(i, timestamp, imc)
+        continue
         try:
             loop(i, timestamp, imc)
         except:

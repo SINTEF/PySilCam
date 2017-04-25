@@ -24,7 +24,8 @@ class ParticleSizeDistPlot:
         ax = self.ax[0, 0]
         if display==True:
             self.image = ax.imshow(np.uint8(imc), cmap='gray', 
-                                   interpolation='None', animated=True)
+                                   interpolation='None', animated=True, vmin=0,
+                                   vmax=255)
 
         #Plot segmented image in upper right axis
         ax = self.ax[0, 1]
@@ -45,10 +46,10 @@ class ParticleSizeDistPlot:
         norm = np.sum(vd_mean['total'].vd_mean)/100
         ax = self.ax[1, 1]
         self.line, = ax.plot(vd_mean['total'].dias, vd_mean['total'].vd_mean, color='k')
-        self.line_oil, = ax.plot(vd_mean['oil'].dias, 
-                                  vd_mean['oil'].vd_mean, color='darkred')
-        self.line_gas, = ax.plot(vd_mean['gas'].dias,
-                                  vd_mean['gas'].vd_mean, color='royalblue')
+#        self.line_oil, = ax.plot(vd_mean['oil'].dias, 
+#                                  vd_mean['oil'].vd_mean, color='darkred')
+#        self.line_gas, = ax.plot(vd_mean['gas'].dias,
+#                                  vd_mean['gas'].vd_mean, color='royalblue')
         ax.set_xlim(1, 10000)
         ax.set_ylim(0, 20)
         ax.set_xscale('log')
@@ -71,8 +72,8 @@ class ParticleSizeDistPlot:
 
         norm = np.sum(vd_mean['total'].vd_mean)/100
         self.line.set_data(vd_mean['total'].dias, vd_mean['total'].vd_mean/norm)
-        self.line_oil.set_data(vd_mean['oil'].dias, vd_mean['oil'].vd_mean/norm)
-        self.line_gas.set_data(vd_mean['gas'].dias, vd_mean['gas'].vd_mean/norm)
+#        self.line_oil.set_data(vd_mean['oil'].dias, vd_mean['oil'].vd_mean/norm)
+#        self.line_gas.set_data(vd_mean['gas'].dias, vd_mean['gas'].vd_mean/norm)
 
         #Fast redraw of dynamic figure elements only
         if display==True:
@@ -80,8 +81,8 @@ class ParticleSizeDistPlot:
             self.ax[0, 1].draw_artist(self.image_bw)
         self.ax[1, 0].draw_artist(self.d50_plot)
         self.ax[1, 1].draw_artist(self.line)
-        self.ax[1, 1].draw_artist(self.line_oil)
-        self.ax[1, 1].draw_artist(self.line_gas)
+        #self.ax[1, 1].draw_artist(self.line_oil)
+        #self.ax[1, 1].draw_artist(self.line_gas)
         self.figure.canvas.flush_events()
 
 
