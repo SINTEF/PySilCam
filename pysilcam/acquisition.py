@@ -183,12 +183,12 @@ def acquire():
         #Aquire raw images and yield to calling context
         try:
             while True:
-                try:
-                    timestamp, img = _acquire_frame(camera, frame0)
-                    yield timestamp, img
-                except:
-                    print('  FAILED CAPTURE!')
-                    frame0.img_idx += 1
+                #try:
+                timestamp, img = _acquire_frame(camera, frame0)
+                yield timestamp, img
+                #except:
+                #    print('  FAILED CAPTURE!')
+                #    frame0.img_idx += 1
         finally:
             #Clean up after capture
             camera.revokeAllFrames()
