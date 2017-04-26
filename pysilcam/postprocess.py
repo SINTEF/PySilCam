@@ -112,28 +112,18 @@ class TimeIntegratedVolumeDist:
             self.vd_mean = self.vdlist[0]
 
 
-def montage_maker(roidir, pixel_size, msize=2048, brightness=255):
+def montage_maker(roifiles, pixel_size, msize=2048, brightness=255):
     '''
     makes nice looking matages from a directory of extracted particle images
-
-    USEAGE:
-    import pysilcam.postprocess as scpp
-    import matplotlib.pyplot as plt
-    montage = scpp.montage_maker('export', 14.4)
-    plt.imshow(montage)
-    plt.show()
+    
+    use make_montage to call this function
     '''
-
     montage = np.zeros((msize,msize,3),dtype=np.uint8())
     immap_test = np.zeros_like(montage)
     print('making a montage - this might take some time....')
 
-    dirlist = sorted([f for f in os.listdir(roidir) if f.endswith('.tiff')])
-    print('{0} particles found'.format(len(dirlist)))
-
-    for files in dirlist:
-        filename = os.path.join(roidir, files)
-        particle_image = imageio.imread(filename)
+    for files in roifiles:
+        particle_image = imageio.imread(files)
 
         particle_rect = np.ones_like(particle_image)
         [height, width] = np.shape(particle_image[:,:,0])
@@ -179,6 +169,36 @@ def montage_maker(roidir, pixel_size, msize=2048, brightness=255):
 
     return montageplot
 
+def make_montage(stats_csv_file, pixel_size, roidir, min_length=100,
+        auto_scaler=800):
+    stats = pd.read_csv(stats_csv_file)
 
+    stats.sort_values(by=['major_axis_length'], ascending=False, inplace=True)
 
+    roifiles = stats['export name'].loc[stats['major_axis_length'] * 14.4 >
+            min_length].values
+
+    print('rofiles:',len(roifiles))
+    IMSTEP = np.max([np.int(np.round(len(roifiles)/auto_scaler)),1])
+    print('reducing particles by factor of {0}'.format(IMSTEP))
+    roifiles = roifiles[np.arange(0,len(roifiles),IMSTEP)]
+    print('rofiles:',len(roifiles))
+
+    for i, f in enumerate(roifiles):
+        roifiles[i] = os.path.join(roidir, f)
+
+    montage = montage_maker(roifiles, pixel_size, msize=1024)
+
+    return montage
+
+def montage_plot(montage, pixel_size):
+    msize = np.shape(montage[:,0,0])
+    ex = pixel_size * np.float64(msize)/1000.
+    
+    ax = plt.gca()
+    ax.imshow(montage, extent=[0,ex,0,ex])
+    ax.set_xticks([1, 2],[])
+    ax.set_xticklabels(['    1mm',''])
+    ax.set_yticks([], [])
+    ax.xaxis.set_ticks_position('bottom')
 

@@ -63,9 +63,7 @@ def fancy_props(iml, imc, settings):
         data[i, :] = [getattr(el, p) for p in propnames]
         bboxes[i, :] = el.bbox
 
-
     column_names = np.hstack(([propnames, 'minr', 'minc', 'maxr', 'maxc']))
-    #cat_data = np.stack((data, bboxes)).T 
     cat_data = np.hstack((data, bboxes))
     partstats = pd.DataFrame(columns=column_names, data=cat_data)
 

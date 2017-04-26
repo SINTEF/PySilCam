@@ -187,6 +187,10 @@ def silcam_process_fancy(config_filename):
         else:
             stats_all, imbw, saturation = statextract(imc, settings)
 
+        if settings.ExportParticles.export_images:
+            filenames = exportparts.export_particles(imc,timestamp,stats_all,settings)
+            stats_all['export name'] = filenames
+
         stats_all['timestamp'] = timestamp
         if i==0:
             stats_all.to_csv(settings.General.datafile +
@@ -200,6 +204,7 @@ def silcam_process_fancy(config_filename):
         #stats = dict(total=stats_all,
         #             oil=stats_all[stats_all['gas']==0],
         #             gas=stats_all[stats_all['gas']==1])
+
 
         #Time the particle statistics processing step
         proc_time = time.clock() - start_time
@@ -225,8 +230,6 @@ def silcam_process_fancy(config_filename):
         data_all = oilgas.cat_data(timestamp, stats['total'], settings)
         psddatafile.append_data(data_all)
 
-        if settings.ExportParticles.export_images:
-            exportparts.export_particles(imc,timestamp,stats_all,settings)
 
         tot_time = time.clock() - start_time
 
