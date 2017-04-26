@@ -187,6 +187,14 @@ def silcam_process_fancy(config_filename):
         else:
             stats_all, imbw, saturation = statextract(imc, settings)
 
+        stats_all['timestamp'] = timestamp
+        if i==0:
+            stats_all.to_csv(settings.General.datafile +
+                    '-STATS.csv',index_label='particle index') 
+        else:
+            stats_all.to_csv(settings.General.datafile + '-STATS.csv',
+                    mode='a', header=False) 
+
         stats = dict(total=stats_all)
         #stats_all, imbw, saturation = statextract(imc, settings)
         #stats = dict(total=stats_all,
