@@ -1,5 +1,8 @@
 import pandas as pd
 import numpy as np
+import os
+import imageio
+import matplotlib.pyplot as plt
 
 # PIX_SIZE = 35.2 / 2448 * 1000 # pixel size in microns (Med. mag)
 
@@ -107,3 +110,75 @@ class TimeIntegratedVolumeDist:
             self.vd_mean = np.nanmean(self.vdlist, axis=0)
         else:
             self.vd_mean = self.vdlist[0]
+
+
+def montage_maker(roidir, pixel_size, msize=2048, brightness=255):
+    '''
+    makes nice looking matages from a directory of extracted particle images
+
+    USEAGE:
+    import pysilcam.postprocess as scpp
+    import matplotlib.pyplot as plt
+    montage = scpp.montage_maker('export', 14.4)
+    plt.imshow(montage)
+    plt.show()
+    '''
+
+    montage = np.zeros((msize,msize,3),dtype=np.uint8())
+    immap_test = np.zeros_like(montage)
+    print('making a montage - this might take some time....')
+
+    dirlist = sorted([f for f in os.listdir(roidir) if f.endswith('.tiff')])
+    print('{0} particles found'.format(len(dirlist)))
+
+    for files in dirlist:
+        filename = os.path.join(roidir, files)
+        particle_image = imageio.imread(filename)
+
+        particle_rect = np.ones_like(particle_image)
+        [height, width] = np.shape(particle_image[:,:,0])
+
+        counter = 0
+        while (counter < 5):
+            r = np.random.randint(1,msize-height)
+            c = np.random.randint(1,msize-width)
+
+            test = np.max(immap_test[r:r+height,c:c+width,None]+1)
+
+            if (test>1):
+                counter += 1
+            else:
+                break
+
+        if (test>1):
+            continue
+
+        immap_test[r:r+height,c:c+width,None] = immap_test[r:r+height,c:c+width,None]+1
+
+        # contrast exploding:
+        particle_image = np.float64(particle_image)
+        particle_image -= particle_image.min()
+        particle_image /= particle_image.max()
+        particle_image *= 255
+
+        # eye-candy normalization:
+        #bm = brightness / peak
+        peak = np.median(particle_image.flatten())
+        bm = brightness - peak 
+
+        im_to_insert = np.float64(particle_image[:,:,None,:]) + bm
+        #im_to_insert = np.float64(particle_image) + bm
+        im_to_insert[im_to_insert>255] = 255
+
+        montage[r:r+height,c:c+width,None] = np.uint8(im_to_insert)
+
+    montageplot = np.copy(montage)
+    montageplot[montage>255] = 255
+    montageplot[montage==0] = 255
+    print('montage complete')
+
+    return montageplot
+
+
+
+
