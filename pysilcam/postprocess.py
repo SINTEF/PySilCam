@@ -3,6 +3,9 @@ import numpy as np
 import os
 import imageio
 import matplotlib.pyplot as plt
+from skimage.filters.rank import median
+from skimage.morphology import disk
+
 
 # PIX_SIZE = 35.2 / 2448 * 1000 # pixel size in microns (Med. mag)
 
@@ -152,7 +155,6 @@ def montage_maker(roifiles, pixel_size, msize=2048, brightness=255):
         particle_image *= 255
 
         # eye-candy normalization:
-        #bm = brightness / peak
         peak = np.median(particle_image.flatten())
         bm = brightness - peak 
 
@@ -170,7 +172,7 @@ def montage_maker(roifiles, pixel_size, msize=2048, brightness=255):
     return montageplot
 
 def make_montage(stats_csv_file, pixel_size, roidir, min_length=100,
-        auto_scaler=800):
+        auto_scaler=300, msize=1024):
     stats = pd.read_csv(stats_csv_file)
 
     stats.sort_values(by=['major_axis_length'], ascending=False, inplace=True)
@@ -187,18 +189,8 @@ def make_montage(stats_csv_file, pixel_size, roidir, min_length=100,
     for i, f in enumerate(roifiles):
         roifiles[i] = os.path.join(roidir, f)
 
-    montage = montage_maker(roifiles, pixel_size, msize=1024)
+    montage = montage_maker(roifiles, pixel_size, msize)
 
     return montage
 
-def montage_plot(montage, pixel_size):
-    msize = np.shape(montage[:,0,0])
-    ex = pixel_size * np.float64(msize)/1000.
-    
-    ax = plt.gca()
-    ax.imshow(montage, extent=[0,ex,0,ex])
-    ax.set_xticks([1, 2],[])
-    ax.set_xticklabels(['    1mm',''])
-    ax.set_yticks([], [])
-    ax.xaxis.set_ticks_position('bottom')
 

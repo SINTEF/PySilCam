@@ -97,7 +97,7 @@ def psd(stats, settings, ax, line=None, c='k'):
         ax.set_xscale('log')
         ax.set_xlabel('Equiv. diam (um)')
         ax.set_ylabel('Volume concentration (%/sizebin)')
-    ax.set_xlim(1, 10000)
+    ax.set_xlim(10, 10000)
     ax.set_ylim(0, 100)
 
     #ax.axvline(sc_pp.d50_from_vd(vd,dias), color=c)
@@ -117,4 +117,17 @@ def show_imc(imc, mag=2):
     plt.ylabel('mm')
 
     return
+
+
+def montage_plot(montage, pixel_size):
+
+    msize = np.shape(montage[:,0,0])
+    ex = pixel_size * np.float64(msize)/1000.
+    
+    ax = plt.gca()
+    ax.imshow(montage, extent=[0,ex,0,ex])
+    ax.set_xticks([1, 2],[])
+    ax.set_xticklabels(['    1mm',''])
+    ax.set_yticks([], [])
+    ax.xaxis.set_ticks_position('bottom')
 

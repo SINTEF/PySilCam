@@ -23,6 +23,23 @@ TODO: add tests for this module
 logger = logging.getLogger(__name__)
 
 
+def im2bw_fancy(imc, greythresh):
+    ''' converts corrected image (imc) to a binary image
+    using greythresh as the threshold value (some auto-scaling of greythresh is done inside)
+
+    returns:
+      imbw (binary image)
+    '''
+    img = np.copy(imc)
+    img = median(img, disk(4))
+    thresh = np.uint8(greythresh * np.median(img))
+    imbw = np.invert(img > thresh)
+    imbw = morphology.binary_erosion(imbw) # correctish for blur in median filter for disk(4)
+    imbw = morphology.binary_erosion(imbw) # correctish for blur in median filter for disk(4)
+
+    return imbw
+
+
 def im2bw(imc, greythresh):
     ''' converts corrected image (imc) to a binary image
     using greythresh as the threshold value (some auto-scaling of greythresh is done inside)
@@ -340,7 +357,7 @@ def is_gas():
     pass
 
 
-def statextract(imc, settings):
+def statextract(imc, settings, fancy=False):
     '''extracts statistics of particles in imc (raw corrected image)
 
     returns:
@@ -348,7 +365,10 @@ def statextract(imc, settings):
       Partstats class)
     '''
     logger.debug('segment')
-    imbw = im2bw(imc, settings.Process.threshold)
+    if fancy:
+        imbw = im2bw_fancy(imc, settings.Process.threshold)
+    else:
+        imbw = im2bw(imc, settings.Process.threshold)
 
     logger.debug('clean')
     imbw = clean_bw(imbw, settings.Process.minimum_area)

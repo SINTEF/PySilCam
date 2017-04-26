@@ -183,9 +183,10 @@ def silcam_process_fancy(config_filename):
         if nc == None: # @todo FIX if there are ambiguous dimentions, assume RGB color space
         #    imc = imc[:,:,1] # and just use green
             #Calculate particle statistics
-            stats_all, imbw, saturation = statextract(imc[:,:,1], settings)
+            stats_all, imbw, saturation = statextract(imc[:,:,1], settings,
+                    fancy=True)
         else:
-            stats_all, imbw, saturation = statextract(imc, settings)
+            stats_all, imbw, saturation = statextract(imc, settings, fancy=True)
 
         if settings.ExportParticles.export_images:
             filenames = exportparts.export_particles(imc,timestamp,stats_all,settings)
