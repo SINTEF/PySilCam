@@ -91,8 +91,19 @@ def nc_vc_from_stats(stats, settings):
     vc = np.sum(vd)
 
     nc = nc_from_nd(necd, sample_volume)
+    
+    # convert nd to units of nc per micron per litre
+    dd = np.gradient(dias)
+    nd = necd / dd
+    nd[nd<0] = np.nan # and nan impossible values!
 
-    return nc, vc, sample_volume
+    # remove data from first bin which will be part-full
+    ind = np.argwhere(nd>0)
+    nd[ind[0]] = np.nan
+
+    junge = get_j(dias,nd)
+
+    return nc, vc, sample_volume, junge
 
 
 def nd_from_stats(stats, settings):

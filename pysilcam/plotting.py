@@ -133,7 +133,6 @@ def nd(stats, settings, ax, line=None, c='k', sample_volume=1.):
     ind = np.argwhere(nd>0)
     nd[ind[0]] = np.nan
 
-    junge = sc_pp.get_j(dias,nd)
 
     if line:
         line.set_data(dias, nd)
@@ -143,8 +142,6 @@ def nd(stats, settings, ax, line=None, c='k', sample_volume=1.):
         ax.set_yscale('log')
         ax.set_xlabel('Equiv. diam (um)')
         ax.set_ylabel('Number concentration (#/L/um)')
-        ax.text(52,2,'  J=' +
-                str(np.round(junge,decimals=2)),verticalalignment='center')
     ax.set_xlim(10, 10000)
 #    ax.set_ylim(0, 100)
 
@@ -203,8 +200,9 @@ def summarise_fancy_stats(stats_csv_file,monitor=False):
         stats = pd.read_csv(stats_csv_file)
 
         # average numer and volume concentrations
-        nc, vc, sv_total = sc_pp.nc_vc_from_stats(stats, settings.PostProcess)
+        nc, vc, sv_total, junge = sc_pp.nc_vc_from_stats(stats, settings.PostProcess)
         d50 = sc_pp.d50_from_stats(stats, settings.PostProcess)
+        total_measured_particles = len(stats['major_axis_length'])
 
         plt.sca(a[0,0])
         plt.cla()
@@ -214,12 +212,14 @@ def summarise_fancy_stats(stats_csv_file,monitor=False):
         plt.sca(a[1,0])
         plt.cla()
         nd(stats, settings.PostProcess, plt.gca(), sample_volume=sv_total)
-        plt.title('Number conc.: {0:.0f}#/L'.format(nc))
+        plt.title('Number conc.: {0:.0f}#/L  Junge exp.: {1:.2f}'.format(nc,
+            junge))
 
         plt.sca(ax3)
         plt.cla()
         montage_plot(montage, settings.PostProcess.pix_size)
-        plt.title('Volume sampled: {0:.1f}L'.format(sv_total))
+        plt.title('Volume sampled: {0:.1f}L  {1:.0f} particles measured'.format(sv_total,
+            total_measured_particles))
 
         plt.draw()
         if monitor:
