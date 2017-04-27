@@ -52,7 +52,7 @@ def get_size_bins():
 
     return bin_mids_um, bin_limits_um
 
-def vc_from_nd(count,psize,sv=1):
+def vd_from_nd(count,psize,sv=1):
     ''' calculate volume concentration from particle count
     
     sv = sample volume size (litres)
@@ -68,9 +68,31 @@ def vc_from_nd(count,psize,sv=1):
     
     tpvol = pvol * count * 1e9  # volume in micro-litres
 
-    vc = tpvol / sv  # micro-litres / litre
+    vd = tpvol / sv  # micro-litres / litre
     
-    return vc
+    return vd
+
+
+def nc_from_nd(count,sv):
+    nc = np.sum(count) / sv
+    return nc
+
+def nc_vc_from_stats(stats, settings):
+    dias, necd = nd_from_stats(stats, settings)
+
+    path_length = settings.path_length
+    pix_size = settings.pix_size
+
+    sample_volume = get_sample_volume(pix_size, path_length=path_length, imx=2048, imy=2448)
+    nims = count_images_in_stats(stats)
+    sample_volume *= nims
+
+    vd = vd_from_nd(necd, dias, sample_volume)
+    vc = np.sum(vd)
+
+    nc = nc_from_nd(necd, sample_volume)
+
+    return nc, vc, sample_volume
 
 
 def nd_from_stats(stats, settings):
@@ -78,6 +100,7 @@ def nd_from_stats(stats, settings):
 
     dias, bin_limits_um = get_size_bins()
     necd, edges = np.histogram(ecd,bin_limits_um)
+    necd = np.float64(necd)
 
     return dias, necd
 
@@ -85,7 +108,7 @@ def nd_from_stats(stats, settings):
 def vd_from_stats(stats, settings):
     dias, necd = nd_from_stats(stats, settings)
 
-    vd = vc_from_nd(necd,dias)
+    vd = vd_from_nd(necd,dias)
 
     return dias, vd
 
@@ -211,3 +234,10 @@ def get_j(dias, nd):
     p = np.polyfit(np.log(dias[ind]),np.log(nd[ind]),1)
     j = p[0]
     return j
+
+
+def count_images_in_stats(stats):
+    u = stats['timestamp'].unique()
+    n_images = len(u)
+
+    return n_images

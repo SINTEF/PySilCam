@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 import pysilcam.postprocess as sc_pp
 import numpy as np
 import seaborn as sns
+from pysilcam.config import load_config, PySilcamSettings
+import pandas as pd
 
 class ParticleSizeDistPlot:
     '''Plot particle size distribution information on 2x2 layout'''
@@ -105,6 +107,17 @@ def psd(stats, settings, ax, line=None, c='k'):
     return line
 
 
+def nd_scaled(stats, settings, ax, c='k'):
+    sv = sc_pp.get_sample_volume(settings.pix_size,
+            path_length=settings.path_length,
+            imx=2048, imy=2448) # sample volume per image
+    # re-scale sample volume to number of images
+    sv_total = sv * sc_pp.count_images_in_stats(stats) # total sampled water volume
+
+    nd(stats, settings, ax, line=None, c='k', sample_volume=sv_total)
+    return
+
+
 def nd(stats, settings, ax, line=None, c='k', sample_volume=1.):
     
     # nc per size bin per sample volume
@@ -114,7 +127,7 @@ def nd(stats, settings, ax, line=None, c='k', sample_volume=1.):
     # convert nd to units of nc per micron per litre
     dd = np.gradient(dias)
     nd /= dd
-    nd[nd<1] = np.nan # and nan impossible values!
+    nd[nd<0] = np.nan # and nan impossible values!
 
     # remove data from first bin which will be part-full
     ind = np.argwhere(nd>0)
@@ -167,3 +180,50 @@ def montage_plot(montage, pixel_size):
     ax.set_yticks([], [])
     ax.xaxis.set_ticks_position('bottom')
 
+
+def summarise_fancy_stats(stats_csv_file,monitor=False):
+    sns.set_style('ticks')
+
+    conf = load_config('configs/config_example.ini')
+    settings = PySilcamSettings(conf)
+
+    min_length = settings.ExportParticles.min_length + 1
+
+    f,a = plt.subplots(2,2)
+    a[0,0] = plt.subplot2grid((2,2),(0, 0))
+    a[1,0] = plt.subplot2grid((2,2),(1, 0))
+    ax3 = plt.subplot2grid((2,2), (0, 1), rowspan=2)
+
+    while True:
+        montage = sc_pp.make_montage(stats_csv_file,
+                settings.PostProcess.pix_size, roidir='export',
+                min_length=min_length,
+                auto_scaler=500, msize=2048)
+
+        stats = pd.read_csv(stats_csv_file)
+
+        # average numer and volume concentrations
+        nc, vc, sv_total = sc_pp.nc_vc_from_stats(stats, settings.PostProcess)
+        d50 = sc_pp.d50_from_stats(stats, settings.PostProcess)
+
+        plt.sca(a[0,0])
+        plt.cla()
+        psd(stats, settings.PostProcess, plt.gca())
+        plt.title('Volume conc.: {0:.2f}uL/L  d50: {1:.0f}um'.format(vc, d50))
+
+        plt.sca(a[1,0])
+        plt.cla()
+        nd(stats, settings.PostProcess, plt.gca(), sample_volume=sv_total)
+        plt.title('Number conc.: {0:.0f}#/L'.format(nc))
+
+        plt.sca(ax3)
+        plt.cla()
+        montage_plot(montage, settings.PostProcess.pix_size)
+        plt.title('Volume sampled: {0:.1f}L'.format(sv_total))
+
+        plt.draw()
+        if monitor:
+            plt.pause(1)
+        else:
+            break
+    plt.show()
