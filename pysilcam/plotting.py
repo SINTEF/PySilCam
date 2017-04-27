@@ -178,10 +178,10 @@ def montage_plot(montage, pixel_size):
     ax.xaxis.set_ticks_position('bottom')
 
 
-def summarise_fancy_stats(stats_csv_file,monitor=False):
+def summarise_fancy_stats(stats_csv_file,config_file,monitor=False):
     sns.set_style('ticks')
 
-    conf = load_config('configs/config_example.ini')
+    conf = load_config(config_file)
     settings = PySilcamSettings(conf)
 
     min_length = settings.ExportParticles.min_length + 1
