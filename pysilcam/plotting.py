@@ -116,15 +116,16 @@ def nd(stats, settings, ax, line=None, c='k', sample_volume=1.):
     nd /= dd
     nd[nd<1] = np.nan # and nan impossible values!
 
-    nd[0] = np.nan
-    nd[-1] = np.nan
+    # remove data from first bin which will be part-full
+    ind = np.argwhere(nd>0)
+    nd[ind[0]] = np.nan
 
     junge = sc_pp.get_j(dias,nd)
 
     if line:
-        line.set_data(dias[19:], nd[19:])
+        line.set_data(dias, nd)
     else:
-        line, = ax.plot(dias[19:],nd[19:], color=c)
+        line, = ax.plot(dias,nd, color=c)
         ax.set_xscale('log')
         ax.set_yscale('log')
         ax.set_xlabel('Equiv. diam (um)')
