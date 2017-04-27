@@ -72,12 +72,18 @@ def vc_from_nd(count,psize,sv=1):
     
     return vc
 
-def vd_from_stats(stats, settings):
+
+def nd_from_stats(stats, settings):
     ecd = stats['equivalent_diameter'] * settings.pix_size
 
     dias, bin_limits_um = get_size_bins()
-
     necd, edges = np.histogram(ecd,bin_limits_um)
+
+    return dias, necd
+
+
+def vd_from_stats(stats, settings):
+    dias, necd = nd_from_stats(stats, settings)
 
     vd = vc_from_nd(necd,dias)
 
@@ -194,3 +200,14 @@ def make_montage(stats_csv_file, pixel_size, roidir, min_length=100,
     return montage
 
 
+def get_sample_volume(pix_size, path_length=10, imx=2048, imy=2448):
+    sample_volume_litres = imx*pix_size/1000 * imy*pix_size/1000 * path_length*1e-6
+
+    return sample_volume_litres
+
+
+def get_j(dias, nd):
+    ind = np.isfinite(dias) & np.isfinite(nd) & (dias<300) & (dias>150)
+    p = np.polyfit(np.log(dias[ind]),np.log(nd[ind]),1)
+    j = p[0]
+    return j

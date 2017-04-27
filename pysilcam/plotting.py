@@ -98,11 +98,46 @@ def psd(stats, settings, ax, line=None, c='k'):
         ax.set_xlabel('Equiv. diam (um)')
         ax.set_ylabel('Volume concentration (%/sizebin)')
     ax.set_xlim(10, 10000)
-    ax.set_ylim(0, 100)
+    ax.set_ylim(0, max(vd/np.sum(vd)*100))
 
     #ax.axvline(sc_pp.d50_from_vd(vd,dias), color=c)
 
     return line
+
+
+def nd(stats, settings, ax, line=None, c='k', sample_volume=1.):
+    
+    # nc per size bin per sample volume
+    dias, nd = sc_pp.nd_from_stats(stats, settings)
+    nd = np.float64(nd) / sample_volume # nc per size bin per litre
+
+    # convert nd to units of nc per micron per litre
+    dd = np.gradient(dias)
+    nd /= dd
+    nd[nd<1] = np.nan # and nan impossible values!
+
+    nd[0] = np.nan
+    nd[-1] = np.nan
+
+    junge = sc_pp.get_j(dias,nd)
+
+    if line:
+        line.set_data(dias[19:], nd[19:])
+    else:
+        line, = ax.plot(dias[19:],nd[19:], color=c)
+        ax.set_xscale('log')
+        ax.set_yscale('log')
+        ax.set_xlabel('Equiv. diam (um)')
+        ax.set_ylabel('Number concentration (#/L/um)')
+        ax.text(52,2,'  J=' +
+                str(np.round(junge,decimals=2)),verticalalignment='center')
+    ax.set_xlim(10, 10000)
+#    ax.set_ylim(0, 100)
+
+    #ax.axvline(sc_pp.d50_from_vd(vd,dias), color=c)
+
+    return line
+
 
 def show_imc(imc, mag=2):
     PIX_SIZE = 35.2 / 2448 * 1000
