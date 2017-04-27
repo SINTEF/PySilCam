@@ -189,10 +189,8 @@ def montage_maker(roifiles, pixel_size, msize=2048, brightness=255):
         immap_test[r:r+height,c:c+width,None] = immap_test[r:r+height,c:c+width,None]+1
 
         # contrast exploding:
+        particle_image = explode_contrast(particle_image)
         particle_image = np.float64(particle_image)
-        particle_image -= particle_image.min()
-        particle_image /= particle_image.max()
-        particle_image *= 255
 
         # eye-candy normalization:
         peak = np.median(particle_image.flatten())
@@ -252,3 +250,36 @@ def count_images_in_stats(stats):
     n_images = len(u)
 
     return n_images
+
+
+def extract_nth_largest(stats,settings,n=0):
+    stats.sort_values(by=['equivalent_diameter'], ascending=False, inplace=True)
+    stats = stats.iloc[n]
+    return stats
+
+
+def extract_nth_longest(stats,settings,n=0):
+    stats.sort_values(by=['major_axis_length'], ascending=False, inplace=True)
+    stats = stats.iloc[n]
+    return stats
+
+
+def explode_contrast(im):
+        im = np.float64(im)
+        im -= im.min()
+        im /= im.max()
+        im *= 255
+        im = np.uint8(im)
+        return im
+
+
+def bright_norm(im,brightness=255):
+    peak = np.median(im.flatten())
+    bm = brightness - peak 
+
+    im = np.float64(im) + bm
+    im[im>255] = 255
+
+    im =np.uint8(im)
+    return im
+

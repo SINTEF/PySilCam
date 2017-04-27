@@ -195,7 +195,7 @@ def summarise_fancy_stats(stats_csv_file,config_file,monitor=False):
         montage = sc_pp.make_montage(stats_csv_file,
                 settings.PostProcess.pix_size, roidir='export',
                 min_length=min_length,
-                auto_scaler=500, msize=2048)
+                auto_scaler=500, msize=1024)
 
         stats = pd.read_csv(stats_csv_file)
 
