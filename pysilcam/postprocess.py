@@ -5,6 +5,10 @@ import imageio
 import matplotlib.pyplot as plt
 from skimage.filters.rank import median
 from skimage.morphology import disk
+import skimage
+import pysilcam.process as scpr
+from scipy import ndimage as ndi
+import skimage
 
 
 # PIX_SIZE = 35.2 / 2448 * 1000 # pixel size in microns (Med. mag)
@@ -162,31 +166,14 @@ def montage_maker(roifiles, pixel_size, msize=2048, brightness=255):
     use make_montage to call this function
     '''
     montage = np.zeros((msize,msize,3),dtype=np.uint8())
-    immap_test = np.zeros_like(montage)
+    immap_test = np.zeros_like(montage[:,:,0])
     print('making a montage - this might take some time....')
 
     for files in roifiles:
         particle_image = imageio.imread(files)
 
-        particle_rect = np.ones_like(particle_image)
+        #particle_rect = np.ones_like(particle_image)
         [height, width] = np.shape(particle_image[:,:,0])
-
-        counter = 0
-        while (counter < 5):
-            r = np.random.randint(1,msize-height)
-            c = np.random.randint(1,msize-width)
-
-            test = np.max(immap_test[r:r+height,c:c+width,None]+1)
-
-            if (test>1):
-                counter += 1
-            else:
-                break
-
-        if (test>1):
-            continue
-
-        immap_test[r:r+height,c:c+width,None] = immap_test[r:r+height,c:c+width,None]+1
 
         # contrast exploding:
         particle_image = explode_contrast(particle_image)
@@ -196,11 +183,39 @@ def montage_maker(roifiles, pixel_size, msize=2048, brightness=255):
         peak = np.median(particle_image.flatten())
         bm = brightness - peak 
 
-        im_to_insert = np.float64(particle_image[:,:,None,:]) + bm
-        #im_to_insert = np.float64(particle_image) + bm
-        im_to_insert[im_to_insert>255] = 255
+        particle_image = np.float64(particle_image) + bm
+        particle_image[particle_image>255] = 255
 
-        montage[r:r+height,c:c+width,None] = np.uint8(im_to_insert)
+        imbw = scpr.im2bw_fancy(np.uint8(particle_image[:,:,0]), 0.95)
+        imbw = ndi.binary_fill_holes(imbw)
+
+        for J in range(5):
+            imbw = skimage.morphology.binary_dilation(imbw)
+
+        #masked = particle_image * imbw[:,:,None]
+        #masked[masked==0] = 255
+        masked = particle_image
+
+        counter = 0
+        while (counter < 5):
+            r = np.random.randint(1,msize-height)
+            c = np.random.randint(1,msize-width)
+
+            #test = np.max(immap_test[r:r+height,c:c+width,None]+1)
+            test = np.max(immap_test[r:r+height,c:c+width]+imbw)
+
+            if (test>1):
+                counter += 1
+            else:
+                break
+
+        if (test>1):
+            continue
+
+        montage[r:r+height,c:c+width,:] = np.uint8(masked)
+
+        immap_test[r:r+height,c:c+width] = imbw
+        #immap_test[r:r+height,c:c+width,None] = immap_test[r:r+height,c:c+width,None]+1
 
     montageplot = np.copy(montage)
     montageplot[montage>255] = 255
@@ -209,8 +224,9 @@ def montage_maker(roifiles, pixel_size, msize=2048, brightness=255):
 
     return montageplot
 
+
 def make_montage(stats_csv_file, pixel_size, roidir, min_length=100,
-        auto_scaler=300, msize=1024):
+        auto_scaler=500, msize=1024):
     stats = pd.read_csv(stats_csv_file)
 
     stats.sort_values(by=['major_axis_length'], ascending=False, inplace=True)
@@ -265,12 +281,12 @@ def extract_nth_longest(stats,settings,n=0):
 
 
 def explode_contrast(im):
-        im = np.float64(im)
-        im -= im.min()
-        im /= im.max()
-        im *= 255
-        im = np.uint8(im)
-        return im
+    im = np.float64(im)
+    im -= im.min()
+    im /= im.max()
+    im *= 255
+    im = np.uint8(im)
+    return im
 
 
 def bright_norm(im,brightness=255):

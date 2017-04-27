@@ -152,12 +152,13 @@ def nd(stats, settings, ax, line=None, c='k', sample_volume=1.):
 
 def show_imc(imc, mag=2):
     PIX_SIZE = 35.2 / 2448 * 1000
+    r, c = np.shape(imc[:,:,0])
 
     if mag==1:
         PIX_SIZE = 67.4 / 2448 * 1000
     
     plt.imshow(np.uint8(imc),
-            extent=[0,2448*PIX_SIZE/1000,0,2048*PIX_SIZE/1000],
+            extent=[0,c*PIX_SIZE/1000,0,r*PIX_SIZE/1000],
             interpolation='nearest')
     plt.xlabel('mm')
     plt.ylabel('mm')
@@ -195,7 +196,7 @@ def summarise_fancy_stats(stats_csv_file,config_file,monitor=False):
         montage = sc_pp.make_montage(stats_csv_file,
                 settings.PostProcess.pix_size, roidir='export',
                 min_length=min_length,
-                auto_scaler=500, msize=1024)
+                auto_scaler=800, msize=1024)
 
         stats = pd.read_csv(stats_csv_file)
 
