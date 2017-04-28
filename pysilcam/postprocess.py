@@ -159,7 +159,8 @@ class TimeIntegratedVolumeDist:
             self.vd_mean = self.vdlist[0]
 
 
-def montage_maker(roifiles, pixel_size, msize=2048, brightness=255):
+def montage_maker(roifiles, pixel_size, msize=2048, brightness=255,
+        tightpack=False):
     '''
     makes nice looking matages from a directory of extracted particle images
     
@@ -186,23 +187,26 @@ def montage_maker(roifiles, pixel_size, msize=2048, brightness=255):
         particle_image = np.float64(particle_image) + bm
         particle_image[particle_image>255] = 255
 
-        imbw = scpr.im2bw_fancy(np.uint8(particle_image[:,:,0]), 0.95)
-        imbw = ndi.binary_fill_holes(imbw)
+        if tightpack:
+            imbw = scpr.im2bw_fancy(np.uint8(particle_image[:,:,0]), 0.95)
+            imbw = ndi.binary_fill_holes(imbw)
 
-        for J in range(5):
-            imbw = skimage.morphology.binary_dilation(imbw)
+            for J in range(5):
+                imbw = skimage.morphology.binary_dilation(imbw)
 
         #masked = particle_image * imbw[:,:,None]
         #masked[masked==0] = 255
-        masked = particle_image
+        # masked = particle_image
 
         counter = 0
         while (counter < 5):
             r = np.random.randint(1,msize-height)
             c = np.random.randint(1,msize-width)
 
-            #test = np.max(immap_test[r:r+height,c:c+width,None]+1)
-            test = np.max(immap_test[r:r+height,c:c+width]+imbw)
+            if tightpack:
+                test = np.max(immap_test[r:r+height,c:c+width]+imbw)
+            else:
+                test = np.max(immap_test[r:r+height,c:c+width,None]+1)
 
             if (test>1):
                 counter += 1
@@ -212,10 +216,12 @@ def montage_maker(roifiles, pixel_size, msize=2048, brightness=255):
         if (test>1):
             continue
 
-        montage[r:r+height,c:c+width,:] = np.uint8(masked)
+        montage[r:r+height,c:c+width,:] = np.uint8(particle_image)
 
-        immap_test[r:r+height,c:c+width] = imbw
-        #immap_test[r:r+height,c:c+width,None] = immap_test[r:r+height,c:c+width,None]+1
+        if tightpack:
+            immap_test[r:r+height,c:c+width] = imbw
+        else:
+            immap_test[r:r+height,c:c+width,None] = immap_test[r:r+height,c:c+width,None]+1
 
     montageplot = np.copy(montage)
     montageplot[montage>255] = 255
