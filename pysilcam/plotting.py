@@ -122,12 +122,8 @@ def nd(stats, settings, ax, line=None, c='k', sample_volume=1.):
     
     # nc per size bin per sample volume
     dias, nd = sc_pp.nd_from_stats(stats, settings)
-    nd = np.float64(nd) / sample_volume # nc per size bin per litre
 
-    # convert nd to units of nc per micron per litre
-    dd = np.gradient(dias)
-    nd /= dd
-    nd[nd<0] = np.nan # and nan impossible values!
+    nd = sc_pp.nd_rescale(dias, nd, sample_volume)
 
     # remove data from first bin which will be part-full
     ind = np.argwhere(nd>0)
@@ -140,8 +136,8 @@ def nd(stats, settings, ax, line=None, c='k', sample_volume=1.):
         line, = ax.plot(dias,nd, color=c)
         ax.set_xscale('log')
         ax.set_yscale('log')
-        ax.set_xlabel('Equiv. diam (um)')
-        ax.set_ylabel('Number concentration (#/L/um)')
+        ax.set_xlabel('Equiv. diam [um]')
+        ax.set_ylabel('Number concentration [#/L/um]')
     ax.set_xlim(10, 10000)
 #    ax.set_ylim(0, 100)
 
@@ -187,9 +183,9 @@ def summarise_fancy_stats(stats_csv_file,config_file,monitor=False):
 
     min_length = settings.ExportParticles.min_length + 1
 
-    f,a = plt.subplots(2,2)
-    a[0,0] = plt.subplot2grid((2,2),(0, 0))
-    a[1,0] = plt.subplot2grid((2,2),(1, 0))
+    #f,a = plt.subplots(2,2)
+    ax1 = plt.subplot2grid((2,2),(0, 0))
+    ax2 = plt.subplot2grid((2,2),(1, 0))
     ax3 = plt.subplot2grid((2,2), (0, 1), rowspan=2)
 
     while True:
@@ -205,12 +201,12 @@ def summarise_fancy_stats(stats_csv_file,config_file,monitor=False):
         d50 = sc_pp.d50_from_stats(stats, settings.PostProcess)
         total_measured_particles = len(stats['major_axis_length'])
 
-        plt.sca(a[0,0])
+        plt.sca(ax1)
         plt.cla()
         psd(stats, settings.PostProcess, plt.gca())
         plt.title('Volume conc.: {0:.2f}uL/L  d50: {1:.0f}um'.format(vc, d50))
 
-        plt.sca(a[1,0])
+        plt.sca(ax2)
         plt.cla()
         nd(stats, settings.PostProcess, plt.gca(), sample_volume=sv_total)
         plt.title('Number conc.: {0:.0f}#/L  Junge exp.: {1:.2f}'.format(nc,

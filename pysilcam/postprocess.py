@@ -95,11 +95,9 @@ def nc_vc_from_stats(stats, settings):
     vc = np.sum(vd)
 
     nc = nc_from_nd(necd, sample_volume)
-    
+
     # convert nd to units of nc per micron per litre
-    dd = np.gradient(dias)
-    nd = necd / dd
-    nd[nd<0] = np.nan # and nan impossible values!
+    nd = nd_rescale(dias, nd, sample_volume)
 
     # remove data from first bin which will be part-full
     ind = np.argwhere(nd>0)
@@ -108,6 +106,20 @@ def nc_vc_from_stats(stats, settings):
     junge = get_j(dias,nd)
 
     return nc, vc, sample_volume, junge
+
+
+def nd_from_stats_scaled(stats, settings):
+    dias, necd = nd_from_stats(stats,settings)
+
+    sample_volume = get_sample_volume(settings.pix_size,
+            path_length=settings.path_length)
+    nims = count_images_in_stats(stats)
+    sample_volume *= nims
+
+    nd = nd_rescale(dias, necd, sample_volume)
+    ind = np.argwhere(nd>0)
+    nd[ind[0]] = np.nan
+    return dias, nd
 
 
 def nd_from_stats(stats, settings):
@@ -305,3 +317,13 @@ def bright_norm(im,brightness=255):
     im =np.uint8(im)
     return im
 
+
+def nd_rescale(dias, nd, sample_volume):
+    nd = np.float64(nd) / sample_volume # nc per size bin per litre
+
+    # convert nd to units of nc per micron per litre
+    dd = np.gradient(dias)
+    nd /= dd
+    nd[nd<0] = np.nan # and nan impossible values!
+
+    return nd
