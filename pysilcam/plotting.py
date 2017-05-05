@@ -223,4 +223,4 @@ def summarise_fancy_stats(stats_csv_file,config_file,monitor=False):
             plt.pause(1)
         else:
             break
-    plt.show()
+    #plt.show()

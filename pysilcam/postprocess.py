@@ -97,7 +97,7 @@ def nc_vc_from_stats(stats, settings):
     nc = nc_from_nd(necd, sample_volume)
 
     # convert nd to units of nc per micron per litre
-    nd = nd_rescale(dias, nd, sample_volume)
+    nd = nd_rescale(dias, necd, sample_volume)
 
     # remove data from first bin which will be part-full
     ind = np.argwhere(nd>0)
