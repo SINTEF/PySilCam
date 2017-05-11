@@ -25,14 +25,14 @@ class ParticleSizeDistPlot:
         #Plot image in upper left axis
         ax = self.ax[0, 0]
         if display==True:
-            self.image = ax.imshow(np.uint8(imc), cmap='gray', 
+            self.image = ax.imshow(np.uint8(imc), cmap='gray',
                                    interpolation='None', animated=True, vmin=0,
                                    vmax=255)
 
         #Plot segmented image in upper right axis
         ax = self.ax[0, 1]
         if display==True:
-            self.image_bw = ax.imshow(np.uint8(imbw > 0), cmap='gray', 
+            self.image_bw = ax.imshow(np.uint8(imbw > 0), cmap='gray',
                                       interpolation='None', animated=True)
 
         #Plot D50 time series in lower left axis
@@ -48,7 +48,7 @@ class ParticleSizeDistPlot:
         norm = np.sum(vd_mean['total'].vd_mean)/100
         ax = self.ax[1, 1]
         self.line, = ax.plot(vd_mean['total'].dias, vd_mean['total'].vd_mean, color='k')
-#        self.line_oil, = ax.plot(vd_mean['oil'].dias, 
+#        self.line_oil, = ax.plot(vd_mean['oil'].dias,
 #                                  vd_mean['oil'].vd_mean, color='darkred')
 #        self.line_gas, = ax.plot(vd_mean['gas'].dias,
 #                                  vd_mean['gas'].vd_mean, color='royalblue')
@@ -61,7 +61,7 @@ class ParticleSizeDistPlot:
         #Trigger initial full draw of the figure
         self.figure.canvas.draw()
 
- 
+
     def update(self, imc, imbw, times, d50_ts, vd_mean, display):
         '''Update plot data without full replotting for speed'''
 
@@ -89,7 +89,7 @@ class ParticleSizeDistPlot:
 
 
 def psd(stats, settings, ax, line=None, c='k'):
-    
+
     dias, vd = sc_pp.vd_from_stats(stats, settings)
 
     if line:
@@ -119,7 +119,7 @@ def nd_scaled(stats, settings, ax, c='k'):
 
 
 def nd(stats, settings, ax, line=None, c='k', sample_volume=1.):
-    
+
     # nc per size bin per sample volume
     dias, nd = sc_pp.nd_from_stats(stats, settings)
 
@@ -152,7 +152,7 @@ def show_imc(imc, mag=2):
 
     if mag==1:
         PIX_SIZE = 67.4 / 2448 * 1000
-    
+
     plt.imshow(np.uint8(imc),
             extent=[0,c*PIX_SIZE/1000,0,r*PIX_SIZE/1000],
             interpolation='nearest')
@@ -166,7 +166,7 @@ def montage_plot(montage, pixel_size):
 
     msize = np.shape(montage[:,0,0])
     ex = pixel_size * np.float64(msize)/1000.
-    
+
     ax = plt.gca()
     ax.imshow(montage, extent=[0,ex,0,ex])
     ax.set_xticks([1, 2],[])
@@ -215,7 +215,7 @@ def summarise_fancy_stats(stats_csv_file,config_file,monitor=False):
         plt.sca(ax3)
         plt.cla()
         montage_plot(montage, settings.PostProcess.pix_size)
-        plt.title('Volume sampled: {0:.1f}L  {1:.0f} particles measured'.format(sv_total,
+        plt.title('Volume processed: {0:.1f}L  {1:.0f} particles measured'.format(sv_total,
             total_measured_particles))
 
         plt.draw()

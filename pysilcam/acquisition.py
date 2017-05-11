@@ -56,7 +56,7 @@ def _init_camera(vimba):
 
 def _configure_camera(camera, config=dict()):
     '''Configure the camera.
-    
+
     Config is an optioinal dictionary of parameter-value pairs.
     '''
 
@@ -74,7 +74,7 @@ def _configure_camera(camera, config=dict()):
     camera.SyncOutPolarity = 'Normal'
     camera.SyncOutSelector = 'SyncOut1'
     camera.SyncOutSource = 'Strobe1'
-    
+
     #camera.GVSPPacketSize = 9194
     camera.GVSPPacketSize = 1500
 
@@ -95,7 +95,7 @@ def _acquire_frame(camera, frame0):
     camera.runFeatureCommand('AcquisitionStart')
     camera.runFeatureCommand('AcquisitionStop')
     frame0.waitFrameCapture()
-    
+
     #Copy frame data to numpy array (Bayer format)
     #bayer_img = np.ndarray(buffer = frame0.getBufferByteData(),
     #                       dtype = np.uint8,
@@ -116,7 +116,7 @@ def print_camera_config(camera):
     config_info_map = {
         'AquisitionFrameRateAbs': 'Frame rate',
         'ExposureTimeAbs': 'Exposure time',
-        'PixelFormat': 'PixelFormat', 
+        'PixelFormat': 'PixelFormat',
         'StrobeDuration': 'StrobeDuration',
         'StrobeDelay': 'StrobeDelay',
         'StrobeDurationMode': 'StrobeDurationMode',
@@ -125,7 +125,7 @@ def print_camera_config(camera):
         'SyncOutSelector': 'SyncOutSelector',
         'SyncOutSource': 'SyncOutSource',
     }
-    
+
     config_info = '\n'.join(['{0}: {1}'.format(a, camera.getattr(a))
                              for a, b in config_info_map])
 
@@ -137,7 +137,7 @@ def camera_awake_check():
         cameraIds = []
         # get system object
         system_check = vimba_check.getSystem()
-    
+
         # list available cameras (after enabling discovery for GigE cameras)
         if system_check.GeVTLIsPresent:
             system_check.runFeatureCommand("GeVDiscoveryAllOnce")
@@ -150,7 +150,7 @@ def camera_awake_check():
 
 def wait_for_camera():
     camera = None
-    while not camera: 
+    while not camera:
         with pymba.Vimba() as vimba:
             try:
                 camera = _init_camera(vimba)
@@ -183,16 +183,16 @@ def acquire():
         #Aquire raw images and yield to calling context
         try:
             while True:
-                #try:
-                timestamp, img = _acquire_frame(camera, frame0)
-                yield timestamp, img
-                #except:
-                #    print('  FAILED CAPTURE!')
-                #    frame0.img_idx += 1
+                try:
+                    timestamp, img = _acquire_frame(camera, frame0)
+                    yield timestamp, img
+                except:
+                    print('  FAILED CAPTURE!')
+                    frame0.img_idx += 1
         finally:
             #Clean up after capture
             camera.revokeAllFrames()
-    
+
             #Close camera
             #@todo
 
