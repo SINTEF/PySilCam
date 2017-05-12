@@ -31,7 +31,7 @@ def export_particles(imc,timestamp,stats,settings):
         filename = timestamp.strftime('D%Y%m%dT%H%M%S.%f')
 
         filename = filename + '-PN' + str(i[0]) + '.tiff'
-        imageio.imwrite(os.path.join(settings.ExportParticles.ouputpath, 
+        imageio.imwrite(os.path.join(settings.ExportParticles.ouputpath,
 filename), roi)
 
         filenames[int(i)] = filename

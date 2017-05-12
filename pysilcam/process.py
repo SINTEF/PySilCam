@@ -33,6 +33,8 @@ def im2bw_fancy(imc, greythresh):
     img = np.copy(imc)
     img = median(img, disk(4))
     thresh = np.uint8(greythresh * np.median(img))
+    print('thresh:',thresh)
+    plt.show()
     imbw = np.invert(img > thresh)
     imbw = morphology.binary_erosion(imbw) # correctish for blur in median filter for disk(4)
     imbw = morphology.binary_erosion(imbw) # correctish for blur in median filter for disk(4)
@@ -84,6 +86,9 @@ def fancy_props(iml, imc, settings):
     cat_data = np.hstack((data, bboxes))
     partstats = pd.DataFrame(columns=column_names, data=cat_data)
 
+    partstats = partstats[(partstats['major_axis_length'] *
+            settings.PostProcess.pix_size) < settings.Process.max_length]
+
     return partstats
 
 
@@ -106,7 +111,7 @@ def fast_props(iml):
 
 def props_og(iml, imc, settings):
     '''Calculates particle properties of oil and gas.
-    
+
     Properties calculated: equivalent diameter and a flag for oil or gas per
     particle.
 
@@ -185,7 +190,7 @@ def props_og(iml, imc, settings):
     logger.info('Number of oil and gas particles found: {0}'.format(ecd.size))
 
     #Create Pandas DataFrame for particle stats
-    partstats = pd.DataFrame(columns=['equivalent_diameter', 'gas'], 
+    partstats = pd.DataFrame(columns=['equivalent_diameter', 'gas'],
                              data=np.stack((ecd, gas)).T)
 
     return partstats
@@ -345,7 +350,7 @@ def measure_particles(imbw, imc, settings):
     #stats = props_og(iml, imc, settings)
 
     stats = fancy_props(iml, imc, settings)
-    
+
     return stats, saturation
 
 

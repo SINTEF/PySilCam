@@ -58,9 +58,9 @@ def get_size_bins():
 
 def vd_from_nd(count,psize,sv=1):
     ''' calculate volume concentration from particle count
-    
+
     sv = sample volume size (litres)
-     
+
     e.g:
     sample_vol_size=25*1e-3*(1200*4.4e-6*1600*4.4e-6); %size of sample volume in m^3
     sv=sample_vol_size*1e3; %size of sample volume in litres
@@ -69,11 +69,11 @@ def vd_from_nd(count,psize,sv=1):
     psize = psize *1e-6  # convert to m
 
     pvol = 4/3 *np.pi * (psize/2)**3  # volume in m^3
-    
+
     tpvol = pvol * count * 1e9  # volume in micro-litres
 
     vd = tpvol / sv  # micro-litres / litre
-    
+
     return vd
 
 
@@ -175,7 +175,7 @@ def montage_maker(roifiles, pixel_size, msize=2048, brightness=255,
         tightpack=False):
     '''
     makes nice looking matages from a directory of extracted particle images
-    
+
     use make_montage to call this function
     '''
     montage = np.zeros((msize,msize,3),dtype=np.uint8())
@@ -187,6 +187,10 @@ def montage_maker(roifiles, pixel_size, msize=2048, brightness=255,
 
         #particle_rect = np.ones_like(particle_image)
         [height, width] = np.shape(particle_image[:,:,0])
+        if height >= msize:
+            continue
+        if width >= msize:
+            continue
 
         # contrast exploding:
         particle_image = explode_contrast(particle_image)
@@ -194,7 +198,7 @@ def montage_maker(roifiles, pixel_size, msize=2048, brightness=255,
 
         # eye-candy normalization:
         peak = np.median(particle_image.flatten())
-        bm = brightness - peak 
+        bm = brightness - peak
 
         particle_image = np.float64(particle_image) + bm
         particle_image[particle_image>255] = 255
@@ -244,13 +248,13 @@ def montage_maker(roifiles, pixel_size, msize=2048, brightness=255,
 
 
 def make_montage(stats_csv_file, pixel_size, roidir, min_length=100,
-        auto_scaler=500, msize=1024):
+        auto_scaler=500, msize=1024, max_length=5000):
     stats = pd.read_csv(stats_csv_file)
 
     stats.sort_values(by=['major_axis_length'], ascending=False, inplace=True)
 
-    roifiles = stats['export name'].loc[stats['major_axis_length'] * 14.4 >
-            min_length].values
+    roifiles = stats['export name'].loc[(stats['major_axis_length'] * pixel_size >
+            min_length) & (stats['major_axis_length'] * pixel_size < max_length)].values
 
     print('rofiles:',len(roifiles))
     IMSTEP = np.max([np.int(np.round(len(roifiles)/auto_scaler)),1])
@@ -309,7 +313,7 @@ def explode_contrast(im):
 
 def bright_norm(im,brightness=255):
     peak = np.median(im.flatten())
-    bm = brightness - peak 
+    bm = brightness - peak
 
     im = np.float64(im) + bm
     im[im>255] = 255
