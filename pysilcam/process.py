@@ -31,13 +31,13 @@ def im2bw_fancy(imc, greythresh):
       imbw (binary image)
     '''
     img = np.copy(imc)
-    img = median(img, disk(4))
-    thresh = np.uint8(greythresh * np.median(img))
-    # print('thresh:',thresh)
-    plt.show()
+    #img = median(img, disk(4))
+    #thresh = np.uint8(greythresh * np.median(img))
+    thresh = np.uint8(greythresh * np.percentile(img, 50))
+    print('thresh:',thresh)
     imbw = np.invert(img > thresh)
-    imbw = morphology.binary_erosion(imbw) # correctish for blur in median filter for disk(4)
-    imbw = morphology.binary_erosion(imbw) # correctish for blur in median filter for disk(4)
+    #imbw = morphology.binary_erosion(imbw) # correctish for blur in median filter for disk(4)
+    #imbw = morphology.binary_erosion(imbw) # correctish for blur in median filter for disk(4)
 
     return imbw
 
@@ -63,7 +63,7 @@ def clean_bw(imbw, min_area):
     border
     '''
     imbw = morphology.remove_small_objects(imbw > 0, min_size=min_area)
-    imbw = segmentation.clear_border(imbw, in_place=True)  # remove particles touching the border of the image
+    imbw = segmentation.clear_border(imbw, buffer_size=2) # remove particles touching the border of the image
 
     # remove objects smaller the min_area
     return imbw
@@ -379,7 +379,6 @@ def statextract(imc, settings, fancy=False):
     imbw = clean_bw(imbw, settings.Process.minimum_area)
 
     imbw = ndi.binary_fill_holes(imbw)
-
 
     logger.debug('measure')
     stats, saturation = measure_particles(imbw, imc, settings)

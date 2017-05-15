@@ -33,20 +33,9 @@ def shift_bgstack(bgstack, imbg, imnew):
       bgstack (updated list of all background images)
       imbg (updated actual background image)
     '''
-
-    # recalculate av_window (so it doesn't need passing)
-    av_window = np.shape(bgstack)
-    av_window = av_window[0]
     
     imold = bgstack.pop(0)  # pop the oldest image from the stack,
-    # but keep it for subtraction from imbg later
-
     bgstack.append(imnew)  # append the new image to the stack
-    
-#    imbg = imbg * av_window  # rescale imbg
-#    imbg -= imold  # subtract oldest image
-#    imbg += imnew  # add new image
-#    imbg /= av_window  # convert back to proper average
     imbg = np.mean(bgstack, axis=0)
     
     return bgstack, imbg
@@ -62,7 +51,12 @@ def correct_im(imbg, imraw):
       imc (a corrected image)
     '''
     imc = imraw - imbg
-    imc += 255 - np.max(imc)    
+    #imc[:,:,0] += 255 - np.percentile(imc[:,:,0], 99) 
+    #imc[:,:,1] += 255 - np.percentile(imc[:,:,1], 99) 
+    #imc[:,:,2] += 255 - np.percentile(imc[:,:,2], 99) 
+    imc += 255 - np.percentile(imc, 99) 
+
+    imc[imc>255] = 255
     imc = np.uint8(imc)
     
     return imc
