@@ -9,6 +9,7 @@ import skimage
 import pysilcam.process as scpr
 from scipy import ndimage as ndi
 import skimage
+from skimage.exposure import rescale_intensity
 
 
 # PIX_SIZE = 35.2 / 2448 * 1000 # pixel size in microns (Med. mag)
@@ -303,6 +304,18 @@ def extract_nth_longest(stats,settings,n=0):
 
 
 def explode_contrast(im):
+    im = np.float64(im)
+    p1, p2 = np.percentile(im, (0, 80))
+    im_mod = rescale_intensity(im, in_range=(p1, p2))
+                
+    im_mod -= np.min(im_mod)
+    im_mod /= np.max(im_mod)
+    im_mod *= 255
+    im_mod = np.uint8(im_mod)
+    return im_mod
+
+
+def explode_contrast_old(im):
     im = np.float64(im)
     im -= im.min()
     im /= im.max()

@@ -33,7 +33,7 @@ def im2bw_fancy(imc, greythresh):
     img = np.copy(imc)
     img = median(img, disk(4))
     thresh = np.uint8(greythresh * np.median(img))
-    print('thresh:',thresh)
+    # print('thresh:',thresh)
     plt.show()
     imbw = np.invert(img > thresh)
     imbw = morphology.binary_erosion(imbw) # correctish for blur in median filter for disk(4)

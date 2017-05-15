@@ -62,6 +62,22 @@ def correct_im(imbg, imraw):
       imc (a corrected image)
     '''
     imc = imraw - imbg
+    imc += 255 - np.max(imc)    
+    imc = np.uint8(imc)
+    
+    return imc
+
+
+def correct_im_old(imbg, imraw):
+    '''corrects raw image by subtracting the background
+    inputs:
+      imbg (the actual background averaged image)
+      imraw (a raw image)
+
+    returns:
+      imc (a corrected image)
+    '''
+    imc = imraw - imbg
     
     m = imc.max()
     imc += 255/2.
