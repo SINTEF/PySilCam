@@ -12,6 +12,7 @@ import logging
 from scipy import  ndimage as ndi
 from scipy import signal
 from scipy import interpolate
+import skimage.exposure
 
 '''
 module for processing SilCam data
@@ -34,10 +35,19 @@ def im2bw_fancy(imc, greythresh):
     #img = median(img, disk(4))
     #thresh = np.uint8(greythresh * np.median(img))
     thresh = np.uint8(greythresh * np.percentile(img, 50))
-    print('thresh:',thresh)
-    imbw = np.invert(img > thresh)
+    #print('thresh:',thresh)
+    
+    imbw1 = np.invert(img > thresh)
     #imbw = morphology.binary_erosion(imbw) # correctish for blur in median filter for disk(4)
     #imbw = morphology.binary_erosion(imbw) # correctish for blur in median filter for disk(4)
+
+    img_adapteq = skimage.exposure.equalize_adapthist(img,
+            clip_limit=(1-greythresh),
+            nbins=256)
+
+    imbw2 = img_adapteq < (np.percentile(img_adapteq, 0.5) * greythresh)
+
+    imbw = imbw1 & imbw2
 
     return imbw
 

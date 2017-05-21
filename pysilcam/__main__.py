@@ -241,6 +241,14 @@ def silcam_process_fancy(config_filename):
         print(infostr.format(i, tot_time, proc_time, proc_time/tot_time*100, 
                              plot_time, plot_time/tot_time*100, 1.0/tot_time))
 
+        #plt.figure()
+        #plt.imshow(imbw)
+
+        #filename__ = timestamp.strftime('D%Y%m%dT%H%M%S.%f')
+        #plt.savefig('/home/emlynd/Desktop/dump/' + filename__ + '-imbw.png')
+        #plt.close('all')
+
+
 
     print('* Commencing image acquisition and processing')
     for i, (timestamp, imc) in enumerate(bggen):
