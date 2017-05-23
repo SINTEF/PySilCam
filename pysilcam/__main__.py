@@ -183,7 +183,18 @@ def silcam_process_fancy(config_filename):
         if nc == None: # @todo FIX if there are ambiguous dimentions, assume RGB color space
         #    imc = imc[:,:,1] # and just use green
             #Calculate particle statistics
-            stats_all, imbw, saturation = statextract(imc[:,:,1], settings,
+
+            r = imc[:,:,0]
+            g = imc[:,:,1]
+            b = imc[:,:,2]
+            s = np.std([r,g,b])
+            if s > 4:
+                print('bad lighting')
+                imc *= 0
+ #           print(s)
+
+            img = np.uint8(np.min(imc,axis=2))
+            stats_all, imbw, saturation = statextract(img, settings,
                     fancy=True)
         else:
             stats_all, imbw, saturation = statextract(imc, settings, fancy=True)
@@ -241,12 +252,21 @@ def silcam_process_fancy(config_filename):
         print(infostr.format(i, tot_time, proc_time, proc_time/tot_time*100, 
                              plot_time, plot_time/tot_time*100, 1.0/tot_time))
 
-        #plt.figure()
-        #plt.imshow(imbw)
 
-        #filename__ = timestamp.strftime('D%Y%m%dT%H%M%S.%f')
-        #plt.savefig('/home/emlynd/Desktop/dump/' + filename__ + '-imbw.png')
-        #plt.close('all')
+#        import seaborn as sns
+#        sns.set_style('ticks')
+#
+#        f, a = plt.subplots(1,2, figsize=(20,10))
+#
+#        plt.sca(a[0])
+#        plt.imshow(imc)
+#
+#        plt.sca(a[1])
+#        plt.imshow(imbw, interpolation='nearest')
+#
+#        filename__ = timestamp.strftime('D%Y%m%dT%H%M%S.%f')
+#        plt.savefig('/home/emlynd/Desktop/dump/' + filename__ + '-imbw.png')
+#        plt.close('all')
 
 
 
