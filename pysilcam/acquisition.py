@@ -189,6 +189,9 @@ def acquire():
                 except:
                     print('  FAILED CAPTURE!')
                     frame0.img_idx += 1
+                    if frame0.img_idx > len(frame0.files):
+                        print('  END OF FILE LIST.')
+                        break
         finally:
             #Clean up after capture
             camera.revokeAllFrames()
