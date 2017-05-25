@@ -347,5 +347,5 @@ def nd_rescale(dias, nd, sample_volume):
 
 def add_depth_to_stats(stats, time, depth):
     sctime = pd.to_datetime(stats['timestamp'])
-    stats['depth'] = np.interp(np.float64(sctime), np.float64(time), depth)
+    stats['Depth'] = np.interp(np.float64(sctime), np.float64(time), depth)
     return stats
