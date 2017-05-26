@@ -7,10 +7,16 @@ from tflearn.data_preprocessing import ImagePreprocessing
 from tflearn.data_augmentation import ImageAugmentation
 import scipy
 import numpy as np
+import pandas as pd
+import os
 
 
 def load_model(model_path='/mnt/ARRAY/classifier/model/particle-classifier.tfl'):
-    OUTPUTS = 3
+    headerfile = path, filename = os.path.split(model_path)
+    header = pd.read_csv(os.path.join(path, 'header.txt'))
+    OUTPUTS = len(header.columns)
+    print('OUTPUTS:', OUTPUTS)
+
 
     # Same network definition as before
     img_prep = ImagePreprocessing()
@@ -55,5 +61,11 @@ def predict(img, model):
     #print('other,  copepod,  diatom chain')
     #print(prediction)
     return prediction
+
+
+def choise_from_stats(stats):
+    choice = stats.filter(regex="probability_class").idxmax(axis=1)
+    confidence = stats.filter(regex="probability_class").max(axis=1)
+    return choice, confidence
 
 
