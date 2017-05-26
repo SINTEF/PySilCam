@@ -9,7 +9,7 @@ import scipy
 import numpy as np
 
 
-def load_model(MODEL='/mnt/ARRAY/classifier/model/particle-classifier.tfl'):
+def load_model(model_path='/mnt/ARRAY/classifier/model/particle-classifier.tfl'):
     OUTPUTS = 3
 
     # Same network definition as before
@@ -36,8 +36,9 @@ def load_model(MODEL='/mnt/ARRAY/classifier/model/particle-classifier.tfl'):
                          loss='categorical_crossentropy',
                          learning_rate=0.001)
 
-    model = tflearn.DNN(network, tensorboard_verbose=0, checkpoint_path=MODEL)
-    model.load(MODEL)
+    model = tflearn.DNN(network, tensorboard_verbose=0,
+            checkpoint_path=model_path)
+    model.load(model_path)
 
     return model
 

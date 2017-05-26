@@ -150,6 +150,11 @@ def silcam_process_fancy(config_filename):
     configure_logger(settings.General)
     logger = logging.getLogger(__name__ + '.silcam_process_fancy')
 
+    nnmodel = []
+    if settings.NNClassify.enable:
+        import pysilcam.silcam_classify as sccl
+        nnmodel = sccl.load_model(model_path=settings.NNClassify.model_path)
+
     #Initialize the image acquisition generator
     aqgen = acquire()
 
@@ -199,9 +204,10 @@ def silcam_process_fancy(config_filename):
         else:
             stats_all, imbw, saturation = statextract(imc, settings, fancy=True)
 
-        if settings.ExportParticles.export_images:
-            filenames = exportparts.export_particles(imc,timestamp,stats_all,settings)
-            stats_all['export name'] = filenames
+        if (settings.ExportParticles.export_images) or (settings.NNClassify.enable):
+            stats_all = exportparts.export_particles(imc,timestamp,stats_all,
+                    settings,nnmodel)
+
 
         stats_all['timestamp'] = timestamp
         if i==0:
