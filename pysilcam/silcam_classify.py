@@ -13,9 +13,9 @@ import os
 
 def load_model(model_path='/mnt/ARRAY/classifier/model/particle-classifier.tfl'):
     headerfile = path, filename = os.path.split(model_path)
-    header = pd.read_csv(os.path.join(path, 'header.txt'))
+    header = pd.read_csv(os.path.join(path, 'header.tfl.txt'))
     OUTPUTS = len(header.columns)
-    print('OUTPUTS:', OUTPUTS)
+    class_labels = header.columns
 
 
     # Same network definition as before
@@ -46,7 +46,7 @@ def load_model(model_path='/mnt/ARRAY/classifier/model/particle-classifier.tfl')
             checkpoint_path=model_path)
     model.load(model_path)
 
-    return model
+    return model, class_labels
 
 def predict(img, model):
     # Load the image file

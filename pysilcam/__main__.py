@@ -153,7 +153,7 @@ def silcam_process_fancy(config_filename):
     nnmodel = []
     if settings.NNClassify.enable:
         import pysilcam.silcam_classify as sccl
-        nnmodel = sccl.load_model(model_path=settings.NNClassify.model_path)
+        nnmodel, class_labels = sccl.load_model(model_path=settings.NNClassify.model_path)
 
     #Initialize the image acquisition generator
     aqgen = acquire()
@@ -206,7 +206,7 @@ def silcam_process_fancy(config_filename):
 
         if (settings.ExportParticles.export_images) or (settings.NNClassify.enable):
             stats_all = exportparts.export_particles(imc,timestamp,stats_all,
-                    settings,nnmodel)
+                    settings,nnmodel,len(class_labels))
 
 
         stats_all['timestamp'] = timestamp

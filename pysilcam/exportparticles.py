@@ -11,7 +11,7 @@ import imageio
 import os
 import pysilcam.silcam_classify as sccl
 
-def export_particles(imc,timestamp,stats,settings,nnmodel):
+def export_particles(imc,timestamp,stats,settings,nnmodel,nclasses):
 
     inds = np.argwhere((settings.PostProcess.pix_size *
             stats['major_axis_length'])>settings.ExportParticles.min_length)
@@ -25,7 +25,7 @@ def export_particles(imc,timestamp,stats,settings,nnmodel):
 
     if settings.NNClassify.enable:
         predictions = np.zeros((len(stats['major_axis_length']),
-            settings.NNClassify.nclasses),
+            nclasses),
             dtype='float64')
         predictions *= np.nan
 
@@ -50,7 +50,7 @@ def export_particles(imc,timestamp,stats,settings,nnmodel):
             predictions[int(i),:] = prediction[0]
 
     if settings.NNClassify.enable:
-        for n in range(settings.NNClassify.nclasses):
+        for n in range(nclasses):
             stats['probability_class' + str(n)] = predictions[:,n]
 
     if settings.ExportParticles.export_images:
