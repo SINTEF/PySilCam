@@ -51,8 +51,10 @@ X = np.zeros([0, IMXY, IMXY, 3],dtype='uint8')
 Y = np.zeros((0,len(classes)),dtype='uint8')
 
 for c_ind, c in enumerate(classes):
+    print('  ',c)
     filepath = os.path.join(DATABASE_PATH,c)
-    files = os.listdir(filepath)
+    #files = os.listdir(filepath)
+    files = [o for o in os.listdir(filepath) if o.endswith('.tiff')]
     for f in files:
         im = skimage.io.imread(os.path.join(filepath,f))
         X = add_im_to_stack(X, im)
@@ -90,7 +92,7 @@ print('OK.')
 
 # -----------------------------
 df = pd.DataFrame(columns = classes)
-df.to_csv('header.txt', index=False)
+df.to_csv('header.tfl..txt', index=False)
 # -----------------------------
 
 outputs = np.shape(Y)[1]

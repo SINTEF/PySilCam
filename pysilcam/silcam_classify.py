@@ -11,6 +11,14 @@ import pandas as pd
 import os
 
 
+def get_class_labels(model_path='/mnt/ARRAY/classifier/model/particle-classifier.tfl'):
+    headerfile = path, filename = os.path.split(model_path)
+    header = pd.read_csv(os.path.join(path, 'header.tfl.txt'))
+    OUTPUTS = len(header.columns)
+    class_labels = header.columns
+    return class_labels
+
+
 def load_model(model_path='/mnt/ARRAY/classifier/model/particle-classifier.tfl'):
     headerfile = path, filename = os.path.split(model_path)
     header = pd.read_csv(os.path.join(path, 'header.tfl.txt'))

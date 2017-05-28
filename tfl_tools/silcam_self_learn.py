@@ -5,9 +5,9 @@ import pandas as pd
 import os
 from shutil import copyfile
 
-DATABASE_PATH = '/mnt/ARRAY/silcam_classification_database'
+DATABASE_PATH = '/mnt/PDrive/silcam_classification_database'
 config_file = '/mnt/ARRAY/ENTICE/Data/configs/config.ini'
-stats_csv_file = '/mnt/ARRAY/ENTICE/Data/proc_nn/STN12-STATS.csv'
+stats_csv_file = '/mnt/ARRAY/ENTICE/Data/proc_nn/STN14-STATS.csv'
 filepath = '/mnt/ARRAY/ENTICE/Data/export/'
 model_path = '/mnt/ARRAY/classifier/model/'
 
@@ -35,7 +35,10 @@ for i,cl in enumerate(class_labels):
 
     sstats = stats[(choice==class_label) & (confidence>confidence_threshold[i])]
     if len(sstats)==0:
+        print(0,'images')
         continue
+
+    print(len(sstats),'images')
 
     for j in np.arange(0,len(sstats)):
         filename = sstats.iloc[j]['export name']
