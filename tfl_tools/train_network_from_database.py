@@ -92,7 +92,7 @@ print('OK.')
 
 # -----------------------------
 df = pd.DataFrame(columns = classes)
-df.to_csv('header.tfl..txt', index=False)
+df.to_csv('header.tfl.txt', index=False)
 # -----------------------------
 
 outputs = np.shape(Y)[1]

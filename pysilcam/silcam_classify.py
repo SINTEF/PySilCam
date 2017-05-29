@@ -10,8 +10,16 @@ import numpy as np
 import pandas as pd
 import os
 
+'''
+SilCam TensorFlow analysis for classification of particle types
+'''
+
 
 def get_class_labels(model_path='/mnt/ARRAY/classifier/model/particle-classifier.tfl'):
+    ''' read the header file that defines the catagories
+
+    class_labels = get_class_labels(model_path='/mnt/ARRAY/classifier/model/particle-classifier.tfl')
+     '''
     headerfile = path, filename = os.path.split(model_path)
     header = pd.read_csv(os.path.join(path, 'header.tfl.txt'))
     OUTPUTS = len(header.columns)
@@ -20,6 +28,12 @@ def get_class_labels(model_path='/mnt/ARRAY/classifier/model/particle-classifier
 
 
 def load_model(model_path='/mnt/ARRAY/classifier/model/particle-classifier.tfl'):
+    ''' load the trained tfl model
+    
+    model, class_labels = load_model(model_path='/mnt/ARRAY/classifier/model/particle-classifier.tfl')
+
+    model is the trained tf model ready for use in prediction
+    '''
     headerfile = path, filename = os.path.split(model_path)
     header = pd.read_csv(os.path.join(path, 'header.tfl.txt'))
     OUTPUTS = len(header.columns)
@@ -57,6 +71,17 @@ def load_model(model_path='/mnt/ARRAY/classifier/model/particle-classifier.tfl')
     return model, class_labels
 
 def predict(img, model):
+    ''' use tfl model to classify particles
+
+    prediction = predict(img, model)
+
+    img is a particle ROI, corrected and treated with the silcam
+    explode_contrast function
+
+    model is the loaded tfl model
+
+    prediction is the probability of the roi belonging to each class
+    '''
     # Load the image file
     #img = scipy.ndimage.imread(args.image, mode="RGB")
 
@@ -72,6 +97,16 @@ def predict(img, model):
 
 
 def choise_from_stats(stats):
+    '''
+    post-processing handy tool for use on stats created with the silcam_classify
+    code
+
+    choice, confidence = choise_from_stats(stats)
+
+    choice is the most likely class
+    confidence is the probability of being that class
+    '''
+
     choice = stats.filter(regex="probability_class").idxmax(axis=1)
     confidence = stats.filter(regex="probability_class").max(axis=1)
     return choice, confidence

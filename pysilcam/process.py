@@ -9,7 +9,7 @@ from skimage import measure
 import pandas as pd
 import matplotlib.pyplot as plt
 import logging
-from scipy import  ndimage as ndi
+from scipy import ndimage as ndi
 from scipy import signal
 from scipy import interpolate
 import skimage.exposure
@@ -32,22 +32,14 @@ def im2bw_fancy(imc, greythresh):
       imbw (binary image)
     '''
     img = np.copy(imc)
-    #img = median(img, disk(4))
-    #thresh = np.uint8(greythresh * np.median(img))
     thresh = np.uint8(greythresh * np.percentile(img, 50))
     
     imbw1 = np.invert(img > thresh)
-    #imbw = morphology.binary_erosion(imbw) # correctish for blur in median filter for disk(4)
-    #imbw = morphology.binary_erosion(imbw) # correctish for blur in median filter for disk(4)
-
     img_adapteq = skimage.exposure.equalize_adapthist(img,
             clip_limit=(1-greythresh),
             nbins=256)
-
     newthresh = np.percentile(img_adapteq, 0.75) * greythresh
-
     imbw2 = img_adapteq < newthresh
-
     imbw = imbw1 & imbw2
 
     return imbw
@@ -55,15 +47,13 @@ def im2bw_fancy(imc, greythresh):
 
 def im2bw(imc, greythresh):
     ''' converts corrected image (imc) to a binary image
-    using greythresh as the threshold value (some auto-scaling of greythresh is done inside)
+    using greythresh as the threshold value (fixed scaling of greythresh is done inside)
 
     returns:
       imbw (binary image)
     '''
 
-    #thresh = np.uint8(greythresh * np.median(img))  # determine auto-amazing theshold estimate
     thresh = np.uint8(greythresh * 230)  # or use a faster less-good version
-
     imbw = imc < thresh  # segment the image
 
     return imbw
@@ -81,6 +71,13 @@ def clean_bw(imbw, min_area):
 
 
 def fancy_props(iml, imc, settings):
+    '''Calculates fancy particle properties
+
+    return pandas.DataFrame
+
+    partstats = fancy_props(iml, imc, settings)
+    '''
+
     propnames = ['major_axis_length', 'minor_axis_length',
                  'equivalent_diameter']
 
@@ -104,6 +101,12 @@ def fancy_props(iml, imc, settings):
 
 
 def fast_props(iml):
+    '''Calculates basic particle properties
+
+    return pandas.DataFrame
+
+    partstats = fancy_props(iml)
+    '''
 
     propnames = ['major_axis_length', 'minor_axis_length',
                  'equivalent_diameter']
@@ -170,7 +173,7 @@ def props_og(iml, imc, settings):
         ecd[i] = ecd_
         gas[i] = False
 
-        if settings.Process.find_gas==False:
+        if settings.Process.find_gas == False:
             continue
 
         # minor axis must exceed minarea number of pixels for gas identification
@@ -208,6 +211,15 @@ def props_og(iml, imc, settings):
 
 
 def concentration_check(imbw, settings):
+    ''' Check saturation level of the sample volume by comparing area of
+    particles with settings.Process.max_coverage
+
+    sat_check, saturation = concentration_check(imbw, settings)
+
+    set_check is a flag, which is True if the image is acceptable
+    saturation is the percentaage saturated
+    '''
+
     covered_area = float(imbw.sum())
     r, c = np.shape(imbw)
     covered_pcent = covered_area / (r * c) * 100
@@ -381,17 +393,24 @@ def statextract(imc, settings, fancy=False):
       Partstats class)
     '''
     logger.debug('segment')
-    if fancy:
+
+    if fancy:  # check is fancy (slow) processing is enabled
+        # segment the image
         imbw = im2bw_fancy(imc, settings.Process.threshold)
     else:
+        # segment the image
         imbw = im2bw(imc, settings.Process.threshold)
 
     logger.debug('clean')
+
+    # clean segmented image (small particles and border particles)
     imbw = clean_bw(imbw, settings.Process.minimum_area)
 
+    # fill holes in particles
     imbw = ndi.binary_fill_holes(imbw)
 
     logger.debug('measure')
+    # calculate particle statistics
     stats, saturation = measure_particles(imbw, imc, settings)
 
     return stats, imbw, saturation

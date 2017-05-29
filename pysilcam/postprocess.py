@@ -38,11 +38,17 @@ def d50_from_stats(stats, settings):
     return d50
 
 def d50_from_vd(vd,dias):
+    ''' calculate d50 from a volume distribution
+    d50 = d50_from_vd(vd,dias)
+    '''
     csvd = np.cumsum(vd/np.sum(vd))
     d50 = np.interp(0.5,csvd,dias)
     return d50
 
 def get_size_bins():
+    '''retrieve size bins for PSD analysis
+    bin_mids_um, bin_limits_um = get_size_bins()
+    '''
     bin_limits_um = np.zeros((53),dtype=np.float64)
     bin_limits_um[0] = 2.72 * 0.91
 

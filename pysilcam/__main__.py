@@ -32,6 +32,7 @@ title = '''
        |___/                                
 '''
 
+
 def configure_logger(settings):
     if settings.logfile:
         logging.basicConfig(filename=settings.logfile,
@@ -130,6 +131,7 @@ def silcam_acquire():
                 etype, emsg, etrace = sys.exc_info()
                 print('Exception occurred: {0}. Restarting acquisition.'.format(emsg))
  
+
 def silcam_process_fancy(config_filename):
     '''Run processing of SilCam images in real time'''
     print(config_filename)
@@ -189,30 +191,29 @@ def silcam_process_fancy(config_filename):
         #    imc = imc[:,:,1] # and just use green
             #Calculate particle statistics
 
-            r = imc[:,:,0]
-            g = imc[:,:,1]
-            b = imc[:,:,2]
-            s = np.std([r,g,b])
+            r = imc[:, :, 0]
+            g = imc[:, :, 1]
+            b = imc[:, :, 2]
+            s = np.std([r, g, b])
             if s > 4:
                 print('bad lighting')
                 imc *= 0
  #           print(s)
 
-            img = np.uint8(np.min(imc,axis=2))
+            img = np.uint8(np.min(imc, axis=2))
             stats_all, imbw, saturation = statextract(img, settings,
                     fancy=True)
         else:
             stats_all, imbw, saturation = statextract(imc, settings, fancy=True)
 
         if (settings.ExportParticles.export_images) or (settings.NNClassify.enable):
-            stats_all = exportparts.export_particles(imc,timestamp,stats_all,
-                    settings,nnmodel,len(class_labels))
-
+            stats_all = exportparts.export_particles(imc, timestamp, stats_all,
+                    settings, nnmodel, len(class_labels))
 
         stats_all['timestamp'] = timestamp
         if i==0:
             stats_all.to_csv(settings.General.datafile +
-                    '-STATS.csv',index_label='particle index') 
+                    '-STATS.csv', index_label='particle index') 
         else:
             stats_all.to_csv(settings.General.datafile + '-STATS.csv',
                     mode='a', header=False) 
@@ -388,7 +389,6 @@ def silcam_process_realtime(config_filename):
         print(infostr.format(i, tot_time, proc_time, proc_time/tot_time*100, 
                              plot_time, plot_time/tot_time*100, 1.0/tot_time))
 
-
     print('* Commencing image acquisition and processing')
     for i, (timestamp, imc) in enumerate(bggen):
         loop(i, timestamp, imc)
@@ -399,6 +399,7 @@ def silcam_process_realtime(config_filename):
             infostr = 'Failed to process frame {0}, skipping.'.format(i)
             logger.warning(infostr)
             print(infostr)
+
 
 def silcam_process_batch():
     print('Placeholder for silcam-process-batch entry point')
