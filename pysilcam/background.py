@@ -50,7 +50,7 @@ def correct_im(imbg, imraw):
     returns:
       imc (a corrected image)
     '''
-    imc = imraw - imbg
+    imc = np.float64(imraw) - np.float64(imbg)
     #imc[:,:,0] += 255 - np.percentile(imc[:,:,0], 99) 
     #imc[:,:,1] += 255 - np.percentile(imc[:,:,1], 99) 
     #imc[:,:,2] += 255 - np.percentile(imc[:,:,2], 99) 

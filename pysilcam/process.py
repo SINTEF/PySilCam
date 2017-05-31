@@ -42,6 +42,9 @@ def im2bw_fancy(imc, greythresh):
     imbw2 = img_adapteq < newthresh
     imbw = imbw1 & imbw2
 
+    print('forcing imbw to single threshold method!!!!')
+    imbw = imbw1
+
     return imbw
 
 
@@ -70,6 +73,24 @@ def clean_bw(imbw, min_area):
     return imbw
 
 
+def filter_bad_stats(stats,settings):
+    mmr = stats['minor_axis_length'] / stats['major_axis_length']   
+    stats = stats[mmr > settings.Process.min_deformation]
+
+    stats = stats[(stats['major_axis_length'] * settings.PostProcess.pix_size) <
+            settings.Process.max_length]
+
+    ecd_ = stats['equivalent_diameter']
+
+    bbox_area = (stats['maxr']-stats['minr']) * (stats['maxc']-stats['minc'])
+
+    #Discard overlapping particles (approximate by solidity requirement)
+    stats = stats[(stats['equivalent_diameter'] ** 2 / bbox_area) >
+            (settings.Process.min_solidity)]
+
+    return stats
+
+
 def fancy_props(iml, imc, settings):
     '''Calculates fancy particle properties
 
@@ -94,8 +115,9 @@ def fancy_props(iml, imc, settings):
     cat_data = np.hstack((data, bboxes))
     partstats = pd.DataFrame(columns=column_names, data=cat_data)
 
-    partstats = partstats[(partstats['major_axis_length'] *
-            settings.PostProcess.pix_size) < settings.Process.max_length]
+    print('removing bad partstats')
+    partstats = filter_bad_stats(partstats,settings)
+    print('  ok')
 
     return partstats
 

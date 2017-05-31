@@ -195,9 +195,10 @@ def silcam_process_fancy(config_filename):
             g = imc[:, :, 1]
             b = imc[:, :, 2]
             s = np.std([r, g, b])
+            print('lighting std:',s)
             if s > 4:
                 print('bad lighting')
-                imc *= 0
+                #imc *= 0
  #           print(s)
 
             img = np.uint8(np.min(imc, axis=2))

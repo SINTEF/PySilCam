@@ -13,8 +13,9 @@ import pysilcam.silcam_classify as sccl
 
 def export_particles(imc,timestamp,stats,settings,nnmodel,nclasses):
 
-    inds = np.argwhere((settings.PostProcess.pix_size *
-            stats['major_axis_length'])>settings.ExportParticles.min_length)
+    inds = np.argwhere(((settings.PostProcess.pix_size *
+            stats['major_axis_length'])>settings.ExportParticles.min_length) &
+            ((settings.PostProcess.pix_size * stats['minor_axis_length'])>2))
 
     extractable_particles = len(inds)
     print('EXTRACTING {0} IMAGES from {1}'.format(extractable_particles,len(stats['major_axis_length'])))
