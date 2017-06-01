@@ -146,7 +146,7 @@ network = fully_connected(network, 512, activation='relu')
 # Step 7: Dropout - throw away some data randomly during training to prevent over-fitting
 network = dropout(network, 0.5)
 
-# Step 8: Fully-connected neural network with two outputs (0=isn't a bird, 1=is a bird) to make the final prediction
+# Step 8: Fully-connected neural network to make the final prediction
 network = fully_connected(network, outputs, activation='softmax')
 
 # Tell tflearn how we want to train the network
