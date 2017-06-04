@@ -18,7 +18,7 @@ from shutil import copyfile
 import subprocess
 
 
-DATADIR = '/mnt/DATA'
+DATADIR = '/mnt/ARRAY/ENTICE/Data/STN01'
 
 
 class guiclass:
@@ -156,14 +156,14 @@ class guiclass:
 
     def stop_record(self):
         self.recordbt.configure(bg = "blue", state=NORMAL)
-        subprocess.call('killall silcam-acquire', shell=True)
+        #subprocess.call('killall silcam-acquire', shell=True)
 
     def record(self):
         self.recordbt.configure(bg = "green", state=DISABLED)
         self.stopbt.configure(bg = "red")
         #self.process=subprocess.Popen(['pre xx'],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True,preexec_fn=os.setsid)
         #self.process=subprocess.Popen(['source activate pysilcam; cd /mnt/DATA; silcam-acquire'], shell=True)
-        self.process=subprocess.Popen(['./logsilcam.sh'])
+        #self.process=subprocess.Popen(['./logsilcam.sh'])
         
 
 root = Tk()
