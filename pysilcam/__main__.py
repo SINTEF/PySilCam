@@ -209,7 +209,7 @@ def silcam_process_fancy(config_filename):
 
         if (settings.ExportParticles.export_images) or (settings.NNClassify.enable):
             stats_all = exportparts.export_particles(imc, timestamp, stats_all,
-                    settings, nnmodel, len(class_labels))
+                    settings, nnmodel, class_labels)
 
         stats_all['timestamp'] = timestamp
         if i==0:
