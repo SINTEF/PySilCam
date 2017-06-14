@@ -42,8 +42,8 @@ def im2bw_fancy(imc, greythresh):
     imbw2 = img_adapteq < newthresh
     imbw = imbw1 & imbw2
 
-    print('forcing imbw to single threshold method!!!!')
-    imbw = imbw1
+    #print('forcing imbw to single threshold method!!!!')
+    #imbw = imbw1
 
     return imbw
 
@@ -115,9 +115,9 @@ def fancy_props(iml, imc, settings):
     cat_data = np.hstack((data, bboxes))
     partstats = pd.DataFrame(columns=column_names, data=cat_data)
 
-    print('removing bad partstats')
-    partstats = filter_bad_stats(partstats,settings)
-    print('  ok')
+    #print('removing bad partstats')
+    #partstats = filter_bad_stats(partstats,settings)
+    #print('  ok')
 
     return partstats
 
