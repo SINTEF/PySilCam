@@ -42,8 +42,8 @@ def im2bw_fancy(imc, greythresh):
     imbw2 = img_adapteq < newthresh
     imbw = imbw1 & imbw2
 
-    print('forcing imbw to single threshold method!!!!')
-    imbw = imbw1
+#    print('forcing imbw to single threshold method!!!!')
+#    imbw = imbw1
 
     return imbw
 

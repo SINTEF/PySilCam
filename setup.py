@@ -64,6 +64,7 @@ setup(
     entry_points={
         'console_scripts': [
             'silcam-acquire = pysilcam.__main__:silcam_acquire',
+            'silcam-live = pysilcam.__main__:silcam_acquire',
             'silcam-process-rt = pysilcam.__main__:silcam_process_realtime',
             'silcam-process-batch = pysilcam.__main__:silcam_process_batch',
         ]

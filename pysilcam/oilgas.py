@@ -5,7 +5,6 @@ module for processing Oil and Gas SilCam data
 import pysilcam.postprocess as sc_pp 
 import itertools
 
-
 def ogdataheader():
 
     ogheader = 'Y, M, D, h, m, s, '
