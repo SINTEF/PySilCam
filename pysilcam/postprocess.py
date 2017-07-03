@@ -10,6 +10,7 @@ import pysilcam.process as scpr
 from scipy import ndimage as ndi
 import skimage
 from skimage.exposure import rescale_intensity
+import h5py
 
 
 # PIX_SIZE = 35.2 / 2448 * 1000 # pixel size in microns (Med. mag)
@@ -355,3 +356,18 @@ def add_depth_to_stats(stats, time, depth):
     sctime = pd.to_datetime(stats['timestamp'])
     stats['Depth'] = np.interp(np.float64(sctime), np.float64(time), depth)
     return stats
+
+
+def export_name2im(exportname, path):
+    ''' returns an image from the export name string in the -STATS.csv file
+
+    get the exportname like this: exportname = stats['export name']
+    '''
+    pn = exportname.values[0].split('-')[1]
+    name = exportname.values[0].split('-')[0] + '.h5'
+    fullname = os.path.join(path, name)
+
+    fh = h5py.File(fullname ,'r')
+
+    im = fh[pn]
+    return im
