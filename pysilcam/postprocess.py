@@ -132,6 +132,7 @@ def nd_from_stats_scaled(stats, settings):
 
 def nd_from_stats(stats, settings):
     ecd = stats['equivalent_diameter'] * settings.pix_size
+    ecd = ecd[~np.isnan(ecd)]
 
     dias, bin_limits_um = get_size_bins()
     necd, edges = np.histogram(ecd,bin_limits_um)
