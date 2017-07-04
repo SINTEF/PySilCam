@@ -20,8 +20,8 @@ def test_background_aquire():
         assert(len(imgc.shape) == 3)
 
         #Check that we only get one channel
-        #Check that corrected image is float64
-        assert(imgc.dtype == np.float64)
+        #Check that corrected image is uint8
+        assert(imgc.dtype == np.uint8)
 
         #Check that we got different image data
         if prev_imgc is not None:
