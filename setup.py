@@ -25,6 +25,8 @@ class PyTest(TestCommand):
 
     def run_tests(self):
         import pytest
+        params = {"args":self.test_args}
+        params["args"] +=  ["--junitxml", "test-report/output.xml"]
         errcode = pytest.main(self.test_args)
         sys.exit(errcode)
 
@@ -64,6 +66,7 @@ setup(
     entry_points={
         'console_scripts': [
             'silcam-acquire = pysilcam.__main__:silcam_acquire',
+            'silcam-live = pysilcam.__main__:silcam_acquire',
             'silcam-process-rt = pysilcam.__main__:silcam_process_realtime',
             'silcam-process-batch = pysilcam.__main__:silcam_process_batch',
         ]

@@ -9,8 +9,12 @@ def test_config_parser():
     conf = load_config(filename)
 
     assert 'General' in conf
-    assert 'Process' in conf
     assert conf['General']['version'] == '1'
+    assert 'Background' in conf
+    assert 'Process' in conf
+    assert 'PostProcess' in conf
+    assert 'ExportParticles' in conf
+    assert 'NNClassify' in conf
 
 
 def test_settings():
@@ -18,6 +22,10 @@ def test_settings():
     filename = os.path.join(path, '..', 'config_example.ini')
     settings = PySilcamSettings(filename)
 
-    assert hasattr(settings, 'Background')
     assert hasattr(settings, 'General')
     assert hasattr(settings.General, 'version')
+    assert hasattr(settings, 'Background')
+    assert hasattr(settings, 'Process')
+    assert hasattr(settings, 'PostProcess')
+    assert hasattr(settings, 'ExportParticles')
+    assert hasattr(settings, 'NNClassify')

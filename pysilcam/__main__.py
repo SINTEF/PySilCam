@@ -22,6 +22,7 @@ import pysilcam.exportparticles as exportparts
 from pysilcam.config import load_config, PySilcamSettings
 from skimage import color
 import imageio
+import os
 
 title = '''
  ____        ____  _ _  ____                
@@ -177,7 +178,13 @@ def silcam_process_fancy(config_filename):
         logger.info('Initializing real-time plotting')
         rtplot = scplt.ParticleSizeDistPlot()
 
-    psddatafile = datalogger.DataLogger(settings.General.datafile + '.csv',
+    if 'PYSILCAM_TESTDATA' in os.environ.keys():
+        path = os.environ['PYSILCAM_TESTDATA']
+        datafilename = os.path.join(settings.General.datafile, path)
+    else:
+        datafilename = settings.General.datafile
+
+    psddatafile = datalogger.DataLogger(datafilename + '.csv',
             oilgas.ogdataheader())
 
     def loop(i, timestamp, imc):
@@ -219,10 +226,10 @@ def silcam_process_fancy(config_filename):
         stats_all['timestamp'] = timestamp
 
         if i==0:
-            stats_all.to_csv(settings.General.datafile +
+            stats_all.to_csv(datafilename +
                     '-STATS.csv', index_label='particle index') 
         else:
-            stats_all.to_csv(settings.General.datafile + '-STATS.csv',
+            stats_all.to_csv(datafilename + '-STATS.csv',
                     mode='a', header=False) 
 
 
@@ -287,18 +294,12 @@ def silcam_process_fancy(config_filename):
 
     print('* Commencing image acquisition and processing')
     for i, (timestamp, imc) in enumerate(bggen):
-        loop(i, timestamp, imc)
-        continue
         try:
             loop(i, timestamp, imc)
         except:
             infostr = 'Failed to process frame {0}, skipping.'.format(i)
             logger.warning(infostr)
             print(infostr)
-
-        if i == 0:
-            print('loop break')
-            break
 
 
 def silcam_process_realtime(config_filename):

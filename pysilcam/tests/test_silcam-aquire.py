@@ -3,18 +3,6 @@ import numpy as np
 from subprocess import check_output
 import pysilcam.acquisition
 
-
-def test_echo():
-    '''An example test.'''
-    result = run_cmd("echo hello world")
-    assert result == "hello world\n"
-
-
-def run_cmd(cmd):
-    '''Run a shell command `cmd` and return its output.'''
-    return check_output(cmd, shell=True).decode('utf-8')
-
-
 def test_acquire_five_frames():
     '''Testing frame acquisition'''
 
