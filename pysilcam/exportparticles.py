@@ -10,6 +10,7 @@ import numpy as np
 import imageio
 import os
 import pysilcam.silcam_classify as sccl
+import h5py
 
 def export_particles(imc,timestamp,stats,settings,nnmodel,class_labels):
 
@@ -30,6 +31,9 @@ def export_particles(imc,timestamp,stats,settings,nnmodel,class_labels):
             dtype='float64')
         predictions *= np.nan
 
+    filename = timestamp.strftime('D%Y%m%dT%H%M%S.%f')
+    HDF5File = h5py.File(os.path.join(settings.ExportParticles.ouputpath, filename + ".h5"), "w")
+
     for i in inds:
         bbox[0] = stats.iloc[i]['minr']
         bbox[1] = stats.iloc[i]['minc']
@@ -38,18 +42,15 @@ def export_particles(imc,timestamp,stats,settings,nnmodel,class_labels):
         roi = extract_roi(imc, bbox[:,0])
 
         if settings.ExportParticles.export_images:
-            filename = timestamp.strftime('D%Y%m%dT%H%M%S.%f')
-
-            filename = filename + '-PN' + str(i[0]) + '.tiff'
-            imageio.imwrite(os.path.join(settings.ExportParticles.ouputpath,
-                filename), roi)
-
-            filenames[int(i)] = filename
+            filenames[int(i)] = filename + '-PN' + str(i[0])
+            dset = HDF5File.create_dataset('PN' + str(i[0]), data = roi)
 
         if settings.NNClassify.enable:
             prediction = sccl.predict(roi, nnmodel)
             predictions[int(i),:] = prediction[0]
 
+    HDF5File.close()
+    
     if settings.NNClassify.enable:
         for n,c in enumerate(class_labels):
             stats['probability_' + c] = predictions[:,n]
