@@ -205,8 +205,7 @@ def silcam_process_fancy(config_filename):
             print('lighting std:',s)
             if s > 4:
                 print('bad lighting')
-                imc *= 0
- #           print(s)
+                return
 
             img = np.uint8(np.min(imc, axis=2))
             stats_all, imbw, saturation = statextract(img, settings,
@@ -218,13 +217,21 @@ def silcam_process_fancy(config_filename):
             stats_all = exportparts.export_particles(imc, timestamp, stats_all,
                     settings, nnmodel, class_labels)
 
+
+        if len(stats_all) == 0:
+            print('ZERO particles idenfitied')
+            z = np.zeros(len(stats_all.columns)) * np.nan
+            stats_all.loc[0] = z 
+
         stats_all['timestamp'] = timestamp
+
         if i==0:
             stats_all.to_csv(datafilename +
                     '-STATS.csv', index_label='particle index') 
         else:
             stats_all.to_csv(datafilename + '-STATS.csv',
                     mode='a', header=False) 
+
 
         stats = dict(total=stats_all)
         #stats_all, imbw, saturation = statextract(imc, settings)
@@ -287,8 +294,6 @@ def silcam_process_fancy(config_filename):
 
     print('* Commencing image acquisition and processing')
     for i, (timestamp, imc) in enumerate(bggen):
-        loop(i, timestamp, imc)
-        continue
         try:
             loop(i, timestamp, imc)
         except:
