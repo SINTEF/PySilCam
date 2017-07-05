@@ -31,19 +31,31 @@ def im2bw_fancy(imc, greythresh):
     returns:
       imbw (binary image)
     '''
-    img = np.copy(imc)
+    img = np.copy(imc) # create a copy of the input image (not sure why)
+
+    # obtain a semi-autimated treshold which can handle
+    # some flicker in the illumination by tracking the 50th percentile of the
+    # image histogram
     thresh = np.uint8(greythresh * np.percentile(img, 50))
     
+    # create a segmented image using the crude threshold
     imbw1 = np.invert(img > thresh)
+
+    # perform an adaptive historgram equalization to handle some
+    # less-than-ideal lighting situations
     img_adapteq = skimage.exposure.equalize_adapthist(img,
             clip_limit=(1-greythresh),
             nbins=256)
+    
+    # use the equalised image to estimate a second semi-automated threshold
     newthresh = np.percentile(img_adapteq, 0.75) * greythresh
-    imbw2 = img_adapteq < newthresh
-    imbw = imbw1 & imbw2
 
-    #print('forcing imbw to single threshold method!!!!')
-    #imbw = imbw1
+    # create a second segmented image using newthresh
+    imbw2 = img_adapteq < newthresh
+
+    # merge both segmentation methods by selecting regions where both identify
+    # something as a particle (everything else is water)
+    imbw = imbw1 & imbw2
 
     return imbw
 
@@ -66,8 +78,16 @@ def clean_bw(imbw, min_area):
     '''cleans up particles which are too small and particles touching the
     border
     '''
+
+    # remove objects that are below the detection limit defined in the config
+    # file.
+    # this min_area is usually 12 pixels
     imbw = morphology.remove_small_objects(imbw > 0, min_size=min_area)
-    imbw = segmentation.clear_border(imbw, buffer_size=2) # remove particles touching the border of the image
+
+    # remove particles touching the border of the image
+    # because there might be part of a particle not recorded, and therefore
+    # border particles will be incorrectly sized
+    imbw = segmentation.clear_border(imbw, buffer_size=2)
 
     # remove objects smaller the min_area
     return imbw
@@ -99,25 +119,31 @@ def fancy_props(iml, imc, settings):
     partstats = fancy_props(iml, imc, settings)
     '''
 
+    # define the geometrical properties to be calculated from regionprops
     propnames = ['major_axis_length', 'minor_axis_length',
                  'equivalent_diameter']
 
+    # measure geometrical properties of particles
     region_properties = measure.regionprops(iml, cache=False)
+    # cache=False is faster
 
+    # pre-allocate some things
     data = np.zeros((len(region_properties), len(propnames)), dtype=np.float64)
     bboxes = np.zeros((len(region_properties), 4), dtype=np.float64)
 
+    # loop through each particle and extract the desired statistics
     for i, el in enumerate(region_properties):
         data[i, :] = [getattr(el, p) for p in propnames]
         bboxes[i, :] = el.bbox
 
+    # build the column names for the outputed DataFrame
     column_names = np.hstack(([propnames, 'minr', 'minc', 'maxr', 'maxc']))
-    cat_data = np.hstack((data, bboxes))
-    partstats = pd.DataFrame(columns=column_names, data=cat_data)
 
-    #print('removing bad partstats')
-    #partstats = filter_bad_stats(partstats,settings)
-    #print('  ok')
+    # merge regionprops statistics with a seperate bounding box columns
+    cat_data = np.hstack((data, bboxes))
+
+    # put particle statistics into a DataFrame
+    partstats = pd.DataFrame(columns=column_names, data=cat_data)
 
     return partstats
 
@@ -127,7 +153,7 @@ def fast_props(iml):
 
     return pandas.DataFrame
 
-    partstats = fancy_props(iml)
+    partstats = fast_props(iml)
     '''
 
     propnames = ['major_axis_length', 'minor_axis_length',
@@ -336,7 +362,7 @@ def extract_roi(im, bbox):
     returns:
       roi
     '''
-    roi = im[bbox[0]:bbox[2], bbox[1]:bbox[3]]
+    roi = im[bbox[0]:bbox[2], bbox[1]:bbox[3]] # yep, that't it.
     return roi
 
 
@@ -376,24 +402,27 @@ def measure_particles(imbw, imc, settings):
       stats (list of particle statistics for every particle, according to
       Partstats class)
 
-    TODO: handle situation when too many particles are found
-    TODO: handle situation when zero particles are found
     '''
+
+    # check the converage of the image of particles is acceptable
     sat_check, saturation = concentration_check(imbw, settings)
     if sat_check == False:
         logger.warn('....breached concentration limit! Skipping image.')
-        imbw *= False
+        imbw *= 0 # this is not a good way to handle this condition
+        # @todo handle situation when too many particles are found
 
+    # label the segmented image
     iml = morphology.label(imbw > 0)
     logger.info('  {0} particles found'.format(iml.max()))
 
+    # if there are too many particles then do no proceed with analysis
     if (iml.max() > settings.Process.max_particles):
         logger.warn('....that''s way too many particles! Skipping image.')
-        iml *= 0
+        imbw *= 0 # this is not a good way to handle this condition
+        # @todo handle situation when too many particles are found
 
-    #stats = fast_props(iml)
-    #stats = props_og(iml, imc, settings)
 
+    # calculate particle statistics
     stats = fancy_props(iml, imc, settings)
 
     return stats, saturation
