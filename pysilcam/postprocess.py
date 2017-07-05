@@ -180,7 +180,7 @@ class TimeIntegratedVolumeDist:
             self.vd_mean = self.vdlist[0]
 
 
-def montage_maker(roifiles, pixel_size, msize=2048, brightness=255,
+def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
         tightpack=False):
     '''
     makes nice looking matages from a directory of extracted particle images
@@ -192,9 +192,9 @@ def montage_maker(roifiles, pixel_size, msize=2048, brightness=255,
     print('making a montage - this might take some time....')
 
     for files in roifiles:
-        particle_image = imageio.imread(files)
+        print(files)
+        particle_image = export_name2im(files, roidir)
 
-        #particle_rect = np.ones_like(particle_image)
         [height, width] = np.shape(particle_image[:,:,0])
         if height >= msize:
             continue
@@ -219,9 +219,6 @@ def montage_maker(roifiles, pixel_size, msize=2048, brightness=255,
             for J in range(5):
                 imbw = skimage.morphology.binary_dilation(imbw)
 
-        #masked = particle_image * imbw[:,:,None]
-        #masked[masked==0] = 255
-        # masked = particle_image
 
         counter = 0
         while (counter < 5):
@@ -260,10 +257,14 @@ def make_montage(stats_csv_file, pixel_size, roidir, min_length=100,
         auto_scaler=500, msize=1024, max_length=5000):
     stats = pd.read_csv(stats_csv_file)
 
+    stats = stats[~np.isnan(stats['major_axis_length'])]
+
     stats.sort_values(by=['major_axis_length'], ascending=False, inplace=True)
 
-    roifiles = stats['export name'].loc[(stats['major_axis_length'] * pixel_size >
-            min_length) & (stats['major_axis_length'] * pixel_size < max_length)].values
+    roifiles = stats['export name'].loc[
+            (stats['major_axis_length'] * pixel_size > min_length) &
+            (stats['major_axis_length'] * pixel_size < max_length)
+            ].values
 
     print('rofiles:',len(roifiles))
     IMSTEP = np.max([np.int(np.round(len(roifiles)/auto_scaler)),1])
@@ -271,10 +272,7 @@ def make_montage(stats_csv_file, pixel_size, roidir, min_length=100,
     roifiles = roifiles[np.arange(0,len(roifiles),IMSTEP)]
     print('rofiles:',len(roifiles))
 
-    for i, f in enumerate(roifiles):
-        roifiles[i] = os.path.join(roidir, f)
-
-    montage = montage_maker(roifiles, pixel_size, msize)
+    montage = montage_maker(roifiles, roidir, pixel_size, msize)
 
     return montage
 
@@ -362,10 +360,10 @@ def add_depth_to_stats(stats, time, depth):
 def export_name2im(exportname, path):
     ''' returns an image from the export name string in the -STATS.csv file
 
-    get the exportname like this: exportname = stats['export name']
+    get the exportname like this: exportname = stats['export name'].values[0]
     '''
-    pn = exportname.values[0].split('-')[1]
-    name = exportname.values[0].split('-')[0] + '.h5'
+    pn = exportname.split('-')[1]
+    name = exportname.split('-')[0] + '.h5'
     fullname = os.path.join(path, name)
 
     fh = h5py.File(fullname ,'r')
