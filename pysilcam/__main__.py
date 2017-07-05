@@ -240,8 +240,6 @@ def silcam_process_fancy(config_filename):
         #Time the particle statistics processing step
         proc_time = time.clock() - start_time
 
-        times.append(i)
-
         #If real-time plotting is enabled, update the plots
         # @todo realtime plotting will no longer work because the averaged
         # time-series data is no longer calculated here. This should be fixed
@@ -272,6 +270,8 @@ def silcam_process_fancy(config_filename):
     # iterate on the bbgen generator to obtain images
     for i, (timestamp, imc) in enumerate(bggen):
         # handle errors if the loop function fails for any reason
+        loop(i, timestamp, imc)
+        continue
         try:
             loop(i, timestamp, imc)
         except:
