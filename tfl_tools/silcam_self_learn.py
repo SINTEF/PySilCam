@@ -4,6 +4,9 @@ import numpy as np
 import pandas as pd
 import os
 from shutil import copyfile
+import logging
+
+logging.basicConfig(filename='self_learn.log',level=logging.DEBUG)
 
 DATABASE_PATH = '/mnt/PDrive/silcam_classification_database'
 config_file = '/mnt/ARRAY/ENTICE/Data/configs/config.ini'
@@ -18,8 +21,8 @@ DATABASE_selftaught_PATH = os.path.join(DATABASE_PATH,'../','silcam_self_taught_
 header = pd.read_csv(os.path.join(model_path, 'header.tfl.txt'))
 OUTPUTS = len(header.columns)
 class_labels = header.columns
-print(class_labels)
-print(confidence_threshold)
+logging.info(class_labels)
+logging.info(confidence_threshold)
 
 for cl in class_labels:
     os.makedirs(os.path.join(DATABASE_selftaught_PATH,cl),exist_ok=True)
@@ -30,15 +33,15 @@ choice, confidence = sccl.choise_from_stats(stats)
 
 for i,cl in enumerate(class_labels):
     class_label = 'probability_class' + str(i)
-    print(class_label)
-    print(class_labels[i])
+    logging.info(class_label)
+    logging.info(class_labels[i])
 
     sstats = stats[(choice==class_label) & (confidence>confidence_threshold[i])]
     if len(sstats)==0:
-        print(0,'images')
+        logging.info(0,'images')
         continue
 
-    print(len(sstats),'images')
+    logging.info(len(sstats),'images')
 
     for j in np.arange(0,len(sstats)):
         filename = sstats.iloc[j]['export name']

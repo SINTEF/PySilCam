@@ -11,9 +11,11 @@ from scipy import ndimage as ndi
 import skimage
 from skimage.exposure import rescale_intensity
 import h5py
+import logging
 
 
 # PIX_SIZE = 35.2 / 2448 * 1000 # pixel size in microns (Med. mag)
+logger = logging.getLogger(__name__)
 
 def stats_from_csv(filename):
     stats = pd.read_csv(filename,index_col=0)
@@ -28,7 +30,9 @@ def filter_stats(stats, settings):
 
     endparts = len(stats)
     print(iniparts - endparts,' particles removed.')
+    logger.debug(iniparts - endparts,' particles removed.')
     print(endparts,' particles measured.')
+    logger.debug(endparts,' particles measured.')
     return stats
 
 def d50_from_stats(stats, settings):
@@ -190,6 +194,7 @@ def montage_maker(roifiles, pixel_size, msize=2048, brightness=255,
     montage = np.zeros((msize,msize,3),dtype=np.uint8())
     immap_test = np.zeros_like(montage[:,:,0])
     print('making a montage - this might take some time....')
+    logger.debug('making a montage - this might take some time....')
 
     for files in roifiles:
         particle_image = imageio.imread(files)
@@ -252,6 +257,7 @@ def montage_maker(roifiles, pixel_size, msize=2048, brightness=255,
     montageplot[montage>255] = 255
     montageplot[montage==0] = 255
     print('montage complete')
+    logger.debug('montage complete')
 
     return montageplot
 
@@ -266,10 +272,13 @@ def make_montage(stats_csv_file, pixel_size, roidir, min_length=100,
             min_length) & (stats['major_axis_length'] * pixel_size < max_length)].values
 
     print('rofiles:',len(roifiles))
+    logger.debug('rofiles:',len(roifiles))
     IMSTEP = np.max([np.int(np.round(len(roifiles)/auto_scaler)),1])
     print('reducing particles by factor of {0}'.format(IMSTEP))
+    logger.debug('reducing particles by factor of {0}'.format(IMSTEP))
     roifiles = roifiles[np.arange(0,len(roifiles),IMSTEP)]
     print('rofiles:',len(roifiles))
+    logger.debug('rofiles:',len(roifiles))
 
     for i, f in enumerate(roifiles):
         roifiles[i] = os.path.join(roidir, f)

@@ -10,54 +10,57 @@ from tflearn.data_preprocessing import ImagePreprocessing
 from tflearn.data_augmentation import ImageAugmentation
 import pickle
 import numpy as np
+import logging
 
-print('Load the data set')
+logging.basicConfig(filename='train_network.log',level=logging.DEBUG)
+
+logging.info('Load the data set')
 X, Y = pickle.load(open("DATA.pkl", "rb"))
 X2, Y2 = pickle.load(open("DATA_12.pkl", "rb"))
 X = np.vstack((X,X2))
 Y = np.vstack((Y,Y2))
 
 X_test, Y_test = pickle.load(open("DATA_backup.pkl", "rb"))
-print('pickle file loaded')
+logging.info('pickle file loaded')
 
 outputs = np.shape(Y)[1]
-print(outputs,' outputs found')
+logging.info(outputs,' outputs found')
 
 X = np.float64(X)
 Y = np.float64(Y)
 X_test = np.float64(X_test)
 Y_test = np.float64(Y_test)
 
-print('Shuffle the data')
+logging.info('Shuffle the data')
 X, Y = shuffle(X, Y)
 
-print('Make sure the data is normalized')
+logging.info('Make sure the data is normalized')
 img_prep = ImagePreprocessing()
 img_prep.add_featurewise_zero_center()
 img_prep.add_featurewise_stdnorm()
 
 # Create extra synthetic training data by flipping, rotating and blurring the
 # images on our data set.
-print('make extra data')
+logging.info('make extra data')
 img_aug = ImageAugmentation()
 img_aug.add_random_flip_leftright()
 img_aug.add_random_rotation(max_angle=25.)
 img_aug.add_random_blur(sigma_max=3.)
 
-print('Define our network architecture:')
+logging.info('Define our network architecture:')
 
 # Input is a 32x32 image with 3 color channels (red, green and blue)
 network = input_data(shape=[None, 32, 32, 3],
                      data_preprocessing=img_prep,
                      data_augmentation=img_aug)
 
-print('Step 1: Convolution')
+logging.info('Step 1: Convolution')
 network = conv_2d(network, 32, 3, activation='relu')
 
-print('Step 2: Max pooling')
+logging.info('Step 2: Max pooling')
 network = max_pool_2d(network, 2)
 
-print('Step 3: Convolution again')
+logging.info('Step 3: Convolution again')
 network = conv_2d(network, 64, 3, activation='relu')
 
 # Step 4: Convolution yet again
@@ -91,4 +94,4 @@ model.fit(X, Y, n_epoch=200, shuffle=True, validation_set=(X_test, Y_test),
 
 # Save model when training is complete to a file
 model.save("particle-classifier.tfl")
-print("Network trained and saved as particle-classifier.tfl!")
+logging.info("Network trained and saved as particle-classifier.tfl!")
