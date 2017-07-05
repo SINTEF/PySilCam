@@ -368,10 +368,10 @@ def add_depth_to_stats(stats, time, depth):
 def export_name2im(exportname, path):
     ''' returns an image from the export name string in the -STATS.csv file
 
-    get the exportname like this: exportname = stats['export name']
+    get the exportname like this: exportname = stats['export name'].values[0]
     '''
-    pn = exportname.values[0].split('-')[1]
-    name = exportname.values[0].split('-')[0] + '.h5'
+    pn = exportname.split('-')[1]
+    name = exportname.split('-')[0] + '.h5'
     fullname = os.path.join(path, name)
 
     fh = h5py.File(fullname ,'r')
