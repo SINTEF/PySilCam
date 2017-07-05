@@ -178,11 +178,7 @@ def silcam_process_fancy(config_filename):
         logger.info('Initializing real-time plotting')
         rtplot = scplt.ParticleSizeDistPlot()
 
-    if 'PYSILCAM_TESTDATA' in os.environ.keys():
-        path = os.environ['PYSILCAM_TESTDATA']
-        datafilename = os.path.join(settings.General.datafile, path)
-    else:
-        datafilename = settings.General.datafile
+    datafilename = settings.General.datafile
 
     psddatafile = datalogger.DataLogger(datafilename + '.csv',
             oilgas.ogdataheader())
