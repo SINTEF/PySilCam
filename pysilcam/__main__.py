@@ -222,10 +222,11 @@ def silcam_process_fancy(config_filename):
             print('ZERO particles idenfitied')
             z = np.zeros(len(stats_all.columns)) * np.nan
             stats_all.loc[0] = z 
+            stats_all['export name'] = 'not_exported'
 
         stats_all['timestamp'] = timestamp
 
-        if i==0:
+        if not os.path.isfile(datafilename):
             stats_all.to_csv(datafilename +
                     '-STATS.csv', index_label='particle index') 
         else:

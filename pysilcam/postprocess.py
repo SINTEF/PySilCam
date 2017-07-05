@@ -180,7 +180,7 @@ class TimeIntegratedVolumeDist:
             self.vd_mean = self.vdlist[0]
 
 
-def montage_maker(roifiles, pixel_size, msize=2048, brightness=255,
+def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
         tightpack=False):
     '''
     makes nice looking matages from a directory of extracted particle images
@@ -192,7 +192,9 @@ def montage_maker(roifiles, pixel_size, msize=2048, brightness=255,
     print('making a montage - this might take some time....')
 
     for files in roifiles:
-        particle_image = imageio.imread(files)
+        print(files)
+        particle_image = export_name2im(files, roidir)
+        #particle_image = imageio.imread(files)
 
         #particle_rect = np.ones_like(particle_image)
         [height, width] = np.shape(particle_image[:,:,0])
@@ -260,10 +262,14 @@ def make_montage(stats_csv_file, pixel_size, roidir, min_length=100,
         auto_scaler=500, msize=1024, max_length=5000):
     stats = pd.read_csv(stats_csv_file)
 
+    stats = stats[~np.isnan(stats['major_axis_length'])]
+
     stats.sort_values(by=['major_axis_length'], ascending=False, inplace=True)
 
-    roifiles = stats['export name'].loc[(stats['major_axis_length'] * pixel_size >
-            min_length) & (stats['major_axis_length'] * pixel_size < max_length)].values
+    roifiles = stats['export name'].loc[
+            (stats['major_axis_length'] * pixel_size > min_length) &
+            (stats['major_axis_length'] * pixel_size < max_length)
+            ].values
 
     print('rofiles:',len(roifiles))
     IMSTEP = np.max([np.int(np.round(len(roifiles)/auto_scaler)),1])
@@ -271,10 +277,10 @@ def make_montage(stats_csv_file, pixel_size, roidir, min_length=100,
     roifiles = roifiles[np.arange(0,len(roifiles),IMSTEP)]
     print('rofiles:',len(roifiles))
 
-    for i, f in enumerate(roifiles):
-        roifiles[i] = os.path.join(roidir, f)
+    #for i, f in enumerate(roifiles):
+    #    roifiles[i] = os.path.join(roidir, f)
 
-    montage = montage_maker(roifiles, pixel_size, msize)
+    montage = montage_maker(roifiles, roidir, pixel_size, msize)
 
     return montage
 
