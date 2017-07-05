@@ -194,9 +194,7 @@ def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
     for files in roifiles:
         print(files)
         particle_image = export_name2im(files, roidir)
-        #particle_image = imageio.imread(files)
 
-        #particle_rect = np.ones_like(particle_image)
         [height, width] = np.shape(particle_image[:,:,0])
         if height >= msize:
             continue
@@ -221,9 +219,6 @@ def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
             for J in range(5):
                 imbw = skimage.morphology.binary_dilation(imbw)
 
-        #masked = particle_image * imbw[:,:,None]
-        #masked[masked==0] = 255
-        # masked = particle_image
 
         counter = 0
         while (counter < 5):
@@ -276,9 +271,6 @@ def make_montage(stats_csv_file, pixel_size, roidir, min_length=100,
     print('reducing particles by factor of {0}'.format(IMSTEP))
     roifiles = roifiles[np.arange(0,len(roifiles),IMSTEP)]
     print('rofiles:',len(roifiles))
-
-    #for i, f in enumerate(roifiles):
-    #    roifiles[i] = os.path.join(roidir, f)
 
     montage = montage_maker(roifiles, roidir, pixel_size, msize)
 
