@@ -222,7 +222,7 @@ def silcam_process_fancy(config_filename):
 
         stats_all['timestamp'] = timestamp
 
-        if not os.path.isfile(datafilename):
+        if not os.path.isfile(datafilename + '-STATS.csv'):
             stats_all.to_csv(datafilename +
                     '-STATS.csv', index_label='particle index') 
         else:
