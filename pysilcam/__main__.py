@@ -270,8 +270,6 @@ def silcam_process_fancy(config_filename):
     # iterate on the bbgen generator to obtain images
     for i, (timestamp, imc) in enumerate(bggen):
         # handle errors if the loop function fails for any reason
-        loop(i, timestamp, imc)
-        continue
         try:
             loop(i, timestamp, imc)
         except:
