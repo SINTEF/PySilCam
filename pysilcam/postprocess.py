@@ -192,7 +192,6 @@ def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
     print('making a montage - this might take some time....')
 
     for files in roifiles:
-        print(files)
         particle_image = export_name2im(files, roidir)
 
         [height, width] = np.shape(particle_image[:,:,0])
