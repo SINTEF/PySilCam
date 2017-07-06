@@ -48,7 +48,6 @@ def silcam_acquire():
     Usage:
       silcam-acquire
       silcam-acquire liveview
-      silcam-acquire process <configfile>
       silcam-acquire fancyprocess <configfile>
       silcam-acquire -h | --help
       silcam-acquire --version
@@ -66,23 +65,7 @@ def silcam_acquire():
     args = docopt(silcam_acquire.__doc__, version='PySilCam {0}'.format(__version__))
     #print('Type \'silcam-acquire -h\' for help')
 
-    if args['process']:
-        #pr = cProfile.Profile()
-        #pr.enable()
-        #s = StringIO()
-        #sortby = 'cumulative'
-#        while True:
-#            try:
-        silcam_process_realtime(args['<configfile>'])
-#            except:
-#                print('probably image loading error....')
-#                time.sleep(1)
-        #pr.disable()
-        #ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-        #ps.print_stats()
-#       # print(s.getvalue())
-        #ps.dump_stats('process_profile.cprof')
-    elif args['fancyprocess']:
+    if args['fancyprocess']:
         silcam_process_fancy(args['<configfile>'])
 
     elif args['liveview']:
