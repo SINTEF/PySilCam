@@ -94,19 +94,24 @@ def clean_bw(imbw, min_area):
 
 
 def filter_bad_stats(stats,settings):
+    ''' remove unacceptable particles from the stats
+    '''
+    # calculate minor-major axis ratio
     mmr = stats['minor_axis_length'] / stats['major_axis_length']   
+    # remove stats where particles are too deformed
     stats = stats[mmr > settings.Process.min_deformation]
 
+    # remove particles that exceed the maximum dimention
     stats = stats[(stats['major_axis_length'] * settings.PostProcess.pix_size) <
             settings.Process.max_length]
 
-    ecd_ = stats['equivalent_diameter']
-
+    # calculate the area of the bounding boxes
     bbox_area = (stats['maxr']-stats['minr']) * (stats['maxc']-stats['minc'])
 
     #Discard overlapping particles (approximate by solidity requirement)
     stats = stats[(stats['equivalent_diameter'] ** 2 / bbox_area) >
             (settings.Process.min_solidity)]
+    # this is a crude, but fast approximate of solidity
 
     return stats
 
@@ -463,5 +468,8 @@ def statextract(imc, settings, fancy=False):
     logger.debug('measure')
     # calculate particle statistics
     stats, saturation = measure_particles(imbw, imc, settings)
+
+    # remove bad particles from data
+    stats = filter_bad_stats(stats, settings)
 
     return stats, imbw, saturation

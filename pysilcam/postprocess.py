@@ -19,22 +19,15 @@ def stats_from_csv(filename):
     stats = pd.read_csv(filename,index_col=0)
     return stats
 
-def filter_stats(stats, settings):
-    iniparts = len(stats)
-    mmr = stats['minor_axis_length'] / stats['major_axis_length']
-    stats = stats[mmr > settings.min_deformation]
-
-    stats = stats[stats['solidity'] > settings.min_solidity]
-
-    endparts = len(stats)
-    print(iniparts - endparts,' particles removed.')
-    print(endparts,' particles measured.')
-    return stats
 
 def d50_from_stats(stats, settings):
+    '''calculate the d50 from the stats and settings
+    '''
 
+    # the volume distribution needs calculating first
     dias, vd = vd_from_stats(stats, settings)
 
+    # then the d50
     d50 = d50_from_vd(vd,dias)
     return d50
 
