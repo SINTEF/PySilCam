@@ -197,8 +197,7 @@ def silcam_process_fancy(config_filename):
         img = np.uint8(np.min(imc, axis=2))
 
         #Calculate particle statistics
-        stats_all, imbw, saturation = statextract(img, settings,
-                fancy=True)
+        stats_all, imbw, saturation = statextract(img, settings)
 
         # Export particle images if enabled in config file
         # also use this function for the NN calssification (because it is the
@@ -270,6 +269,8 @@ def silcam_process_fancy(config_filename):
     # iterate on the bbgen generator to obtain images
     for i, (timestamp, imc) in enumerate(bggen):
         # handle errors if the loop function fails for any reason
+        loop(i, timestamp, imc)
+        continue
         try:
             loop(i, timestamp, imc)
         except:
@@ -387,8 +388,6 @@ def silcam_process_realtime(config_filename):
 
     print('* Commencing image acquisition and processing')
     for i, (timestamp, imc) in enumerate(bggen):
-        loop(i, timestamp, imc)
-        continue
         try:
             loop(i, timestamp, imc)
         except:

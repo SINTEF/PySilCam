@@ -39,7 +39,8 @@ def im2bw_fancy(imc, greythresh):
     thresh = np.uint8(greythresh * np.percentile(img, 50))
     
     # create a segmented image using the crude threshold
-    imbw1 = np.invert(img > thresh)
+    #imbw1 = np.invert(img > thresh)
+    imbw1 = img < thresh
 
     # perform an adaptive historgram equalization to handle some
     # less-than-ideal lighting situations
@@ -67,8 +68,10 @@ def im2bw(imc, greythresh):
     returns:
       imbw (binary image)
     '''
-
-    thresh = np.uint8(greythresh * 230)  # or use a faster less-good version
+    # obtain a semi-autimated treshold which can handle
+    # some flicker in the illumination by tracking the 50th percentile of the
+    # image histogram
+    thresh = np.uint8(greythresh * np.percentile(imc, 50))
     imbw = imc < thresh  # segment the image
 
     return imbw
@@ -436,7 +439,7 @@ def is_gas():
     pass
 
 
-def statextract(imc, settings, fancy=False):
+def statextract(imc, settings):
     '''extracts statistics of particles in imc (raw corrected image)
 
     returns:
@@ -445,12 +448,9 @@ def statextract(imc, settings, fancy=False):
     '''
     logger.debug('segment')
 
-    if fancy:  # check is fancy (slow) processing is enabled
-        # segment the image
-        imbw = im2bw_fancy(imc, settings.Process.threshold)
-    else:
-        # segment the image
-        imbw = im2bw(imc, settings.Process.threshold)
+    imbw = im2bw(imc, settings.Process.threshold) # im2bw is less fancy but
+    # faster than im2bw_fancy. This might cause problems when trying to
+    # process images with bad lighting
 
     logger.debug('clean')
 
