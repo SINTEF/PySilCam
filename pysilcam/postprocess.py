@@ -252,18 +252,16 @@ def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
     return montageplot
 
 
-def make_montage(stats_csv_file, pixel_size, roidir, min_length=100,
-        auto_scaler=500, msize=1024, max_length=5000):
+def make_montage(stats_csv_file, pixel_size, roidir,
+        auto_scaler=500, msize=1024):
     stats = pd.read_csv(stats_csv_file)
 
     stats = stats[~np.isnan(stats['major_axis_length'])]
 
     stats.sort_values(by=['major_axis_length'], ascending=False, inplace=True)
 
-    roifiles = stats['export name'].loc[
-            (stats['major_axis_length'] * pixel_size > min_length) &
-            (stats['major_axis_length'] * pixel_size < max_length)
-            ].values
+    roifiles = stats['export name'][stats['export name'] !=
+            'not_exported'].values
 
     print('rofiles:',len(roifiles))
     IMSTEP = np.max([np.int(np.round(len(roifiles)/auto_scaler)),1])
