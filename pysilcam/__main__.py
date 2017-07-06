@@ -230,7 +230,7 @@ def silcam_process_fancy(config_filename):
         # @todo accidentally appending to an existing file could be dangerous
         # because data will be duplicated (and concentrations would therefore
         # double)
-        if not os.path.isfile(datafilename):
+        if not os.path.isfile(datafilename + '-STATS.csv'):
             stats_all.to_csv(datafilename +
                     '-STATS.csv', index_label='particle index') 
         else:
