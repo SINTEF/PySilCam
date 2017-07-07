@@ -189,6 +189,7 @@ def silcam_process_fancy(config_filename):
             return
 
         #Calculate particle statistics
+
         stats_all, imbw, saturation = statextract(imc, settings, timestamp, nnmodel, class_labels)
 
         # if there are not particles identified, assume zero concentration.

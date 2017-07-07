@@ -42,7 +42,8 @@ def im2bw_fancy(imc, greythresh):
     thresh = np.uint8(greythresh * np.percentile(img, 50))
     
     # create a segmented image using the crude threshold
-    imbw1 = np.invert(img > thresh)
+    #imbw1 = np.invert(img > thresh)
+    imbw1 = img < thresh
 
     # perform an adaptive historgram equalization to handle some
     # less-than-ideal lighting situations
@@ -70,8 +71,10 @@ def im2bw(imc, greythresh):
     returns:
       imbw (binary image)
     '''
-
-    thresh = np.uint8(greythresh * 230)  # or use a faster less-good version
+    # obtain a semi-autimated treshold which can handle
+    # some flicker in the illumination by tracking the 50th percentile of the
+    # image histogram
+    thresh = np.uint8(greythresh * np.percentile(imc, 50))
     imbw = imc < thresh  # segment the image
 
     return imbw
@@ -237,13 +240,13 @@ def statextract(imc, settings, timestamp, nnmodel, class_labels):
       Partstats class)
     '''
     logger.debug('segment')
-    
+
     # simplyfy processing by squeezing the image dimentions into a 2D array
     # min is used for squeezing to represent the highest attenuation of all wavelengths
-    img = np.uint8(np.min(imc, axis=2))
-    
-    # segment the image
-    imbw = im2bw_fancy(img, settings.Process.threshold)
+    img = np.uint8(np.min(imc, axis=2)
+    imbw = im2bw(img, settings.Process.threshold) # im2bw is less fancy but
+    # faster than im2bw_fancy. This might cause problems when trying to
+    # process images with bad lighting
 
     logger.debug('clean')
 
