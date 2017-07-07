@@ -18,7 +18,6 @@ import pysilcam.postprocess as sc_pp
 import pysilcam.plotting as scplt
 import pysilcam.datalogger as datalogger
 import pysilcam.oilgas as oilgas
-import pysilcam.exportparticles as exportparts
 from pysilcam.config import load_config, PySilcamSettings
 from skimage import color
 import imageio
@@ -188,21 +187,8 @@ def silcam_process_fancy(config_filename):
             print('bad lighting')
             return
 
-        # simplyfy processing by squeezing the image dimentions into a 2D array
-        # min is used for squeezing to represent the highest attenuation of all wavelengths
-        img = np.uint8(np.min(imc, axis=2))
-
         #Calculate particle statistics
-        stats_all, imbw, saturation = statextract(img, settings,
-                fancy=True)
-
-        # Export particle images if enabled in config file
-        # also use this function for the NN calssification (because it is the
-        # fastest way to access particle ROIs used for classification
-        # @todo tidy up this
-        if (settings.ExportParticles.export_images) or (settings.NNClassify.enable):
-            stats_all = exportparts.export_particles(imc, timestamp, stats_all,
-                    settings, nnmodel, class_labels)
+        stats_all, imbw, saturation = statextract(imc, settings, timestamp, nnmodel, class_labels)
 
         # if there are not particles identified, assume zero concentration.
         # This means that the data should indicate that a 'good' image was
@@ -224,7 +210,7 @@ def silcam_process_fancy(config_filename):
         # if the output file does not already exist, create it
         # otherwise data will be appended
         # @todo accidentally appending to an existing file could be dangerous
-        # because data will be duplicated (and concentrations would therefore
+        # because data will be duplsicated (and concentrations would therefore
         # double)
         if not os.path.isfile(datafilename + '-STATS.csv'):
             stats_all.to_csv(datafilename +
