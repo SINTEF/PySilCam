@@ -11,8 +11,12 @@ from scipy import ndimage as ndi
 import skimage
 from skimage.exposure import rescale_intensity
 import h5py
+import logging
 
 
+logger = logging.getLogger(__name__)
+logger.debug(iniparts - endparts,' particles removed.')
+logger.debug(endparts,' particles measured.')
 def d50_from_stats(stats, settings):
     '''calculate the d50 from the stats and settings
     '''
@@ -255,6 +259,7 @@ def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
     # pre-allocate an empty test canvas
     immap_test = np.zeros_like(montage[:,:,0])
     print('making a montage - this might take some time....')
+    logger.debug('making a montage - this might take some time....')
 
     # loop through each extracted particle and attempt to add it to the canvas
     for files in roifiles:
@@ -337,6 +342,7 @@ def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
     montageplot[montage>255] = 255
     montageplot[montage==0] = 255
     print('montage complete')
+    logger.debug('montage complete')
 
     return montageplot
 
@@ -362,10 +368,13 @@ def make_montage(stats_csv_file, pixel_size, roidir, min_length=100,
 
     # subsample the particles if necessary
     print('rofiles:',len(roifiles))
+    logger.debug('rofiles:',len(roifiles))
     IMSTEP = np.max([np.int(np.round(len(roifiles)/auto_scaler)),1])
     print('reducing particles by factor of {0}'.format(IMSTEP))
+    logger.debug('reducing particles by factor of {0}'.format(IMSTEP))
     roifiles = roifiles[np.arange(0,len(roifiles),IMSTEP)]
     print('rofiles:',len(roifiles))
+    logger.debug('rofiles:',len(roifiles))
 
     montage = montage_maker(roifiles, roidir, pixel_size, msize)
 

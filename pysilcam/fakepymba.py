@@ -33,20 +33,25 @@ def get_time_stamp(frame):
 
 def query_start():
     print('Starting query')
+    logging.debug('Starting query')
 
 class Camera:
     def openCamera(self):
         print('Opening camera')
+        logging.debug('Opening camera')
 
     def startCapture(self):
         print('Starting capture')
+        logging.debug('Starting capture')
         #time.sleep(1.0/FPS)
 
     def runFeatureCommand(self, cmd):
         print('Camera command: {0}'.format(cmd))
+        logging.debug('Camera command: {0}'.format(cmd))
 
     def endCapture(self):
         print('Ending camera capture')
+        logging.debug('Ending camera capture')
 
     def getFrame(self):
         #time.sleep(1.0/FPS)
@@ -57,6 +62,7 @@ class Camera:
 
     def revokeAllFrames(self):
         print('\nCleaning up: revoking all frames')
+        logging.debug('\nCleaning up: revoking all frames')
         pass
 
 
@@ -83,6 +89,7 @@ class Frame:
             self.height = 600
 
         print('Frame acquired')
+        logging.debug('Frame acquired')
 
     def getBufferByteData(self):
         if self.files is not None:
@@ -95,26 +102,31 @@ class Frame:
             fname = os.path.basename(self.files[self.img_idx])
             self.timestamp = pd.to_datetime(fname[1:-4])
             self.img_idx += 1
-            print('Getting buffer byte data from file {0}, {1}/{2}'.format(frame.shape, 
-                                                                           self.img_idx, len(self.files)))
+            print('Getting buffer byte data from file {0}, {1}/{2}'.format(frame.shape, self.img_idx, len(self.files)))
+            logging.debug('Getting buffer byte data from file {0}, {1}/{2}'.format(frame.shape, self.img_idx, len(self.files)))
         else:
             self.timestamp = datetime.now()
             frame = np.random.random((self.height, self.width, 3))
             print('Getting buffer byte data, {0}'.format(frame.shape))
+            logging.debug('Getting buffer byte data, {0}'.format(frame.shape))
             time.sleep(1.0/FPS)
         return frame.tobytes()
 
     def announceFrame(self):
         print('Frame acquired')
+        logging.debug('Frame acquired')
 
     def announceFrame(self):
         print('Announcing frame')
+        logging.debug('Announcing frame')
 
     def queueFrameCapture(self):
         print('Queuing frame capture')
+        logging.debug('Queuing frame capture')
 
     def waitFrameCapture(self):
         print('Waiting for frame capture')
+        logging.debug('Waiting for frame capture')
 
 
 class RealtimeFrame(Frame):
@@ -135,11 +147,13 @@ class RealtimeFrame(Frame):
         self.height = img0.shape[0]
         self.width = img0.shape[1]
         print('Realtime frame acquired')
+        logging.debug('Realtime frame acquired')
 
     def getBufferByteData(self):
         self._list_images()
         while self.files[-3] == self.filename:
             print('No new images ({0}), waiting 1s and then retrying'.format(len(self.files)))
+            logging.debug('No new images ({0}), waiting 1s and then retrying'.format(len(self.files)))
             time.sleep(1)
             self._list_images()
 
@@ -154,25 +168,30 @@ class RealtimeFrame(Frame):
         self.timestamp = pd.to_datetime(fname[1:-4])
         self.img_idx += 1
         print('Getting buffer byte data from file {0}, #{1}'.format(frame.shape, self.img_idx))
+        logging.debug('Getting buffer byte data from file {0}, #{1}'.format(frame.shape, self.img_idx))
         return frame.tobytes()
 
 
 class System:
     def __init__(self):
         print('System initialize')
+        logging.debug('System initialize')
         self.GeVTLIsPresent = False
 
 class Vimba:
     def getSystem(self):
         print('Getting Vimba system')
+        logging.debug('Getting Vimba system')
         return System()
 
     def getCameraIds(self):
         print('Getting camera IDs')
+        logging.debug('Getting camera IDs')
         return [0]
 
     def getCamera(self, camera_id):
         print('Getting camera: {0}'.format(camera_id))
+        logging.debug('Getting camera: {0}'.format(camera_id))
         return Camera()
 
     def __enter__(self):
