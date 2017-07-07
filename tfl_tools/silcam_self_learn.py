@@ -21,6 +21,8 @@ DATABASE_selftaught_PATH = os.path.join(DATABASE_PATH,'../','silcam_self_taught_
 header = pd.read_csv(os.path.join(model_path, 'header.tfl.txt'))
 OUTPUTS = len(header.columns)
 class_labels = header.columns
+print(class_labels)
+print(confidence_threshold)
 logging.info(class_labels)
 logging.info(confidence_threshold)
 
@@ -38,9 +40,11 @@ for i,cl in enumerate(class_labels):
 
     sstats = stats[(choice==class_label) & (confidence>confidence_threshold[i])]
     if len(sstats)==0:
+        print(0,'images')
         logging.info(0,'images')
         continue
 
+    print(len(sstats),'images')
     logging.info(len(sstats),'images')
 
     for j in np.arange(0,len(sstats)):
