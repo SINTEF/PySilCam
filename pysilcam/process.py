@@ -111,7 +111,7 @@ def filter_bad_stats(stats,settings):
     return stats
 
 
-def fancy_props(iml, imc, settings):
+def fancy_props(iml):
     '''Calculates fancy particle properties
 
     return pandas.DataFrame
@@ -119,33 +119,9 @@ def fancy_props(iml, imc, settings):
     partstats = fancy_props(iml, imc, settings)
     '''
 
-    # define the geometrical properties to be calculated from regionprops
-    propnames = ['major_axis_length', 'minor_axis_length',
-                 'equivalent_diameter']
-
-    # measure geometrical properties of particles
     region_properties = measure.regionprops(iml, cache=False)
-    # cache=False is faster
 
-    # pre-allocate some things
-    data = np.zeros((len(region_properties), len(propnames)), dtype=np.float64)
-    bboxes = np.zeros((len(region_properties), 4), dtype=np.float64)
-
-    # loop through each particle and extract the desired statistics
-    for i, el in enumerate(region_properties):
-        data[i, :] = [getattr(el, p) for p in propnames]
-        bboxes[i, :] = el.bbox
-
-    # build the column names for the outputed DataFrame
-    column_names = np.hstack(([propnames, 'minr', 'minc', 'maxr', 'maxc']))
-
-    # merge regionprops statistics with a seperate bounding box columns
-    cat_data = np.hstack((data, bboxes))
-
-    # put particle statistics into a DataFrame
-    partstats = pd.DataFrame(columns=column_names, data=cat_data)
-
-    return partstats
+    return region_properties
 
 
 def fast_props(iml):
@@ -363,6 +339,7 @@ def extract_roi(im, bbox):
       roi
     '''
     roi = im[bbox[0]:bbox[2], bbox[1]:bbox[3]] # yep, that't it.
+
     return roi
 
 
@@ -403,7 +380,6 @@ def measure_particles(imbw, imc, settings):
       Partstats class)
 
     '''
-
     # check the converage of the image of particles is acceptable
     sat_check, saturation = concentration_check(imbw, settings)
     if sat_check == False:
@@ -423,9 +399,9 @@ def measure_particles(imbw, imc, settings):
 
 
     # calculate particle statistics
-    stats = fancy_props(iml, imc, settings)
+    region_properties = fancy_props(iml)
 
-    return stats, saturation
+    return saturation, region_properties
 
 
 def find_gas(imbw, imc, stats):
@@ -462,6 +438,6 @@ def statextract(imc, settings, fancy=False):
 
     logger.debug('measure')
     # calculate particle statistics
-    stats, saturation = measure_particles(imbw, imc, settings)
+    saturation, region_properties = measure_particles(imbw, imc, settings)
 
-    return stats, imbw, saturation
+    return imbw, saturation, region_properties
