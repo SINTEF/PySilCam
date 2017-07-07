@@ -3,8 +3,10 @@ import os
 import warnings
 import time
 import numpy as np
-import logging
 import pandas as pd
+import logging
+
+logger = logging.getLogger(__name__)
 
 #Try import pymba, if not available, revert to in-package mockup
 #If environment variable PYSILCAM_FAKEPYMBA is defined, use
@@ -18,13 +20,13 @@ else:
     except:
         warnings.warn('Pymba not available, using mocked version', ImportWarning)
         print('Pymba not available, using mocked version')
+        logger.debug('Pymba not available, using mocked version')
         import pysilcam.fakepymba as pymba
     else:
         #Monkey-patch in a real-time timestamp getter to be consistent with
         #FakePymba
         pymba.get_time_stamp = lambda x: pd.Timestamp.now()
 
-logger = logging.getLogger(__name__)
 
 
 def _init_camera(vimba):
@@ -130,7 +132,7 @@ def print_camera_config(camera):
                              for a, b in config_info_map])
 
     print(config_info)
-
+    logger.debug(config_info)
 
 def camera_awake_check():
     with pymba.Vimba() as vimba_check:
@@ -155,7 +157,9 @@ def wait_for_camera():
             try:
                 camera = _init_camera(vimba)
             except RuntimeError:
-                print('Could not connect to camera, sleeping five seconds and then retrying')
+                msg = 'Could not connect to camera, sleeping five seconds and then retrying'
+                print(msg)
+                logger.warning(msg)
                 time.sleep(5)
 
 
@@ -188,9 +192,11 @@ def acquire():
                     yield timestamp, img
                 except:
                     print('  FAILED CAPTURE!')
+                    logger.warning("FAILED CAPTURE!")
                     frame0.img_idx += 1
                     if frame0.img_idx > len(frame0.files):
                         print('  END OF FILE LIST.')
+                        logger.debug('  END OF FILE LIST.')
                         break
         finally:
             #Clean up after capture

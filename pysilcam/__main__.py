@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
 import time
+import logging
 from docopt import docopt
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,7 +9,6 @@ import pandas as pd
 import cProfile
 import pstats
 from io import StringIO
-import logging
 from pysilcam import __version__
 from pysilcam.acquisition import acquire
 from pysilcam.background import backgrounder
@@ -18,12 +18,12 @@ import pysilcam.postprocess as sc_pp
 import pysilcam.plotting as scplt
 import pysilcam.datalogger as datalogger
 import pysilcam.oilgas as oilgas
-import pysilcam.exportparticles as exportparts
 from pysilcam.config import load_config, PySilcamSettings
 from skimage import color
 import imageio
 import os
 import pysilcam.silcam_classify as sccl
+
 
 title = '''
  ____        ____  _ _  ____                
@@ -49,7 +49,6 @@ def silcam_acquire():
     Usage:
       silcam-acquire
       silcam-acquire liveview
-      silcam-acquire process <configfile>
       silcam-acquire fancyprocess <configfile>
       silcam-acquire -h | --help
       silcam-acquire --version
@@ -66,11 +65,8 @@ def silcam_acquire():
     print('')
     args = docopt(silcam_acquire.__doc__, version='PySilCam {0}'.format(__version__))
 
-    if args['process']:
-        silcam_process_realtime(args['<configfile>'])
-    
     # this is the standard processing method under development now
-    elif args['fancyprocess']:
+    if args['fancyprocess']:
         silcam_process_fancy(args['<configfile>'])
 
     elif args['liveview']:
@@ -192,20 +188,9 @@ def silcam_process_fancy(config_filename):
             print('bad lighting')
             return
 
-        # simplyfy processing by squeezing the image dimentions into a 2D array
-        # min is used for squeezing to represent the highest attenuation of all wavelengths
-        img = np.uint8(np.min(imc, axis=2))
-
         #Calculate particle statistics
-        stats_all, imbw, saturation = statextract(img, settings)
 
-        # Export particle images if enabled in config file
-        # also use this function for the NN calssification (because it is the
-        # fastest way to access particle ROIs used for classification
-        # @todo tidy up this
-        if (settings.ExportParticles.export_images) or (settings.NNClassify.enable):
-            stats_all = exportparts.export_particles(imc, timestamp, stats_all,
-                    settings, nnmodel, class_labels)
+        stats_all, imbw, saturation = statextract(imc, settings, timestamp, nnmodel, class_labels)
 
         # if there are not particles identified, assume zero concentration.
         # This means that the data should indicate that a 'good' image was
@@ -227,7 +212,7 @@ def silcam_process_fancy(config_filename):
         # if the output file does not already exist, create it
         # otherwise data will be appended
         # @todo accidentally appending to an existing file could be dangerous
-        # because data will be duplicated (and concentrations would therefore
+        # because data will be duplsicated (and concentrations would therefore
         # double)
         if not os.path.isfile(datafilename + '-STATS.csv'):
             stats_all.to_csv(datafilename +
@@ -269,8 +254,6 @@ def silcam_process_fancy(config_filename):
     # iterate on the bbgen generator to obtain images
     for i, (timestamp, imc) in enumerate(bggen):
         # handle errors if the loop function fails for any reason
-        loop(i, timestamp, imc)
-        continue
         try:
             loop(i, timestamp, imc)
         except:
@@ -279,121 +262,6 @@ def silcam_process_fancy(config_filename):
             print(infostr)
 
     #---- END ----
-
-
-def silcam_process_realtime(config_filename):
-    '''Run processing of SilCam images in real time
-    
-    THIS FUNCTION IS BASICALLY NOT USED ANYMORE....
-
-    '''
-
-    print(config_filename)
-
-    print('REALTIME MODE')
-    print('')
-
-    #Load the configuration, create settings object
-    conf = load_config(config_filename)
-    settings = PySilcamSettings(conf)
-
-    #Print configuration to screen
-    print('---- CONFIGURATION ----\n')
-    conf.write(sys.stdout)
-    print('-----------------------\n')
-
-    #Configure logging
-    configure_logger(settings.General)
-    logger = logging.getLogger(__name__ + '.silcam_process_realtime')
-
-    #Initialize the image acquisition generator
-    aqgen = acquire()
-
-    #Get number of images to use for background correction from config
-    print('* Initializing background image handler')
-    bggen = backgrounder(settings.Background.num_images, aqgen)
-
-    times = []
-    d50_ts = []
-
-    #Volume size distribution for total, oil and gas
-    vd_mean = dict(total=sc_pp.TimeIntegratedVolumeDist(settings.PostProcess),
-                   oil=sc_pp.TimeIntegratedVolumeDist(settings.PostProcess),
-                   gas=sc_pp.TimeIntegratedVolumeDist(settings.PostProcess))
-    d50_ts = dict(total=[], oil=[], gas=[])
-
-    if settings.Process.display:
-        logger.info('Initializing real-time plotting')
-        rtplot = scplt.ParticleSizeDistPlot()
-
-    ogdatafile = datalogger.DataLogger(settings.General.datafile + '.csv',
-            oilgas.ogdataheader())
-    ogdatafile_gas = datalogger.DataLogger(settings.General.datafile + '-GAS.csv',
-            oilgas.ogdataheader())
-    tavoilfile = datalogger.DataLogger(settings.General.datafile + '-tavoil.csv',
-            'tavd50, sat')
-
-    def loop(i, timestamp, imc):
-        #Time the full acquisition and processing loop
-        start_time = time.clock()
-
-        logger.info('Processing time stamp {0}'.format(timestamp))
-
-        nc = color.guess_spatial_dimensions(imc)
-        if nc == None: # @todo FIX if there are ambiguous dimentions, assume RGB color space
-            imc = imc[:,:,1] # and just use green
-
-        #Calculate particle statistics
-        stats_all, imbw, saturation = statextract(imc, settings)
-        stats = dict(total=stats_all,
-                     oil=stats_all[stats_all['gas']==0],
-                     gas=stats_all[stats_all['gas']==1])
-
-        #Time the particle statistics processing step
-        proc_time = time.clock() - start_time
-
-        #Calculate time-averaged volume distributions and D50 from particle stats
-        for key in stats.keys():
-            vd_mean[key].update_from_stats(stats[key], timestamp)
-            d50_ts[key].append(sc_pp.d50_from_vd(vd_mean[key].vd_mean, 
-                                                 vd_mean[key].dias))
-
-        times.append(i)
-
-        #If real-time plotting is enabled, update the plots
-        if settings.Process.display:
-            if i == 0:
-                rtplot.plot(imc, imbw, times, d50_ts['total'], vd_mean,
-                        settings.Process.display)
-            else:
-                rtplot.update(imc, imbw, times, d50_ts['total'], vd_mean,
-                        settings.Process.display)
-
-        #Log particle stats data to file
-        data_all = oilgas.cat_data(timestamp, stats['total'], settings)
-        ogdatafile.append_data(data_all)
-        data_gas = oilgas.cat_data(timestamp, stats['gas'], settings)
-        ogdatafile_gas.append_data(data_gas)
-
-        tavoilfile.append_data([d50_ts['total'][-1], saturation])
-
-        tot_time = time.clock() - start_time
-
-        #Print timing information for this iteration
-        plot_time = tot_time - proc_time
-        infostr = '  Image {0} processed in {1:.2f} sec ({6:.1f} Hz). '
-        infostr += 'Statextract: {2:.2f}s ({3:.0f}%) Plot: {4:.2f}s ({5:.0f}%)'
-        print(infostr.format(i, tot_time, proc_time, proc_time/tot_time*100, 
-                             plot_time, plot_time/tot_time*100, 1.0/tot_time))
-
-    print('* Commencing image acquisition and processing')
-    for i, (timestamp, imc) in enumerate(bggen):
-        try:
-            loop(i, timestamp, imc)
-        except:
-            infostr = 'Failed to process frame {0}, skipping.'.format(i)
-            logger.warning(infostr)
-            print(infostr)
 
 
 def silcam_process_batch():
