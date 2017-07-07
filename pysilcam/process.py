@@ -97,19 +97,24 @@ def clean_bw(imbw, min_area):
 
 
 def filter_bad_stats(stats,settings):
+    ''' remove unacceptable particles from the stats
+    '''
+    # calculate minor-major axis ratio
     mmr = stats['minor_axis_length'] / stats['major_axis_length']   
+    # remove stats where particles are too deformed
     stats = stats[mmr > settings.Process.min_deformation]
 
+    # remove particles that exceed the maximum dimention
     stats = stats[(stats['major_axis_length'] * settings.PostProcess.pix_size) <
             settings.Process.max_length]
 
-    ecd_ = stats['equivalent_diameter']
-
+    # calculate the area of the bounding boxes
     bbox_area = (stats['maxr']-stats['minr']) * (stats['maxc']-stats['minc'])
 
     #Discard overlapping particles (approximate by solidity requirement)
     stats = stats[(stats['equivalent_diameter'] ** 2 / bbox_area) >
             (settings.Process.min_solidity)]
+    # this is a crude, but fast approximate of solidity
 
     return stats
 
@@ -129,116 +134,6 @@ def fancy_props(iml, imc, timestamp, settings, nnmodel, class_labels):
     return stats
 
 
-def fast_props(iml):
-    '''Calculates basic particle properties
-
-    return pandas.DataFrame
-
-    partstats = fast_props(iml)
-    '''
-
-    propnames = ['major_axis_length', 'minor_axis_length',
-                 'equivalent_diameter']
-
-    region_properties = measure.regionprops(iml, cache=False)
-
-    data = np.zeros((len(region_properties), len(propnames)), dtype=np.float64)
-
-    for i, el in enumerate(region_properties):
-        data[i, :] = [getattr(el, p) for p in propnames]
-
-    partstats = pd.DataFrame(columns=propnames, data=data)
-
-    return partstats
-
-
-def props_og(iml, imc, settings):
-    '''Calculates particle properties of oil and gas.
-
-    Properties calculated: equivalent diameter and a flag for oil or gas per
-    particle.
-
-    Input
-    -----
-        iml: labeled image, small particles removed
-        imc: corrected image
-        settings: global PySilCam settings object
-
-    Returns: pandas.DataFrame
-    '''
-
-    #Fast (lazy eval) calculation of region properties for oil and gas
-    region_properties = measure.regionprops(iml, cache=False)
-
-    #Pre-allocate equiv. circular diameter and gas flag arrays
-    ecd = np.zeros(settings.Process.max_particles, dtype=np.float64)
-    gas = np.zeros(settings.Process.max_particles, dtype=np.bool)
-    ecd[:] = np.nan
-    gas[:] = False
-
-    for i, el in enumerate(region_properties):
-
-        #Discard very eccentric particles
-        minax = el.minor_axis_length
-        majax = el.major_axis_length
-        mmr = minax / majax
-        if mmr < settings.Process.min_deformation:
-            continue
-
-        if ((majax * settings.PostProcess.pix_size) >
-            settings.Process.max_length):
-                continue
-
-        ecd_ = el.equivalent_diameter
-
-        bbox = el.bbox
-        bbox_area = (bbox[2]-bbox[0]) * (bbox[3]-bbox[1])
-
-        #Discard overlapping particles (approximate by solidity requirement)
-        if (ecd_ ** 2 / bbox_area) < (settings.Process.min_solidity):
-            continue
-
-        #Particle is initially assumed to be oil
-        ecd[i] = ecd_
-        gas[i] = False
-
-        if settings.Process.find_gas == False:
-            continue
-
-        # minor axis must exceed minarea number of pixels for gas identification
-        #Valid particles with too few pixels for gas identification algorithm
-        #are assumed to be oil.
-        if minax < settings.Process.minimum_area:
-            continue
-
-        roi = extract_roi(imc, bbox)
-
-        #Extract intensity profile
-        y = 1 / np.sum(roi, axis=0)
-        x = np.arange(0, len(y))
-
-        #Interpolate profile with smoothed spline
-        spl = interpolate.UnivariateSpline(x, y, s=1e-10, k=4)
-
-        #Find peaks in profile for gas identification purpose
-        pinds = spl.derivative().roots()
-
-        #Gas if profile contains 2 or 3 peaks
-        if len(pinds)>1 and len(pinds)<4:
-            gas[i] = True
-
-    #Nans in ecd array are skipped particles, filter these out
-    gas = gas[~np.isnan(ecd)]
-    ecd = ecd[~np.isnan(ecd)]
-    logger.info('Number of oil and gas particles found: {0}'.format(ecd.size))
-
-    #Create Pandas DataFrame for particle stats
-    partstats = pd.DataFrame(columns=['equivalent_diameter', 'gas'],
-                             data=np.stack((ecd, gas)).T)
-
-    return partstats
-
-
 def concentration_check(imbw, settings):
     ''' Check saturation level of the sample volume by comparing area of
     particles with settings.Process.max_coverage
@@ -248,82 +143,31 @@ def concentration_check(imbw, settings):
     set_check is a flag, which is True if the image is acceptable
     saturation is the percentaage saturated
     '''
-
+    
+    # calcualte the area covered by particles in the binary image
     covered_area = float(imbw.sum())
+
+    # measure the image size for correct area calcaultion
     r, c = np.shape(imbw)
+
+    # calculate the percentage of the image covered by particles
     covered_pcent = covered_area / (r * c) * 100
 
+    # convert the percentage covered to a saturation based on the maximum
+    # acceptable coverage defined in the config
     saturation = covered_pcent / settings.Process.max_coverage * 100
 
     logger.info('{0:.1f}% saturation'.format(saturation))
 
+    # check if the saturation is acceptable
     sat_check = saturation < 100
 
     return sat_check, saturation
 
-def props(iml, image_index,im):
-    '''populates stats dataframe with partstats given a labelled iamge
-    (iml), some sort of image-specific tag for future location matching
-    (image_index), and the corrected raw image (im)
-
-    returns:
-      partstats
-
-    '''
-    # this is crazy - i only want some of these attributes.....
-    logger.debug('rprops')
-    region_properties = measure.regionprops(iml, cache=False)
-    logger.debug('  ok')
-#     minor_axis = np.array([el.minor_axis_length for el in stats])
-
-    partstats = pd.DataFrame(index=range(len(region_properties)), columns=['H',
-        'S','V','spine length','area','major_axis_length','minor_axis_length',
-        'convex area','equivalent_diameter','bbox rmin','bbox cmin','bbox rmax',
-        'bbox cmax','perimeter','filled area'] )
-    for i, el in enumerate (region_properties):
-        hsv = get_color_stats(im,el.bbox,el.image)
-        partstats['H'][i] = hsv[0]
-        partstats['S'][i] = hsv[1]
-        partstats['V'][i] = hsv[2]
-
-        #partstats['spine length'][i] = get_spine_length(el.image)
-        partstats['spine length'][i] = np.nan
-        partstats['area'][i] = el.area
-        partstats['major_axis_length'][i] = el.major_axis_length
-        partstats['minor_axis_length'][i] = el.minor_axis_length
-        partstats['convex area'][i] = el.convex_area
-        partstats['equivalent_diameter'][i] = el.equivalent_diameter
-        partstats['bbox rmin'][i] = el.bbox[0]
-        partstats['bbox cmin'][i] = el.bbox[1]
-        partstats['bbox rmax'][i] = el.bbox[2]
-        partstats['bbox cmax'][i] = el.bbox[3]
-        partstats['perimeter'][i] = el.perimeter
-        partstats['filled area'][i] = el.filled_area
-
-#        image_data = Partstats(get_spine_length(el.image),image_index, el.area,
-#                el.major_axis_length, el.minor_axis_length,
-#                el.convex_area, el.equivalent_diameter,
-#                el.bbox,el.perimeter, el.filled_area,
-#                hsv)
-#        partstats.append(image_data)
-
-#    partstats = []
-#    for i, el in enumerate (region_properties):
-#        hsv = get_color_stats(im,el.bbox,el.image)
-#
-#        image_data = Partstats(get_spine_length(el.image),image_index, el.area,
-#                el.major_axis_length, el.minor_axis_length,
-#                el.convex_area, el.equivalent_diameter,
-#                el.bbox,el.perimeter, el.filled_area,
-#                hsv)
-#        partstats.append(image_data)
-
-    return partstats
-
 
 def get_spine_length(imbw):
     ''' extracts the spine length of particles from a binary particle image
-    (imbw)
+    (imbw is a binary roi)
 
     returns:
       spine_length
@@ -346,30 +190,6 @@ def extract_roi(im, bbox):
     roi = im[bbox[0]:bbox[2], bbox[1]:bbox[3]] # yep, that't it.
 
     return roi
-
-
-def get_color_stats(im, bbox, imbw):
-    '''extracts HSV averages inside a particle
-    requries:
-      im (the corrected raw image)
-      bbox (bounding box of the particle image)
-      imbw (segmented particle image - of shape determined by bbox)
-    '''
-    hsv = np.array([np.nan, np.nan, np.nan])
-
-    #roi = np.uint8(extract_roi(im,bbox))
-    #hsv_roi = cv2.cvtColor(roi, cv2.COLOR_RGB2HSV)
-    #hsv_roi = roi
-
-    #hsv_mask = imbw[:,:,None] * hsv_roi
-    #hsv_mask = np.float64(hsv_mask)
-    #hsv_mask[hsv_mask==0] = np.nan
-
-    #hsv = np.array([0, 0, 0])
-    #hsv[0] = np.nanmedian(hsv_mask[:,:,0])
-    #hsv[1] = np.nanmedian(hsv_mask[:,:,1])
-    #hsv[2] = np.nanmedian(hsv_mask[:,:,2])
-    return hsv
 
 
 def measure_particles(imbw, imc, settings, timestamp, nnmodel, class_labels):
@@ -409,17 +229,9 @@ def measure_particles(imbw, imc, settings, timestamp, nnmodel, class_labels):
     return stats, saturation
 
 
-def find_gas(imbw, imc, stats):
-    pass
-
-
-def is_gas():
-    pass
-
-
 def statextract(imc, settings, timestamp, nnmodel, class_labels):
-    '''extracts statistics of particles in imc (2D image)
-
+    '''extracts statistics of particles in imc (raw corrected image)
+    
     returns:
       stats (list of particle statistics for every particle, according to
       Partstats class)
@@ -444,6 +256,9 @@ def statextract(imc, settings, timestamp, nnmodel, class_labels):
     logger.debug('measure')
     # calculate particle statistics
     stats, saturation = measure_particles(imbw, imc, settings, timestamp, nnmodel, class_labels)
+
+    # remove bad particles from data
+    stats = filter_bad_stats(stats, settings)
 
     return stats, imbw, saturation
 

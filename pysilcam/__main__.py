@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
 import time
+import logging
 from docopt import docopt
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,7 +9,6 @@ import pandas as pd
 import cProfile
 import pstats
 from io import StringIO
-import logging
 from pysilcam import __version__
 from pysilcam.acquisition import acquire
 from pysilcam.background import backgrounder
@@ -23,6 +23,7 @@ from skimage import color
 import imageio
 import os
 import pysilcam.silcam_classify as sccl
+
 
 title = '''
  ____        ____  _ _  ____                
