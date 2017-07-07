@@ -14,9 +14,6 @@ import h5py
 import logging
 
 
-logger = logging.getLogger(__name__)
-logger.debug(iniparts - endparts,' particles removed.')
-logger.debug(endparts,' particles measured.')
 def d50_from_stats(stats, settings):
     '''calculate the d50 from the stats and settings
     '''
