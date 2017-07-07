@@ -360,7 +360,7 @@ def make_montage(stats_csv_file, pixel_size, roidir,
 
     roifiles = stats['export name'][stats['export name'] !=
             'not_exported'].values
-    
+
     # subsample the particles if necessary
     print('rofiles:',len(roifiles))
     logger.debug('rofiles:',len(roifiles))
