@@ -94,7 +94,7 @@ def silcam_acquire():
                 aqgen = acquire()
                 for i, (timestamp, imraw) in enumerate(aqgen):
                     filename = timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc')
-                    with open(filename, 'w') as fh:
+                    with open(filename, 'wb') as fh:
                         np.save(fh, imraw, allow_pickle=False)
                         fh.flush()
                         os.fsync(fh.fileno())
