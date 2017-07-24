@@ -13,6 +13,8 @@ logger = logging.getLogger(__name__)
 #in-package mockup regardless.
 if 'PYSILCAM_FAKEPYMBA' in os.environ.keys():
     import pysilcam.fakepymba as pymba
+    # @todo this means that processing on a mchine with pymba installed will
+    # not work with the correct timestamp
     pymba.get_time_stamp = lambda x: pd.Timestamp.now()
 else:
     try:
@@ -26,7 +28,6 @@ else:
         #Monkey-patch in a real-time timestamp getter to be consistent with
         #FakePymba
         pymba.get_time_stamp = lambda x: pd.Timestamp.now()
-
 
 
 def _init_camera(vimba):
@@ -163,13 +164,16 @@ def wait_for_camera():
                 time.sleep(5)
 
 
-def acquire():
+def acquire(datapath=None):
     '''Aquire images from SilCam'''
 
     #Initialize the camera interface, retry every five seconds if camera not found
     #while not camera_awake_check():
     #    print('Could not connect to camera, sleeping five seconds and then retrying')
     #    time.sleep(5)
+
+    if datapath != None:
+        os.environ['PYSILCAM_TESTDATA'] = datapath
 
     #Wait until camera wakes up
     wait_for_camera()

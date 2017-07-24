@@ -18,6 +18,19 @@ try:
 except ImportError:
     import builtins as __builtin__
 
+
+def silcam_load(filename):
+    #Load the raw image from disc depending on filetype
+    if filename.endswith('.silc'):
+        img0 = np.load(filename, allow_pickle=False)
+    else:
+        img0 = imageio.imread(filename)
+    return img0
+
+def silcam_name2time(fname):
+    timestamp = pd.to_datetime(os.path.splitext(fname)[0][1:])
+    return timestamp
+
 #Fake aqusition frequency
 FPS = 15
 
@@ -75,9 +88,12 @@ class Frame:
             path = os.environ['PYSILCAM_TESTDATA']
             self.files = [os.path.join(path, f) 
                           for f in sorted(os.listdir(path)) 
-                          if f.endswith('.bmp')][offset:]
+                          if f.startswith('D') and (f.endswith('.bmp') or
+                              f.endswith('.silc'))][offset:]
             self.img_idx = 0
-            img0 = imageio.imread(self.files[0])
+
+            img0 = silcam_load(self.files[0])
+
             if len(img0.shape) == 2:
                 self.height, self.width = img0.shape
             else:
@@ -93,14 +109,14 @@ class Frame:
 
     def getBufferByteData(self):
         if self.files is not None:
-            frame = imageio.imread(self.files[self.img_idx])
+            frame = silcam_load(self.files[self.img_idx])
             if len(frame.shape) == 2:
                 frame2 = np.zeros((self.height, self.width, 3), dtype=frame.dtype)
                 for i in range(3):
                     frame2[:, :, i] = frame[:, :]
                 frame = frame2
             fname = os.path.basename(self.files[self.img_idx])
-            self.timestamp = pd.to_datetime(fname[1:-4])
+            self.timestamp = silcam_name2time(fname)
             self.img_idx += 1
             print('Getting buffer byte data from file {0}, {1}/{2}'.format(frame.shape, self.img_idx, len(self.files)))
             logging.debug('Getting buffer byte data from file {0}, {1}/{2}'.format(frame.shape, self.img_idx, len(self.files)))
@@ -143,7 +159,7 @@ class RealtimeFrame(Frame):
         self._list_images()
         self.img_idx = 0
         self.filename = self.files[0]
-        img0 = imageio.imread(self.filename)
+        img0 = silcam_load(self.filename)
         self.height = img0.shape[0]
         self.width = img0.shape[1]
         print('Realtime frame acquired')
@@ -158,14 +174,14 @@ class RealtimeFrame(Frame):
             self._list_images()
 
         self.filename = self.files[-3]
-        frame = imageio.imread(self.filename)
+        frame = silcam_load(self.filename)
         if len(frame.shape) == 2:
             frame2 = np.zeros((self.height, self.width, 3), dtype=frame.dtype)
             for i in range(3):
                 frame2[:, :, i] = frame[:, :]
             frame = frame2
         fname = os.path.basename(self.filename)
-        self.timestamp = pd.to_datetime(fname[1:-4])
+        self.timestamp = silcam_name2time(fname)
         self.img_idx += 1
         print('Getting buffer byte data from file {0}, #{1}'.format(frame.shape, self.img_idx))
         logging.debug('Getting buffer byte data from file {0}, #{1}'.format(frame.shape, self.img_idx))
