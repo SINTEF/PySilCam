@@ -194,7 +194,7 @@ def acquire(datapath=None):
                 try:
                     timestamp, img = _acquire_frame(camera, frame0)
                     yield timestamp, img
-                except:
+                except Exception:
                     print('  FAILED CAPTURE!')
                     logger.warning("FAILED CAPTURE!")
                     frame0.img_idx += 1
