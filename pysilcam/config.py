@@ -18,14 +18,12 @@ def load_config(filename):
 
     #Check that the file exists
     if not os.path.exists(filename):
-        logger.error('Config file not found: {0}'.format(filename))
         raise RuntimeError('Config file not found: {0}'.format(filename))
     
     #Create ConfigParser and populate from file
     conf = configparser.ConfigParser()
     files_parsed = conf.read(filename)
     if filename not in files_parsed:
-        logger.error('Could not parse config file: {0}'.format(filename))
         raise RuntimeError('Could not parse config file {0}'.format(filename))
 
     #Check that we got the correction version
@@ -33,7 +31,6 @@ def load_config(filename):
     expectversion = __configversion__
     if fileversion != expectversion:
         errmsg = 'Wrong configuration file version, expected {0}, got {1}.'
-        logger.error(errmsg)
         raise RuntimeError(errmsg.format(fileversion, expectversion))
 
     return conf

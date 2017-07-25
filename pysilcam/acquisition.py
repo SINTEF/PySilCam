@@ -160,7 +160,7 @@ def wait_for_camera():
             except RuntimeError:
                 msg = 'Could not connect to camera, sleeping five seconds and then retrying'
                 print(msg)
-                logger.warning(msg)
+                logger.warning(msg, exc_info=True)
                 time.sleep(5)
 
 

@@ -269,7 +269,7 @@ def silcam_process_fancy(config_filename, datapath):
             loop(i, timestamp, imc)
         except:
             infostr = 'Failed to process frame {0}, skipping.'.format(i)
-            logger.warning(infostr)
+            logger.warning(infostr, exc_info=True)
             print(infostr)
 
     #---- END ----
