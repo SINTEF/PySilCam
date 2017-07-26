@@ -11,8 +11,6 @@ import logging
 # This is the required version of the configuration file
 __configversion__ = 1
 
-logger = logging.getLogger(__name__)
-
 def load_config(filename):
     '''Load config file and validate content'''
 
