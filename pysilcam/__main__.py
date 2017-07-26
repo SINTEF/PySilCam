@@ -58,18 +58,17 @@ def silcam_acquire():
         process     Process acquired images in real time
 
     Options:
-      --nbimages=<number of images>     Number of images to process [default: None].
+      --nbimages=<number of images>     Number of images to process.
       -h --help                         Show this screen.
       --version                         Show version.
     '''
     print(title)
     print('')
     args = docopt(silcam_acquire.__doc__, version='PySilCam {0}'.format(__version__))
-    
     # this is the standard processing method under development now
     if args['fancyprocess']:
         nbImages = args['--nbimages']
-        if (nbImages != 'None'):
+        if (nbImages != None):
             try:
                 nbImages = int(nbImages)
             except ValueError:
@@ -273,7 +272,7 @@ def silcam_process_fancy(config_filename, datapath, nbImages):
     # iterate on the bbgen generator to obtain images
     for i, (timestamp, imc) in enumerate(bggen):
         # handle errors if the loop function fails for any reason
-        if (nbImages != 'None'):
+        if (nbImages != None):
             if (nbImages <= i):
                 break
         try:
