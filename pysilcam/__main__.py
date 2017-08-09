@@ -48,7 +48,7 @@ def silcam():
 
     Usage:
       silcam acquire [-l | --liveview]
-      silcam process <configfile> <datapath>
+      silcam process <configfile> <datapath> [--nbimages=<number of images>]
       silcam -h | --help
       silcam --version
 
@@ -57,9 +57,9 @@ def silcam():
         process     Process images
 
     Options:
-      -l --liveview     Display acquired images.
-      -h --help         Show this screen.
-      --version         Show version.
+      --nbimages=<number of images>     Number of images to process.
+      -h --help                         Show this screen.
+      --version                         Show version.
 
     '''
     print(title)
@@ -67,7 +67,14 @@ def silcam():
     args = docopt(silcam.__doc__, version='PySilCam {0}'.format(__version__))
     # this is the standard processing method under development now
     if args['process']:
-        silcam_process(args['<configfile>'],args['<datapath>'])
+        nbImages = args['--nbimages']
+        if (nbImages != None):
+            try:
+                nbImages = int(nbImages)
+            except ValueError:
+                print('Expected type int for --nbimages.')
+                sys.exit(0)
+        silcam_process(args['<configfile>'],args['<datapath>'], nbImages)
 
     elif args['acquire']:
         if args['--liveview']:
@@ -119,7 +126,8 @@ def silcam():
  
 
 # the standard processing method under active development
-def silcam_process(config_filename, datapath):
+def silcam_process(config_filename, datapath, nbImages=None):
+
     '''Run processing of SilCam images
     
     The goal is to make this as fast as possible so it can be used in real-time
@@ -266,11 +274,14 @@ def silcam_process(config_filename, datapath):
     # iterate on the bbgen generator to obtain images
     for i, (timestamp, imc) in enumerate(bggen):
         # handle errors if the loop function fails for any reason
+        if (nbImages != None):
+            if (nbImages <= i):
+                break
         try:
             loop(i, timestamp, imc)
         except:
             infostr = 'Failed to process frame {0}, skipping.'.format(i)
-            logger.warning(infostr)
+            logger.warning(infostr, exc_info=True)
             print(infostr)
 
     #---- END ----

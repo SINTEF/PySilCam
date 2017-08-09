@@ -160,7 +160,7 @@ def wait_for_camera():
             except RuntimeError:
                 msg = 'Could not connect to camera, sleeping five seconds and then retrying'
                 print(msg)
-                logger.warning(msg)
+                logger.warning(msg, exc_info=True)
                 time.sleep(5)
 
 
@@ -194,7 +194,7 @@ def acquire(datapath=None):
                 try:
                     timestamp, img = _acquire_frame(camera, frame0)
                     yield timestamp, img
-                except:
+                except Exception:
                     print('  FAILED CAPTURE!')
                     logger.warning("FAILED CAPTURE!")
                     frame0.img_idx += 1
