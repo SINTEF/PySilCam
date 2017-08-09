@@ -2,7 +2,7 @@
 import os
 import sys
 import logging
-from pysilcam.__main__ import silcam_process_fancy
+from pysilcam.__main__ import silcam_process
 import unittest
 
 @unittest.skipIf(not os.path.isdir(
@@ -23,7 +23,7 @@ def test_csv_file():
         os.remove(stats_file)
 
     # call process function
-    silcam_process_fancy(conf_file, data_file)
+    silcam_process(conf_file, data_file)
 
     # check that csv file has been created
     assert os.path.isfile(stats_file), 'stats_file not created'
