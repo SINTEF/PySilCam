@@ -44,12 +44,12 @@ def configure_logger(settings):
 
 
 def silcam_acquire():
-    '''Aquire images from the SilCam
+    '''Acquire images from the SilCam
 
     Usage:
       silcam-acquire
       silcam-acquire liveview
-      silcam-acquire fancyprocess <configfile> <datapath>
+      silcam-acquire fancyprocess <configfile> <datapath> [--nbimages=<number of images>]
       silcam-acquire -h | --help
       silcam-acquire --version
 
@@ -58,16 +58,23 @@ def silcam_acquire():
         process     Process acquired images in real time
 
     Options:
-      -h --help     Show this screen.
-      --version     Show version.
+      --nbimages=<number of images>     Number of images to process.
+      -h --help                         Show this screen.
+      --version                         Show version.
     '''
     print(title)
     print('')
     args = docopt(silcam_acquire.__doc__, version='PySilCam {0}'.format(__version__))
-
     # this is the standard processing method under development now
     if args['fancyprocess']:
-        silcam_process_fancy(args['<configfile>'],args['<datapath>'])
+        nbImages = args['--nbimages']
+        if (nbImages != None):
+            try:
+                nbImages = int(nbImages)
+            except ValueError:
+                print('Expected type int for --nbimages.')
+                sys.exit(0)
+        silcam_process_fancy(args['<configfile>'],args['<datapath>'], nbImages)
 
     elif args['liveview']:
         print('LIVEVIEW MODE')
@@ -118,7 +125,7 @@ def silcam_acquire():
  
 
 # the standard processing method under active development
-def silcam_process_fancy(config_filename, datapath):
+def silcam_process_fancy(config_filename, datapath, nbImages):
     '''Run processing of SilCam images
     
     The goal is to make this as fast as possible so it can be used in real-time
@@ -265,6 +272,9 @@ def silcam_process_fancy(config_filename, datapath):
     # iterate on the bbgen generator to obtain images
     for i, (timestamp, imc) in enumerate(bggen):
         # handle errors if the loop function fails for any reason
+        if (nbImages != None):
+            if (nbImages <= i):
+                break
         try:
             loop(i, timestamp, imc)
         except:
