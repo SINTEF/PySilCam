@@ -43,30 +43,30 @@ def configure_logger(settings):
         logging.basicConfig(level=getattr(logging, settings.loglevel))
 
 
-def silcam_acquire():
-    '''Acquire images from the SilCam
+def silcam():
+    '''Aquire/process images from the SilCam
 
     Usage:
-      silcam-acquire
-      silcam-acquire liveview
-      silcam-acquire fancyprocess <configfile> <datapath> [--nbimages=<number of images>]
-      silcam-acquire -h | --help
-      silcam-acquire --version
+      silcam acquire [-l | --liveview]
+      silcam process <configfile> <datapath> [--nbimages=<number of images>]
+      silcam -h | --help
+      silcam --version
 
     Arguments:
-        liveview    Display acquired images
-        process     Process acquired images in real time
+        acquire     Acquire images
+        process     Process images
 
     Options:
       --nbimages=<number of images>     Number of images to process.
       -h --help                         Show this screen.
       --version                         Show version.
+
     '''
     print(title)
     print('')
-    args = docopt(silcam_acquire.__doc__, version='PySilCam {0}'.format(__version__))
+    args = docopt(silcam.__doc__, version='PySilCam {0}'.format(__version__))
     # this is the standard processing method under development now
-    if args['fancyprocess']:
+    if args['process']:
         nbImages = args['--nbimages']
         if (nbImages != None):
             try:
@@ -74,58 +74,60 @@ def silcam_acquire():
             except ValueError:
                 print('Expected type int for --nbimages.')
                 sys.exit(0)
-        silcam_process_fancy(args['<configfile>'],args['<datapath>'], nbImages)
+        silcam_process(args['<configfile>'],args['<datapath>'], nbImages)
 
-    elif args['liveview']:
-        print('LIVEVIEW MODE')
-        print('')
-        print('----------------------\n')
-        plt.ion()
-        fig, ax = plt.subplots()
-        t1 = time.time()
-
-        for i, img in enumerate(acquire()):
-            t2 = time.time()
-            aq_freq = np.round(1.0/(t2 - t1), 1)
-            print('Image {0} acquired at frequency {1:.1f} Hz'.format(i, aq_freq))
-            t1 = t2
-            #ax.imshow(img[:,:,0], cmap=plt.cm.gray)
-            ax.imshow(np.uint8(img))
-            #plt.draw()
-            plt.pause(0.05)
-
-    else: # this is the standard acquisition method under development now
-        while True:
+    elif args['acquire']:
+        if args['--liveview']:
+            print('LIVEVIEW MODE')
+            print('')
+            print('----------------------\n')
+            plt.ion()
+            fig, ax = plt.subplots()
             t1 = time.time()
-            try:
-                aqgen = acquire()
-                for i, (timestamp, imraw) in enumerate(aqgen):
-                    filename = timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc')
-                    with open(filename, 'wb') as fh:
-                        np.save(fh, imraw, allow_pickle=False)
-                        fh.flush()
-                        os.fsync(fh.fileno())
-                    print('Written', filename)
 
-                    t2 = time.time()
-                    aq_freq = np.round(1.0/(t2 - t1), 1)
-                    requested_freq = 16.0
-                    rest_time = (1 / requested_freq) - (1 / aq_freq)
-                    rest_time = np.max([rest_time, 0.])
-                    time.sleep(rest_time)
-                    actual_aq_freq = 1/(1/aq_freq + rest_time)
-                    print('Image {0} acquired at frequency {1:.1f} Hz'.format(i, actual_aq_freq))
-                    t1 = time.time()
-            except KeyboardInterrupt:
-                print('User interrupt with ctrl+c, terminating PySilCam.')
-                sys.exit(0)
-            except:
-                etype, emsg, etrace = sys.exc_info()
-                print('Exception occurred: {0}. Restarting acquisition.'.format(emsg))
+            for i, img in enumerate(acquire()):
+                t2 = time.time()
+                aq_freq = np.round(1.0/(t2 - t1), 1)
+                print('Image {0} acquired at frequency {1:.1f} Hz'.format(i, aq_freq))
+                t1 = t2
+                #ax.imshow(img[:,:,0], cmap=plt.cm.gray)
+                ax.imshow(np.uint8(img))
+                #plt.draw()
+                plt.pause(0.05)
+
+        else: # this is the standard acquisition method under development now
+            while True:
+                t1 = time.time()
+                try:
+                    aqgen = acquire()
+                    for i, (timestamp, imraw) in enumerate(aqgen):
+                        filename = timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc')
+                        with open(filename, 'wb') as fh:
+                            np.save(fh, imraw, allow_pickle=False)
+                            fh.flush()
+                            os.fsync(fh.fileno())
+                        print('Written', filename)
+
+                        t2 = time.time()
+                        aq_freq = np.round(1.0/(t2 - t1), 1)
+                        requested_freq = 16.0
+                        rest_time = (1 / requested_freq) - (1 / aq_freq)
+                        rest_time = np.max([rest_time, 0.])
+                        time.sleep(rest_time)
+                        actual_aq_freq = 1/(1/aq_freq + rest_time)
+                        print('Image {0} acquired at frequency {1:.1f} Hz'.format(i, actual_aq_freq))
+                        t1 = time.time()
+                except KeyboardInterrupt:
+                    print('User interrupt with ctrl+c, terminating PySilCam.')
+                    sys.exit(0)
+                except:
+                    etype, emsg, etrace = sys.exc_info()
+                    print('Exception occurred: {0}. Restarting acquisition.'.format(emsg))
  
 
 # the standard processing method under active development
-def silcam_process_fancy(config_filename, datapath, nbImages):
+def silcam_process(config_filename, datapath, nbImages=None):
+
     '''Run processing of SilCam images
     
     The goal is to make this as fast as possible so it can be used in real-time
@@ -136,7 +138,7 @@ def silcam_process_fancy(config_filename, datapath, nbImages):
     '''
     print(config_filename)
 
-    print('FANCYPROCESS MODE')
+    print('PROCESS MODE')
     print('')
 
     #---- SETUP ----
@@ -152,7 +154,7 @@ def silcam_process_fancy(config_filename, datapath, nbImages):
 
     #Configure logging
     configure_logger(settings.General)
-    logger = logging.getLogger(__name__ + '.silcam_process_fancy')
+    logger = logging.getLogger(__name__ + '.silcam_process')
 
     logger.info('Processing path: ' + datapath)
 
@@ -162,7 +164,7 @@ def silcam_process_fancy(config_filename, datapath, nbImages):
         nnmodel, class_labels = sccl.load_model(model_path=settings.NNClassify.model_path)
 
     #Initialize the image acquisition generator
-    aqgen = acquire(datapath=datapath)
+    aqgen = acquire(datapath)
 
     #Get number of images to use for background correction from config
     print('* Initializing background image handler')
