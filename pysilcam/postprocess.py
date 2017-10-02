@@ -355,6 +355,15 @@ def make_montage(stats_csv_file, pixel_size, roidir,
     # sort the particles based on their length
     stats.sort_values(by=['major_axis_length'], ascending=False, inplace=True)
 
+    roifiles = gen_roifiles(stats, auto_scaler=auto_scaler)
+
+    montage = montage_maker(roifiles, roidir, pixel_size, msize)
+
+    return montage
+
+
+def gen_roifiles(stats, auto_scaler=500):
+
     roifiles = stats['export name'][stats['export name'] !=
             'not_exported'].values
 
@@ -365,9 +374,7 @@ def make_montage(stats_csv_file, pixel_size, roidir,
     roifiles = roifiles[np.arange(0,len(roifiles),IMSTEP)]
     print('rofiles:',len(roifiles))
 
-    montage = montage_maker(roifiles, roidir, pixel_size, msize)
-
-    return montage
+    return roifiles
 
 
 def get_sample_volume(pix_size, path_length=10, imx=2048, imy=2448):
