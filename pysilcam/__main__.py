@@ -23,6 +23,7 @@ from skimage import color
 import imageio
 import os
 import pysilcam.silcam_classify as sccl
+import pysilcam.sclive as scl
 
 
 title = '''
@@ -76,53 +77,40 @@ def silcam():
                 sys.exit(0)
         silcam_process(args['<configfile>'],args['<datapath>'], nbImages)
 
-    elif args['acquire']:
+    elif args['acquire']: # this is the standard acquisition method under development now
         if args['--liveview']:
-            print('LIVEVIEW MODE')
-            print('')
-            print('----------------------\n')
-            plt.ion()
-            fig, ax = plt.subplots()
+            lv = scl.liveview()
+        while True:
             t1 = time.time()
+            try:
+                aqgen = acquire()
+                for i, (timestamp, imraw) in enumerate(aqgen):
+                    if args['--liveview']:
+                        lv = lv.update(imraw, timestamp)
+                        if not lv.record:
+                            continue
+                    filename = timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc')
+                    with open(filename, 'wb') as fh:
+                        np.save(fh, imraw, allow_pickle=False)
+                        fh.flush()
+                        os.fsync(fh.fileno())
+                    print('Written', filename)
 
-            for i, img in enumerate(acquire()):
-                t2 = time.time()
-                aq_freq = np.round(1.0/(t2 - t1), 1)
-                print('Image {0} acquired at frequency {1:.1f} Hz'.format(i, aq_freq))
-                t1 = t2
-                #ax.imshow(img[:,:,0], cmap=plt.cm.gray)
-                ax.imshow(np.uint8(img))
-                #plt.draw()
-                plt.pause(0.05)
-
-        else: # this is the standard acquisition method under development now
-            while True:
-                t1 = time.time()
-                try:
-                    aqgen = acquire()
-                    for i, (timestamp, imraw) in enumerate(aqgen):
-                        filename = timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc')
-                        with open(filename, 'wb') as fh:
-                            np.save(fh, imraw, allow_pickle=False)
-                            fh.flush()
-                            os.fsync(fh.fileno())
-                        print('Written', filename)
-
-                        t2 = time.time()
-                        aq_freq = np.round(1.0/(t2 - t1), 1)
-                        requested_freq = 16.0
-                        rest_time = (1 / requested_freq) - (1 / aq_freq)
-                        rest_time = np.max([rest_time, 0.])
-                        time.sleep(rest_time)
-                        actual_aq_freq = 1/(1/aq_freq + rest_time)
-                        print('Image {0} acquired at frequency {1:.1f} Hz'.format(i, actual_aq_freq))
-                        t1 = time.time()
-                except KeyboardInterrupt:
-                    print('User interrupt with ctrl+c, terminating PySilCam.')
-                    sys.exit(0)
-                except:
-                    etype, emsg, etrace = sys.exc_info()
-                    print('Exception occurred: {0}. Restarting acquisition.'.format(emsg))
+                    t2 = time.time()
+                    aq_freq = np.round(1.0/(t2 - t1), 1)
+                    requested_freq = 16.0
+                    rest_time = (1 / requested_freq) - (1 / aq_freq)
+                    rest_time = np.max([rest_time, 0.])
+                    time.sleep(rest_time)
+                    actual_aq_freq = 1/(1/aq_freq + rest_time)
+                    print('Image {0} acquired at frequency {1:.1f} Hz'.format(i, actual_aq_freq))
+                    t1 = time.time()
+            except KeyboardInterrupt:
+                print('User interrupt with ctrl+c, terminating PySilCam.')
+                sys.exit(0)
+            except:
+                etype, emsg, etrace = sys.exc_info()
+                print('Exception occurred: {0}. Restarting acquisition.'.format(emsg))
  
 
 # the standard processing method under active development
