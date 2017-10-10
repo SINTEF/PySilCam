@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>SilCam</class>
+ <widget class="QMainWindow" name="SilCam">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>641</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="windowTitle">
+   <string notr="true">SilCam</string>
+  </property>
+  <property name="statusTip">
+   <string notr="true"/>
+  </property>
+  <widget class="QWidget" name="centralwidget"/>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuTest">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionSave_Figure"/>
+    <addaction name="actionExit"/>
+   </widget>
+   <widget class="QMenu" name="menuData">
+    <property name="title">
+     <string>Data</string>
+    </property>
+    <widget class="QMenu" name="menuProcessed">
+     <property name="title">
+      <string>Processed</string>
+     </property>
+     <addaction name="actionLoadProcessed"/>
+     <addaction name="actionVD_Time_series"/>
+     <addaction name="actionExport_Time_series"/>
+    </widget>
+    <addaction name="actionRaw"/>
+    <addaction name="menuProcessed"/>
+   </widget>
+   <widget class="QMenu" name="menuAcquire">
+    <property name="title">
+     <string>Acquire</string>
+    </property>
+    <addaction name="actionConfig"/>
+    <addaction name="actionController"/>
+   </widget>
+   <widget class="QMenu" name="menuProcessing">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
+    <property name="title">
+     <string>Processing</string>
+    </property>
+    <addaction name="actionSilc_viewer"/>
+   </widget>
+   <addaction name="menuTest"/>
+   <addaction name="menuData"/>
+   <addaction name="menuAcquire"/>
+   <addaction name="menuProcessing"/>
+  </widget>
+  <widget class="QDockWidget" name="infoWidget">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>100</width>
+     <height>100</height>
+    </size>
+   </property>
+   <property name="features">
+    <set>QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable</set>
+   </property>
+   <property name="windowTitle">
+    <string>Info</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>4</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents"/>
+  </widget>
+  <action name="actionOpen">
+   <property name="text">
+    <string>Open</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="text">
+    <string>Exit</string>
+   </property>
+  </action>
+  <action name="actionRaw">
+   <property name="text">
+    <string>Raw</string>
+   </property>
+  </action>
+  <action name="actionConfig">
+   <property name="text">
+    <string>Config</string>
+   </property>
+  </action>
+  <action name="actionController">
+   <property name="text">
+    <string>Controller</string>
+   </property>
+  </action>
+  <action name="actionSave_Figure">
+   <property name="text">
+    <string>Save Figure</string>
+   </property>
+  </action>
+  <action name="actionLoadProcessed">
+   <property name="text">
+    <string>Load</string>
+   </property>
+  </action>
+  <action name="actionVD_Time_series">
+   <property name="text">
+    <string>VD Time-series</string>
+   </property>
+  </action>
+  <action name="actionExport_Time_series">
+   <property name="text">
+    <string>Export VD Time-series</string>
+   </property>
+  </action>
+  <action name="actionSilc_viewer">
+   <property name="text">
+    <string>silc viewer</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
