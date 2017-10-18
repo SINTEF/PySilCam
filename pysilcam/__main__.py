@@ -196,9 +196,9 @@ def silcam_process(config_filename, datapath, nbImages=None):
         b = imc[:, :, 2]
         s = np.std([r, g, b])
         print('lighting std:',s)
-        # ignore bas images as if they were not obtained (i.e. do not affect
+        # ignore bad images as if they were not obtained (i.e. do not affect
         # output statistics in any way)
-        if s > 4:
+        if s > 8:
             print('bad lighting')
             return
 

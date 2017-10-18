@@ -76,6 +76,7 @@ class Frame:
         if 'PYSILCAM_TESTDATA' in os.environ.keys():
             offset = int(os.environ.get('PYSILCAM_OFFSET', 0))
             path = os.environ['PYSILCAM_TESTDATA']
+            path = path.replace('\ ',' ') # handle spaces (not sure on windows behaviour)
             self.files = [os.path.join(path, f) 
                           for f in sorted(os.listdir(path)) 
                           if f.startswith('D') and (f.endswith('.bmp') or
