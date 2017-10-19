@@ -509,3 +509,11 @@ def export_name2im(exportname, path):
     im = fh[pn]
 
     return im
+
+
+def extract_latest_stats(stats, window_size):
+    end = pd.to_datetime(np.max(stats['timestamp']))
+    start = end - pd.to_timedelta('00:00:' + str(window_size))
+    stats = stats[pd.to_datetime(stats['timestamp'])>start]
+    return stats
+

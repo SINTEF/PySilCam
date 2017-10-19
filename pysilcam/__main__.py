@@ -24,6 +24,7 @@ import imageio
 import os
 import pysilcam.silcam_classify as sccl
 import pysilcam.sclive as scl
+import pysilcam.oilgas as scog
 
 
 title = '''
@@ -157,6 +158,9 @@ def silcam_process(config_filename, datapath, nbImages=None):
     if settings.NNClassify.enable:
         nnmodel, class_labels = sccl.load_model(model_path=settings.NNClassify.model_path)
 
+    # this can be initialised and then never used
+    rts = scog.rt_stats(settings)
+
     if settings.Process.display:
         lv = scl.liveview()
     else:
@@ -189,7 +193,7 @@ def silcam_process(config_filename, datapath, nbImages=None):
 
     #---- MAIN PROCESSING LOOP ----
     # processing function run on each image
-    def loop(i, timestamp, imc, lv=None):
+    def loop(i, timestamp, imc, lv=None, rts=None):
         #Time the full acquisition and processing loop
         start_time = time.clock()
 
@@ -268,8 +272,20 @@ def silcam_process(config_filename, datapath, nbImages=None):
                              plot_time, plot_time/tot_time*100, 1.0/tot_time))
 
         #---- END MAIN PROCESSING LOOP ----
+        #---- DO SOME ADMIN ----
+        if settings.Process.real_time_stats:
+            try:
+                rts.stats = rts.stats().append(stats_all)
+            except:
+                rts.stats = rts.stats.append(stats_all)
+            rts.update()
+            if settings.Process.display:
+                lv.stats = rts.stats
+                lv.oil_stats = rts.oil_stats
+                lv.gas_stats = rts.gas_stats
+
         if settings.Process.display:
-            lv = lv.update(imc, timestamp, stats_all, settings)
+            lv = lv.update(imc, timestamp, settings)
 
     #---- RUN PROCESSING ----
 
@@ -280,8 +296,10 @@ def silcam_process(config_filename, datapath, nbImages=None):
         if (nbImages != None):
             if (nbImages <= i):
                 break
+        loop(i, timestamp, imc, lv, rts)
+        continue
         try:
-            loop(i, timestamp, imc, lv)
+            loop(i, timestamp, imc, lv, rts)
         except:
             infostr = 'Failed to process frame {0}, skipping.'.format(i)
             logger.warning(infostr, exc_info=True)

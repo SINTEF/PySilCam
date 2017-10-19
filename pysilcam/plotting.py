@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import pysilcam.postprocess as sc_pp
 import numpy as np
 import seaborn as sns
+sns.set_style('ticks')
 from pysilcam.config import load_config, PySilcamSettings
 import pandas as pd
 
