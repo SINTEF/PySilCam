@@ -19,6 +19,7 @@ class liveview:
         self.c = pygame.time.Clock()
         self.font = pygame.font.SysFont("monospace", 20)
         self.record = False
+        self.disp = True
         pass
 
 
@@ -56,11 +57,14 @@ class liveview:
 
     def update(self, img, timestamp):
         self.c.tick()
-        im = pygame.surfarray.make_surface(np.uint8(img))
-        im = pygame.transform.flip(im, False, True)
-        im = pygame.transform.rotate(im, -90)
-        im = pygame.transform.scale(im, self.size)
-        self.screen.blit(im, (0,0))
+        if self.disp:
+            im = pygame.surfarray.make_surface(np.uint8(img))
+            im = pygame.transform.flip(im, False, True)
+            im = pygame.transform.rotate(im, -90)
+            im = pygame.transform.scale(im, self.size)
+            self.screen.blit(im, (0,0))
+        else:
+            self.screen.fill((0, 0, 0))
 
         self.timestamp = timestamp
         
@@ -72,6 +76,8 @@ class liveview:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_r:
                     self.record = np.invert(self.record)
+                if event.key == pygame.K_d:
+                    self.disp = np.invert(self.disp)
 
         self.overlay()
 
