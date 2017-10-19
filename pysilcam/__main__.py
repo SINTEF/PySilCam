@@ -159,6 +159,9 @@ def silcam_process(config_filename, datapath, nbImages=None):
 
     if settings.Process.display:
         lv = scl.liveview()
+    else:
+        lv=[]
+
     #Initialize the image acquisition generator
     aqgen = acquire(datapath)
 
@@ -186,7 +189,7 @@ def silcam_process(config_filename, datapath, nbImages=None):
 
     #---- MAIN PROCESSING LOOP ----
     # processing function run on each image
-    def loop(i, timestamp, imc, lv):
+    def loop(i, timestamp, imc, lv=None):
         #Time the full acquisition and processing loop
         start_time = time.clock()
 
@@ -266,7 +269,7 @@ def silcam_process(config_filename, datapath, nbImages=None):
 
         #---- END MAIN PROCESSING LOOP ----
         if settings.Process.display:
-            lv = lv.update(imc, timestamp)
+            lv = lv.update(imc, timestamp, stats_all, settings)
 
     #---- RUN PROCESSING ----
 

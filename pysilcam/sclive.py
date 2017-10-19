@@ -4,6 +4,13 @@ import numpy as np
 import pygame
 import subprocess
 import os
+import pysilcam.plotting as scplt
+import pysilcam.postprocess as sc_pp
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.backends.backend_agg as agg
+import pylab
+
 
 class liveview:
 
@@ -19,7 +26,7 @@ class liveview:
         self.c = pygame.time.Clock()
         self.font = pygame.font.SysFont("monospace", 20)
         self.record = False
-        self.disp = True
+        self.disp = False
         pass
 
 
@@ -55,7 +62,7 @@ class liveview:
         return self
 
 
-    def update(self, img, timestamp):
+    def update(self, img, timestamp, stats=None, settings=None):
         self.c.tick()
         if self.disp:
             im = pygame.surfarray.make_surface(np.uint8(img))
@@ -64,7 +71,21 @@ class liveview:
             im = pygame.transform.scale(im, self.size)
             self.screen.blit(im, (0,0))
         else:
-            self.screen.fill((0, 0, 0))
+            if len(stats)>0:
+                fig = pylab.figure(figsize=[4, 4], dpi=100)
+                ax = fig.gca()
+                #dias, vd = sc_pp.vd_from_stats(stats, settings.PostProcess)
+                scplt.psd(stats, settings.PostProcess, ax, line=None, c='k')
+                canvas = agg.FigureCanvasAgg(fig)
+                canvas.draw()
+                renderer = canvas.get_renderer()
+                raw_data = renderer.tostring_rgb()
+                size = canvas.get_width_height()
+                surf = pygame.image.fromstring(raw_data, size, "RGB")
+                surf = pygame.tranform.scale(surf, self.size)
+                self.screen.blit(surf, (0,0))
+            else:
+                self.screen.fill((0, 0, 0))
 
         self.timestamp = timestamp
         
