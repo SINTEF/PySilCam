@@ -23,30 +23,32 @@ class liveview:
 
 
     def overlay(self):
+        r, g, b = 0, 0, 255
+
         # top
         txt = str(self.timestamp)
-        label = self.font.render(txt, 1, (255, 255, 0))
+        label = self.font.render(txt, 1, (r, g, b))
         self.screen.blit(label, (0,0))
 
         txt = 'FPS:' + str(np.round(self.c.get_fps(), decimals=2))
-        label = self.font.render(txt, 1, (255, 255, 0))
+        label = self.font.render(txt, 1, (r, g, b))
         self.screen.blit(label, (0,20))
 
         # bottom
         montxt = "df -h | grep DATA | awk '{{print $5}}'"
         prc = subprocess.Popen([montxt], shell=True, stdout=subprocess.PIPE)
         pcentfull = prc.stdout.read().decode('ascii').strip()
-        label = self.font.render(str(pcentfull), 1, (255, 255,0))
+        label = self.font.render(str(pcentfull), 1, (r, g, b))
 
         txt = os.getcwd() + ' ' + str(pcentfull)
-        label = self.font.render(txt, 1, (255, 255,0))
+        label = self.font.render(txt, 1, (r, g, b))
         self.screen.blit(label, (0,self.size[1]-40))
 
         if self.record:
             txt = 'REC.[r]: ON'
         else:
             txt = 'REC.[r]: OFF'
-        label = self.font.render(txt, 1, (255, 255*np.invert(self.record), 0))
+        label = self.font.render(txt, 1, (r, g*np.invert(self.record), b))
         self.screen.blit(label, (0,self.size[1]-20))
 
         return self

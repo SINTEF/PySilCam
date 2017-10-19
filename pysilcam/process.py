@@ -284,8 +284,9 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
     # obtain the original image filename from the timestamp
     filename = timestamp.strftime('D%Y%m%dT%H%M%S.%f')
 
-    # Make the HDF5 file
-    HDF5File = h5py.File(os.path.join(settings.ExportParticles.ouputpath, filename + ".h5"), "w")
+    if settings.ExportParticles.export_images:
+        # Make the HDF5 file
+        HDF5File = h5py.File(os.path.join(settings.ExportParticles.ouputpath, filename + ".h5"), "w")
 
     # define the geometrical properties to be calculated from regionprops
     propnames = ['major_axis_length', 'minor_axis_length',
@@ -311,15 +312,17 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
             
             # add the roi to the HDF5 file
             filenames[int(i)] = filename + '-PN' + str(i)
-            dset = HDF5File.create_dataset('PN' + str(i), data = roi)
+            if settings.ExportParticles.export_images:
+                dset = HDF5File.create_dataset('PN' + str(i), data = roi)
 
             # run a prediction on what type of particle this might be
             if settings.NNClassify.enable:
                 prediction = sccl.predict(roi, nnmodel)
                 predictions[int(i),:] = prediction[0]
 
-    # close the HDF5 file
-    HDF5File.close()
+    if settings.ExportParticles.export_images:
+        # close the HDF5 file
+        HDF5File.close()
 
     # build the column names for the outputed DataFrame
     column_names = np.hstack(([propnames, 'minr', 'minc', 'maxr', 'maxc']))

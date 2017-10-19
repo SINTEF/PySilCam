@@ -157,6 +157,7 @@ def silcam_process(config_filename, datapath, nbImages=None):
     if settings.NNClassify.enable:
         nnmodel, class_labels = sccl.load_model(model_path=settings.NNClassify.model_path)
 
+    lv = scl.liveview()
     #Initialize the image acquisition generator
     aqgen = acquire(datapath)
 
@@ -184,23 +185,25 @@ def silcam_process(config_filename, datapath, nbImages=None):
 
     #---- MAIN PROCESSING LOOP ----
     # processing function run on each image
-    def loop(i, timestamp, imc):
+    def loop(i, timestamp, imc, lv):
         #Time the full acquisition and processing loop
         start_time = time.clock()
+        lv = lv.update(imc, timestamp)
 
         logger.info('Processing time stamp {0}'.format(timestamp))
 
         # basic check of image quality
-        r = imc[:, :, 0]
-        g = imc[:, :, 1]
-        b = imc[:, :, 2]
-        s = np.std([r, g, b])
-        print('lighting std:',s)
-        # ignore bad images as if they were not obtained (i.e. do not affect
-        # output statistics in any way)
-        if s > 8:
-            print('bad lighting')
-            return
+        if False:
+            r = imc[:, :, 0]
+            g = imc[:, :, 1]
+            b = imc[:, :, 2]
+            s = np.std([r, g, b])
+            print('lighting std:',s)
+            # ignore bad images as if they were not obtained (i.e. do not affect
+            # output statistics in any way)
+            if s > 8:
+                print('bad lighting')
+                return
 
         #Calculate particle statistics
         stats_all, imbw, saturation = statextract(imc, settings, timestamp,
@@ -272,7 +275,7 @@ def silcam_process(config_filename, datapath, nbImages=None):
             if (nbImages <= i):
                 break
         try:
-            loop(i, timestamp, imc)
+            loop(i, timestamp, imc, lv)
         except:
             infostr = 'Failed to process frame {0}, skipping.'.format(i)
             logger.warning(infostr, exc_info=True)
