@@ -23,8 +23,8 @@ import cmocean
 import subprocess
 
 
-#DATADIR = os.getcwd()
-DATADIR = '/mnt/DATA/'
+DATADIR = os.getcwd()
+#DATADIR = '/mnt/DATA/'
 
 def names_to_times(names):
     times = []
@@ -160,7 +160,7 @@ def main():
                    screen.blit(im,(0,0))
                    label = font.render('ZOOM [F]: OFF', 1, (255, 255, 0))
                 screen.blit(label,(0, size[1]-20))
-                
+
                 if direction==1:
                     dirtxt = '>>'
                 elif direction==-1:
@@ -245,7 +245,7 @@ def main():
                 'background-color: rgb(150,150,255) }'))
             self.ctrl.ui.pb_stop.setStyleSheet(('QPushButton {' +
                 'background-color: rgb(150,150,255) }'))
-     
+
 
         def monitor_switch(self):
             self.monitor_toggle = np.invert(self.monitor_toggle)
@@ -542,7 +542,7 @@ def main():
             self.status_update('  ----  ')
             self.status_update('  ')
             app.processEvents()
-            self.process=subprocess.Popen(['./logsilcam.sh'])
+            #self.process=subprocess.Popen(['./logsilcam.sh'])
             app.processEvents()
             self.ctrl.ui.pb_start.setStyleSheet(('QPushButton {' +
                 'background-color: rgb(0,150,0) }'))
@@ -550,7 +550,7 @@ def main():
                 'background-color: rgb(150,150,255) }'))
             self.ctrl.ui.pb_start.setEnabled(False)
             app.processEvents()
-     
+
 
         def stop_record(self):
             self.status_update('  ----  ')
@@ -559,7 +559,7 @@ def main():
             self.status_update('  ----  ')
             self.status_update('  ----  ')
             self.status_update('  ')
-            subprocess.call('killall silcam-acquire', shell=True)
+            #subprocess.call('killall silcam-acquire', shell=True)
             app.processEvents()
             self.ctrl.ui.pb_start.setStyleSheet(('QPushButton {' +
                 'background-color: rgb(150,150,255) }'))
@@ -567,7 +567,7 @@ def main():
                 'background-color: rgb(150,150,255) }'))
             self.ctrl.ui.pb_start.setEnabled(True)
             app.processEvents()
-     
+
 
         def exit(self):
             app.quit()
