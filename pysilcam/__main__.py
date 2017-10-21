@@ -28,12 +28,12 @@ import pysilcam.oilgas as scog
 
 
 title = '''
- ____        ____  _ _  ____                
-|  _ \ _   _/ ___|(_) |/ ___|__ _ _ __ ___  
-| |_) | | | \___ \| | | |   / _` | '_ ` _ \ 
+ ____        ____  _ _  ____
+|  _ \ _   _/ ___|(_) |/ ___|__ _ _ __ ___
+| |_) | | | \___ \| | | |   / _` | '_ ` _ \
 |  __/| |_| |___) | | | |__| (_| | | | | | |
 |_|    \__, |____/|_|_|\____\__,_|_| |_| |_|
-       |___/                                
+       |___/
 '''
 
 
@@ -118,13 +118,13 @@ def silcam_acquire(liveview=False):
         except:
             etype, emsg, etrace = sys.exc_info()
             print('Exception occurred: {0}. Restarting acquisition.'.format(emsg))
- 
+
 
 # the standard processing method under active development
 def silcam_process(config_filename, datapath, nbImages=None):
 
     '''Run processing of SilCam images
-    
+
     The goal is to make this as fast as possible so it can be used in real-time
 
     Function requires the filename (including path) of the config.ini file
@@ -241,10 +241,10 @@ def silcam_process(config_filename, datapath, nbImages=None):
         # double)
         if not os.path.isfile(datafilename + '-STATS.csv'):
             stats_all.to_csv(datafilename +
-                    '-STATS.csv', index_label='particle index') 
+                    '-STATS.csv', index_label='particle index')
         else:
             stats_all.to_csv(datafilename + '-STATS.csv',
-                    mode='a', header=False) 
+                    mode='a', header=False)
 
         #Time the particle statistics processing step
         proc_time = time.clock() - start_time
@@ -267,7 +267,7 @@ def silcam_process(config_filename, datapath, nbImages=None):
                 lv.gas_stats = rts.gas_stats
 
         if settings.Process.display:
-            lv = lv.update(imc, timestamp, settings)
+            lv = lv.update(imc, settings)
 
     #---- RUN PROCESSING ----
 
