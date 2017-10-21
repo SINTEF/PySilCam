@@ -21,6 +21,7 @@ sns.set_style('ticks')
 sns.set_context(font_scale=2)
 import cmocean
 import subprocess
+import pysilcam.__main__ as psc
 
 
 DATADIR = os.getcwd()
@@ -542,6 +543,7 @@ def main():
             self.status_update('  ----  ')
             self.status_update('  ')
             app.processEvents()
+            #psc.silcam_process('config.ini', self.datadir) 
             #self.process=subprocess.Popen(['./logsilcam.sh'])
             app.processEvents()
             self.ctrl.ui.pb_start.setStyleSheet(('QPushButton {' +
