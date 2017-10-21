@@ -237,7 +237,7 @@ def silcam_process(config_filename, datapath, nbImages=None):
         # if the output file does not already exist, create it
         # otherwise data will be appended
         # @todo accidentally appending to an existing file could be dangerous
-        # because data will be duplsicated (and concentrations would therefore
+        # because data will be duplicated (and concentrations would therefore
         # double)
         if not os.path.isfile(datafilename + '-STATS.csv'):
             stats_all.to_csv(datafilename +
@@ -249,27 +249,9 @@ def silcam_process(config_filename, datapath, nbImages=None):
         #Time the particle statistics processing step
         proc_time = time.clock() - start_time
 
-        #If real-time plotting is enabled, update the plots
-        # @todo realtime plotting will no longer work because the averaged
-        # time-series data is no longer calculated here. This should be fixed
-        # by reading of the STATS.csv or storing stats in memory
-        #if settings.Process.display:
-        #    if i == 0:
-        #        rtplot.plot(imc, imbw, times, d50_ts['total'], vd_mean,
-        #                settings.Process.display)
-        #    else:
-        #        rtplot.update(imc, imbw, times, d50_ts['total'], vd_mean,
-        #                settings.Process.display)
-
-        # figure out how long this took
-        tot_time = time.clock() - start_time
-
         #Print timing information for this iteration
-        plot_time = tot_time - proc_time
-        infostr = '  Image {0} processed in {1:.2f} sec ({6:.1f} Hz). '
-        infostr += 'Statextract: {2:.2f}s ({3:.0f}%) Plot: {4:.2f}s ({5:.0f}%)'
-        print(infostr.format(i, tot_time, proc_time, proc_time/tot_time*100, 
-                             plot_time, plot_time/tot_time*100, 1.0/tot_time))
+        infostr = '  Image {0} processed in {1:.2f} sec ({2:.1f} Hz). '
+        print(infostr.format(i, proc_time, 1.0/proc_time*100))
 
         #---- END MAIN PROCESSING LOOP ----
         #---- DO SOME ADMIN ----

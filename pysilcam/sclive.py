@@ -1,5 +1,4 @@
 from pysilcam.acquisition import acquire
-import matplotlib.pyplot as plt
 import numpy as np
 import pygame
 import subprocess
@@ -7,11 +6,14 @@ import os
 import pysilcam.plotting as scplt
 import pysilcam.postprocess as sc_pp
 import matplotlib
-matplotlib.use('Agg')
+matplotlib.use('Qt5Agg')
+import matplotlib.pyplot as plt
 import matplotlib.backends.backend_agg as agg
-import pylab
 import pandas as pd
+import logging
+import time
 
+logger = logging.getLogger(__name__)
 
 class liveview:
 
@@ -34,6 +36,9 @@ class liveview:
         self.stats = []
         self.oil_stats = []
         self.gas_stats = []
+        self.fig, self.ax = plt.subplots(figsize=[8, 8])
+        self.line = self.ax.plot([1,2],[1,2])
+        plt.show(block=False)
 
 
     def overlay(self):
@@ -87,6 +92,7 @@ class liveview:
 
     def update(self, img, timestamp, settings=None):
         self.c.tick()
+        start_time = time.clock()
         if self.disp==0:
             im = pygame.surfarray.make_surface(np.uint8(img))
             im = pygame.transform.flip(im, False, True)
@@ -94,31 +100,31 @@ class liveview:
             im = pygame.transform.scale(im, self.size)
             self.screen.blit(im, (0,0))
         elif np.logical_and((self.disp==1), (len(self.stats)>0)):
-            fig = pylab.figure(figsize=[8, 8], dpi=100)
-            ax = fig.gca()
-            
+
             dias, vd = sc_pp.vd_from_stats(self.oil_stats, settings.PostProcess)
-            plt.plot(dias, vd,'r')
+            self.ax.clear()
+            self.ax.plot(dias,vd,'r')
+            self.ax.set_xlim(10, 10000)
+            #self.ax.set_xscale('log')
+            self.ax.set_xlabel('Equiv. diam (um)')
+            self.ax.set_ylabel('Volume concentration (uL/L)')
+            plt.pause(0.001)
             dias, vd = sc_pp.vd_from_stats(self.gas_stats, settings.PostProcess)
-            plt.plot(dias, vd,'b')
-             
-            ax.set_xlim(10, 10000)
-            ax.set_xscale('log')
-            ax.set_xlabel('Equiv. diam (um)')
-            ax.set_ylabel('Volume concentration (uL/L)')
+            #plt.plot(dias, vd,'b')
+           
+            #self.ax.set_title(str(np.min(self.stats['timestamp'])) + ' - ' + 
+            #        str(np.max(self.stats['timestamp'])))
             
-            plt.title(str(np.min(self.stats['timestamp'])) + ' - ' + 
-                    str(np.max(self.stats['timestamp'])))
-            
-            canvas = agg.FigureCanvasAgg(fig)
-            canvas.draw()
-            renderer = canvas.get_renderer()
-            raw_data = renderer.tostring_rgb()
-            size = canvas.get_width_height()
-            surf = pygame.image.fromstring(raw_data, size, "RGB")
-            surf = pygame.transform.scale(surf, self.size)
-            self.screen.blit(surf, (0,0))
-            plt.close('all')
+            #canvas = agg.FigureCanvasAgg(fig)
+            #canvas.draw()
+            #renderer = canvas.get_renderer()
+            #raw_data = renderer.tostring_rgb()
+            #size = canvas.get_width_height()
+            #surf = pygame.image.fromstring(raw_data, size, "RGB")
+            #surf = pygame.transform.scale(surf, self.size)
+            #self.screen.blit(surf, (0,0))
+            #plt.close('all')
+            #self.screen.fill((255, 0, 0))
         elif self.disp==2:
             self.screen.fill((255, 255, 255))
 
@@ -139,6 +145,9 @@ class liveview:
 
         self.overlay()
 
-        pygame.display.flip()
+        #pygame.display.flip()
+        tot_time = time.clock() - start_time
+        
+        logger.info('{0:.2f}s used for display'.format(tot_time))
 
         return self

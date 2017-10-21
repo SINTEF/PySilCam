@@ -333,7 +333,7 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
     # put particle statistics into a DataFrame
     stats = pd.DataFrame(columns=column_names, data=cat_data)
 
-    print('EXTRACTING {0} IMAGES from {1}'.format(nb_extractable_part, len(stats['major_axis_length']))) 
+    logger.info('EXTRACTING {0} IMAGES from {1}'.format(nb_extractable_part, len(stats['major_axis_length']))) 
     
     # add classification predictions to the particle statistics data
     if settings.NNClassify.enable:
