@@ -22,23 +22,27 @@ sns.set_context(font_scale=2)
 import cmocean
 import subprocess
 import pysilcam.__main__ as psc
+import datetime
 
 
 DATADIR = os.getcwd()
 #DATADIR = '/mnt/DATA/'
 
 
-from multiprocessing import Process
+from multiprocessing import Process, Queue
 
 class ProcThread(Process):
 
-    def __init__(self, datadir):
+    def __init__(self):
         super(ProcThread, self).__init__()
-        self.datadir = datadir
+        self.q = Queue()
 
     def run(self):
-        psc.silcam_process('config.ini', self.datadir)
+        psc.silcam_process('config.ini', self.datadir, gui=self.q)
 
+    def go(self, datadir):
+        self.datadir = datadir
+        self.start()
 
 def names_to_times(names):
     times = []
@@ -78,6 +82,7 @@ def main():
             self.lv_raw_toggle = False
             self.monitor_toggle = False
             self.lvwaitseconds = 1
+            self.process = ProcThread()
 
             # ---- figure in middle
             f = plt.figure()
@@ -255,7 +260,6 @@ def main():
             self.lv_raw_check()
             self.monitor_check()
             self.ctrl.show()
-            self.monitor_switch()
             self.ctrl.ui.pb_start.setStyleSheet(('QPushButton {' +
                 'background-color: rgb(150,150,255) }'))
             self.ctrl.ui.pb_stop.setStyleSheet(('QPushButton {' +
@@ -320,6 +324,7 @@ def main():
                 pcentfull + ' full; ' + hz + 'Hz; ' +
                 last_image + ' sec. since prev.')
 
+
             self.status_update(ttlstr, grow=False)
             QtCore.QTimer.singleShot(1*1000, self.monitor)
 
@@ -332,8 +337,33 @@ def main():
                 self.ctrl.ui.pb_DriveMonitor.setStyleSheet(('QPushButton {' +
                         'background-color: rgb(150,150,255) }'))
 
-
         def lv_raw(self):
+            self.lv_raw_check()
+            if not self.lv_raw_toggle:
+                return
+
+            if self.process.is_alive():
+                plt.clf()
+                plt.cla()
+                try:
+                    data = self.process.q.get(timeout=1)
+                    imc = data['imc']
+                    timestamp = data['timestamp']
+                    plt.title('image time: ' + str(timestamp))
+                except:
+                    imc = np.zeros((2048,2048), dtype=np.uint8)
+                    plt.title('data timeout' + str(datetime.datetime.now()))
+
+                plt.imshow(imc)
+                plt.tight_layout()
+                self.canvas.draw()
+            else:
+                plt.title('no data to plot' + str(datetime.datetime.now()))
+                self.canvas.draw()
+
+            QtCore.QTimer.singleShot(self.lvwaitseconds*1000, self.lv_raw)
+
+        def lv_raw_from_disc(self):
             self.lv_raw_check()
             if not self.lv_raw_toggle:
                 return
@@ -362,7 +392,8 @@ def main():
                 plt.title('error loading image')
                 self.canvas.draw()
 
-            QtCore.QTimer.singleShot(self.lvwaitseconds*1000, self.lv_raw)
+            QtCore.QTimer.singleShot(self.lvwaitseconds*1000,
+                    self.lv_raw_from_disc)
 
 
         def lv_raw_check(self):
@@ -556,8 +587,7 @@ def main():
                     'even if these windows are closed ----')
             self.status_update('  ----  ')
             self.status_update('  ')
-            self.process = ProcThread(self.datadir)
-            self.process.start()
+            self.process.go(self.datadir)
 
             app.processEvents()
 
@@ -580,6 +610,7 @@ def main():
             self.status_update('  ----  ')
             self.status_update('  ')
             #subprocess.call('killall silcam-acquire', shell=True)
+            self.process = ProcThread()
             app.processEvents()
             self.ctrl.ui.pb_start.setStyleSheet(('QPushButton {' +
                 'background-color: rgb(150,150,255) }'))

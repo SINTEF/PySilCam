@@ -121,7 +121,7 @@ def silcam_acquire(liveview=False):
 
 
 # the standard processing method under active development
-def silcam_process(config_filename, datapath, nbImages=None):
+def silcam_process(config_filename, datapath, nbImages=None, gui=None):
 
     '''Run processing of SilCam images
 
@@ -193,7 +193,7 @@ def silcam_process(config_filename, datapath, nbImages=None):
 
     #---- MAIN PROCESSING LOOP ----
     # processing function run on each image
-    def loop(i, timestamp, imc, lv=None, rts=None):
+    def loop(i, timestamp, imc, lv=None, rts=None, gui=None):
         #Time the full acquisition and processing loop
         start_time = time.clock()
 
@@ -269,6 +269,15 @@ def silcam_process(config_filename, datapath, nbImages=None):
         if settings.Process.display:
             lv = lv.update(imc, settings)
 
+        if not gui==None:
+            print('putting data on gui queue')
+            guidata = {'imc': imc,
+                    'timestamp': timestamp
+                    #'realtimestats': rts
+                    }
+            gui.put(guidata)
+            print('  OK.')
+
     #---- RUN PROCESSING ----
 
     print('* Commencing image acquisition and processing')
@@ -278,10 +287,10 @@ def silcam_process(config_filename, datapath, nbImages=None):
         if (nbImages != None):
             if (nbImages <= i):
                 break
-        loop(i, timestamp, imc, lv, rts)
+        loop(i, timestamp, imc, lv, rts, gui)
         continue
         try:
-            loop(i, timestamp, imc, lv, rts)
+            loop(i, timestamp, imc, lv, rts, gui)
         except:
             infostr = 'Failed to process frame {0}, skipping.'.format(i)
             logger.warning(infostr, exc_info=True)
