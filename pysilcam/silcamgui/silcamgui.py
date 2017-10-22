@@ -290,6 +290,20 @@ def main():
             if not self.monitor_toggle:
                 return
 
+            self.logfile = 'proc/log.log'
+            prc = subprocess.Popen(['tail -1 ' + self.logfile], shell=True, stdout=subprocess.PIPE)
+            line = prc.stdout.read().decode('ascii').strip()
+
+            self.status_update(line, grow=False)
+            QtCore.QTimer.singleShot(1*500, self.monitor)
+
+
+        def monitor_old(self):
+            self.monitor_check()
+
+            if not self.monitor_toggle:
+                return
+
             files = [os.path.join(self.datadir, f)
                     for f in sorted(os.listdir(self.datadir)) if
                     f.endswith('.bmp')]
