@@ -28,20 +28,16 @@ DATADIR = os.getcwd()
 #DATADIR = '/mnt/DATA/'
 
 
-from PyQt5.QtCore import QThread
+from multiprocessing import Process
 
-class ProcThread(QThread):
+class ProcThread(Process):
 
-    def __init__(self, config_file, datadir):
-        QThread.__init__(self)
+    def __init__(self, datadir):
+        super(ProcThread, self).__init__()
         self.datadir = datadir
-        self.config_file = config_file
-
-    def __del__(self):
-        self.wait()
 
     def run(self):
-        psc.silcam_process(self.config_file, self.datadir)
+        psc.silcam_process('config.ini', self.datadir)
 
 
 def names_to_times(names):
@@ -117,10 +113,11 @@ def main():
             self.infstr = 'Hei!!\n' + self.datadir
             self.infolabel.setText(self.infstr)
 
+
             self.layout = layout
             app.processEvents()
 
-            #self.acquire_controller()
+            self.acquire_controller()
 
 
         def silcview(self):
@@ -559,9 +556,11 @@ def main():
                     'even if these windows are closed ----')
             self.status_update('  ----  ')
             self.status_update('  ')
+            self.process = ProcThread(self.datadir)
+            self.process.start()
+
             app.processEvents()
-            self.pthread = ProcThread('config.ini', self.datadir)
-            self.pthread.start()
+
             #psc.silcam_process('config.ini', self.datadir)
             #self.process=subprocess.Popen(['./logsilcam.sh'])
             self.ctrl.ui.pb_start.setStyleSheet(('QPushButton {' +
@@ -573,7 +572,7 @@ def main():
 
 
         def stop_record(self):
-            self.pthread.terminate()
+            self.process.terminate()
             self.status_update('  ----  ')
             self.status_update('  ----  ')
             self.status_update('KILLALL SILCAM-ACQUIRE PROCESSES!')

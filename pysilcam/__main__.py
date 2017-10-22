@@ -251,7 +251,7 @@ def silcam_process(config_filename, datapath, nbImages=None):
 
         #Print timing information for this iteration
         infostr = '  Image {0} processed in {1:.2f} sec ({2:.1f} Hz). '
-        print(infostr.format(i, proc_time, 1.0/proc_time*100))
+        print(infostr.format(i, proc_time, 1.0/proc_time))
 
         #---- END MAIN PROCESSING LOOP ----
         #---- DO SOME ADMIN ----
