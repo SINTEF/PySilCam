@@ -27,6 +27,23 @@ import pysilcam.__main__ as psc
 DATADIR = os.getcwd()
 #DATADIR = '/mnt/DATA/'
 
+
+from PyQt5.QtCore import QThread
+
+class ProcThread(QThread):
+
+    def __init__(self, config_file, datadir):
+        QThread.__init__(self)
+        self.datadir = datadir
+        self.config_file = config_file
+
+    def __del__(self):
+        self.wait()
+
+    def run(self):
+        psc.silcam_process(self.config_file, self.datadir)
+
+
 def names_to_times(names):
     times = []
     for n in names:
@@ -97,7 +114,7 @@ def main():
             ilayout.addWidget(self.infolabel)
             self.ui.dockWidgetContents.setLayout(ilayout)
 
-            self.infstr = 'Hei!!\n'
+            self.infstr = 'Hei!!\n' + self.datadir
             self.infolabel.setText(self.infstr)
 
             self.layout = layout
@@ -543,9 +560,10 @@ def main():
             self.status_update('  ----  ')
             self.status_update('  ')
             app.processEvents()
-            #psc.silcam_process('config.ini', self.datadir) 
+            self.pthread = ProcThread('config.ini', self.datadir)
+            self.pthread.start()
+            #psc.silcam_process('config.ini', self.datadir)
             #self.process=subprocess.Popen(['./logsilcam.sh'])
-            app.processEvents()
             self.ctrl.ui.pb_start.setStyleSheet(('QPushButton {' +
                 'background-color: rgb(0,150,0) }'))
             self.ctrl.ui.pb_stop.setStyleSheet(('QPushButton {' +
@@ -555,6 +573,7 @@ def main():
 
 
         def stop_record(self):
+            self.pthread.terminate()
             self.status_update('  ----  ')
             self.status_update('  ----  ')
             self.status_update('KILLALL SILCAM-ACQUIRE PROCESSES!')
