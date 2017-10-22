@@ -349,16 +349,36 @@ def main():
                     data = self.process.q.get(timeout=1)
                     imc = data['imc']
                     timestamp = data['timestamp']
-                    plt.title('image time: ' + str(timestamp))
+                    dias = data['dias']
+                    vd_oil = data['vd_oil']
+                    vd_gas = data['vd_gas']
+
+                    ttlstr = ('image time: ' +
+                        str(timestamp))
                 except:
                     imc = np.zeros((2048,2048), dtype=np.uint8)
-                    plt.title('data timeout' + str(datetime.datetime.now()))
+                    ttlstr = ('data timeout! ' +
+                        str(datetime.datetime.now()))
 
+                plt.subplot(1,2,1)
+                plt.cla()
                 plt.imshow(imc)
+                plt.title(ttlstr)
+
+                plt.subplot(1,2,2)
+                plt.cla()
+                try:
+                    plt.plot(dias, vd_oil ,'r')
+                    plt.plot(dias, vd_gas ,'b')
+                    plt.xscale('log')
+                    plt.xlim((10, 10000))
+                except:
+                    pass
+
                 plt.tight_layout()
                 self.canvas.draw()
             else:
-                plt.title('no data to plot' + str(datetime.datetime.now()))
+                plt.title('no data to plot! ' + str(datetime.datetime.now()))
                 self.canvas.draw()
 
             QtCore.QTimer.singleShot(self.lvwaitseconds*1000, self.lv_raw)

@@ -271,9 +271,15 @@ def silcam_process(config_filename, datapath, nbImages=None, gui=None):
 
         if not gui==None:
             print('putting data on gui queue')
+            dias, vd_oil = sc_pp.vd_from_stats(rts.oil_stats,
+                    settings.PostProcess)
+            dias, vd_gas = sc_pp.vd_from_stats(rts.gas_stats,
+                    settings.PostProcess)
             guidata = {'imc': imc,
-                    'timestamp': timestamp
-                    #'realtimestats': rts
+                    'timestamp': timestamp,
+                    'dias': dias,
+                    'vd_oil': vd_oil,
+                    'vd_gas': vd_gas
                     }
             gui.put(guidata)
             print('  OK.')
