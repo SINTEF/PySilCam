@@ -89,15 +89,21 @@ def silcam_sim(datapath, gui):
     aqgen = acquire(datapath)
     bggen = backgrounder(15, aqgen)
 
+    start_time = time.clock()
     for i, (timestamp, imc) in enumerate(bggen):
+        proc_time = time.clock() - start_time
+        start_time = time.clock()
+        infostr = '  Image {0} processed in {1:.2f} sec ({2:.1f} Hz). '
+        infostr = infostr.format(i, proc_time, 1.0/proc_time)
+        print(infostr)
         guidata = {'imc': imc,
             'timestamp': timestamp,
+            'infostr': infostr,
             'dias': 1,
             'vd_oil': 1,
             'vd_gas': 1
             }
         gui.put(guidata)
-        print(i)
 
 
 def silcam_acquire(liveview=False):
@@ -267,7 +273,8 @@ def silcam_process(config_filename, datapath, nbImages=None, gui=None):
 
         #Print timing information for this iteration
         infostr = '  Image {0} processed in {1:.2f} sec ({2:.1f} Hz). '
-        print(infostr.format(i, proc_time, 1.0/proc_time))
+        infostr = infostr.format(i, proc_time, 1.0/proc_time)
+        print(infostr)
 
         #---- END MAIN PROCESSING LOOP ----
         #---- DO SOME ADMIN ----
@@ -293,6 +300,7 @@ def silcam_process(config_filename, datapath, nbImages=None, gui=None):
                     settings.PostProcess)
             guidata = {'imc': imc,
                     'timestamp': timestamp,
+                    'infostr': infostr,
                     'dias': dias,
                     'vd_oil': vd_oil,
                     'vd_gas': vd_gas

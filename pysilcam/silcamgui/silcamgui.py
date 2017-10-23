@@ -38,8 +38,8 @@ class ProcThread(Process):
         self.q = Queue()
 
     def run(self):
-        #psc.silcam_process('config.ini', self.datadir, gui=self.q)
-        psc.silcam_sim(self.datadir, self.q)
+        psc.silcam_process('config.ini', self.datadir, gui=self.q)
+        #psc.silcam_sim(self.datadir, self.q)
 
     def go(self, datadir):
         self.datadir = datadir
@@ -358,10 +358,8 @@ def main():
                 return
 
             if self.process.is_alive():
-                plt.clf()
-                plt.cla()
                 try:
-                    data = self.process.q.get(timeout=1)
+                    data = self.process.q.get(timeout=0.1)
                     imc = data['imc']
                     timestamp = data['timestamp']
                     dias = data['dias']
@@ -370,10 +368,16 @@ def main():
 
                     ttlstr = ('image time: ' +
                         str(timestamp))
+                    self.status_update(data['infostr'], grow=False)
                 except:
-                    imc = np.zeros((2048,2048), dtype=np.uint8)
                     ttlstr = ('data timeout! ' +
                         str(datetime.datetime.now()))
+                    self.status_update(ttlstr, grow=False)
+                    QtCore.QTimer.singleShot(self.lvwaitseconds*500, self.lv_raw)
+                    return
+
+                plt.clf()
+                plt.cla()
 
                 plt.subplot(1,2,1)
                 plt.cla()
@@ -396,7 +400,11 @@ def main():
                 plt.title('no data to plot! ' + str(datetime.datetime.now()))
                 self.canvas.draw()
 
-            QtCore.QTimer.singleShot(self.lvwaitseconds*500, self.lv_raw)
+            while not self.process.q.empty():
+                self.process.q.get_nowait()
+
+            QtCore.QTimer.singleShot(self.lvwaitseconds*100, self.lv_raw)
+
 
         def lv_raw_from_disc(self):
             self.lv_raw_check()
