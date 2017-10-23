@@ -48,7 +48,6 @@ setup(
     author='Emlyn Davies',
     author_email='emlyn.davies@sintef.no',
     install_requires=REQUIRES,
-    develop_requries=REQUIRES,
     # Use Python 3 branch on alternate repo for Pymba
     #dependency_links=['git+https://github.com/mabl/pymba@python3'],
     # Use master branch for Pymba on Python 2
