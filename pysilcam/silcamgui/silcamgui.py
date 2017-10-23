@@ -38,7 +38,8 @@ class ProcThread(Process):
         self.q = Queue()
 
     def run(self):
-        psc.silcam_process('config.ini', self.datadir, gui=self.q)
+        #psc.silcam_process('config.ini', self.datadir, gui=self.q)
+        psc.silcam_sim(self.datadir, self.q)
 
     def go(self, datadir):
         self.datadir = datadir
@@ -395,7 +396,7 @@ def main():
                 plt.title('no data to plot! ' + str(datetime.datetime.now()))
                 self.canvas.draw()
 
-            QtCore.QTimer.singleShot(self.lvwaitseconds*1000, self.lv_raw)
+            QtCore.QTimer.singleShot(self.lvwaitseconds*500, self.lv_raw)
 
         def lv_raw_from_disc(self):
             self.lv_raw_check()

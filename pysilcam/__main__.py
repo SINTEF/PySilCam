@@ -84,6 +84,22 @@ def silcam():
         else:
             silcam_acquire()
 
+def silcam_sim(datapath, gui):
+
+    aqgen = acquire(datapath)
+    bggen = backgrounder(15, aqgen)
+
+    for i, (timestamp, imc) in enumerate(bggen):
+        guidata = {'imc': imc,
+            'timestamp': timestamp,
+            'dias': 1,
+            'vd_oil': 1,
+            'vd_gas': 1
+            }
+        gui.put(guidata)
+        print(i)
+
+
 def silcam_acquire(liveview=False):
     if liveview:
         lv = scl.liveview()
