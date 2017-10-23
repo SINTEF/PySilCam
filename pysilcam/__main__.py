@@ -293,7 +293,6 @@ def silcam_process(config_filename, datapath, nbImages=None, gui=None):
             lv = lv.update(imc, settings)
 
         if not gui==None:
-            print('putting data on gui queue')
             dias, vd_oil = sc_pp.vd_from_stats(rts.oil_stats,
                     settings.PostProcess)
             dias, vd_gas = sc_pp.vd_from_stats(rts.gas_stats,
@@ -306,7 +305,6 @@ def silcam_process(config_filename, datapath, nbImages=None, gui=None):
                     'vd_gas': vd_gas
                     }
             gui.put(guidata)
-            print('  OK.')
 
     #---- RUN PROCESSING ----
 

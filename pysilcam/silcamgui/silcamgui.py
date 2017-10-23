@@ -370,10 +370,7 @@ def main():
                         str(timestamp))
                     self.status_update(data['infostr'], grow=False)
                 except:
-                    ttlstr = ('data timeout! ' +
-                        str(datetime.datetime.now()))
-                    self.status_update(ttlstr, grow=False)
-                    QtCore.QTimer.singleShot(self.lvwaitseconds*500, self.lv_raw)
+                    QtCore.QTimer.singleShot(self.lvwaitseconds*1000, self.lv_raw)
                     return
 
                 plt.clf()
@@ -382,6 +379,7 @@ def main():
                 plt.subplot(1,2,1)
                 plt.cla()
                 plt.imshow(imc)
+                plt.axis('off')
                 plt.title(ttlstr)
 
                 plt.subplot(1,2,2)
@@ -391,19 +389,20 @@ def main():
                     plt.plot(dias, vd_gas ,'b')
                     plt.xscale('log')
                     plt.xlim((10, 10000))
+                    plt.ylabel('Volume Concentration [uL/L]')
+                    plt.xlabel('Diamter [um]')
                 except:
                     pass
 
                 plt.tight_layout()
                 self.canvas.draw()
             else:
-                plt.title('no data to plot! ' + str(datetime.datetime.now()))
-                self.canvas.draw()
+                self.status_update('Waiting for data', grow=False)
 
             while not self.process.q.empty():
                 self.process.q.get_nowait()
 
-            QtCore.QTimer.singleShot(self.lvwaitseconds*100, self.lv_raw)
+            QtCore.QTimer.singleShot(self.lvwaitseconds*1000, self.lv_raw)
 
 
         def lv_raw_from_disc(self):
@@ -620,15 +619,8 @@ def main():
 
         def record(self):
             self.status_update('  ----  ')
-            self.status_update('STARTING SILCAM-ACQUIRE!')
+            self.status_update('STARTING SILCAM!')
             self.status_update('  recording to: ' + self.datadir)
-            self.status_update('  ')
-            self.status_update('  use Drive monitor to check recording status')
-            self.status_update('  use Live raw to see subset of raw images')
-            self.status_update('  ')
-            self.status_update('  ---- WARNING: Acquisition will continue ' +
-                    'even if these windows are closed ----')
-            self.status_update('  ----  ')
             self.status_update('  ')
             self.process.go(self.datadir)
 
@@ -645,26 +637,31 @@ def main():
 
 
         def stop_record(self):
-            self.process.terminate()
-            self.status_update('  ----  ')
-            self.status_update('  ----  ')
-            self.status_update('KILLALL SILCAM-ACQUIRE PROCESSES!')
-            self.status_update('  ----  ')
-            self.status_update('  ----  ')
-            self.status_update('  ')
-            #subprocess.call('killall silcam-acquire', shell=True)
-            self.process = ProcThread()
-            app.processEvents()
-            self.ctrl.ui.pb_start.setStyleSheet(('QPushButton {' +
-                'background-color: rgb(150,150,255) }'))
-            self.ctrl.ui.pb_stop.setStyleSheet(('QPushButton {' +
-                'background-color: rgb(150,150,255) }'))
-            self.ctrl.ui.pb_start.setEnabled(True)
-            app.processEvents()
+            if self.process.is_alive():
+                self.process.terminate()
+                self.status_update('  ----  ')
+                self.status_update('KILLING SILCAM PROCESS')
+                self.status_update('  ----  ')
+                #subprocess.call('killall silcam-acquire', shell=True)
+                self.process = ProcThread()
+                app.processEvents()
+                self.ctrl.ui.pb_start.setStyleSheet(('QPushButton {' +
+                    'background-color: rgb(150,150,255) }'))
+                self.ctrl.ui.pb_stop.setStyleSheet(('QPushButton {' +
+                    'background-color: rgb(150,150,255) }'))
+                self.ctrl.ui.pb_start.setEnabled(True)
+                app.processEvents()
+            else:
+                self.status_update('Nothing to stop.')
+
+
+        def closeEvent(self, event):
+            self.stop_record()
 
 
         def exit(self):
             app.quit()
+
 
     myapp = StartQT5()
     myapp.show()
