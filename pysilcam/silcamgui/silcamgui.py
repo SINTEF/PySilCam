@@ -38,11 +38,12 @@ class ProcThread(Process):
         self.q = Queue()
 
     def run(self):
-        psc.silcam_process('config.ini', self.datadir, gui=self.q)
+        psc.silcam_process(self.configfile, self.datadir, gui=self.q)
         #psc.silcam_sim(self.datadir, self.q)
 
-    def go(self, datadir):
+    def go(self, datadir, configfile):
         self.datadir = datadir
+        self.configfile = configfile
         self.start()
 
 def names_to_times(names):
@@ -618,11 +619,17 @@ def main():
 
 
         def record(self):
+            if self.settings == '':
+                self.status_update('config file not found. please load one.')
+                self.load_sc_config()
+                if self.settings == '':
+                    return
+
             self.status_update('  ----  ')
             self.status_update('STARTING SILCAM!')
             self.status_update('  recording to: ' + self.datadir)
             self.status_update('  ')
-            self.process.go(self.datadir)
+            self.process.go(self.datadir, self.configfile)
 
             app.processEvents()
 
