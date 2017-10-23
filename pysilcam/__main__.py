@@ -315,8 +315,6 @@ def silcam_process(config_filename, datapath, nbImages=None, gui=None):
         if (nbImages != None):
             if (nbImages <= i):
                 break
-        loop(i, timestamp, imc, lv, rts, gui)
-        continue
         try:
             loop(i, timestamp, imc, lv, rts, gui)
         except:
