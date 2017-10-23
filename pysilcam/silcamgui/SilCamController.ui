@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>191</width>
-    <height>205</height>
+    <height>161</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -71,28 +71,6 @@
    </property>
    <property name="text">
     <string>Live raw</string>
-   </property>
-   <property name="autoDefault">
-    <bool>false</bool>
-   </property>
-   <property name="default">
-    <bool>false</bool>
-   </property>
-   <property name="flat">
-    <bool>false</bool>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="pb_DriveMonitor">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>160</y>
-     <width>168</width>
-     <height>41</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Drive monitor</string>
    </property>
    <property name="autoDefault">
     <bool>false</bool>

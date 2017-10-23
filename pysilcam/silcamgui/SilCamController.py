@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_SilCamController(object):
     def setupUi(self, SilCamController):
         SilCamController.setObjectName("SilCamController")
-        SilCamController.resize(191, 205)
+        SilCamController.resize(191, 161)
         SilCamController.setWindowOpacity(0.9)
         self.pb_start = QtWidgets.QPushButton(SilCamController)
         self.pb_start.setGeometry(QtCore.QRect(10, 10, 168, 41))
@@ -31,12 +31,6 @@ class Ui_SilCamController(object):
         self.pb_live_raw.setDefault(False)
         self.pb_live_raw.setFlat(False)
         self.pb_live_raw.setObjectName("pb_live_raw")
-        self.pb_DriveMonitor = QtWidgets.QPushButton(SilCamController)
-        self.pb_DriveMonitor.setGeometry(QtCore.QRect(10, 160, 168, 41))
-        self.pb_DriveMonitor.setAutoDefault(False)
-        self.pb_DriveMonitor.setDefault(False)
-        self.pb_DriveMonitor.setFlat(False)
-        self.pb_DriveMonitor.setObjectName("pb_DriveMonitor")
 
         self.retranslateUi(SilCamController)
         QtCore.QMetaObject.connectSlotsByName(SilCamController)
@@ -47,5 +41,4 @@ class Ui_SilCamController(object):
         self.pb_start.setText(_translate("SilCamController", "START"))
         self.pb_stop.setText(_translate("SilCamController", "STOP"))
         self.pb_live_raw.setText(_translate("SilCamController", "Live raw"))
-        self.pb_DriveMonitor.setText(_translate("SilCamController", "Drive monitor"))
 

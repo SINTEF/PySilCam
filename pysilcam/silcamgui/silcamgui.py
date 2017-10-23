@@ -91,7 +91,7 @@ def main():
             self.canvas = FigureCanvas(f)
             layout = QVBoxLayout()
             layout.addWidget(self.canvas)
-            self.ui.centralwidget.setLayout(layout)
+            self.ui.fig_widget.setLayout(layout)
             path_here = os.path.realpath(__file__)
             imfile = os.path.join(os.path.split(path_here)[0], 'ojleutslipp.jpg')
             im = skimage.io.imread(imfile)
@@ -109,19 +109,12 @@ def main():
             self.ui.actionExport_Time_series.triggered.connect(self.export_series_vd)
             self.ui.actionController.triggered.connect(self.acquire_controller)
             self.ui.actionSave_Figure.triggered.connect(self.save_figure)
-
-            self.infolabel = QtWidgets.QTextEdit(self.ui.dockWidgetContents)
-            self.infolabel.setReadOnly(True)
-            self.infolabel.setLineWrapMode(QtWidgets.QTextEdit.NoWrap)
-            ilayout = QVBoxLayout()
-            ilayout.addWidget(self.infolabel)
-            self.ui.dockWidgetContents.setLayout(ilayout)
-
-            self.infstr = 'Hei!!\n' + self.datadir
-            self.infolabel.setText(self.infstr)
-
+            self.ui.pb_ChangeDirectory.clicked.connect(self.change_directory)
 
             self.layout = layout
+
+            self.status_update('')
+
             app.processEvents()
 
             self.acquire_controller()
@@ -255,12 +248,10 @@ def main():
         def acquire_controller(self):
             self.ctrl = controller(self)
             self.ctrl.ui.pb_live_raw.clicked.connect(self.lv_raw_switch)
-            self.ctrl.ui.pb_DriveMonitor.clicked.connect(self.monitor_switch)
             self.ctrl.ui.pb_start.clicked.connect(self.record)
             self.ctrl.ui.pb_stop.clicked.connect(self.stop_record)
             self.status_update('opening acquisition controller')
             self.lv_raw_check()
-            self.monitor_check()
             self.ctrl.show()
             self.ctrl.ui.pb_start.setStyleSheet(('QPushButton {' +
                 'background-color: rgb(150,150,255) }'))
@@ -286,73 +277,6 @@ def main():
                 self.status_update(' Live view disabled')
 
 
-        def monitor(self):
-            self.monitor_check()
-
-            if not self.monitor_toggle:
-                return
-
-            self.logfile = 'proc/log.log'
-            prc = subprocess.Popen(['tail -1 ' + self.logfile], shell=True, stdout=subprocess.PIPE)
-            line = prc.stdout.read().decode('ascii').strip()
-
-            self.status_update(line, grow=False)
-            QtCore.QTimer.singleShot(1*500, self.monitor)
-
-
-        def monitor_old(self):
-            self.monitor_check()
-
-            if not self.monitor_toggle:
-                return
-
-            files = [os.path.join(self.datadir, f)
-                    for f in sorted(os.listdir(self.datadir)) if
-                    f.endswith('.bmp')]
-            nimages = str(len(files))
-            if len(files) > 3:
-
-                name1 = os.path.split(files[-3])[1]
-                ts1 = pd.to_datetime(name1[1:-4])
-                name2 = os.path.split(files[-2])[1]
-                ts2 = pd.to_datetime(name2[1:-4])
-                td = ts2 - ts1
-                td = td / np.timedelta64(1, 's')
-                hz = 1 / td
-                hz = str(np.around(hz, decimals=2))
-
-                last_image = pd.to_datetime(pd.datetime.now()) - ts2
-                last_image = last_image / np.timedelta64(1, 's')
-                last_image = str(np.around(last_image, decimals=1))
-
-            else:
-                hz = 'waiting for data'
-                last_image = ' waiting for data'
-
-
-            #montxt = "df -h | grep " + self.datadir + " | awk '{{print $5}}'"
-            montxt = "df -h | grep DATA | awk '{{print $5}}'"
-            prc = subprocess.Popen([montxt], shell=True, stdout=subprocess.PIPE)
-            pcentfull = prc.stdout.read().decode('ascii').strip()
-
-
-            ttlstr = (self.datadir + ' :  ' + nimages + ' images; ' +
-                pcentfull + ' full; ' + hz + 'Hz; ' +
-                last_image + ' sec. since prev.')
-
-
-            self.status_update(ttlstr, grow=False)
-            QtCore.QTimer.singleShot(1*1000, self.monitor)
-
-
-        def monitor_check(self):
-            if self.monitor_toggle:
-                self.ctrl.ui.pb_DriveMonitor.setStyleSheet(('QPushButton {' +
-                        'background-color: rgb(0,150,0) }'))
-            else:
-                self.ctrl.ui.pb_DriveMonitor.setStyleSheet(('QPushButton {' +
-                        'background-color: rgb(150,150,255) }'))
-
         def lv_raw(self):
             self.lv_raw_check()
             if not self.lv_raw_toggle:
@@ -369,7 +293,7 @@ def main():
 
                     ttlstr = ('image time: ' +
                         str(timestamp))
-                    self.status_update(data['infostr'], grow=False)
+                    self.status_update(data['infostr'])
                 except:
                     QtCore.QTimer.singleShot(self.lvwaitseconds*1000, self.lv_raw)
                     return
@@ -398,7 +322,7 @@ def main():
                 plt.tight_layout()
                 self.canvas.draw()
             else:
-                self.status_update('Waiting for data', grow=False)
+                self.status_update('Waiting for data')
 
             while not self.process.q.empty():
                 self.process.q.get_nowait()
@@ -448,16 +372,9 @@ def main():
                         'background-color: rgb(150,150,255) }'))
 
 
-        def status_update(self, string, grow=True):
-            if not grow:
-                self.infstr = self.infstr[:self.infstr.rfind('\n')]
-                self.infstr = self.infstr[:self.infstr.rfind('\n')]
-                self.infstr += '\n'
-
-            self.infstr += string + '\n'
-            self.infolabel.setText(self.infstr)
-            sb = self.infolabel.verticalScrollBar()
-            sb.setValue(sb.maximum())
+        def status_update(self, string):
+            string = 'Directory: ' + self.datadir + '  |  ' + string
+            self.ui.statusBar.setText(string)
             app.processEvents()
 
 
@@ -504,7 +421,7 @@ def main():
                     settings)
                 datafile.append_data(data_all)
                 string = '  {:0.01f} %'.format(i/len(u)*100)
-                self.status_update(string , grow=False)
+                self.status_update(string)
             self.status_update(' done.')
 
 
@@ -569,7 +486,7 @@ def main():
                 dias, vd_ = scpp.vd_from_stats(substats, self.settings.PostProcess)
                 vd.append(vd_)
                 string = '  {:0.01f} %'.format(i/len(u)*100)
-                self.status_update(string , grow=False)
+                self.status_update(string)
 
             self.status_update(' done.')
 
@@ -583,12 +500,19 @@ def main():
             self.canvas.draw()
 
 
-
-        def raw(self):
+        def change_directory(self):
+            inidir = self.datadir
             self.datadir=QFileDialog.getExistingDirectory(self,'open',self.datadir,QFileDialog.ShowDirsOnly)
             if self.datadir == '':
-                self.datadir = DATADIR
-                return
+                self.datadir = inidir
+            else:
+                self.status_update('(new directory)')
+            app.processEvents()
+
+
+        def raw(self):
+            self.change_directory()
+            app.processEvents()
             files = [os.path.join(self.datadir, f) for f in
                     sorted(os.listdir(self.datadir))
                     if f.endswith('.bmp')]
@@ -625,10 +549,7 @@ def main():
                 if self.settings == '':
                     return
 
-            self.status_update('  ----  ')
             self.status_update('STARTING SILCAM!')
-            self.status_update('  recording to: ' + self.datadir)
-            self.status_update('  ')
             self.process.go(self.datadir, self.configfile)
 
             app.processEvents()
@@ -652,14 +573,14 @@ def main():
                 #subprocess.call('killall silcam-acquire', shell=True)
                 self.process = ProcThread()
                 app.processEvents()
-                self.ctrl.ui.pb_start.setStyleSheet(('QPushButton {' +
-                    'background-color: rgb(150,150,255) }'))
-                self.ctrl.ui.pb_stop.setStyleSheet(('QPushButton {' +
-                    'background-color: rgb(150,150,255) }'))
-                self.ctrl.ui.pb_start.setEnabled(True)
-                app.processEvents()
             else:
                 self.status_update('Nothing to stop.')
+            self.ctrl.ui.pb_start.setStyleSheet(('QPushButton {' +
+                'background-color: rgb(150,150,255) }'))
+            self.ctrl.ui.pb_stop.setStyleSheet(('QPushButton {' +
+                'background-color: rgb(150,150,255) }'))
+            self.ctrl.ui.pb_start.setEnabled(True)
+            app.processEvents()
 
 
         def closeEvent(self, event):

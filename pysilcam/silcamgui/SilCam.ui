@@ -22,7 +22,27 @@
   <property name="statusTip">
    <string notr="true"/>
   </property>
-  <widget class="QWidget" name="centralwidget"/>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="1" column="0" colspan="3">
+     <widget class="QWidget" name="fig_widget" native="true"/>
+    </item>
+    <item row="0" column="0" alignment="Qt::AlignLeft|Qt::AlignTop">
+     <widget class="QPushButton" name="pb_ChangeDirectory">
+      <property name="text">
+       <string>Working Folder</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="1" colspan="2">
+     <widget class="QLabel" name="statusBar">
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
@@ -58,7 +78,6 @@
     <property name="title">
      <string>Acquire</string>
     </property>
-    <addaction name="actionConfig"/>
     <addaction name="actionController"/>
    </widget>
    <widget class="QMenu" name="menuProcessing">
@@ -74,30 +93,6 @@
    <addaction name="menuData"/>
    <addaction name="menuAcquire"/>
    <addaction name="menuProcessing"/>
-  </widget>
-  <widget class="QDockWidget" name="infoWidget">
-   <property name="sizePolicy">
-    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-     <horstretch>0</horstretch>
-     <verstretch>0</verstretch>
-    </sizepolicy>
-   </property>
-   <property name="minimumSize">
-    <size>
-     <width>100</width>
-     <height>100</height>
-    </size>
-   </property>
-   <property name="features">
-    <set>QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable</set>
-   </property>
-   <property name="windowTitle">
-    <string>Info</string>
-   </property>
-   <attribute name="dockWidgetArea">
-    <number>4</number>
-   </attribute>
-   <widget class="QWidget" name="dockWidgetContents"/>
   </widget>
   <action name="actionOpen">
    <property name="text">
