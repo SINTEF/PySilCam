@@ -16,35 +16,16 @@ import pysilcam.postprocess as scpp
 import pysilcam.plotting as scplt
 import pysilcam.datalogger as scdl
 import pysilcam.oilgas as scog
-from pysilcam.config import load_config, PySilcamSettings
 sns.set_style('ticks')
 sns.set_context(font_scale=2)
 import cmocean
 import subprocess
-import pysilcam.__main__ as psc
 import datetime
-
+import pysilcam.silcamgui.guicalcs as gc
 
 DATADIR = os.getcwd()
 #DATADIR = '/mnt/DATA/'
 
-
-from multiprocessing import Process, Queue
-
-class ProcThread(Process):
-
-    def __init__(self):
-        super(ProcThread, self).__init__()
-        self.q = Queue()
-
-    def run(self):
-        psc.silcam_process(self.configfile, self.datadir, gui=self.q)
-        #psc.silcam_sim(self.datadir, self.q)
-
-    def go(self, datadir, configfile):
-        self.datadir = datadir
-        self.configfile = configfile
-        self.start()
 
 def names_to_times(names):
     times = []
@@ -78,13 +59,12 @@ def main():
             self.ui.setupUi(self)
 
             # --- some default states
-            self.datadir = DATADIR
             self.settings = ''
             self.stats = []
             self.lv_raw_toggle = False
             self.monitor_toggle = False
             self.lvwaitseconds = 1
-            self.process = ProcThread()
+            self.process = gc.ProcThread(DATADIR)
 
             # ---- figure in middle
             f = plt.figure()
@@ -102,13 +82,8 @@ def main():
 
             # ---- define some callbacks
             self.ui.actionExit.triggered.connect(self.exit)
-            self.ui.actionRaw.triggered.connect(self.raw)
-            self.ui.actionSilc_viewer.triggered.connect(self.silcview)
-            self.ui.actionLoadProcessed.triggered.connect(self.load_processed)
-            self.ui.actionVD_Time_series.triggered.connect(self.time_series_vd)
-            self.ui.actionExport_Time_series.triggered.connect(self.export_series_vd)
+            self.ui.actionSilc_viewer.triggered.connect(self.process.silcview)
             self.ui.actionController.triggered.connect(self.acquire_controller)
-            self.ui.actionSave_Figure.triggered.connect(self.save_figure)
             self.ui.pb_ChangeDirectory.clicked.connect(self.change_directory)
 
             self.layout = layout
@@ -119,130 +94,6 @@ def main():
 
             self.acquire_controller()
 
-
-        def silcview(self):
-            self.raw()
-            files = [os.path.join(self.datadir, f) for f in
-                    sorted(os.listdir(self.datadir))
-                    if f.endswith('.bmp')]
-            import pygame
-            import time
-            pygame.init()
-            info = pygame.display.Info()
-            size = (int(info.current_h / (2048/2448))-100, info.current_h-100)
-            screen = pygame.display.set_mode(size)
-            font = pygame.font.SysFont("monospace", 20)
-            c = pygame.time.Clock()
-            zoom = False
-            counter = -1
-            direction = 1 # 1=forward 2=backward
-            pause = False
-            pygame.event.set_blocked(pygame.MOUSEMOTION)
-            while True:
-                if pause:
-                    event = pygame.event.wait()
-                    if event.type == 12:
-                        pygame.quit()
-                        return
-                    if event.type == pygame.KEYDOWN:
-                        if event.key == pygame.K_f:
-                            zoom = np.invert(zoom)
-                        if event.key == pygame.K_LEFT:
-                            direction = -1
-                        if event.key == pygame.K_RIGHT:
-                            direction = 1
-                        if event.key == pygame.K_p:
-                            pause = np.invert(pause)
-                        else:
-                            continue
-                        pygame.time.wait(100)
-
-                counter += direction
-                counter = np.max([counter, 0])
-                counter = np.min([len(files)-1, counter])
-                c.tick(15) # restrict to 15Hz
-                f = files[counter]
-
-                if not (counter == 0 | counter==len(files)-1):
-                    im = pygame.image.load(os.path.join(self.datadir, f)).convert()
-
-                if zoom:
-                    label = font.render('ZOOM [F]: ON', 1, (255, 255, 0))
-                    im = pygame.transform.scale2x(im)
-                    screen.blit(im,(-size[0]/2,-size[1]/2))
-                else:
-                   im = pygame.transform.scale(im, size)
-                   screen.blit(im,(0,0))
-                   label = font.render('ZOOM [F]: OFF', 1, (255, 255, 0))
-                screen.blit(label,(0, size[1]-20))
-
-                if direction==1:
-                    dirtxt = '>>'
-                elif direction==-1:
-                    dirtxt = '<<'
-                if pause:
-                    dirtxt = 'PAUSED ' + dirtxt
-                label = font.render('DIRECTION [<-|->|p]: ' + dirtxt, 1, (255,255,0))
-                screen.blit(label, (0, size[1]-40))
-
-                if counter == 0:
-                    label = font.render('FIRST IMAGE', 1, (255,255,0))
-                    screen.blit(label, (0, size[1]-60))
-                elif counter == len(files)-1:
-                    label = font.render('LAST IMAGE', 1, (255,255,0))
-                    screen.blit(label, (0, size[1]-60))
-
-
-                timestamp = pd.to_datetime(
-                        os.path.splitext(os.path.split(f)[-1])[0][1:])
-
-
-                pygame.display.set_caption('raw image replay:' + os.path.split(f)[0])#, icontitle=None)
-                label = font.render(str(timestamp), 20, (255, 255, 0))
-                screen.blit(label,(0,0))
-                label = font.render('Display FPS:' + str(c.get_fps()),
-                        1, (255, 255, 0))
-                screen.blit(label,(0,20))
-
-                for event in pygame.event.get():
-                    if event.type == 12:
-                        pygame.quit()
-                        return
-                    if event.type == pygame.KEYDOWN:
-                        if event.key == pygame.K_f:
-                            zoom = np.invert(zoom)
-                        if event.key == pygame.K_LEFT:
-                            direction = -1
-                        if event.key == pygame.K_RIGHT:
-                            direction = 1
-                        if event.key == pygame.K_p:
-                            pause = np.invert(pause)
-                            direction = 0
-
-
-
-                pygame.display.flip()
-
-            pygame.quit()
-
-            print(self.datadir)
-
-
-        def save_figure(self):
-            savename = QFileDialog.getSaveFileName(self,
-                caption = 'Save plots',
-                directory = os.path.join(self.datadir, '../'),
-                filter = (('*.png'))
-                )
-            if savename == '':
-                return
-
-            savename = savename[0]
-            print(savename)
-            self.status_update('saving to ' + savename)
-            app.processEvents()
-            plt.savefig(savename, bbox_inches='tight', dpi=600)
-            self.status_update('  done.')
 
 
         def acquire_controller(self):
@@ -262,8 +113,8 @@ def main():
         def monitor_switch(self):
             self.monitor_toggle = np.invert(self.monitor_toggle)
             if self.monitor_toggle:
-                self.status_update('monitoring ' + self.datadir)
-                self.status_update(' ' + self.datadir)
+                self.status_update('monitoring ' + self.process.datadir)
+                self.status_update(' ' + self.process.datadir)
                 self.monitor()
             else:
                 self.status_update(' drive monitor disabled')
@@ -281,86 +132,12 @@ def main():
             self.lv_raw_check()
             if not self.lv_raw_toggle:
                 return
-
-            if self.process.is_alive():
-                try:
-                    data = self.process.q.get(timeout=0.1)
-                    imc = data['imc']
-                    timestamp = data['timestamp']
-                    dias = data['dias']
-                    vd_oil = data['vd_oil']
-                    vd_gas = data['vd_gas']
-
-                    ttlstr = ('image time: ' +
-                        str(timestamp))
-                    self.status_update(data['infostr'])
-                except:
-                    QtCore.QTimer.singleShot(self.lvwaitseconds*1000, self.lv_raw)
-                    return
-
-                plt.clf()
-                plt.cla()
-
-                plt.subplot(1,2,1)
-                plt.cla()
-                plt.imshow(imc)
-                plt.axis('off')
-                plt.title(ttlstr)
-
-                plt.subplot(1,2,2)
-                plt.cla()
-                try:
-                    plt.plot(dias, vd_oil ,'r')
-                    plt.plot(dias, vd_gas ,'b')
-                    plt.xscale('log')
-                    plt.xlim((10, 10000))
-                    plt.ylabel('Volume Concentration [uL/L]')
-                    plt.xlabel('Diamter [um]')
-                except:
-                    pass
-
-                plt.tight_layout()
-                self.canvas.draw()
-            else:
-                self.status_update('Waiting for data')
-
-            while not self.process.q.empty():
-                self.process.q.get_nowait()
+ 
+            self.process.plot()
+            self.status_update(self.process.info)
+            self.canvas.draw()
 
             QtCore.QTimer.singleShot(self.lvwaitseconds*1000, self.lv_raw)
-
-
-        def lv_raw_from_disc(self):
-            self.lv_raw_check()
-            if not self.lv_raw_toggle:
-                return
-
-            try:
-                files = [os.path.join(self.datadir, f) for f in
-                        sorted(os.listdir(self.datadir)) if f.endswith('.bmp') ]
-                imfile = files[-2]
-
-                name = os.path.split(imfile)[1]
-                timestamp = pd.to_datetime(name[1:-4])
-
-                #im = skimage.io.imread(imfile)
-                with open(imfile, 'rb') as fh:
-                    im = np.load(imfile, allow_pickle=False)
-                plt.clf()
-                plt.cla()
-                plt.imshow(im)
-                plt.title('Time now: ' + str(pd.datetime.now()) + '\n'
-                        'Time acquired: ' + str(timestamp)
-                        )
-                plt.axis('off')
-                plt.tight_layout()
-                self.canvas.draw()
-            except ValueError:
-                plt.title('error loading image')
-                self.canvas.draw()
-
-            QtCore.QTimer.singleShot(self.lvwaitseconds*1000,
-                    self.lv_raw_from_disc)
 
 
         def lv_raw_check(self):
@@ -373,184 +150,31 @@ def main():
 
 
         def status_update(self, string):
-            string = 'Directory: ' + self.datadir + '  |  ' + string
+            string = 'Directory: ' + self.process.datadir + '  |  ' + string
             self.ui.statusBar.setText(string)
             app.processEvents()
 
 
-        def load_sc_config(self):
-            self.configfile = QFileDialog.getOpenFileName(self,
-                    caption = 'Load config ini file',
-                    directory = self.datadir,
-                    filter = (('*.ini'))
-                    )[0]
-            if self.configfile == '':
-                return
-            conf = load_config(self.configfile)
-            self.settings = PySilcamSettings(conf)
-
-
-        def export_series_vd(self):
-            if len(self.stats) == 0 :
-                self.load_processed()
-
-            stats = self.stats
-            settings = self.settings
-
-            savename = QFileDialog.getSaveFileName(self,
-                caption = 'Save VD Time-Series CSV',
-                directory = os.path.join(self.datadir, '../'),
-                filter = (('.csv'))
-                )
-            if savename == '':
-                return
-
-            savename = savename[0] + savename[1]
-            datafile = scdl.DataLogger(savename, scog.ogdataheader())
-
-            u = stats['timestamp'].unique()
-
-            self.status_update('exporting to' + savename)
-            self.status_update(' ')
-            for i, s in enumerate(u):
-                substats = stats[stats['timestamp']==s]
-
-                ts = pd.to_datetime(substats['timestamp'])
-                ts = ts.iloc[0]
-                data_all = scog.cat_data(ts, substats,
-                    settings)
-                datafile.append_data(data_all)
-                string = '  {:0.01f} %'.format(i/len(u)*100)
-                self.status_update(string)
-            self.status_update(' done.')
-
-
-        def load_processed(self):
-            self.filename = QFileDialog.getOpenFileName(self,
-                    caption = 'Load stats csv file',
-                    directory = self.datadir,
-                    filter = (('*-STATS.csv'))
-                    )[0]
-            if self.filename == '':
-                return
-
-            self.status_update('loading ' + self.filename)
-            app.processEvents()
-
-            stats = pd.read_csv(self.filename)
-            self.stats = stats
-
-            nims = scpp.count_images_in_stats(stats)
-
-            self.status_update(str(nims) + ' images in dataset')
-            self.status_update(str(len(stats)) + ' particles in dataset')
-
-            if self.settings == '':
-                self.status_update('config file not found. please load one.')
-                self.load_sc_config()
-                if self.settings == '':
-                    return
-
-            dias, vd = scpp.vd_from_stats(stats, self.settings.PostProcess)
-
-            plt.subplot(1,2,1)
-            plt.cla()
-            vdm = vd / sum(vd) * 100
-            plt.plot(dias,vdm,'k')
-            plt.xscale('log')
-            plt.xlabel('Equiv. diam [um]')
-            plt.ylabel('Volume concentration [%/size class]')
-            plt.title('Average volume distribution')
-
-            plt.subplot(1,2,2)
-            plt.cla()
-            scplt.nd_scaled(stats,self.settings.PostProcess, plt.gca())
-            plt.title('Average number distribution')
-
-            self.canvas.draw()
-
-        def time_series_vd(self):
-            if len(self.stats) == 0 :
-                self.load_processed()
-
-            stats = self.stats
-
-            self.status_update('converting particles to distributions')
-            self.status_update(' please wait....')
-            app.processEvents()
-
-            u = stats['timestamp'].unique()
-            vd = []
-            for i, s in enumerate(u):
-                substats = stats[stats['timestamp']==s]
-                dias, vd_ = scpp.vd_from_stats(substats, self.settings.PostProcess)
-                vd.append(vd_)
-                string = '  {:0.01f} %'.format(i/len(u)*100)
-                self.status_update(string)
-
-            self.status_update(' done.')
-
-            plt.clf()
-            vd = np.transpose(vd)
-            plt.pcolormesh(pd.to_datetime(u),dias,vd,
-                    norm=matplotlib.colors.LogNorm(), cmap=cmocean.cm.matter)
-            plt.ylabel('Equiv. diam [um]')
-            plt.yscale('log')
-
-            self.canvas.draw()
-
-
         def change_directory(self):
-            inidir = self.datadir
-            self.datadir=QFileDialog.getExistingDirectory(self,'open',self.datadir,QFileDialog.ShowDirsOnly)
-            if self.datadir == '':
-                self.datadir = inidir
+            inidir = self.process.datadir
+            self.process.datadir=QFileDialog.getExistingDirectory(self,'open',
+                    self.process.datadir,QFileDialog.ShowDirsOnly)
+            if self.process.datadir == '':
+                self.process.datadir = inidir
             else:
                 self.status_update('(new directory)')
             app.processEvents()
 
 
-        def raw(self):
-            self.change_directory()
-            app.processEvents()
-            files = [os.path.join(self.datadir, f) for f in
-                    sorted(os.listdir(self.datadir))
-                    if f.endswith('.bmp')]
-            self.nims = len(files)
-            if self.nims < 2:
-                self.status_update('Less than 2 images found')
-                return
-            times = names_to_times(files)
-
-
-            plt.subplot(1,2,1)
-            plt.cla()
-            plt.plot(times,np.arange(0,self.nims),'k.',markersize=2)
-            plt.title(self.datadir + ': ' + str(self.nims) + ' images')
-            myFmt = matplotlib.dates.DateFormatter('%D-%H:%M:%S')
-            plt.gca().xaxis.set_major_formatter(myFmt)
-            plt.gcf().autofmt_xdate()
-            plt.ylabel('Image number')
-
-            hz = times_to_hz(times)
-            plt.subplot(1,2,2)
-            plt.cla()
-            plt.hist(hz,bins=np.arange(0,7,0.1),color='k')
-            plt.xlabel('Sampling Frequency [Hz]')
-            plt.ylabel('Images')
-
-            self.canvas.draw()
-
-
         def record(self):
-            if self.settings == '':
+            if self.process.settings == '':
                 self.status_update('config file not found. please load one.')
                 self.load_sc_config()
-                if self.settings == '':
+                if self.process.settings == '':
                     return
 
             self.status_update('STARTING SILCAM!')
-            self.process.go(self.datadir, self.configfile)
+            self.process.go()
 
             app.processEvents()
 
@@ -565,22 +189,32 @@ def main():
 
 
         def stop_record(self):
-            if self.process.is_alive():
-                self.process.terminate()
-                self.status_update('  ----  ')
-                self.status_update('KILLING SILCAM PROCESS')
-                self.status_update('  ----  ')
+            self.process.stop_silcam()
+
+            self.status_update('  ----  ')
+            self.status_update('KILLING SILCAM PROCESS')
+            self.status_update('  ----  ')
                 #subprocess.call('killall silcam-acquire', shell=True)
-                self.process = ProcThread()
-                app.processEvents()
-            else:
-                self.status_update('Nothing to stop.')
+            self.process = gc.ProcThread(self.process.datadir)
+            app.processEvents()
+
             self.ctrl.ui.pb_start.setStyleSheet(('QPushButton {' +
                 'background-color: rgb(150,150,255) }'))
             self.ctrl.ui.pb_stop.setStyleSheet(('QPushButton {' +
                 'background-color: rgb(150,150,255) }'))
             self.ctrl.ui.pb_start.setEnabled(True)
             app.processEvents()
+
+
+        def load_sc_config(self):
+            self.process.configfile = QFileDialog.getOpenFileName(self,
+                    caption = 'Load config ini file',
+                    directory = self.process.datadir,
+                    filter = (('*.ini'))
+                    )[0]
+            if self.process.configfile == '':
+                return
+            self.process.load_settings(self.process.configfile)
 
 
         def closeEvent(self, event):

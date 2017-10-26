@@ -304,6 +304,7 @@ def silcam_process(config_filename, datapath, nbImages=None, gui=None):
                     'vd_oil': vd_oil,
                     'vd_gas': vd_gas
                     }
+            #guidata = stats_all.to_dict()
             gui.put(guidata)
 
     #---- RUN PROCESSING ----
