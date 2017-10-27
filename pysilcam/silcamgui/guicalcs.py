@@ -6,6 +6,23 @@ QAction, QTabWidget,QVBoxLayout, QFileDialog)
 import os
 from pysilcam.config import load_config, PySilcamSettings
 import pysilcam.oilgas as scog
+import numpy as np
+import pysilcam.postprocess as sc_pp
+import pandas as pd
+
+def get_data(self):
+    try:
+        stats = self.q.get(timeout=0.1)
+    except:
+        stats = None
+    return stats
+
+
+def extract_stats_im(guidata):
+    imc = guidata['imc']
+    del guidata['imc']
+    stats = pd.DataFrame.from_dict(guidata)
+    return stats, imc
 
 
 class ProcThread(Process):
@@ -17,7 +34,7 @@ class ProcThread(Process):
         self.datadir = datadir
         self.configfile = ''
         self.settings = ''
-
+        self.rts = ''
 
 
     def run(self):
@@ -26,9 +43,7 @@ class ProcThread(Process):
 
 
     def go(self):
-        self.rts = scog.rt_stats(self.settings)
         self.start()
-        self.info = 'go sent'
 
 
     def stop_silcam(self):
@@ -41,61 +56,67 @@ class ProcThread(Process):
 
     def plot(self):
         infostr = 'waiting to plot'
+        if self.rts == '':
+            self.rts = scog.rt_stats(self.settings)
+
         if self.is_alive():
-            try:
-                stats = self.q.get(timeout=0.1)
+            guidata = get_data(self)
+            if not guidata == None:
+                stats, imc = extract_stats_im(guidata)
+                timestamp = np.max(stats['timestamp'])
 
                 try:
-                    rts.stats = rts.stats().append(stats_all)
+                    self.rts.stats = self.rts.stats().append(stats)
                 except:
-                    rts.stats = rts.stats.append(stats_all)
-                rts.update()
+                    self.rts.stats = self.rts.stats.append(stats)
+                self.rts.update()
+
+                dias, vd_oil = sc_pp.vd_from_stats(self.rts.oil_stats,
+                    self.settings.PostProcess)
+                dias, vd_gas = sc_pp.vd_from_stats(self.rts.gas_stats,
+                    self.settings.PostProcess)
+
+                #infostr = data['infostr']
+                infostr = 'got data'
+
+                plt.clf()
+                plt.cla()
 
 
-                #stats = pd.DataFrame.from_dict(data)
-                #print(data.head())
+                plt.subplot(2,2,1)
+                plt.cla()
+                plt.plot(dias, vd_oil ,'r')
+                plt.plot(dias, vd_gas ,'b')
+                plt.xscale('log')
+                plt.xlim((10, 10000))
+                plt.ylabel('Volume Concentration [uL/L]')
+                plt.xlabel('Diamter [um]')
 
-                #dias, vd = sc_pp.vd_from_stats(stats,
-                #    settings.PostProcess)
+                plt.subplot(2,2,3)
+                ttlstr = (
+                        'Oil d50: {:0.0f}um'.format(self.rts.oil_d50) + '\n' + 
+                        'Gas d50: {:0.0f}um'.format(self.rts.gas_d50) + '\n' 
+                        )
+                plt.title(ttlstr)
+                plt.axis('off')
 
-                imc = data['imc']
-                timestamp = data['timestamp']
-                dias = data['dias']
-                vd_oil = data['vd_oil']
-                vd_gas = data['vd_gas']
-
-                ttlstr = ('image time: ' +
+                plt.subplot(1,2,2)
+                ttlstr = ('Image time: ' +
                     str(timestamp))
-                infostr = data['infostr']
-            except:
-                infostr = 'failed to get data from process'
-                return
+                plt.cla()
+                plt.imshow(imc)
+                plt.axis('off')
+                plt.title(ttlstr)
 
-            plt.clf()
-            plt.cla()
+                plt.tight_layout()
+            #except:
+            #    infostr = 'failed to get data from process'
+            #    print('failed to get data from process')
 
-            plt.subplot(1,2,1)
-            plt.cla()
-            plt.imshow(imc)
-            plt.axis('off')
-            plt.title(ttlstr)
+            while not self.q.empty():
+                self.q.get_nowait()
 
-            plt.subplot(1,2,2)
-            plt.cla()
-            plt.plot(dias, vd_oil ,'r')
-            plt.plot(dias, vd_gas ,'b')
-            plt.xscale('log')
-            plt.xlim((10, 10000))
-            plt.ylabel('Volume Concentration [uL/L]')
-            plt.xlabel('Diamter [um]')
-
-            plt.tight_layout()
-
-        while not self.q.empty():
-            self.q.get_nowait()
-
-        self.info = infostr
-
+            self.info = infostr
 
 
     def silcview(self):

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>641</height>
+    <width>808</width>
+    <height>764</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -24,20 +24,27 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="1" column="0" colspan="3">
-     <widget class="QWidget" name="fig_widget" native="true"/>
-    </item>
-    <item row="0" column="0" alignment="Qt::AlignLeft|Qt::AlignTop">
+    <item row="0" column="0" alignment="Qt::AlignLeft">
      <widget class="QPushButton" name="pb_ChangeDirectory">
       <property name="text">
        <string>Working Folder</string>
       </property>
      </widget>
     </item>
-    <item row="0" column="1" colspan="2">
+    <item row="0" column="1" alignment="Qt::AlignTop">
      <widget class="QLabel" name="statusBar">
       <property name="text">
-       <string/>
+       <string>STATUS</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="0" colspan="2">
+     <widget class="QWidget" name="fig_widget" native="true">
+      <property name="minimumSize">
+       <size>
+        <width>790</width>
+        <height>400</height>
+       </size>
       </property>
      </widget>
     </item>
@@ -48,7 +55,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
+     <width>808</width>
      <height>27</height>
     </rect>
    </property>

@@ -133,6 +133,7 @@ def main():
             if not self.lv_raw_toggle:
                 return
  
+            self.status_update('asking for plot')
             self.process.plot()
             self.status_update(self.process.info)
             self.canvas.draw()

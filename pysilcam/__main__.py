@@ -24,7 +24,6 @@ import imageio
 import os
 import pysilcam.silcam_classify as sccl
 import pysilcam.sclive as scl
-import pysilcam.oilgas as scog
 
 
 title = '''
@@ -180,14 +179,6 @@ def silcam_process(config_filename, datapath, nbImages=None, gui=None):
     if settings.NNClassify.enable:
         nnmodel, class_labels = sccl.load_model(model_path=settings.NNClassify.model_path)
 
-    # this can be initialised and then never used
-    rts = scog.rt_stats(settings)
-
-    if settings.Process.display:
-        lv = scl.liveview()
-    else:
-        lv=[]
-
     #Initialize the image acquisition generator
     aqgen = acquire(datapath)
 
@@ -215,7 +206,7 @@ def silcam_process(config_filename, datapath, nbImages=None, gui=None):
 
     #---- MAIN PROCESSING LOOP ----
     # processing function run on each image
-    def loop(i, timestamp, imc, lv=None, rts=None, gui=None):
+    def loop(i, timestamp, imc, gui=None):
         #Time the full acquisition and processing loop
         start_time = time.clock()
 
@@ -278,33 +269,9 @@ def silcam_process(config_filename, datapath, nbImages=None, gui=None):
 
         #---- END MAIN PROCESSING LOOP ----
         #---- DO SOME ADMIN ----
-        if settings.Process.real_time_stats:
-            try:
-                rts.stats = rts.stats().append(stats_all)
-            except:
-                rts.stats = rts.stats.append(stats_all)
-            rts.update()
-            if settings.Process.display:
-                lv.stats = rts.stats
-                lv.oil_stats = rts.oil_stats
-                lv.gas_stats = rts.gas_stats
-
-        if settings.Process.display:
-            lv = lv.update(imc, settings)
-
         if not gui==None:
-            dias, vd_oil = sc_pp.vd_from_stats(rts.oil_stats,
-                    settings.PostProcess)
-            dias, vd_gas = sc_pp.vd_from_stats(rts.gas_stats,
-                    settings.PostProcess)
-            guidata = {'imc': imc,
-                    'timestamp': timestamp,
-                    'infostr': infostr,
-                    'dias': dias,
-                    'vd_oil': vd_oil,
-                    'vd_gas': vd_gas
-                    }
-            #guidata = stats_all.to_dict()
+            guidata = stats_all.to_dict()
+            guidata['imc'] = imc
             gui.put(guidata)
 
     #---- RUN PROCESSING ----
@@ -317,7 +284,7 @@ def silcam_process(config_filename, datapath, nbImages=None, gui=None):
             if (nbImages <= i):
                 break
         try:
-            loop(i, timestamp, imc, lv, rts, gui)
+            loop(i, timestamp, imc, gui)
         except:
             infostr = 'Failed to process frame {0}, skipping.'.format(i)
             logger.warning(infostr, exc_info=True)
