@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import (QMainWindow, QApplication, QPushButton, QWidget,
 QAction, QTabWidget,QVBoxLayout, QFileDialog)
 import os
 from pysilcam.config import load_config, PySilcamSettings
+import pysilcam.oilgas as scog
 
 
 class ProcThread(Process):
@@ -18,12 +19,14 @@ class ProcThread(Process):
         self.settings = ''
 
 
+
     def run(self):
         psc.silcam_process(self.configfile, self.datadir, gui=self.q)
         #psc.silcam_sim(self.datadir, self.q)
 
 
     def go(self):
+        self.rts = scog.rt_stats(self.settings)
         self.start()
         self.info = 'go sent'
 
@@ -40,7 +43,15 @@ class ProcThread(Process):
         infostr = 'waiting to plot'
         if self.is_alive():
             try:
-                data = self.q.get(timeout=0.1)
+                stats = self.q.get(timeout=0.1)
+
+                try:
+                    rts.stats = rts.stats().append(stats_all)
+                except:
+                    rts.stats = rts.stats.append(stats_all)
+                rts.update()
+
+
                 #stats = pd.DataFrame.from_dict(data)
                 #print(data.head())
 
