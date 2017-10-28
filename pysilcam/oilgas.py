@@ -2,10 +2,14 @@
 '''
 module for processing Oil and Gas SilCam data
 '''
-import pysilcam.postprocess as sc_pp 
+import pysilcam.postprocess as sc_pp
 import itertools
 import pandas as pd
 import numpy as np
+import os
+import http.server
+import socketserver
+from multiprocessing import Process, Queue
 
 def extract_gas(stats, THRESH=0.9):
     ind = np.logical_or((stats['probability_bubble']>stats['probability_oil']),
@@ -54,6 +58,30 @@ class rt_stats():
         self.gas_d50 = sc_pp.d50_from_stats(self.gas_stats,
                 self.settings.PostProcess)
 
+    def to_csv(self, filename):
+        df = pd.DataFrame()
+        df['Oil d50[um]'] = [self.oil_d50]
+        df['Gas d50[um]'] = [self.gas_d50]
+        df.to_csv(filename, index=False, mode='w') # do not append to this file
+
+
+class ServerThread(Process):
+
+    def __init__(self):
+        super(ServerThread, self).__init__()
+        self.go()
+
+    def run(self):
+        PORT = 8000
+        address = '10.218.129.3'
+        Handler = http.server.SimpleHTTPRequestHandler
+        with socketserver.TCPServer((address, PORT), Handler) as httpd:
+            print("serving at port", PORT)
+            httpd.serve_forever()
+
+    def go(self):
+        self.start()
+
 
 def ogdataheader():
 
@@ -64,7 +92,7 @@ def ogdataheader():
     for i in bin_mids_um:
         ogheader += str(i) + ', '
         #print(str(i) + ', ')
-                
+
     ogheader += 'd50, ProcessedParticles'
 
     return ogheader

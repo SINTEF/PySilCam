@@ -59,6 +59,7 @@ class ProcThread(Process):
         if self.rts == '':
             self.rts = scog.rt_stats(self.settings)
 
+
         if self.is_alive():
             guidata = get_data(self)
             if not guidata == None:
@@ -70,6 +71,9 @@ class ProcThread(Process):
                 except:
                     self.rts.stats = self.rts.stats.append(stats)
                 self.rts.update()
+                filename = os.path.join(self.settings.General.datafile,
+                    'OilGasd50.csv')
+                self.rts.to_csv(filename)
 
                 dias, vd_oil = sc_pp.vd_from_stats(self.rts.oil_stats,
                     self.settings.PostProcess)
@@ -94,8 +98,8 @@ class ProcThread(Process):
 
                 plt.subplot(2,2,3)
                 ttlstr = (
-                        'Oil d50: {:0.0f}um'.format(self.rts.oil_d50) + '\n' + 
-                        'Gas d50: {:0.0f}um'.format(self.rts.gas_d50) + '\n' 
+                        'Oil d50: {:0.0f}um'.format(self.rts.oil_d50) + '\n' +
+                        'Gas d50: {:0.0f}um'.format(self.rts.gas_d50) + '\n'
                         )
                 plt.title(ttlstr)
                 plt.axis('off')

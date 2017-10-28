@@ -65,6 +65,7 @@ def main():
             self.monitor_toggle = False
             self.lvwaitseconds = 1
             self.process = gc.ProcThread(DATADIR)
+            scog.ServerThread()
 
             # ---- figure in middle
             f = plt.figure()
@@ -132,7 +133,7 @@ def main():
             self.lv_raw_check()
             if not self.lv_raw_toggle:
                 return
- 
+
             self.status_update('asking for plot')
             self.process.plot()
             self.status_update(self.process.info)
@@ -151,7 +152,7 @@ def main():
 
 
         def status_update(self, string):
-            string = 'Directory: ' + self.process.datadir + '  |  ' + string
+            string = string + '  |  Directory: ' + self.process.datadir
             self.ui.statusBar.setText(string)
             app.processEvents()
 

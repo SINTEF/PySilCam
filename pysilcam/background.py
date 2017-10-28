@@ -34,9 +34,10 @@ def shift_bgstack(bgstack, imbg, imnew):
       imbg (updated actual background image)
     '''
     imold = bgstack.pop(0)  # pop the oldest image from the stack,
-    imbg -= (imold/len(bgstack))
-    imbg += (imnew/len(bgstack))
+    #imbg -= (imold/len(bgstack))
+    #imbg += (imnew/len(bgstack))
     bgstack.append(imnew)  # append the new image to the stack
+    imbg = np.mean(bgstack, axis=0)
     return bgstack, imbg
 
 
