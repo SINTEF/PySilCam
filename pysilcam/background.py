@@ -57,6 +57,7 @@ def correct_im(imbg, imraw):
     imc += 255 - np.percentile(imc, 99)
 
     imc[imc>255] = 255
+    imc[imc<0] = 0
     imc = np.uint8(imc)
 
     return imc
