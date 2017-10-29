@@ -290,7 +290,7 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
 
     # define the geometrical properties to be calculated from regionprops
     propnames = ['major_axis_length', 'minor_axis_length',
-                 'equivalent_diameter']
+                 'equivalent_diameter', 'solidity']
 
     # pre-allocate some things
     data = np.zeros((len(region_properties), len(propnames)), dtype=np.float64)

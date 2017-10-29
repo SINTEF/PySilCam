@@ -12,6 +12,9 @@ import socketserver
 from multiprocessing import Process, Queue
 
 def extract_gas(stats, THRESH=0.9):
+    ma = stats['minor_axis_length'] / stats['major_axis_length']
+    stats = stats[ma>0.3]
+    stats = stats[stats['solidity']>0.9]
     ind = np.logical_or((stats['probability_bubble']>stats['probability_oil']),
             (stats['probability_oily_gas']>stats['probability_oil']))
 
@@ -25,7 +28,9 @@ def extract_gas(stats, THRESH=0.9):
 
 
 def extract_oil(stats, THRESH=0.9):
-    stats = stats[stats['major_axis_length']
+    ma = stats['minor_axis_length'] / stats['major_axis_length']
+    stats = stats[ma>0.3]
+    stats = stats[stats['solidity']>0.9]
     ind = np.logical_or((stats['probability_oil']>stats['probability_bubble']),
             (stats['probability_oil']>stats['probability_oily_gas']))
 
