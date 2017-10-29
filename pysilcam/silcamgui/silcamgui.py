@@ -54,7 +54,7 @@ class server_dlg(QMainWindow):
 
     def go(self):
         ip = self.ui.IPText.toPlainText()
-        scog.ServerThread(ip)
+        self.server = scog.ServerThread(ip)
 
 
 class controller(QMainWindow):
@@ -243,7 +243,10 @@ def main():
 
         def closeEvent(self, event):
             self.stop_record()
-
+            try:
+                self.serverdlg.server.terminate()
+            except:
+                pass
 
         def exit(self):
             app.quit()
