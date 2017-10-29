@@ -11,6 +11,7 @@ import matplotlib
 import skimage.io
 from pysilcam.silcamgui.SilCam import Ui_SilCam
 from pysilcam.silcamgui.SilCamController import Ui_SilCamController
+from pysilcam.silcamgui.ServerDLG import Ui_Server
 import seaborn as sns
 import pysilcam.postprocess as scpp
 import pysilcam.plotting as scplt
@@ -43,11 +44,21 @@ def times_to_hz(times):
         hz.append(1/dt)
     return hz
 
+
+class server_dlg(QMainWindow):
+    def __init__(self, parent=None):
+        QMainWindow.__init__(self, parent)
+        self.ui = Ui_Server()
+        self.ui.setupUi(self)
+
+
+
 class controller(QMainWindow):
     def __init__(self, parent=None):
         QMainWindow.__init__(self, parent)
         self.ui = Ui_SilCamController()
         self.ui.setupUi(self)
+
 
 def main():
     app = QApplication(sys.argv)
@@ -65,7 +76,6 @@ def main():
             self.monitor_toggle = False
             self.lvwaitseconds = 1
             self.process = gc.ProcThread(DATADIR)
-            scog.ServerThread()
 
             # ---- figure in middle
             f = plt.figure()
@@ -84,6 +94,8 @@ def main():
             # ---- define some callbacks
             self.ui.actionExit.triggered.connect(self.exit)
             self.ui.actionSilc_viewer.triggered.connect(self.process.silcview)
+            #self.ui.actionServer.triggered.connect(scog.ServerThread)
+            self.ui.actionServer.triggered.connect(self.server)
             self.ui.actionController.triggered.connect(self.acquire_controller)
             self.ui.pb_ChangeDirectory.clicked.connect(self.change_directory)
 
@@ -95,6 +107,10 @@ def main():
 
             self.acquire_controller()
 
+
+        def server(self):
+            self.serverdlg = server_dlg(self)
+            self.serverdlg.actionStart.triggered.connect(scog.ServerThread)
 
 
         def acquire_controller(self):

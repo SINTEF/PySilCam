@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Server</class>
+ <widget class="QDialog" name="Server">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>310</width>
+    <height>137</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Dialog</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item alignment="Qt::AlignHCenter|Qt::AlignTop">
+    <widget class="QPlainTextEdit" name="plainTextEdit">
+     <property name="maximumSize">
+      <size>
+       <width>256</width>
+       <height>110</height>
+      </size>
+     </property>
+    </widget>
+   </item>
+   <item alignment="Qt::AlignHCenter|Qt::AlignBottom">
+    <widget class="QPushButton" name="Start">
+     <property name="text">
+      <string>Start</string>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

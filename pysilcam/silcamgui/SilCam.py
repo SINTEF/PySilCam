@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_SilCam(object):
     def setupUi(self, SilCam):
         SilCam.setObjectName("SilCam")
-        SilCam.resize(808, 764)
+        SilCam.resize(814, 703)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -35,7 +35,7 @@ class Ui_SilCam(object):
         self.gridLayout.addWidget(self.fig_widget, 1, 0, 1, 2)
         SilCam.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(SilCam)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 808, 27))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 814, 22))
         self.menubar.setObjectName("menubar")
         self.menuTest = QtWidgets.QMenu(self.menubar)
         self.menuTest.setObjectName("menuTest")
@@ -69,6 +69,8 @@ class Ui_SilCam(object):
         self.actionExport_Time_series.setObjectName("actionExport_Time_series")
         self.actionSilc_viewer = QtWidgets.QAction(SilCam)
         self.actionSilc_viewer.setObjectName("actionSilc_viewer")
+        self.actionServer = QtWidgets.QAction(SilCam)
+        self.actionServer.setObjectName("actionServer")
         self.menuTest.addAction(self.actionSave_Figure)
         self.menuTest.addAction(self.actionExit)
         self.menuProcessed.addAction(self.actionLoadProcessed)
@@ -78,6 +80,7 @@ class Ui_SilCam(object):
         self.menuData.addAction(self.menuProcessed.menuAction())
         self.menuAcquire.addAction(self.actionController)
         self.menuProcessing.addAction(self.actionSilc_viewer)
+        self.menuProcessing.addAction(self.actionServer)
         self.menubar.addAction(self.menuTest.menuAction())
         self.menubar.addAction(self.menuData.menuAction())
         self.menubar.addAction(self.menuAcquire.menuAction())
@@ -105,4 +108,5 @@ class Ui_SilCam(object):
         self.actionVD_Time_series.setText(_translate("SilCam", "VD Time-series"))
         self.actionExport_Time_series.setText(_translate("SilCam", "Export VD Time-series"))
         self.actionSilc_viewer.setText(_translate("SilCam", "silc viewer"))
+        self.actionServer.setText(_translate("SilCam", "Server"))
 

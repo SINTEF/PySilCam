@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>808</width>
-    <height>764</height>
+    <width>814</width>
+    <height>703</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -55,8 +55,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>808</width>
-     <height>27</height>
+     <width>814</width>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuTest">
@@ -95,6 +95,7 @@
      <string>Processing</string>
     </property>
     <addaction name="actionSilc_viewer"/>
+    <addaction name="actionServer"/>
    </widget>
    <addaction name="menuTest"/>
    <addaction name="menuData"/>
@@ -149,6 +150,11 @@
   <action name="actionSilc_viewer">
    <property name="text">
     <string>silc viewer</string>
+   </property>
+  </action>
+  <action name="actionServer">
+   <property name="text">
+    <string>Server</string>
    </property>
   </action>
  </widget>
