@@ -67,15 +67,16 @@ class rt_stats():
 
 class ServerThread(Process):
 
-    def __init__(self):
+    def __init__(self, ip):
         super(ServerThread, self).__init__()
+        self.ip = ip
         self.go()
 
     def run(self):
         PORT = 8000
-        address = '192.168.1.2'
+        #address = '192.168.1.2'
         Handler = http.server.SimpleHTTPRequestHandler
-        with socketserver.TCPServer((address, PORT), Handler) as httpd:
+        with socketserver.TCPServer((self.ip, PORT), Handler) as httpd:
             print("serving at port", PORT)
             httpd.serve_forever()
 

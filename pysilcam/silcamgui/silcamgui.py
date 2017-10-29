@@ -26,7 +26,7 @@ import pysilcam.silcamgui.guicalcs as gc
 
 DATADIR = os.getcwd()
 #DATADIR = '/mnt/DATA/'
-
+IP = '192.168.1.2'
 
 def names_to_times(names):
     times = []
@@ -50,7 +50,11 @@ class server_dlg(QMainWindow):
         QMainWindow.__init__(self, parent)
         self.ui = Ui_Server()
         self.ui.setupUi(self)
+        self.ui.IPText.appendPlainText(IP)
 
+    def go(self):
+        ip = self.ui.IPText.toPlainText()
+        scog.ServerThread(ip)
 
 
 class controller(QMainWindow):
@@ -109,8 +113,10 @@ def main():
 
 
         def server(self):
+            print('opening serverdlg')
             self.serverdlg = server_dlg(self)
-            self.serverdlg.actionStart.triggered.connect(scog.ServerThread)
+            self.serverdlg.ui.Start.clicked.connect(self.serverdlg.go)
+            self.serverdlg.show()
 
 
         def acquire_controller(self):

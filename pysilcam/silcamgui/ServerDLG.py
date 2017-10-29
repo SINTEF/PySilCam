@@ -11,22 +11,19 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Server(object):
     def setupUi(self, Server):
         Server.setObjectName("Server")
-        Server.resize(310, 137)
-        self.verticalLayout = QtWidgets.QVBoxLayout(Server)
-        self.verticalLayout.setObjectName("verticalLayout")
-        self.plainTextEdit = QtWidgets.QPlainTextEdit(Server)
-        self.plainTextEdit.setMaximumSize(QtCore.QSize(256, 110))
-        self.plainTextEdit.setObjectName("plainTextEdit")
-        self.verticalLayout.addWidget(self.plainTextEdit, 0, QtCore.Qt.AlignHCenter|QtCore.Qt.AlignTop)
+        Server.resize(310, 201)
         self.Start = QtWidgets.QPushButton(Server)
+        self.Start.setGeometry(QtCore.QRect(90, 120, 141, 71))
         self.Start.setObjectName("Start")
-        self.verticalLayout.addWidget(self.Start, 0, QtCore.Qt.AlignHCenter|QtCore.Qt.AlignBottom)
+        self.IPText = QtWidgets.QPlainTextEdit(Server)
+        self.IPText.setGeometry(QtCore.QRect(60, 50, 191, 31))
+        self.IPText.setObjectName("IPText")
 
         self.retranslateUi(Server)
         QtCore.QMetaObject.connectSlotsByName(Server)
 
     def retranslateUi(self, Server):
         _translate = QtCore.QCoreApplication.translate
-        Server.setWindowTitle(_translate("Server", "Dialog"))
+        Server.setWindowTitle(_translate("Server", "HTTP Server"))
         self.Start.setText(_translate("Server", "Start"))
 
