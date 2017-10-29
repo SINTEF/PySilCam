@@ -73,7 +73,7 @@ class ServerThread(Process):
 
     def run(self):
         PORT = 8000
-        address = '10.218.129.3'
+        address = '192.168.1.2'
         Handler = http.server.SimpleHTTPRequestHandler
         with socketserver.TCPServer((address, PORT), Handler) as httpd:
             print("serving at port", PORT)
