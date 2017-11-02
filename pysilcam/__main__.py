@@ -214,17 +214,16 @@ def silcam_process(config_filename, datapath, nbImages=None, gui=None):
         logger.info('Processing time stamp {0}'.format(timestamp))
 
         # basic check of image quality
-        if False:
-            r = imc[:, :, 0]
-            g = imc[:, :, 1]
-            b = imc[:, :, 2]
-            s = np.std([r, g, b])
-            print('lighting std:',s)
-            # ignore bad images as if they were not obtained (i.e. do not affect
-            # output statistics in any way)
-            if s > 8:
-                print('bad lighting')
-                return
+        r = imc[:, :, 0]
+        g = imc[:, :, 1]
+        b = imc[:, :, 2]
+        s = np.std([r, g, b])
+        print('lighting std:',s)
+        # ignore bad images as if they were not obtained (i.e. do not affect
+        # output statistics in any way)
+        if s > settings.Process.bad_lighting_limit:
+            logger.info('bad lighting')
+            return
 
         #Calculate particle statistics
         stats_all, imbw, saturation = statextract(imc, settings, timestamp,

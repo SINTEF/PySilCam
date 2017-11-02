@@ -111,14 +111,6 @@ def filter_bad_stats(stats,settings):
     stats = stats[(stats['major_axis_length'] * settings.PostProcess.pix_size) <
             settings.Process.max_length]
 
-    # calculate the area of the bounding boxes
-    bbox_area = (stats['maxr']-stats['minr']) * (stats['maxc']-stats['minc'])
-
-    #Discard overlapping particles (approximate by solidity requirement)
-    stats = stats[(stats['equivalent_diameter'] ** 2 / bbox_area) >
-            (settings.Process.min_solidity)]
-    # this is a crude, but fast approximate of solidity
-
     return stats
 
 
@@ -302,9 +294,8 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
         bboxes[i, :] = el.bbox
 
         # Find particles that match export criteria 
-        if (((settings.PostProcess.pix_size *
-            data[i, 0]) > settings.ExportParticles.min_length) &  #major_axis_length
-            ((settings.PostProcess.pix_size * data[i, 1]) > 2)):  #minor_axis_length
+        if ((data[i, 0] > settings.ExportParticles.min_length) & #major_axis_length in pixels
+            (data[i, 1] > 2)): # minor length in pixels
             
             nb_extractable_part += 1
             # extract the region of interest from the corrected colour image

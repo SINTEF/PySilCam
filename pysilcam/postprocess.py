@@ -342,7 +342,7 @@ def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
 
 
 def make_montage(stats_csv_file, pixel_size, roidir,
-        auto_scaler=500, msize=1024):
+        auto_scaler=500, msize=1024, maxlength=100000):
     ''' wrapper function for montage_maker 
     '''
 
@@ -351,6 +351,8 @@ def make_montage(stats_csv_file, pixel_size, roidir,
 
     # remove nans because concentrations are not important here
     stats = stats[~np.isnan(stats['major_axis_length'])]
+    stats = stats[(stats['major_axis_length'] *
+            pixel_size) < maxlength]
 
     # sort the particles based on their length
     stats.sort_values(by=['major_axis_length'], ascending=False, inplace=True)
