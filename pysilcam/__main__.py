@@ -23,7 +23,6 @@ from skimage import color
 import imageio
 import os
 import pysilcam.silcam_classify as sccl
-import pysilcam.sclive as scl
 
 
 title = '''
@@ -78,45 +77,14 @@ def silcam():
         silcam_process(args['<configfile>'],args['<datapath>'], nbImages)
 
     elif args['acquire']: # this is the standard acquisition method under development now
-        if args['--liveview']:
-            silcam_acquire(liveview=True)
-        else:
-            silcam_acquire()
+        silcam_acquire()
 
-def silcam_sim(datapath, gui):
-
-    aqgen = acquire(datapath)
-    bggen = backgrounder(15, aqgen)
-
-    start_time = time.clock()
-    for i, (timestamp, imc) in enumerate(bggen):
-        proc_time = time.clock() - start_time
-        start_time = time.clock()
-        infostr = '  Image {0} processed in {1:.2f} sec ({2:.1f} Hz). '
-        infostr = infostr.format(i, proc_time, 1.0/proc_time)
-        print(infostr)
-        guidata = {'imc': imc,
-            'timestamp': timestamp,
-            'infostr': infostr,
-            'dias': 1,
-            'vd_oil': 1,
-            'vd_gas': 1
-            }
-        gui.put(guidata)
-
-
-def silcam_acquire(liveview=False):
-    if liveview:
-        lv = scl.liveview()
+def silcam_acquire():
     while True:
         t1 = time.time()
         try:
             aqgen = acquire()
             for i, (timestamp, imraw) in enumerate(aqgen):
-                if liveview:
-                    lv = lv.update(imraw, timestamp)
-                    if not lv.record:
-                        continue
                 filename = timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc')
                 with open(filename, 'wb') as fh:
                     np.save(fh, imraw, allow_pickle=False)
