@@ -15,7 +15,7 @@ if 'PYSILCAM_FAKEPYMBA' in os.environ.keys():
     import pysilcam.fakepymba as pymba
     # @todo this means that processing on a mchine with pymba installed will
     # not work with the correct timestamp
-    pymba.get_time_stamp = lambda x: pd.Timestamp.now()
+    #pymba.get_time_stamp = lambda x: pd.Timestamp.now()
 else:
     try:
         import pymba
@@ -24,10 +24,10 @@ else:
         print('Pymba not available, using mocked version')
         logger.debug('Pymba not available, using mocked version')
         import pysilcam.fakepymba as pymba
-    else:
+    #else:
         #Monkey-patch in a real-time timestamp getter to be consistent with
         #FakePymba
-        pymba.get_time_stamp = lambda x: pd.Timestamp.now()
+        #pymba.get_time_stamp = lambda x: pd.Timestamp.now()
 
 
 def _init_camera(vimba):
@@ -67,7 +67,7 @@ def _configure_camera(camera, config=dict()):
     camera.AcquisitionFrameRateAbs = 1
     camera.TriggerSource = 'FixedRate'
     camera.AcquisitionMode = 'SingleFrame'
-    camera.ExposureTimeAbs = 550
+    camera.ExposureTimeAbs = 200
     #camera.PixelFormat = 'BayerRG8'
     camera.PixelFormat = 'RGB8Packed'
     camera.StrobeDuration = 600

@@ -145,7 +145,7 @@ def nd_from_stats_scaled(stats, settings):
     ''' calcualte a scaled number distribution from stats and settings
     units of nd are in number per micron per litre
     '''
-    # calculate the number distirbution (number per bin per sample volume) 
+    # calculate the number distirbution (number per bin per sample volume)
     dias, necd = nd_from_stats(stats,settings)
 
     # calculate the sample volume per image
@@ -342,8 +342,8 @@ def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
 
 
 def make_montage(stats_csv_file, pixel_size, roidir,
-        auto_scaler=500, msize=1024):
-    ''' wrapper function for montage_maker 
+        auto_scaler=500, msize=1024, maxlength=100000):
+    ''' wrapper function for montage_maker
     '''
 
     # obtain particle statistics from the csv file
@@ -351,9 +351,20 @@ def make_montage(stats_csv_file, pixel_size, roidir,
 
     # remove nans because concentrations are not important here
     stats = stats[~np.isnan(stats['major_axis_length'])]
+    stats = stats[(stats['major_axis_length'] *
+            pixel_size) < maxlength]
 
     # sort the particles based on their length
     stats.sort_values(by=['major_axis_length'], ascending=False, inplace=True)
+
+    roifiles = gen_roifiles(stats, auto_scaler=auto_scaler)
+
+    montage = montage_maker(roifiles, roidir, pixel_size, msize)
+
+    return montage
+
+
+def gen_roifiles(stats, auto_scaler=500):
 
     roifiles = stats['export name'][stats['export name'] !=
             'not_exported'].values
@@ -365,9 +376,7 @@ def make_montage(stats_csv_file, pixel_size, roidir,
     roifiles = roifiles[np.arange(0,len(roifiles),IMSTEP)]
     print('rofiles:',len(roifiles))
 
-    montage = montage_maker(roifiles, roidir, pixel_size, msize)
-
-    return montage
+    return roifiles
 
 
 def get_sample_volume(pix_size, path_length=10, imx=2048, imy=2448):
@@ -427,7 +436,7 @@ def explode_contrast(im):
     # re-scale the instensities in the image to chop off some ends
     p1, p2 = np.percentile(im, (0, 80))
     im_mod = rescale_intensity(im, in_range=(p1, p2))
-                
+
     # set minimum value to zero
     im_mod -= np.min(im_mod)
 
@@ -502,3 +511,16 @@ def export_name2im(exportname, path):
     im = fh[pn]
 
     return im
+
+
+def extract_latest_stats(stats, window_size):
+    ''' extracts the stats data from within the last number of seconds specified
+    by window_size.
+
+    returns stats dataframe (from the last window_size seconds)
+    '''
+    end = pd.to_datetime(np.max(stats['timestamp']))
+    start = end - pd.to_timedelta('00:00:' + str(window_size))
+    stats = stats[pd.to_datetime(stats['timestamp'])>start]
+    return stats
+

@@ -76,8 +76,9 @@ class Frame:
         if 'PYSILCAM_TESTDATA' in os.environ.keys():
             offset = int(os.environ.get('PYSILCAM_OFFSET', 0))
             path = os.environ['PYSILCAM_TESTDATA']
-            self.files = [os.path.join(path, f) 
-                          for f in sorted(os.listdir(path)) 
+            path = path.replace('\ ',' ') # handle spaces (not sure on windows behaviour)
+            self.files = [os.path.join(path, f)
+                          for f in sorted(os.listdir(path))
                           if f.startswith('D') and (f.endswith('.bmp') or
                               f.endswith('.silc'))][offset:]
             self.img_idx = 0
@@ -132,11 +133,11 @@ class RealtimeFrame(Frame):
     '''For faster real-time processing from disk'''
 
     def _list_images(self):
-        self.files = [os.path.join(self.path, f) 
-                      for f in sorted(os.listdir(self.path)) 
+        self.files = [os.path.join(self.path, f)
+                      for f in sorted(os.listdir(self.path))
                       if f.endswith('.bmp')]
- 
-    def __init__(self): 
+
+    def __init__(self):
         #Read files from this location
         self.path = os.environ['PYSILCAM_REALTIME_DATA']
         self._list_images()

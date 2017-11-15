@@ -14,6 +14,9 @@ REQUIRES = [
     'matplotlib',
     'imageio',
     'scikit-image',
+    'pygame',
+    'tflearn',
+#    'tensorflow',
 #    'pymba',
 ]
 
@@ -66,6 +69,9 @@ setup(
     entry_points={
         'console_scripts': [
             'silcam = pysilcam.__main__:silcam',
+        ],
+        'gui_scripts': [
+            'silcam-gui = pysilcam.silcamgui.silcamgui:main',
         ]
     },
     tests_require=['pytest'],

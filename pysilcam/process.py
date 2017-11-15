@@ -111,14 +111,6 @@ def filter_bad_stats(stats,settings):
     stats = stats[(stats['major_axis_length'] * settings.PostProcess.pix_size) <
             settings.Process.max_length]
 
-    # calculate the area of the bounding boxes
-    bbox_area = (stats['maxr']-stats['minr']) * (stats['maxc']-stats['minc'])
-
-    #Discard overlapping particles (approximate by solidity requirement)
-    stats = stats[(stats['equivalent_diameter'] ** 2 / bbox_area) >
-            (settings.Process.min_solidity)]
-    # this is a crude, but fast approximate of solidity
-
     return stats
 
 
@@ -284,12 +276,13 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
     # obtain the original image filename from the timestamp
     filename = timestamp.strftime('D%Y%m%dT%H%M%S.%f')
 
-    # Make the HDF5 file
-    HDF5File = h5py.File(os.path.join(settings.ExportParticles.ouputpath, filename + ".h5"), "w")
+    if settings.ExportParticles.export_images:
+        # Make the HDF5 file
+        HDF5File = h5py.File(os.path.join(settings.ExportParticles.ouputpath, filename + ".h5"), "w")
 
     # define the geometrical properties to be calculated from regionprops
     propnames = ['major_axis_length', 'minor_axis_length',
-                 'equivalent_diameter']
+                 'equivalent_diameter', 'solidity']
 
     # pre-allocate some things
     data = np.zeros((len(region_properties), len(propnames)), dtype=np.float64)
@@ -301,9 +294,8 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
         bboxes[i, :] = el.bbox
 
         # Find particles that match export criteria 
-        if (((settings.PostProcess.pix_size *
-            data[i, 0]) > settings.ExportParticles.min_length) &  #major_axis_length
-            ((settings.PostProcess.pix_size * data[i, 1]) > 2)):  #minor_axis_length
+        if ((data[i, 0] > settings.ExportParticles.min_length) & #major_axis_length in pixels
+            (data[i, 1] > 2)): # minor length in pixels
             
             nb_extractable_part += 1
             # extract the region of interest from the corrected colour image
@@ -311,15 +303,17 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
             
             # add the roi to the HDF5 file
             filenames[int(i)] = filename + '-PN' + str(i)
-            dset = HDF5File.create_dataset('PN' + str(i), data = roi)
+            if settings.ExportParticles.export_images:
+                dset = HDF5File.create_dataset('PN' + str(i), data = roi)
 
             # run a prediction on what type of particle this might be
             if settings.NNClassify.enable:
                 prediction = sccl.predict(roi, nnmodel)
                 predictions[int(i),:] = prediction[0]
 
-    # close the HDF5 file
-    HDF5File.close()
+    if settings.ExportParticles.export_images:
+        # close the HDF5 file
+        HDF5File.close()
 
     # build the column names for the outputed DataFrame
     column_names = np.hstack(([propnames, 'minr', 'minc', 'maxr', 'maxc']))
@@ -330,7 +324,7 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
     # put particle statistics into a DataFrame
     stats = pd.DataFrame(columns=column_names, data=cat_data)
 
-    print('EXTRACTING {0} IMAGES from {1}'.format(nb_extractable_part, len(stats['major_axis_length']))) 
+    logger.info('EXTRACTING {0} IMAGES from {1}'.format(nb_extractable_part, len(stats['major_axis_length']))) 
     
     # add classification predictions to the particle statistics data
     if settings.NNClassify.enable:

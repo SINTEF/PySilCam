@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import pysilcam.postprocess as sc_pp
 import numpy as np
 import seaborn as sns
+sns.set_style('ticks')
 from pysilcam.config import load_config, PySilcamSettings
 import pandas as pd
 
@@ -175,7 +176,8 @@ def montage_plot(montage, pixel_size):
     ax.xaxis.set_ticks_position('bottom')
 
 
-def summarise_fancy_stats(stats_csv_file,config_file,monitor=False):
+def summarise_fancy_stats(stats_csv_file, config_file, monitor=False,
+        maxlength=100000):
     sns.set_style('ticks')
 
     conf = load_config(config_file)
@@ -190,10 +192,13 @@ def summarise_fancy_stats(stats_csv_file,config_file,monitor=False):
 
     while True:
         montage = sc_pp.make_montage(stats_csv_file,
-                settings.PostProcess.pix_size, roidir='export',
-                auto_scaler=1600, msize=2048)
+                settings.PostProcess.pix_size,
+                roidir=settings.ExportParticles.ouputpath,
+                auto_scaler=1600, msize=2048, maxlength=maxlength)
 
         stats = pd.read_csv(stats_csv_file)
+        stats = stats[(stats['major_axis_length'] *
+                settings.PostProcess.pix_size) < maxlength]
 
         # average numer and volume concentrations
         nc, vc, sv_total, junge = sc_pp.nc_vc_from_stats(stats, settings.PostProcess)

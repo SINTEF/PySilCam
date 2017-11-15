@@ -17,13 +17,13 @@ def ini_background(av_window, acquire):
     '''
     bgstack = []
     bgstack.append(next(acquire)[1])  # get the first image
-    
+
     for i in range(av_window-1):  # loop through the rest, appending to bgstack
         bgstack.append(next(acquire)[1])
-    
+
     imbg = np.mean(bgstack, axis=0)  # average the images in the stack
 #    imbg = np.amax(bgstack, axis=0)  # average the images in the stack
-    
+
     return bgstack, imbg
 
 
@@ -33,11 +33,11 @@ def shift_bgstack(bgstack, imbg, imnew):
       bgstack (updated list of all background images)
       imbg (updated actual background image)
     '''
-    
     imold = bgstack.pop(0)  # pop the oldest image from the stack,
+    #imbg -= (imold/len(bgstack))
+    #imbg += (imnew/len(bgstack))
     bgstack.append(imnew)  # append the new image to the stack
     imbg = np.mean(bgstack, axis=0)
-    
     return bgstack, imbg
 
 
@@ -51,14 +51,15 @@ def correct_im(imbg, imraw):
       imc (a corrected image)
     '''
     imc = np.float64(imraw) - np.float64(imbg)
-    #imc[:,:,0] += 255 - np.percentile(imc[:,:,0], 99) 
-    #imc[:,:,1] += 255 - np.percentile(imc[:,:,1], 99) 
-    #imc[:,:,2] += 255 - np.percentile(imc[:,:,2], 99) 
-    imc += 255 - np.percentile(imc, 99) 
+    #imc[:,:,0] += 255 - np.percentile(imc[:,:,0], 99)
+    #imc[:,:,1] += 255 - np.percentile(imc[:,:,1], 99)
+    #imc[:,:,2] += 255 - np.percentile(imc[:,:,2], 99)
+    imc += 255 - np.percentile(imc, 99)
 
     imc[imc>255] = 255
+    imc[imc<0] = 0
     imc = np.uint8(imc)
-    
+
     return imc
 
 
@@ -72,21 +73,21 @@ def correct_im_old(imbg, imraw):
       imc (a corrected image)
     '''
     imc = imraw - imbg
-    
+
     m = imc.max()
     imc += 255/2.
 #    imc += 255-m
     imc[imc<0] = 0
     imc[imc>255] = 255
     imc = np.uint8(imc)
-    
+
     return imc
 
 
 def shift_and_correct(bgstack, imbg, imraw):
     '''shifts the background stack and averaged image and corrects the new
     raw image.
-    
+
     This is a wrapper for shift_bgstack and correct_im
 
     inputs:
@@ -102,7 +103,7 @@ def shift_and_correct(bgstack, imbg, imraw):
 
     imc = correct_im(imbg, imraw)
     bgstack, imbg = shift_bgstack(bgstack, imbg, imraw)
-    
+
     return bgstack, imbg, imc
 
 
