@@ -22,7 +22,6 @@ def ini_background(av_window, acquire):
         bgstack.append(next(acquire)[1])
 
     imbg = np.mean(bgstack, axis=0)  # average the images in the stack
-#    imbg = np.amax(bgstack, axis=0)  # average the images in the stack
 
     return bgstack, imbg
 
@@ -34,10 +33,11 @@ def shift_bgstack(bgstack, imbg, imnew):
       imbg (updated actual background image)
     '''
     imold = bgstack.pop(0)  # pop the oldest image from the stack,
-    #imbg -= (imold/len(bgstack))
-    #imbg += (imnew/len(bgstack))
+    # subtract the old image from the average (scaled by the average window)
+    imbg -= (imold/len(bgstack))
+    # add the new image to the average (scaled by the average window)
+    imbg += (imnew/len(bgstack))
     bgstack.append(imnew)  # append the new image to the stack
-    imbg = np.mean(bgstack, axis=0)
     return bgstack, imbg
 
 
