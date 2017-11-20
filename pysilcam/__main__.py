@@ -24,7 +24,7 @@ import imageio
 import os
 import pysilcam.silcam_classify as sccl
 import multiprocessing
-from multiprocessing import Queue, Pool
+from multiprocessing import Queue, Pool, Process
 
 title = '''
  ____        ____  _ _  ____
@@ -75,8 +75,7 @@ def silcam():
             except ValueError:
                 print('Expected type int for --nbimages.')
                 sys.exit(0)
-        #silcam_process(args['<configfile>'],args['<datapath>'], nbImages)
-        cProfile.runctx("silcam_process(configfile,datapath, nbImages)",{'configfile': args['<configfile>'], 'datapath':args['<datapath>'], 'nbImages':nbImages, 'silcam_process':silcam_process} ,{}, "testProfile.out")
+        silcam_process(args['<configfile>'],args['<datapath>'], nbImages)
 
     elif args['acquire']: # this is the standard acquisition method under development now
         silcam_acquire()
@@ -142,12 +141,12 @@ def silcam_process(config_filename, datapath, nbImages=None, gui=None):
     configure_logger(settings.General)
     logger = logging.getLogger(__name__ + '.silcam_process')
 
-    logger.info('Processing path: ' + datapath)
+    #logger.info('Processing path: ' + datapath)
 
     # load the model for particle classification and keep it for later
-    nnmodel = []
-    if settings.NNClassify.enable:
-        nnmodel, class_labels = sccl.load_model(model_path=settings.NNClassify.model_path)
+    #nnmodel = []
+    #if settings.NNClassify.enable:
+    #    nnmodel, class_labels = sccl.load_model(model_path=settings.NNClassify.model_path)
 
     #Initialize the image acquisition generator
     aqgen = acquire(datapath)
@@ -177,17 +176,32 @@ def silcam_process(config_filename, datapath, nbImages=None, gui=None):
 
     #---- RUN PROCESSING ----
 
+    proc_list = list()
+
+    distributor(datafilename, imcQueue, conf, datapath, proc_list, gui)
+
     print('* Commencing image acquisition and processing')
+
     # iterate on the bbgen generator to obtain images
     for i, (timestamp, imc) in enumerate(bggen):
         # handle errors if the loop function fails for any reason
         if (nbImages != None):
             if (nbImages <= i):
                 break
-        imcQueue.put(imc)
+        print ("add to queue")
+        imcQueue.put((i, timestamp, imc))
 
+
+
+    for p in proc_list:
+        imcQueue.put(None)
+
+    for p in proc_list:
+        p.join()
+        print ('%s.exitcode = %s' % (p.name, p.exitcode) )
+    imcQueue.close()     
         #try:
-        loop(i, timestamp, imc, logger, settings, nnmodel, class_labels, datafilename, gui)
+        #loop(i, timestamp, imc, settings, nnmodel, class_labels, datafilename, gui)
         #except:
         #    infostr = 'Failed to process frame {0}, skipping.'.format(i)
         #    logger.warning(infostr, exc_info=True)
@@ -196,82 +210,142 @@ def silcam_process(config_filename, datapath, nbImages=None, gui=None):
     #---- END ----
 
 
-def loop(i, timestamp, imc, logger, settings, nnmodel, class_labels, datafilename, gui=None):
+def loop(conf, datafilename, queue, nbCore, gui=None):
     '''
     Main processing loop, run for each image
     '''
+    print("LOOP running on "  + str(nbCore))
 
-    #Time the full acquisition and processing loop
-    start_time = time.clock()
+    logger = logging.getLogger(__name__ + '.silcam_process')
+    settings = PySilcamSettings(conf)
+    # load the model for particle classification and keep it for later
+    nnmodel = []
+    if settings.NNClassify.enable:
+        nnmodel, class_labels = sccl.load_model(model_path=settings.NNClassify.model_path)
+    f = open('./outputFile' + str(nbCore), 'a')
+    f.write("loop starting")
+    
+    while True:
+        task = queue.get()
 
-    logger.info('Processing time stamp {0}'.format(timestamp))
+        if task is None:
+            f.write("NONE received")
+            print ("NONE received on core:" + str(nbCore))
+            break
 
-    # basic check of image quality
-    r = imc[:, :, 0]
-    g = imc[:, :, 1]
-    b = imc[:, :, 2]
-    s = np.std([r, g, b])
-    print('lighting std:',s)
-    # ignore bad images as if they were not obtained (i.e. do not affect
-    # output statistics in any way)
-    if s > settings.Process.bad_lighting_limit:
-        logger.info('bad lighting')
-        return
 
-    #Calculate particle statistics
-    stats_all, imbw, saturation = statextract(imc, settings, timestamp,
-                                              nnmodel, class_labels)
+        imc = task[2]
+        timestamp = task[1]
+        i = task[0]
+        
+        #Time the full acquisition and processing loop
+        start_time = time.clock()
 
-    # if there are not particles identified, assume zero concentration.
-    # This means that the data should indicate that a 'good' image was
-    # obtained, without any particles. Therefore fill all values with nans
-    # and add the image timestamp
-    if len(stats_all) == 0:
-        print('ZERO particles idenfitied')
-        z = np.zeros(len(stats_all.columns)) * np.nan
-        stats_all.loc[0] = z
-        # 'export name' should not be nan because then this column of the
-        # DataFrame will contain multiple types, so label with string instead
-        if settings.ExportParticles.export_images:
-            stats_all['export name'] = 'not_exported'
+        logger.info('Processing time stamp {0}'.format(timestamp))
 
-    # add timestamp to each row of particle statistics
-    stats_all['timestamp'] = timestamp
+        # basic check of image quality
+        r = imc[:, :, 0]
+        g = imc[:, :, 1]
+        b = imc[:, :, 2]
+        s = np.std([r, g, b])
+        f.write("lighting std:" + str(s))
+        print('lighting std:',s)
+        # ignore bad images as if they were not obtained (i.e. do not affect
+        # output statistics in any way)
+        if s > settings.Process.bad_lighting_limit:
+            logger.info('bad lighting')
+            return
 
-    # create or append particle statistics to output file
-    # if the output file does not already exist, create it
-    # otherwise data will be appended
-    # @todo accidentally appending to an existing file could be dangerous
-    # because data will be duplicated (and concentrations would therefore
-    # double)
-    if not os.path.isfile(datafilename + '-STATS.csv'):
-        stats_all.to_csv(datafilename +
-                '-STATS.csv', index_label='particle index')
-    else:
-        stats_all.to_csv(datafilename + '-STATS.csv',
-                mode='a', header=False)
+        #Calculate particle statistics
+        stats_all, imbw, saturation = statextract(imc, settings, timestamp,
+                                                  nnmodel, class_labels)
 
-    #Time the particle statistics processing step
-    proc_time = time.clock() - start_time
+        # if there are not particles identified, assume zero concentration.
+        # This means that the data should indicate that a 'good' image was
+        # obtained, without any particles. Therefore fill all values with nans
+        # and add the image timestamp
+        if len(stats_all) == 0:
+            print('ZERO particles idenfitied')
+            z = np.zeros(len(stats_all.columns)) * np.nan
+            stats_all.loc[0] = z
+            # 'export name' should not be nan because then this column of the
+            # DataFrame will contain multiple types, so label with string instead
+            if settings.ExportParticles.export_images:
+                stats_all['export name'] = 'not_exported'
 
-    #Print timing information for this iteration
-    infostr = '  Image {0} processed in {1:.2f} sec ({2:.1f} Hz). '
-    infostr = infostr.format(i, proc_time, 1.0/proc_time)
-    print(infostr)
+        # add timestamp to each row of particle statistics
+        stats_all['timestamp'] = timestamp
 
-    #---- END MAIN PROCESSING LOOP ----
-    #---- DO SOME ADMIN ----
-    if not gui==None:
-        guidata = stats_all.to_dict()
-        guidata['imc'] = imc
-        gui.put(guidata)
+        # create or append particle statistics to output file
+        # if the output file does not already exist, create it
+        # otherwise data will be appended
+        # @todo accidentally appending to an existing file could be dangerous
+        # because data will be duplicated (and concentrations would therefore
+        # double)
+        if not os.path.isfile(datafilename + '-STATS.csv'):
+            stats_all.to_csv(datafilename +
+                    '-STATS.csv', index_label='particle index')
+        else:
+            stats_all.to_csv(datafilename + '-STATS.csv',
+                    mode='a', header=False)
 
-def distributor(imcQueue):
+        #Time the particle statistics processing step
+        proc_time = time.clock() - start_time
+
+        #Print timing information for this iteration
+        infostr = '  Image {0} processed in {1:.2f} sec ({2:.1f} Hz). '
+        infostr = infostr.format(i, proc_time, 1.0/proc_time)
+        print(infostr)
+        f.write(infostr + "\n")
+
+        #---- END MAIN PROCESSING LOOP ----
+        #---- DO SOME ADMIN ----
+        if not gui==None:
+            guidata = stats_all.to_dict()
+            guidata['imc'] = imc
+            gui.put(guidata)
+    f.close()
+
+def looptest(conf, nnmodel, queue, nbCore,  datafilename, gui):#, class_labels, datafilename, queue, nbCore, gui=None):
+    print("TEST LOOP" + str(nbCore))
+    while True:
+        task = queue.get()
+        print("queue size :" + str(queue.qsize()) + " on core :" + str(nbCore))
+        if task is None:
+            print ("NONE received on core:" + str(nbCore))
+            break
+        print("get from queue")
+
+
+
+def distributor(datafilename, queue, conf, datapath, proc_list, gui=None):
     '''
     Collect the images acquired and distrbutes them to the different loop processes
     '''
-    
-    
+    print("start distributor")
+
+
+    settings = PySilcamSettings(conf)
+    #Configure logging
+    configure_logger(settings.General)
+    logger = logging.getLogger(__name__ + '.silcam_process')
+
+    logger.info('Processing path: ' + datapath)
+
+     
+    numCores = 1
+    if (multiprocessing.cpu_count() > 2):
+        numCores = multiprocessing.cpu_count() - 2
+    print ("total number of cores available :" + str(numCores))
+
+    for nbCore in range(numCores):
+        print ("num core :" + str(nbCore))
+        a_proc = multiprocessing.Process(target=loop, args=(conf, datafilename, queue, nbCore, gui))
+        proc_list.append(a_proc)
+        print ("process started")
+        a_proc.start()
+
+
     
     
     
