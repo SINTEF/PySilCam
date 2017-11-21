@@ -98,20 +98,3 @@ def predict(img, model):
     #print(prediction)
     return prediction
 
-
-def choise_from_stats(stats):
-    '''
-    post-processing handy tool for use on stats created with the silcam_classify
-    code
-
-    choice, confidence = choise_from_stats(stats)
-
-    choice is the most likely class
-    confidence is the probability of being that class
-    '''
-
-    choice = stats.filter(regex="probability_class").idxmax(axis=1)
-    confidence = stats.filter(regex="probability_class").max(axis=1)
-    return choice, confidence
-
-
