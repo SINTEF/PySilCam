@@ -9,7 +9,7 @@ def test_config_parser():
     conf = load_config(filename)
 
     assert 'General' in conf
-    assert conf['General']['version'] == '1'
+    assert conf['General']['version'] == '2'
     assert 'Background' in conf
     assert 'Process' in conf
     assert 'PostProcess' in conf
