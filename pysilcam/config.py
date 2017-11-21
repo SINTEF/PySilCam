@@ -9,7 +9,7 @@ from collections import namedtuple
 import logging
 
 # This is the required version of the configuration file
-__configversion__ = 1
+__configversion__ = 2
 
 def load_config(filename):
     '''Load config file and validate content'''

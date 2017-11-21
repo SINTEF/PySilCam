@@ -267,11 +267,10 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
     filenames = ['not_exported'] * len(region_properties)
 
     # pre-allocation
-    if settings.NNClassify.enable:
-        predictions = np.zeros((len(region_properties),
-            len(class_labels)),
-            dtype='float64')
-        predictions *= np.nan
+    predictions = np.zeros((len(region_properties),
+         len(class_labels)),
+         dtype='float64')
+    predictions *= np.nan
 
     # obtain the original image filename from the timestamp
     filename = timestamp.strftime('D%Y%m%dT%H%M%S.%f')
@@ -307,9 +306,8 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
                 dset = HDF5File.create_dataset('PN' + str(i), data = roi)
 
             # run a prediction on what type of particle this might be
-            if settings.NNClassify.enable:
-                prediction = sccl.predict(roi, nnmodel)
-                predictions[int(i),:] = prediction[0]
+            prediction = sccl.predict(roi, nnmodel)
+            predictions[int(i),:] = prediction[0]
 
     if settings.ExportParticles.export_images:
         # close the HDF5 file
@@ -327,9 +325,8 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
     logger.info('EXTRACTING {0} IMAGES from {1}'.format(nb_extractable_part, len(stats['major_axis_length']))) 
     
     # add classification predictions to the particle statistics data
-    if settings.NNClassify.enable:
-        for n,c in enumerate(class_labels):
-            stats['probability_' + c] = predictions[:,n]
+    for n,c in enumerate(class_labels):
+       stats['probability_' + c] = predictions[:,n]
 
     # add the filenames of the HDF5 file and particle number tag to the
     # particle statistics data
