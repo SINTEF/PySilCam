@@ -278,7 +278,7 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
 
     if settings.ExportParticles.export_images:
         # Make the HDF5 file
-        HDF5File = h5py.File(os.path.join(settings.ExportParticles.ouputpath, filename + ".h5"), "w")
+        HDF5File = h5py.File(os.path.join(settings.ExportParticles.outputpath, filename + ".h5"), "w")
 
     # define the geometrical properties to be calculated from regionprops
     propnames = ['major_axis_length', 'minor_axis_length',
