@@ -5,6 +5,7 @@ from tflearn.layers.conv import conv_2d, max_pool_2d
 from tflearn.layers.estimator import regression
 from tflearn.data_preprocessing import ImagePreprocessing
 from tflearn.data_augmentation import ImageAugmentation
+import tensorflow as tf
 import scipy
 import numpy as np
 import pandas as pd
@@ -29,7 +30,7 @@ def get_class_labels(model_path='/mnt/ARRAY/classifier/model/particle-classifier
 
 def load_model(model_path='/mnt/ARRAY/classifier/model/particle-classifier.tfl'):
     ''' load the trained tfl model
-    
+
     model, class_labels = load_model(model_path='/mnt/ARRAY/classifier/model/particle-classifier.tfl')
 
     model is the trained tf model ready for use in prediction
@@ -39,6 +40,7 @@ def load_model(model_path='/mnt/ARRAY/classifier/model/particle-classifier.tfl')
     OUTPUTS = len(header.columns)
     class_labels = header.columns
 
+    tf.reset_default_graph()
 
     # Same network definition as before
     img_prep = ImagePreprocessing()
