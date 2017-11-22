@@ -78,8 +78,7 @@ def silcam():
             except ValueError:
                 print('Expected type int for --nbimages.')
                 sys.exit(0)
-        #silcam_process(args['<configfile>'],args['<datapath>'], multiProcess, nbImages)
-        cProfile.runctx("silcam_process(configfile,datapath, multiProcess, nbImages)",{'configfile': args['<configfile>'], 'datapath':args['<datapath>'], 'multiProcess':multiProcess, 'nbImages':nbImages, 'silcam_process':silcam_process} ,{}, "withMultiProc.out")
+        silcam_process(args['<configfile>'],args['<datapath>'], multiProcess, nbImages)
 
     elif args['acquire']: # this is the standard acquisition method under development now
         silcam_acquire()
