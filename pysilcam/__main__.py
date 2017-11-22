@@ -24,7 +24,6 @@ import imageio
 import os
 import pysilcam.silcam_classify as sccl
 import multiprocessing
-#from pathos.helpers import mp
 
 title = '''
  ____        ____  _ _  ____
@@ -179,7 +178,6 @@ def silcam_process(config_filename, datapath, nbImages=None, gui=None):
 
     print('* Commencing image acquisition and processing')
 
-
     # iterate on the bbgen generator to obtain images
     for i, (timestamp, imc) in enumerate(bggen):
         # handle errors if the loop function fails for any reason
@@ -216,7 +214,7 @@ def loop(config_filename, conf, datafilename, inputQueue, outputQueue, nbCore, g
     nnmodel = []
     if settings.NNClassify.enable:
         nnmodel, class_labels = sccl.load_model(model_path=settings.NNClassify.model_path)
-
+    
     while True:
         try:
             task = inputQueue.get()
@@ -288,7 +286,6 @@ def loop(config_filename, conf, datafilename, inputQueue, outputQueue, nbCore, g
             logger.warning(infostr, exc_info=True)
             print(infostr)
 
-
 def distributor(logger, settings, config_filename, datafilename, inputQueue, outputQueue, conf, datapath, proc_list, gui=None):
     '''
     distributes the images in the input queue to the different loop processes
@@ -331,7 +328,6 @@ def collector(outputQueue, datafilename, proc_list):
         else:
             task.to_csv(datafilename + '-STATS.csv',
                     mode='a', header=False)
-   
    
 def silcam_process_batch():
     print('Placeholder for silcam-process-batch entry point')
