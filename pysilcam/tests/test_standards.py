@@ -16,6 +16,11 @@ import tensorflow as tf
 @unittest.skipIf(not os.path.isdir(
     '//sintef.no/mk20/nasgul/Miljoteknologi/MK102013220_SILCAM_IPR_EJD/hello_silcam/unittest_entries/STANDARDS/StandardsSmall'),
     "test path not accessible")
+
+@unittest.skipIf(not os.path.isfile(
+    'config_glass_standards.ini'), 
+    "config file not accessible")
+
 def test_big_standards():
     '''Testing that the large standards are sized correctly'''
 
