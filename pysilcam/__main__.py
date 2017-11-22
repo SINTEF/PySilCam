@@ -174,10 +174,11 @@ def silcam_process(config_filename, datapath, nbImages=None, gui=None):
     #---- RUN PROCESSING ----
 
     proc_list = list()
-
-    distributor(logger, settings, config_filename, datafilename, inputQueue, conf, datapath, proc_list, gui)
+    outputList = list()
+    distributor(logger, settings, config_filename, datafilename, inputQueue, outputQueue, conf, datapath, proc_list, gui)
 
     print('* Commencing image acquisition and processing')
+
 
     # iterate on the bbgen generator to obtain images
     for i, (timestamp, imc) in enumerate(bggen):
@@ -189,21 +190,20 @@ def silcam_process(config_filename, datapath, nbImages=None, gui=None):
 
     for p in proc_list:
         inputQueue.put(None) 
+        
+    collector(outputQueue, datafilename, proc_list)
     
-    collector(outputQueue)
-
     for p in proc_list:
         p.join()
         print ('%s.exitcode = %s' % (p.name, p.exitcode) )
 
-    outputQueue.put(None)
     outputQueue.close()
     inputQueue.close()    
 
     #---- END ----
 
 
-def loop(config_filename, conf, datafilename, inputQueue, nbCore, gui=None):
+def loop(config_filename, conf, datafilename, inputQueue, outputQueue, nbCore, gui=None):
     '''
     Main processing loop, run for each image
     '''
@@ -217,16 +217,12 @@ def loop(config_filename, conf, datafilename, inputQueue, nbCore, gui=None):
     if settings.NNClassify.enable:
         nnmodel, class_labels = sccl.load_model(model_path=settings.NNClassify.model_path)
 
-
-    f = open('./outputFile' + str(nbCore), 'a')
-    f.write("loop starting")
-    
     while True:
         try:
             task = inputQueue.get()
 
             if task is None:
-                f.write("NONE received")
+                outputQueue.put(None)  
                 break
 
             imc = task[2]
@@ -243,7 +239,6 @@ def loop(config_filename, conf, datafilename, inputQueue, nbCore, gui=None):
             g = imc[:, :, 1]
             b = imc[:, :, 2]
             s = np.std([r, g, b])
-            f.write("lighting std:" + str(s))
             print('lighting std:',s)
             # ignore bad images as if they were not obtained (i.e. do not affect
             # output statistics in any way)
@@ -267,7 +262,7 @@ def loop(config_filename, conf, datafilename, inputQueue, nbCore, gui=None):
                 # DataFrame will contain multiple types, so label with string instead
                 if settings.ExportParticles.export_images:
                     stats_all['export name'] = 'not_exported'
-
+            
             # add timestamp to each row of particle statistics
             stats_all['timestamp'] = timestamp
 
@@ -280,7 +275,6 @@ def loop(config_filename, conf, datafilename, inputQueue, nbCore, gui=None):
             infostr = '  Image {0} processed in {1:.2f} sec ({2:.1f} Hz). '
             infostr = infostr.format(i, proc_time, 1.0/proc_time)
             print(infostr)
-            f.write(infostr + "\n")
 
             #---- END MAIN PROCESSING LOOP ----
             #---- DO SOME ADMIN ----
@@ -295,9 +289,7 @@ def loop(config_filename, conf, datafilename, inputQueue, nbCore, gui=None):
             print(infostr)
 
 
-    f.close()
-
-def distributor(logger, settings, config_filename, datafilename, inputQueue, conf, datapath, proc_list, gui=None):
+def distributor(logger, settings, config_filename, datafilename, inputQueue, outputQueue, conf, datapath, proc_list, gui=None):
     '''
     distributes the images in the input queue to the different loop processes
     '''
@@ -307,21 +299,26 @@ def distributor(logger, settings, config_filename, datafilename, inputQueue, con
         numCores = multiprocessing.cpu_count() - 2
 
     for nbCore in range(numCores):
-        proc = multiprocessing.Process(target=loop, args=(config_filename, conf, datafilename, inputQueue, nbCore, gui))
+        proc = multiprocessing.Process(target=loop, args=(config_filename, conf, datafilename, inputQueue, outputQueue,nbCore, gui))
         proc_list.append(proc)
         proc.start()
 
-def collector(outputQueue):
+def collector(outputQueue, datafilename, proc_list):
     '''
-    collects all the results to write them into the stats.csv file
+    collects all the results and write them into the stats.csv file
     '''
 
+    countProcessFinished = 0
     while True:
         task = outputQueue.get()
 
-        if (task == None):
-            break
-        
+        if (task is None):
+            countProcessFinished = countProcessFinished + 1
+            # The collector can be stopped only after all loop processes are finished
+            if (countProcessFinished == len(proc_list)):
+                break
+            continue
+
         # create or append particle statistics to output file
         # if the output file does not already exist, create it
         # otherwise data will be appended
@@ -329,15 +326,12 @@ def collector(outputQueue):
         # because data will be duplicated (and concentrations would therefore
         # double)
         if not os.path.isfile(datafilename + '-STATS.csv'):
-            stats_all.to_csv(datafilename +
+            task.to_csv(datafilename +
                     '-STATS.csv', index_label='particle index')
         else:
-            stats_all.to_csv(datafilename + '-STATS.csv',
+            task.to_csv(datafilename + '-STATS.csv',
                     mode='a', header=False)
-
-
-
-
-    
+   
+   
 def silcam_process_batch():
     print('Placeholder for silcam-process-batch entry point')
