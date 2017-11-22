@@ -23,7 +23,7 @@ def test_csv_file():
         os.remove(stats_file)
 
     # call process function
-    silcam_process(conf_file, data_file)
+    silcam_process(conf_file, data_file, False)
 
     # check that csv file has been created
     assert os.path.isfile(stats_file), 'stats_file not created'
@@ -44,5 +44,4 @@ def test_csv_file():
         if line[0] == '0': # index of particule
             nbimages += 1
     assert nbimages == 5, 'images missing from csv file' # 5 images are used for the background, the 5 images left are processed
-    
-    
+

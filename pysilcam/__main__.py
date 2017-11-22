@@ -48,7 +48,7 @@ def silcam():
 
     Usage:
       silcam acquire [-l | --liveview]
-      silcam process <configfile> <datapath> [--nbimages=<number of images>]
+      silcam process <configfile> <datapath> [--nbimages=<number of images>] [--singleProcess]
       silcam -h | --help
       silcam --version
 
@@ -58,6 +58,7 @@ def silcam():
 
     Options:
       --nbimages=<number of images>     Number of images to process.
+      --singleProcess                   Deactivate multiprocessing
       -h --help                         Show this screen.
       --version                         Show version.
 
@@ -67,6 +68,9 @@ def silcam():
     args = docopt(silcam.__doc__, version='PySilCam {0}'.format(__version__))
     # this is the standard processing method under development now
     if args['process']:
+        multiProcess = True
+        if args['--singleProcess']:
+            multiProcess = False
         nbImages = args['--nbimages']
         if (nbImages != None):
             try:
@@ -74,7 +78,7 @@ def silcam():
             except ValueError:
                 print('Expected type int for --nbimages.')
                 sys.exit(0)
-        silcam_process(args['<configfile>'],args['<datapath>'], nbImages)
+        silcam_process(args['<configfile>'],args['<datapath>'], multiProcess, nbImages)
 
     elif args['acquire']: # this is the standard acquisition method under development now
         silcam_acquire()
@@ -110,7 +114,7 @@ def silcam_acquire():
 
 
 # the standard processing method under active development
-def silcam_process(config_filename, datapath, nbImages=None, gui=None):
+def silcam_process(config_filename, datapath, multiProcess, nbImages=None, gui=None):
 
     '''Run processing of SilCam images
 
@@ -173,8 +177,9 @@ def silcam_process(config_filename, datapath, nbImages=None, gui=None):
     #---- RUN PROCESSING ----
 
     proc_list = list()
-    outputList = list()
-    distributor(logger, settings, config_filename, datafilename, inputQueue, outputQueue, conf, datapath, proc_list, gui)
+
+    if (multiProcess):
+        distributor(logger, settings, config_filename, datafilename, inputQueue, outputQueue, conf, datapath, proc_list, gui, multiProcess)
 
     print('* Commencing image acquisition and processing')
 
@@ -186,8 +191,12 @@ def silcam_process(config_filename, datapath, nbImages=None, gui=None):
                 break
         inputQueue.put((i, timestamp, imc)) # the tuple (i, timestamp, imc) is added to the inputQueue
 
-    for p in proc_list:
-        inputQueue.put(None) 
+    if (multiProcess):
+        for p in proc_list:
+            inputQueue.put(None)
+    else:
+        inputQueue.put(None)
+        loop(config_filename, conf, datafilename, inputQueue, outputQueue, 1, gui)
         
     collector(outputQueue, datafilename, proc_list)
     
@@ -286,7 +295,7 @@ def loop(config_filename, conf, datafilename, inputQueue, outputQueue, nbCore, g
             logger.warning(infostr, exc_info=True)
             print(infostr)
 
-def distributor(logger, settings, config_filename, datafilename, inputQueue, outputQueue, conf, datapath, proc_list, gui=None):
+def distributor(logger, settings, config_filename, datafilename, inputQueue, outputQueue, conf, datapath, proc_list, gui=None, multiProcess = True):
     '''
     distributes the images in the input queue to the different loop processes
     '''
@@ -296,7 +305,7 @@ def distributor(logger, settings, config_filename, datafilename, inputQueue, out
         numCores = multiprocessing.cpu_count() - 2
 
     for nbCore in range(numCores):
-        proc = multiprocessing.Process(target=loop, args=(config_filename, conf, datafilename, inputQueue, outputQueue,nbCore, gui))
+        proc = multiprocessing.Process(target=loop, args=(config_filename, conf, datafilename, inputQueue, outputQueue, nbCore, gui))
         proc_list.append(proc)
         proc.start()
 
@@ -304,15 +313,16 @@ def collector(outputQueue, datafilename, proc_list):
     '''
     collects all the results and write them into the stats.csv file
     '''
-
     countProcessFinished = 0
     while True:
         task = outputQueue.get()
-
+        
         if (task is None):
             countProcessFinished = countProcessFinished + 1
+            if (len(proc_list) == 0): # no multiprocessing
+                break
             # The collector can be stopped only after all loop processes are finished
-            if (countProcessFinished == len(proc_list)):
+            elif (countProcessFinished == len(proc_list)):
                 break
             continue
 
@@ -328,6 +338,6 @@ def collector(outputQueue, datafilename, proc_list):
         else:
             task.to_csv(datafilename + '-STATS.csv',
                     mode='a', header=False)
-   
+
 def silcam_process_batch():
     print('Placeholder for silcam-process-batch entry point')
