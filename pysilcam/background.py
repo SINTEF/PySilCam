@@ -110,7 +110,7 @@ def shift_and_correct(bgstack, imbg, imraw):
     return bgstack, imbg, imc
 
 
-def backgrounder(av_window, acquire, bad_lighting_limit):
+def backgrounder(av_window, acquire, bad_lighting_limit=10000):
     '''generator which interracts with acquire to return a corrcted image
     given av_window number of frame to use in creating a moving background
 
@@ -140,5 +140,4 @@ def backgrounder(av_window, acquire, bad_lighting_limit):
         if (s <= bad_lighting_limit):
            yield timestamp, imc
         else:
-            print('bad lighting, std=',s)
             logger.info('bad lighting, std={0}'.format(s))
