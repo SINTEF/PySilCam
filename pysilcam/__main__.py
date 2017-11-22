@@ -140,6 +140,10 @@ def silcam_process(config_filename, datapath, nbImages=None, gui=None):
     configure_logger(settings.General)
     logger = logging.getLogger(__name__ + '.silcam_process')
 
+    # Remove non alfanumeric characters from the end of the datapath. Usually '/' or '\'
+    while not datapath[-1].isalnum():
+       datapath = datapath[:-1]
+
     logger.info('Processing path: ' + datapath)
 
     # load the model for particle classification and keep it for later
