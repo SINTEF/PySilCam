@@ -180,6 +180,9 @@ def silcam_process(config_filename, datapath, multiProcess=False, nbImages=None,
     inputQueue = multiprocessing.Queue()
     outputQueue = multiprocessing.Queue()
 
+    # If only one core is available, no multiprocessing will be done
+    multiProcess = multiProcess and multiprocessing.cpu_count() > 1
+
     if (multiProcess):
         distributor(inputQueue, outputQueue, conf, proc_list, gui)
 
