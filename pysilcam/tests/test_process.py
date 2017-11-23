@@ -8,14 +8,13 @@ import unittest
 @unittest.skipIf(not os.path.isdir(
     '//sintef.no/mk20/nasgul/Miljoteknologi/MK102013220_SILCAM_IPR_EJD/hello_silcam/unittest_entries/STN04'), 
     "test path not accessible")
-@unittest.skipIf(not os.path.isfile(
-    'config.ini'), 
-    "config file not accessible")
 def test_csv_file():
     '''Testing that the appropriate STATS.csv file is created'''
 
+    path = os.path.dirname(__file__)
+    conf_file = os.path.join(path, 'config.ini')
+
     data_file = '//sintef.no/mk20/nasgul/Miljoteknologi/MK102013220_SILCAM_IPR_EJD/hello_silcam/unittest_entries/STN04'
-    conf_file = 'config.ini'
     stats_file = '//sintef.no/mk20/nasgul/Miljoteknologi/MK102013220_SILCAM_IPR_EJD/hello_silcam/unittest_entries/STN04-STATS.csv'
     
     # if csv file already exists, it has to be deleted
