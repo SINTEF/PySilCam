@@ -140,8 +140,10 @@ def silcam_process(config_filename, datapath, nbImages=None, gui=None):
     configure_logger(settings.General)
     logger = logging.getLogger(__name__ + '.silcam_process')
 
-    # Remove non alfanumeric characters from the end of the datapath. Usually '/' or '\'
-    while not datapath[-1].isalnum():
+    # Remove ' characters
+    datapath = os.path.normpath(datapath.replace("'",""))
+    # Remove " characters at the end (occurs when user give \" at the end)
+    while datapath[-1] == '"':
        datapath = datapath[:-1]
 
     logger.info('Processing path: ' + datapath)
