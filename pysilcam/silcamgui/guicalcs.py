@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QPushButton, QWidget,
 QAction, QTabWidget,QVBoxLayout, QFileDialog)
 import os
-from pysilcam.config import load_config, PySilcamSettings
+from pysilcam.config import PySilcamSettings
 import pysilcam.oilgas as scog
 import numpy as np
 import pysilcam.postprocess as sc_pp
@@ -232,6 +232,5 @@ class ProcThread(Process):
 
 
     def load_settings(self, configfile):
-        conf = load_config(configfile)
-        self.settings = PySilcamSettings(conf)
+        self.settings = PySilcamSettings(configfile)
 

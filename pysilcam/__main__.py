@@ -18,7 +18,7 @@ import pysilcam.postprocess as sc_pp
 import pysilcam.plotting as scplt
 import pysilcam.datalogger as datalogger
 import pysilcam.oilgas as oilgas
-from pysilcam.config import load_config, PySilcamSettings
+from pysilcam.config import PySilcamSettings
 from skimage import color
 import imageio
 import os
@@ -128,12 +128,11 @@ def silcam_process(config_filename, datapath, nbImages=None, gui=None):
     #---- SETUP ----
 
     #Load the configuration, create settings object
-    conf = load_config(config_filename)
-    settings = PySilcamSettings(conf)
+    settings = PySilcamSettings(config_filename)
 
     #Print configuration to screen
     print('---- CONFIGURATION ----\n')
-    conf.write(sys.stdout)
+    settings.config.write(sys.stdout)
     print('-----------------------\n')
 
     #Configure logging
