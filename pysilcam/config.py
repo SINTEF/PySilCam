@@ -45,7 +45,7 @@ class PySilcamSettings:
                 try:
                     parsed_val = ast.literal_eval(v)
                 except:
-                    # Try to fix problem with \
+                    # Try to fix problem with parsing \
                     v = v.replace('\\','\\\\')
                     try: #again
                        parsed_val = ast.literal_eval(v)

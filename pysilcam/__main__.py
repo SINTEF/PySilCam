@@ -140,6 +140,7 @@ def silcam_process(config_filename, datapath, nbImages=None, gui=None):
     configure_logger(settings.General)
     logger = logging.getLogger(__name__ + '.silcam_process')
 
+    # The following is solving problems in transfering arguments from shell on windows
     # Remove ' characters
     datapath = os.path.normpath(datapath.replace("'",""))
     # Remove " characters at the end (occurs when user give \" at the end)
