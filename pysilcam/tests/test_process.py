@@ -23,7 +23,7 @@ def test_csv_file():
         os.remove(stats_file)
 
     # call process function
-    silcam_process(conf_file, data_file, False)
+    silcam_process(conf_file, data_file)
 
     # check that csv file has been created
     assert os.path.isfile(stats_file), 'stats_file not created'

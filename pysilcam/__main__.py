@@ -48,7 +48,7 @@ def silcam():
 
     Usage:
       silcam acquire [-l | --liveview]
-      silcam process <configfile> <datapath> [--nbimages=<number of images>] [--singleProcess]
+      silcam process <configfile> <datapath> [--nbimages=<number of images>] [--multiproc]
       silcam -h | --help
       silcam --version
 
@@ -58,7 +58,7 @@ def silcam():
 
     Options:
       --nbimages=<number of images>     Number of images to process.
-      --singleProcess                   Deactivate multiprocessing
+      --multiproc                       Activate multiprocessing
       -h --help                         Show this screen.
       --version                         Show version.
 
@@ -68,9 +68,9 @@ def silcam():
     args = docopt(silcam.__doc__, version='PySilCam {0}'.format(__version__))
     # this is the standard processing method under development now
     if args['process']:
-        multiProcess = True
-        if args['--singleProcess']:
-            multiProcess = False
+        multiProcess = False
+        if args['--multiproc']:
+            multiProcess = True
         nbImages = args['--nbimages']
         if (nbImages != None):
             try:
@@ -114,7 +114,7 @@ def silcam_acquire():
 
 
 # the standard processing method under active development
-def silcam_process(config_filename, datapath, multiProcess, nbImages=None, gui=None):
+def silcam_process(config_filename, datapath, multiProcess=False, nbImages=None, gui=None):
 
     '''Run processing of SilCam images
 
@@ -176,12 +176,12 @@ def silcam_process(config_filename, datapath, multiProcess, nbImages=None, gui=N
 
     #---- RUN PROCESSING ----
 
-    proc_list = list()
+    proc_list = []
     inputQueue = multiprocessing.Queue()
     outputQueue = multiprocessing.Queue()
 
     if (multiProcess):
-        distributor(logger, settings, config_filename, datafilename, inputQueue, outputQueue, conf, datapath, proc_list, gui, multiProcess)
+        distributor(inputQueue, outputQueue, conf, proc_list, gui)
 
     print('* Commencing image acquisition and processing')
 
@@ -198,7 +198,7 @@ def silcam_process(config_filename, datapath, multiProcess, nbImages=None, gui=N
             inputQueue.put(None)
     else:
         inputQueue.put(None)
-        loop(config_filename, conf, datafilename, inputQueue, outputQueue, 1, gui)
+        loop(conf, inputQueue, outputQueue, gui)
         
     collector(outputQueue, datafilename, proc_list)
     
@@ -212,7 +212,7 @@ def silcam_process(config_filename, datapath, multiProcess, nbImages=None, gui=N
     #---- END ----
 
 
-def loop(config_filename, conf, datafilename, inputQueue, outputQueue, nbCore, gui=None):
+def loop(conf, inputQueue, outputQueue, gui=None):
     '''
     Main processing loop, run for each image
     '''
@@ -223,8 +223,7 @@ def loop(config_filename, conf, datafilename, inputQueue, outputQueue, nbCore, g
 
     # load the model for particle classification and keep it for later
     nnmodel = []
-    if settings.NNClassify.enable:
-        nnmodel, class_labels = sccl.load_model(model_path=settings.NNClassify.model_path)
+    nnmodel, class_labels = sccl.load_model(model_path=settings.NNClassify.model_path)
     
     while True:
         try:
@@ -297,17 +296,15 @@ def loop(config_filename, conf, datafilename, inputQueue, outputQueue, nbCore, g
             logger.warning(infostr, exc_info=True)
             print(infostr)
 
-def distributor(logger, settings, config_filename, datafilename, inputQueue, outputQueue, conf, datapath, proc_list, gui=None, multiProcess = True):
+def distributor(inputQueue, outputQueue, conf, proc_list, gui=None):
     '''
     distributes the images in the input queue to the different loop processes
     '''
-    
-    numCores = 1
-    if (multiprocessing.cpu_count() > 2):
-        numCores = multiprocessing.cpu_count() - 2
+
+    numCores = max(1, multiprocessing.cpu_count() - 2)
 
     for nbCore in range(numCores):
-        proc = multiprocessing.Process(target=loop, args=(config_filename, conf, datafilename, inputQueue, outputQueue, nbCore, gui))
+        proc = multiprocessing.Process(target=loop, args=(conf, inputQueue, outputQueue, gui))
         proc_list.append(proc)
         proc.start()
 
