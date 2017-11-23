@@ -48,7 +48,7 @@ def silcam():
 
     Usage:
       silcam acquire [-l | --liveview]
-      silcam process <configfile> <datapath> [--nbimages=<number of images>] [--multiproc]
+      silcam process <configfile> <datapath> [--nbimages=<number of images>] [--nomultiproc]
       silcam -h | --help
       silcam --version
 
@@ -58,7 +58,7 @@ def silcam():
 
     Options:
       --nbimages=<number of images>     Number of images to process.
-      --multiproc                       Activate multiprocessing
+      --nomultiproc                     Deactivate multiprocessing
       -h --help                         Show this screen.
       --version                         Show version.
 
@@ -68,9 +68,9 @@ def silcam():
     args = docopt(silcam.__doc__, version='PySilCam {0}'.format(__version__))
     # this is the standard processing method under development now
     if args['process']:
-        multiProcess = False
-        if args['--multiproc']:
-            multiProcess = True
+        multiProcess = True
+        if args['--nomultiproc']:
+            multiProcess = False
         nbImages = args['--nbimages']
         if (nbImages != None):
             try:
