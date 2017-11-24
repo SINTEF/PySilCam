@@ -183,7 +183,7 @@ def silcam_process(config_filename, datapath, multiProcess=False, nbImages=None,
     multiProcess = multiProcess and multiprocessing.cpu_count() > 1
 
     if (multiProcess):
-        distributor(inputQueue, outputQueue, conf, proc_list, gui)
+        distributor(inputQueue, outputQueue, config_filename, proc_list, gui)
 
     print('* Commencing image acquisition and processing')
 
@@ -214,11 +214,11 @@ def silcam_process(config_filename, datapath, multiProcess=False, nbImages=None,
     #---- END ----
 
 
-def loop(conf, inputQueue, outputQueue, gui=None):
+def loop(config_filename, inputQueue, outputQueue, gui=None):
     '''
     Main processing loop, run for each image
     '''
-    settings = PySilcamSettings(conf)
+    settings = PySilcamSettings(config_filename)
 
     configure_logger(settings.General)
     logger = logging.getLogger(__name__ + '.silcam_process')
@@ -298,7 +298,7 @@ def loop(conf, inputQueue, outputQueue, gui=None):
             logger.warning(infostr, exc_info=True)
             print(infostr)
 
-def distributor(inputQueue, outputQueue, conf, proc_list, gui=None):
+def distributor(inputQueue, outputQueue, config_filename, proc_list, gui=None):
     '''
     distributes the images in the input queue to the different loop processes
     '''
@@ -306,7 +306,7 @@ def distributor(inputQueue, outputQueue, conf, proc_list, gui=None):
     numCores = max(1, multiprocessing.cpu_count() - 2)
 
     for nbCore in range(numCores):
-        proc = multiprocessing.Process(target=loop, args=(conf, inputQueue, outputQueue, gui))
+        proc = multiprocessing.Process(target=loop, args=(config_filename, inputQueue, outputQueue, gui))
         proc_list.append(proc)
         proc.start()
 
