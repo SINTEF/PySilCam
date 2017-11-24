@@ -8,6 +8,8 @@ import ast
 from collections import namedtuple
 import logging
 
+logger = logging.getLogger(__name__)
+
 # This is the required version of the configuration file
 __configversion__ = 2
 
@@ -50,3 +52,43 @@ class PySilcamSettings:
                 cursec[k] = parsed_val
             C = namedtuple(sec, cursec.keys())
             self.__dict__[sec] = C(**cursec)
+
+def load_camera_config(filename):
+    '''Load camera config file and validate content'''
+
+    # Return an empty dict if the file is not ok
+    config = dict();
+
+    #Check that the file exists
+    if (filename == None):
+        return config
+
+    if not os.path.exists(filename):
+        logger.debug('Camera config file not found: {0}'.format(filename))
+        return config
+
+    #Create ConfigParser and populate from file
+    config_parser = configparser.ConfigParser()
+    files_parsed = config_parser.read(filename)
+    if filename not in files_parsed:
+        logger.debug('Could not parse camera config file {0}'.format(filename))
+        return config
+
+    try:
+       if not config_parser.has_section('Camera'):
+          logger.debug('No Camera section in ini file:', filename)
+          return config
+
+       # File is read, find the camera section
+       for k, v in config_parser.items('Camera'):
+         try:
+            parsed_val = ast.literal_eval(v)
+         except:
+            parsed_val = v
+         config[k] = parsed_val
+
+    except:
+      logger.debug('Could not read camera config file:', filename)
+
+    # return the configuration as a dict
+    return config
