@@ -7,7 +7,7 @@ import pysilcam.postprocess as sc_pp
 import numpy as np
 import seaborn as sns
 sns.set_style('ticks')
-from pysilcam.config import load_config, PySilcamSettings
+from pysilcam.config import PySilcamSettings
 import pandas as pd
 
 class ParticleSizeDistPlot:
@@ -180,8 +180,7 @@ def summarise_fancy_stats(stats_csv_file, config_file, monitor=False,
         maxlength=100000):
     sns.set_style('ticks')
 
-    conf = load_config(config_file)
-    settings = PySilcamSettings(conf)
+    settings = PySilcamSettings(config_file)
 
     min_length = settings.ExportParticles.min_length + 1
 

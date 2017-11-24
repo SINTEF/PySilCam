@@ -7,7 +7,10 @@ use the backgrounder function!
 acquire() must produce a float64 np array
 '''
 import numpy as np
+import logging
 
+#Get module-level logger
+logger = logging.getLogger(__name__)
 
 def ini_background(av_window, acquire):
     '''av_window is the number of images to use in creating the background
@@ -107,13 +110,13 @@ def shift_and_correct(bgstack, imbg, imraw):
     return bgstack, imbg, imc
 
 
-def backgrounder(av_window, acquire):
+def backgrounder(av_window, acquire, bad_lighting_limit=10000):
     '''generator which interracts with acquire to return a corrcted image
     given av_window number of frame to use in creating a moving background
 
     example useage:
       avwind = 10 # number of images used for background
-      imgen = backgrounder(avwind,acquire) # setup generator
+      imgen = backgrounder(avwind,acquire,bad_lighting_limit) # setup generator
 
       n = 10 # acquire 10 images and correct them with a sliding background:
       for i in range(n):
@@ -127,4 +130,14 @@ def backgrounder(av_window, acquire):
     # Aquire images, apply background correction and yield result
     for timestamp, imraw in acquire:
         bgstack, imbg, imc = shift_and_correct(bgstack, imbg, imraw)
-        yield timestamp, imc
+
+        # basic check of image quality
+        r = imc[:, :, 0]
+        g = imc[:, :, 1]
+        b = imc[:, :, 2]
+        s = np.std([r, g, b])
+        # ignore bad images
+        if (s <= bad_lighting_limit):
+           yield timestamp, imc
+        else:
+            logger.info('bad lighting, std={0}'.format(s))

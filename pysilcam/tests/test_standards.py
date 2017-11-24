@@ -7,7 +7,7 @@ import pysilcam.postprocess as scpp
 import unittest
 import pandas as pd
 import pysilcam.silcam_classify as sccl
-from pysilcam.config import load_config, PySilcamSettings
+from pysilcam.config import PySilcamSettings
 import tensorflow as tf
 
 @unittest.skipIf(not os.path.isdir(
@@ -47,8 +47,7 @@ def test_big_standards():
             'probability_oil,probability_other,probability_bubble,probability_faecal_pellets,probability_copepod,'\
             'probability_diatom_chain,probability_oily_gas,export name,timestamp\n', 'columns not properly built'
 
-    conf = load_config(conf_file)
-    settings = PySilcamSettings(conf)
+    settings = PySilcamSettings(conf_file)
     stats = pd.read_csv(stats_file)
     d50 = scpp.d50_from_stats(stats, settings.PostProcess)
     assert (d50 > 310 and d50 < 330), 'incorrect d50'
@@ -90,8 +89,7 @@ def test_small_standards():
             'probability_oil,probability_other,probability_bubble,probability_faecal_pellets,probability_copepod,'\
             'probability_diatom_chain,probability_oily_gas,export name,timestamp\n', 'columns not properly built'
 
-    conf = load_config(conf_file)
-    settings = PySilcamSettings(conf)
+    settings = PySilcamSettings(conf_file)
     stats = pd.read_csv(stats_file)
     d50 = scpp.d50_from_stats(stats, settings.PostProcess)
     assert (d50 > 70 and d50 < 90), 'incorrect d50'
