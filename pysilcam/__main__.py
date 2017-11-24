@@ -200,7 +200,7 @@ def silcam_process(config_filename, datapath, multiProcess=False, nbImages=None,
             inputQueue.put(None)
     else:
         inputQueue.put(None)
-        loop(conf, inputQueue, outputQueue, gui)
+        loop(config_filename, inputQueue, outputQueue, gui)
         
     collector(outputQueue, datafilename, proc_list)
     
