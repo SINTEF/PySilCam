@@ -47,7 +47,7 @@ def silcam():
     '''Aquire/process images from the SilCam
 
     Usage:
-      silcam acquire [-l | --liveview]
+      silcam acquire [<configfile>] [-l | --liveview]
       silcam process <configfile> <datapath> [--nbimages=<number of images>] [--nomultiproc]
       silcam -h | --help
       silcam --version
@@ -81,13 +81,14 @@ def silcam():
         silcam_process(args['<configfile>'],args['<datapath>'], multiProcess, nbImages)
 
     elif args['acquire']: # this is the standard acquisition method under development now
-        silcam_acquire()
+        silcam_acquire(args['<configfile>'])
 
-def silcam_acquire():
+def silcam_acquire(config_file_name):
+
     while True:
         t1 = time.time()
         try:
-            aqgen = acquire()
+            aqgen = acquire(config_file_name)
             for i, (timestamp, imraw) in enumerate(aqgen):
                 filename = timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc')
                 with open(filename, 'wb') as fh:

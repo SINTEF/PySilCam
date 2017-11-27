@@ -5,6 +5,7 @@ import time
 import numpy as np
 import pandas as pd
 import logging
+from pysilcam.config import load_camera_config
 
 logger = logging.getLogger(__name__)
 
@@ -60,8 +61,13 @@ def _init_camera(vimba):
 def _configure_camera(camera, config=dict()):
     '''Configure the camera.
 
-    Config is an optioinal dictionary of parameter-value pairs.
+    Config is an optioinal dictionary of parameter-value pairs,
+    or a file name
     '''
+
+    # chek for config parser
+    if not isinstance(config, dict):
+      config = load_camera_config(config)
 
     #Default settings
     camera.AcquisitionFrameRateAbs = 1
@@ -80,7 +86,6 @@ def _configure_camera(camera, config=dict()):
 
     #camera.GVSPPacketSize = 9194
     camera.GVSPPacketSize = 1500
-
 
     #If a config is specified, override those values
     for k, v in config.items():
@@ -164,7 +169,7 @@ def wait_for_camera():
                 time.sleep(5)
 
 
-def acquire(datapath=None):
+def acquire(camera_config_file, datapath=None):
     '''Aquire images from SilCam'''
 
     #Initialize the camera interface, retry every five seconds if camera not found
@@ -182,7 +187,7 @@ def acquire(datapath=None):
         camera = _init_camera(vimba)
 
         #Configure camera
-        camera = _configure_camera(camera)
+        camera = _configure_camera(camera, camera_config_file)
 
         #Prepare for image acquisition and create a frame
         frame0 = camera.getFrame()
@@ -208,6 +213,7 @@ def acquire(datapath=None):
 
             #Close camera
             #@todo
+
 
 
 def acquire_rgb():
