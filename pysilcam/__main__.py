@@ -192,12 +192,12 @@ def silcam_process(config_filename, datapath, multiProcess=False, nbImages=None,
     if (multiProcess):
         proc_list = []
         mem = psutil.virtual_memory()
-        memFreeMb = mem.free >> 20
+        memAvailableMb = mem.available >> 20
         
         # Each queue cannot occupy more that half of the available memory (memFreeMb).
         # Each image has a size of approx. 15Mb.
-        inputQueue = multiprocessing.Queue(int(mem.free / 2 * 1/15))
-        outputQueue = multiprocessing.Queue(int(mem.free / 2 * 1/15))
+        inputQueue = multiprocessing.Queue(int(memAvailableMb / 2 * 1/15))
+        outputQueue = multiprocessing.Queue(int(memAvailableMb / 2 * 1/15))
         distributor(inputQueue, outputQueue, config_filename, proc_list, gui)
 
         # iterate on the bggen generator to obtain images
@@ -206,8 +206,6 @@ def silcam_process(config_filename, datapath, multiProcess=False, nbImages=None,
             if (nbImages != None):
                 if (nbImages <= i):
                     break
-            #process = psutil.Process(os.getpid())
-            #mem = process.memory_info()[0] / float(2 ** 20)
 
             inputQueue.put((i, timestamp, imc)) # the tuple (i, timestamp, imc) is added to the inputQueue
             # write the images that are available for the moment into the csv file
@@ -329,7 +327,7 @@ def loop(config_filename, inputQueue, outputQueue, gui=None):
         stats_all = processImage(nnmodel, class_labels, task, settings, logger, gui)
 
         if not stats_all is None:
-            outputQueue.put(stats_all.to_dict())
+            outputQueue.put(stats_all)
  
 
 def distributor(inputQueue, outputQueue, config_filename, proc_list, gui=None):
@@ -362,8 +360,7 @@ def collector(inputQueue, outputQueue, datafilename, proc_list, testInputQueue):
                 break
             continue
 
-        stats = pd.DataFrame.from_dict(task)
-        writeCSV(datafilename, stats)
+        writeCSV(datafilename, task)
 
 def writeCSV(datafilename, stats_all):
     '''
