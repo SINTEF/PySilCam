@@ -24,6 +24,7 @@ import imageio
 import os
 import pysilcam.silcam_classify as sccl
 import multiprocessing
+import psutil
 
 title = '''
  ____        ____  _ _  ____
@@ -190,8 +191,13 @@ def silcam_process(config_filename, datapath, multiProcess=False, nbImages=None,
 
     if (multiProcess):
         proc_list = []
-        inputQueue = multiprocessing.Queue()
-        outputQueue = multiprocessing.Queue()
+        mem = psutil.virtual_memory()
+        memFreeMb = mem.free >> 20
+        
+        # Each queue cannot occupy more that half of the available memory (memFreeMb).
+        # Each image has a size of approx. 15Mb.
+        inputQueue = multiprocessing.Queue(int(mem.free / 2 * 1/15))
+        outputQueue = multiprocessing.Queue(int(mem.free / 2 * 1/15))
         distributor(inputQueue, outputQueue, config_filename, proc_list, gui)
 
         # iterate on the bggen generator to obtain images
@@ -200,7 +206,9 @@ def silcam_process(config_filename, datapath, multiProcess=False, nbImages=None,
             if (nbImages != None):
                 if (nbImages <= i):
                     break
-            
+            #process = psutil.Process(os.getpid())
+            #mem = process.memory_info()[0] / float(2 ** 20)
+
             inputQueue.put((i, timestamp, imc)) # the tuple (i, timestamp, imc) is added to the inputQueue
             # write the images that are available for the moment into the csv file
             collector(inputQueue, outputQueue, datafilename, proc_list, False)
@@ -228,7 +236,9 @@ def silcam_process(config_filename, datapath, multiProcess=False, nbImages=None,
             if (nbImages != None):
                 if (nbImages <= i):
                     break
-        
+            process = psutil.Process(os.getpid())
+            mem = process.memory_info()[0] / float(2 ** 20)
+            print(mem)
             image = (i, timestamp, imc)
             # one single image is processed at a time
             stats_all = processImage(nnmodel, class_labels, image, settings, logger, gui)
@@ -303,7 +313,6 @@ def loop(config_filename, inputQueue, outputQueue, gui=None):
     Main processing loop, run for each image
     '''
     settings = PySilcamSettings(config_filename)
-
     configure_logger(settings.General)
     logger = logging.getLogger(__name__ + '.silcam_process')
 
@@ -327,7 +336,7 @@ def distributor(inputQueue, outputQueue, config_filename, proc_list, gui=None):
     '''
     distributes the images in the input queue to the different loop processes
     '''
-
+    
     numCores = max(1, multiprocessing.cpu_count() - 2)
 
     for nbCore in range(numCores):
