@@ -58,7 +58,7 @@ def _init_camera(vimba):
     return camera
 
 
-def _configure_camera(camera, config=dict()):
+def _configure_camera(camera, config_file=None):
     '''Configure the camera.
 
     Config is an optioinal dictionary of parameter-value pairs,
@@ -66,8 +66,10 @@ def _configure_camera(camera, config=dict()):
     '''
 
     # chek for config parser
-    if not isinstance(config, dict):
-      config = load_camera_config(config)
+    if (config_file == None):
+       config = dict()
+    else:
+       config = load_camera_config(config_file)
 
     #Default settings
     camera.AcquisitionFrameRateAbs = 1
@@ -169,7 +171,7 @@ def wait_for_camera():
                 time.sleep(5)
 
 
-def acquire(camera_config_file, datapath=None):
+def acquire(camera_config_file=None, datapath=None):
     '''Aquire images from SilCam'''
 
     #Initialize the camera interface, retry every five seconds if camera not found
@@ -187,7 +189,7 @@ def acquire(camera_config_file, datapath=None):
         camera = _init_camera(vimba)
 
         #Configure camera
-        camera = _configure_camera(camera, camera_config_file)
+        camera = _configure_camera(camera, config_file=camera_config_file)
 
         #Prepare for image acquisition and create a frame
         frame0 = camera.getFrame()
