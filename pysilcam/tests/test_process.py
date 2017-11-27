@@ -43,5 +43,4 @@ def test_csv_file():
         if line[0] == '0': # index of particule
             nbimages += 1
     assert nbimages == 5, 'images missing from csv file' # 5 images are used for the background, the 5 images left are processed
-    
-    
+
