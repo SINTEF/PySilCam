@@ -183,7 +183,6 @@ def silcam_process(config_filename, datapath, multiProcess=False, nbImages=None,
     #---- RUN PROCESSING ----
 
 
-
     # If only one core is available, no multiprocessing will be done
     multiProcess = multiProcess and multiprocessing.cpu_count() > 1
 
@@ -203,33 +202,20 @@ def silcam_process(config_filename, datapath, multiProcess=False, nbImages=None,
                     break
             
             inputQueue.put((i, timestamp, imc)) # the tuple (i, timestamp, imc) is added to the inputQueue
-            print("size queue " + str(outputQueue.qsize()))
             # write the images that are available for the moment into the csv file
-            collector(outputQueue, datafilename, proc_list)
-        
-
+            collector(inputQueue, outputQueue, datafilename, proc_list, False)
 
         for p in proc_list:
-            print("add none in input queue")
             inputQueue.put(None)
 
-        while (inputQueue.qsize()>0):
-            collector(outputQueue, datafilename, proc_list)
-            time.sleep(0.1)
+        # some images might still be waiting to be written to the csv file
+        collector(inputQueue, outputQueue, datafilename, proc_list, True)
 
         for p in proc_list:
-            print("before")
-            print("terminate")
-            p.terminate()
-            #p.join()
-            print("after")
-            print ('%s.exitcode = %s' % (p.name, p.exitcode) )
+            p.join()
 
-        # some images might still wait in the outputQueue
-        #collector(outputQueue, datafilename, proc_list)
-
-        #outputQueue.close()
-        #inputQueue.close()    
+        outputQueue.close()
+        inputQueue.close()    
 
     else:
         # load the model for particle classification and keep it for later
@@ -326,22 +312,16 @@ def loop(config_filename, inputQueue, outputQueue, gui=None):
     nnmodel, class_labels = sccl.load_model(model_path=settings.NNClassify.model_path)
 
     while True:
-        print("start loop")
         task = inputQueue.get()
-        print("loop after get")
         if task is None:
-            print("NONE received")
             outputQueue.put(None)  
             break
 
         stats_all = processImage(nnmodel, class_labels, task, settings, logger, gui)
 
         if not stats_all is None:
-            print("add to outputQueue")
             outputQueue.put(stats_all.to_dict())
-            print("outputQueue "+str(outputQueue.qsize()))
  
-    print("leaving loop")
 
 def distributor(inputQueue, outputQueue, config_filename, proc_list, gui=None):
     '''
@@ -355,14 +335,13 @@ def distributor(inputQueue, outputQueue, config_filename, proc_list, gui=None):
         proc_list.append(proc)
         proc.start()
 
-def collector(outputQueue, datafilename, proc_list):
+def collector(inputQueue, outputQueue, datafilename, proc_list, testInputQueue):
     '''
     collects all the results and write them into the stats.csv file
     '''
+
     countProcessFinished = 0
-    print("outputQueueSize " + str(outputQueue.qsize()) )
-    while (not outputQueue.empty()):
-        print("collector")
+    while ((not outputQueue.empty()) or (testInputQueue and not inputQueue.empty())):
         task = outputQueue.get()
         
         if (task is None):
