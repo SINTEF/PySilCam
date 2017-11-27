@@ -1,0 +1,94 @@
+Metadata-Version: 1.1
+Name: PySilCam
+Version: 0.1.0
+Summary: A Python interface to the SilCam.
+Home-page: UNKNOWN
+Author: Emlyn Davies
+Author-email: emlyn.davies@sintef.no
+License: Copyright 2017 SINTEF
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+Description-Content-Type: UNKNOWN
+Description: ===============================
+        PySilCam
+        ===============================
+        
+        .. image:: docs/silcam.png
+        
+        
+        A Python interface to the SilCam.
+        
+        Features
+        --------
+        
+        * Acqusition of images from SilCam
+        * Real-time processing of SilCam images, particle statistics
+        * Processing images from disk (batch or real-time)
+        
+        Quick start
+        -----------
+        
+        some setup:
+            > conda create -n pysilcam python=2.7
+            > source activate pysilcam
+            > python setup.py install
+        
+        To process images from disk in real time (watching a folder for new images):
+        
+            > PYSILCAM_REALTIME_DATA='<path>' MPLBACKEND='TkAgg' silcam-acquire process pysilcam/config_example.ini
+        
+        for real-time listening processing:
+            > PYSILCAM_FAKEPYMBA=ON PYSILCAM_REALTIME_DATA='<path>' MPLBACKEND='TkAgg' silcam-acquire process pysilcam/config_example.ini
+        
+        for fast acquisition only (no processing):
+            > silcam-acquire
+        
+        Requirements
+        ------------
+        
+        * Python = 3.4
+        
+        * numpy
+        
+        * Pymba with Python 3 support. Install using
+        
+            pip install git+https://github.com/mabl/pymba@python3
+        
+        
+        * For Python 2, the master branch Pymba is required. Install it with
+        
+            pip install -e git+https://github.com/morefigs/pymba#egg=pymba
+        
+        
+        License
+        -------
+        
+        MIT licensed. See the bundled `LICENSE` file for more details.
+        
+Keywords: silcam
+Platform: UNKNOWN
+Classifier: Development Status :: 2 - Pre-Alpha
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Natural Language :: English
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.4
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3.6
