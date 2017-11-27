@@ -24,6 +24,7 @@ import imageio
 import os
 import pysilcam.silcam_classify as sccl
 import multiprocessing
+import psutil
 
 title = '''
  ____        ____  _ _  ____
@@ -114,7 +115,7 @@ def silcam_acquire():
 
 
 # the standard processing method under active development
-def silcam_process(config_filename, datapath, multiProcess=False, nbImages=None, gui=None):
+def silcam_process(config_filename, datapath, multiProcess=True, nbImages=None, gui=None):
 
     '''Run processing of SilCam images
 
@@ -182,43 +183,127 @@ def silcam_process(config_filename, datapath, multiProcess=False, nbImages=None,
 
     #---- RUN PROCESSING ----
 
-    proc_list = []
-    inputQueue = multiprocessing.Queue()
-    outputQueue = multiprocessing.Queue()
 
     # If only one core is available, no multiprocessing will be done
     multiProcess = multiProcess and multiprocessing.cpu_count() > 1
 
-    if (multiProcess):
-        distributor(inputQueue, outputQueue, config_filename, proc_list, gui)
-
     print('* Commencing image acquisition and processing')
 
-    # iterate on the bbgen generator to obtain images
-    for i, (timestamp, imc) in enumerate(bggen):
-        # handle errors if the loop function fails for any reason
-        if (nbImages != None):
-            if (nbImages <= i):
-                break
-        inputQueue.put((i, timestamp, imc)) # the tuple (i, timestamp, imc) is added to the inputQueue
-
     if (multiProcess):
+        proc_list = []
+        mem = psutil.virtual_memory()
+        memAvailableMb = mem.available >> 20
+        
+        # Each queue cannot occupy more that half of the available memory (memFreeMb).
+        # Each image has a size of approx. 15Mb.
+        inputQueue = multiprocessing.Queue(int(memAvailableMb / 2 * 1/15))
+        outputQueue = multiprocessing.Queue(int(memAvailableMb / 2 * 1/15))
+        distributor(inputQueue, outputQueue, config_filename, proc_list, gui)
+
+        # iterate on the bggen generator to obtain images
+        for i, (timestamp, imc) in enumerate(bggen):
+            # handle errors if the loop function fails for any reason
+            if (nbImages != None):
+                if (nbImages <= i):
+                    break
+
+            inputQueue.put((i, timestamp, imc)) # the tuple (i, timestamp, imc) is added to the inputQueue
+            # write the images that are available for the moment into the csv file
+            collector(inputQueue, outputQueue, datafilename, proc_list, False)
+
         for p in proc_list:
             inputQueue.put(None)
-    else:
-        inputQueue.put(None)
-        loop(config_filename, inputQueue, outputQueue, gui)
-        
-    collector(outputQueue, datafilename, proc_list)
-    
-    for p in proc_list:
-        p.join()
-        print ('%s.exitcode = %s' % (p.name, p.exitcode) )
 
-    outputQueue.close()
-    inputQueue.close()    
+        # some images might still be waiting to be written to the csv file
+        collector(inputQueue, outputQueue, datafilename, proc_list, True)
+
+        for p in proc_list:
+            p.join()
+
+        outputQueue.close()
+        inputQueue.close()    
+
+    else:
+        # load the model for particle classification and keep it for later
+        nnmodel = []
+        nnmodel, class_labels = sccl.load_model(model_path=settings.NNClassify.model_path)
+
+        # iterate on the bggen generator to obtain images
+        for i, (timestamp, imc) in enumerate(bggen):
+            # handle errors if the loop function fails for any reason
+            if (nbImages != None):
+                if (nbImages <= i):
+                    break
+            process = psutil.Process(os.getpid())
+            mem = process.memory_info()[0] / float(2 ** 20)
+            print(mem)
+            image = (i, timestamp, imc)
+            # one single image is processed at a time
+            stats_all = processImage(nnmodel, class_labels, image, settings, logger, gui)
+
+            if (not stats_all is None): # if frame processed 
+                # write the image into the csv file
+                writeCSV( datafilename, stats_all)
 
     #---- END ----
+
+
+def processImage(nnmodel, class_labels, image, settings, logger, gui):
+    '''
+    Proceses an image
+    '''
+    try:
+        i = image[0]
+        timestamp = image[1]
+        imc = image[2]
+
+        #time the full acquisition and processing loop
+        start_time = time.clock()
+
+        logger.info('Processing time stamp {0}'.format(timestamp))
+
+        #Calculate particle statistics
+        stats_all, imbw, saturation = statextract(imc, settings, timestamp,
+                                                  nnmodel, class_labels)
+
+        # if there are not particles identified, assume zero concentration.
+        # This means that the data should indicate that a 'good' image was
+        # obtained, without any particles. Therefore fill all values with nans
+        # and add the image timestamp
+        if len(stats_all) == 0:
+            print('ZERO particles idenfitied')
+            z = np.zeros(len(stats_all.columns)) * np.nan
+            stats_all.loc[0] = z
+            # 'export name' should not be nan because then this column of the
+            # DataFrame will contain multiple types, so label with string instead
+            if settings.ExportParticles.export_images:
+                stats_all['export name'] = 'not_exported'
+        
+        # add timestamp to each row of particle statistics
+        stats_all['timestamp'] = timestamp
+
+        #Time the particle statistics processing step
+        proc_time = time.clock() - start_time
+
+        #Print timing information for this iteration
+        infostr = '  Image {0} processed in {1:.2f} sec ({2:.1f} Hz). '
+        infostr = infostr.format(i, proc_time, 1.0/proc_time)
+        print(infostr)
+
+        #---- END MAIN PROCESSING LOOP ----
+        #---- DO SOME ADMIN ----
+        if not gui==None:
+            guidata = stats_all.to_dict()
+            guidata['imc'] = imc
+            gui.put(guidata)
+
+    except:
+        infostr = 'Failed to process frame {0}, skipping.'.format(i)
+        logger.warning(infostr, exc_info=True)
+        print(infostr)
+        return None
+
+    return stats_all
 
 
 def loop(config_filename, inputQueue, outputQueue, gui=None):
@@ -226,90 +311,30 @@ def loop(config_filename, inputQueue, outputQueue, gui=None):
     Main processing loop, run for each image
     '''
     settings = PySilcamSettings(config_filename)
-
     configure_logger(settings.General)
     logger = logging.getLogger(__name__ + '.silcam_process')
 
     # load the model for particle classification and keep it for later
     nnmodel = []
     nnmodel, class_labels = sccl.load_model(model_path=settings.NNClassify.model_path)
-    
+
     while True:
-        try:
-            task = inputQueue.get()
+        task = inputQueue.get()
+        if task is None:
+            outputQueue.put(None)  
+            break
 
-            if task is None:
-                outputQueue.put(None)  
-                break
+        stats_all = processImage(nnmodel, class_labels, task, settings, logger, gui)
 
-            imc = task[2]
-            timestamp = task[1]
-            i = task[0]
-            
-            #Time the full acquisition and processing loop
-            start_time = time.clock()
-
-            logger.info('Processing time stamp {0}'.format(timestamp))
-
-            # basic check of image quality
-            r = imc[:, :, 0]
-            g = imc[:, :, 1]
-            b = imc[:, :, 2]
-            s = np.std([r, g, b])
-            print('lighting std:',s)
-            # ignore bad images as if they were not obtained (i.e. do not affect
-            # output statistics in any way)
-            if s > settings.Process.bad_lighting_limit:
-                logger.info('bad lighting')
-                return
-
-            #Calculate particle statistics
-            stats_all, imbw, saturation = statextract(imc, settings, timestamp,
-                                                      nnmodel, class_labels)
-
-            # if there are not particles identified, assume zero concentration.
-            # This means that the data should indicate that a 'good' image was
-            # obtained, without any particles. Therefore fill all values with nans
-            # and add the image timestamp
-            if len(stats_all) == 0:
-                print('ZERO particles idenfitied')
-                z = np.zeros(len(stats_all.columns)) * np.nan
-                stats_all.loc[0] = z
-                # 'export name' should not be nan because then this column of the
-                # DataFrame will contain multiple types, so label with string instead
-                if settings.ExportParticles.export_images:
-                    stats_all['export name'] = 'not_exported'
-            
-            # add timestamp to each row of particle statistics
-            stats_all['timestamp'] = timestamp
-
+        if not stats_all is None:
             outputQueue.put(stats_all)
-
-            #Time the particle statistics processing step
-            proc_time = time.clock() - start_time
-
-            #Print timing information for this iteration
-            infostr = '  Image {0} processed in {1:.2f} sec ({2:.1f} Hz). '
-            infostr = infostr.format(i, proc_time, 1.0/proc_time)
-            print(infostr)
-
-            #---- END MAIN PROCESSING LOOP ----
-            #---- DO SOME ADMIN ----
-            if not gui==None:
-                guidata = stats_all.to_dict()
-                guidata['imc'] = imc
-                gui.put(guidata)
-
-        except:
-            infostr = 'Failed to process frame {0}, skipping.'.format(i)
-            logger.warning(infostr, exc_info=True)
-            print(infostr)
+ 
 
 def distributor(inputQueue, outputQueue, config_filename, proc_list, gui=None):
     '''
     distributes the images in the input queue to the different loop processes
     '''
-
+    
     numCores = max(1, multiprocessing.cpu_count() - 2)
 
     for nbCore in range(numCores):
@@ -317,12 +342,13 @@ def distributor(inputQueue, outputQueue, config_filename, proc_list, gui=None):
         proc_list.append(proc)
         proc.start()
 
-def collector(outputQueue, datafilename, proc_list):
+def collector(inputQueue, outputQueue, datafilename, proc_list, testInputQueue):
     '''
     collects all the results and write them into the stats.csv file
     '''
+
     countProcessFinished = 0
-    while True:
+    while ((not outputQueue.empty()) or (testInputQueue and not inputQueue.empty())):
         task = outputQueue.get()
         
         if (task is None):
@@ -334,18 +360,26 @@ def collector(outputQueue, datafilename, proc_list):
                 break
             continue
 
-        # create or append particle statistics to output file
-        # if the output file does not already exist, create it
-        # otherwise data will be appended
-        # @todo accidentally appending to an existing file could be dangerous
-        # because data will be duplicated (and concentrations would therefore
-        # double)
-        if not os.path.isfile(datafilename + '-STATS.csv'):
-            task.to_csv(datafilename +
-                    '-STATS.csv', index_label='particle index')
-        else:
-            task.to_csv(datafilename + '-STATS.csv',
-                    mode='a', header=False)
+        writeCSV(datafilename, task)
+
+def writeCSV(datafilename, stats_all):
+    '''
+    writes into the csv ouput file
+    '''
+
+    # create or append particle statistics to output file
+    # if the output file does not already exist, create it
+    # otherwise data will be appended
+    # @todo accidentally appending to an existing file could be dangerous
+    # because data will be duplicated (and concentrations would therefore
+    # double)
+    if not os.path.isfile(datafilename + '-STATS.csv'):
+        stats_all.to_csv(datafilename +
+                '-STATS.csv', index_label='particle index')
+    else:
+        stats_all.to_csv(datafilename + '-STATS.csv',
+                mode='a', header=False)
+
 
 def silcam_process_batch():
     print('Placeholder for silcam-process-batch entry point')
