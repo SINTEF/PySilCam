@@ -115,7 +115,7 @@ def silcam_acquire():
 
 
 # the standard processing method under active development
-def silcam_process(config_filename, datapath, multiProcess=False, nbImages=None, gui=None):
+def silcam_process(config_filename, datapath, multiProcess=True, nbImages=None, gui=None):
 
     '''Run processing of SilCam images
 
