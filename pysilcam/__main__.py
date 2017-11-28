@@ -24,6 +24,8 @@ import imageio
 import os
 import pysilcam.silcam_classify as sccl
 import multiprocessing
+from multiprocessing.managers import BaseManager
+from queue import LifoQueue
 import psutil
 
 title = '''
@@ -48,18 +50,21 @@ def silcam():
     '''Aquire/process images from the SilCam
 
     Usage:
-      silcam acquire [-l | --liveview]
+      silcam acquire <datapath>
       silcam process <configfile> <datapath> [--nbimages=<number of images>] [--nomultiproc]
+      silcam realtime <configfile> <datapath> [--discwrite] [--nomultiproc]
       silcam -h | --help
       silcam --version
 
     Arguments:
         acquire     Acquire images
         process     Process images
+        realtime    Acquire images from the camera and process them in real time
 
     Options:
       --nbimages=<number of images>     Number of images to process.
-      --nomultiproc                     Deactivate multiprocessing
+      --discwrite                       Write images to disc.
+      --nomultiproc                     Deactivate multiprocessing.
       -h --help                         Show this screen.
       --version                         Show version.
 
@@ -67,6 +72,16 @@ def silcam():
     print(title)
     print('')
     args = docopt(silcam.__doc__, version='PySilCam {0}'.format(__version__))
+
+
+    if args['<datapath>']:
+        # The following is solving problems in transfering arguments from shell on windows
+        # Remove ' characters
+        datapath = os.path.normpath(args['<datapath>'].replace("'",""))
+        # Remove " characters at the end (occurs when user give \" at the end)
+        while datapath[-1] == '"':
+            datapath = datapath[:-1]
+
     # this is the standard processing method under development now
     if args['process']:
         multiProcess = True
@@ -79,18 +94,27 @@ def silcam():
             except ValueError:
                 print('Expected type int for --nbimages.')
                 sys.exit(0)
-        silcam_process(args['<configfile>'],args['<datapath>'], multiProcess, nbImages)
+        silcam_process(args['<configfile>'] ,datapath, multiProcess=multiProcess, nbImages=nbImages)
 
     elif args['acquire']: # this is the standard acquisition method under development now
-        silcam_acquire()
+        silcam_acquire(args['<datapath>'])
 
-def silcam_acquire():
+    elif args['realtime']:
+        discWrite = False
+        if args['--discwrite']:
+            discWrite = True
+        multiProcess = True
+        if args['--nomultiproc']:
+            multiProcess = False
+        silcam_process(args['<configfile>'], datapath, multiProcess=multiProcess, discWrite=discWrite)
+
+def silcam_acquire(datapath=False):
     while True:
         t1 = time.time()
         try:
             aqgen = acquire()
             for i, (timestamp, imraw) in enumerate(aqgen):
-                filename = timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc')
+                filename = os.path.join(datapath, timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc'))
                 with open(filename, 'wb') as fh:
                     np.save(fh, imraw, allow_pickle=False)
                     fh.flush()
@@ -115,7 +139,7 @@ def silcam_acquire():
 
 
 # the standard processing method under active development
-def silcam_process(config_filename, datapath, multiProcess=True, nbImages=None, gui=None):
+def silcam_process(config_filename, datapath, multiProcess=True, discWrite=False, nbImages=None, gui=None):
 
     '''Run processing of SilCam images
 
@@ -129,7 +153,6 @@ def silcam_process(config_filename, datapath, multiProcess=True, nbImages=None, 
 
     print('PROCESS MODE')
     print('')
-
     #---- SETUP ----
 
     #Load the configuration, create settings object
@@ -144,17 +167,10 @@ def silcam_process(config_filename, datapath, multiProcess=True, nbImages=None, 
     configure_logger(settings.General)
     logger = logging.getLogger(__name__ + '.silcam_process')
 
-    # The following is solving problems in transfering arguments from shell on windows
-    # Remove ' characters
-    datapath = os.path.normpath(datapath.replace("'",""))
-    # Remove " characters at the end (occurs when user give \" at the end)
-    while datapath[-1] == '"':
-       datapath = datapath[:-1]
-
     logger.info('Processing path: ' + datapath)
 
     #Initialize the image acquisition generator
-    aqgen = acquire(datapath)
+    aqgen = acquire(datapath=datapath, writeToDisk=discWrite)
 
     #Get number of images to use for background correction from config
     print('* Initializing background image handler')
@@ -194,11 +210,17 @@ def silcam_process(config_filename, datapath, multiProcess=True, nbImages=None, 
         mem = psutil.virtual_memory()
         memAvailableMb = mem.available >> 20
         
+        manager = MyManager()
+        manager.start()
         # Each queue cannot occupy more that half of the available memory (memFreeMb).
         # Each image has a size of approx. 15Mb.
-        inputQueue = multiprocessing.Queue(int(memAvailableMb / 2 * 1/15))
-        outputQueue = multiprocessing.Queue(int(memAvailableMb / 2 * 1/15))
+        inputQueue = manager.LifoQueue(int(memAvailableMb / 2 * 1/15))
+        outputQueue = manager.LifoQueue(int(memAvailableMb / 2 * 1/15))
+        
         distributor(inputQueue, outputQueue, config_filename, proc_list, gui)
+
+        for p in proc_list:
+            inputQueue.put(None)
 
         # iterate on the bggen generator to obtain images
         for i, (timestamp, imc) in enumerate(bggen):
@@ -206,22 +228,16 @@ def silcam_process(config_filename, datapath, multiProcess=True, nbImages=None, 
             if (nbImages != None):
                 if (nbImages <= i):
                     break
-
-            inputQueue.put((i, timestamp, imc)) # the tuple (i, timestamp, imc) is added to the inputQueue
+            inputQueue.put_nowait((i, timestamp, imc)) # the tuple (i, timestamp, imc) is added to the inputQueue
             # write the images that are available for the moment into the csv file
             collector(inputQueue, outputQueue, datafilename, proc_list, False)
-
-        for p in proc_list:
-            inputQueue.put(None)
 
         # some images might still be waiting to be written to the csv file
         collector(inputQueue, outputQueue, datafilename, proc_list, True)
 
         for p in proc_list:
             p.join()
-
-        outputQueue.close()
-        inputQueue.close()    
+            print ('%s.exitcode = %s' % (p.name, p.exitcode) )
 
     else:
         # load the model for particle classification and keep it for later
@@ -234,9 +250,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, nbImages=None, 
             if (nbImages != None):
                 if (nbImages <= i):
                     break
-            process = psutil.Process(os.getpid())
-            mem = process.memory_info()[0] / float(2 ** 20)
-            print(mem)
+
             image = (i, timestamp, imc)
             # one single image is processed at a time
             stats_all = processImage(nnmodel, class_labels, image, settings, logger, gui)
@@ -246,6 +260,11 @@ def silcam_process(config_filename, datapath, multiProcess=True, nbImages=None, 
                 writeCSV( datafilename, stats_all)
 
     #---- END ----
+
+class MyManager(BaseManager):
+    pass
+
+MyManager.register('LifoQueue', LifoQueue)
 
 
 def processImage(nnmodel, class_labels, image, settings, logger, gui):
@@ -278,7 +297,7 @@ def processImage(nnmodel, class_labels, image, settings, logger, gui):
             # DataFrame will contain multiple types, so label with string instead
             if settings.ExportParticles.export_images:
                 stats_all['export name'] = 'not_exported'
-        
+
         # add timestamp to each row of particle statistics
         stats_all['timestamp'] = timestamp
 
@@ -318,12 +337,12 @@ def loop(config_filename, inputQueue, outputQueue, gui=None):
     nnmodel = []
     nnmodel, class_labels = sccl.load_model(model_path=settings.NNClassify.model_path)
 
+    outputQueue.put(None)
+
     while True:
         task = inputQueue.get()
         if task is None:
-            outputQueue.put(None)  
             break
-
         stats_all = processImage(nnmodel, class_labels, task, settings, logger, gui)
 
         if not stats_all is None:
@@ -348,9 +367,11 @@ def collector(inputQueue, outputQueue, datafilename, proc_list, testInputQueue):
     '''
 
     countProcessFinished = 0
-    while ((not outputQueue.empty()) or (testInputQueue and not inputQueue.empty())):
+
+    while ((outputQueue.qsize()>0) or (testInputQueue and inputQueue.qsize()>0)):
+
         task = outputQueue.get()
-        
+
         if (task is None):
             countProcessFinished = countProcessFinished + 1
             if (len(proc_list) == 0): # no multiprocessing
@@ -361,6 +382,7 @@ def collector(inputQueue, outputQueue, datafilename, proc_list, testInputQueue):
             continue
 
         writeCSV(datafilename, task)
+
 
 def writeCSV(datafilename, stats_all):
     '''

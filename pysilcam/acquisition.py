@@ -164,7 +164,7 @@ def wait_for_camera():
                 time.sleep(5)
 
 
-def acquire(datapath=None):
+def acquire(datapath=None, writeToDisk=False):
     '''Aquire images from SilCam'''
 
     #Initialize the camera interface, retry every five seconds if camera not found
@@ -193,6 +193,13 @@ def acquire(datapath=None):
             while True:
                 try:
                     timestamp, img = _acquire_frame(camera, frame0)
+                    if writeToDisk:
+                        filename = os.path.join(datapath, timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc'))
+                        with open(filename, 'wb') as fh:
+                            np.save(fh, img, allow_pickle=False)
+                            fh.flush()
+                            os.fsync(fh.fileno())
+                            print('Written', filename)
                     yield timestamp, img
                 except Exception:
                     print('  FAILED CAPTURE!')
