@@ -69,6 +69,7 @@ def load_camera_config(filename):
         return config
 
     if not os.path.exists(filename):
+        print('Camera config file not found: {0}'.format(filename))
         logger.debug('Camera config file not found: {0}'.format(filename))
         return config
 
