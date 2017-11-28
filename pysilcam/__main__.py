@@ -10,7 +10,7 @@ import cProfile
 import pstats
 from io import StringIO
 from pysilcam import __version__
-from pysilcam.acquisition import acquire
+from pysilcam.acquisition import Acquire
 from pysilcam.background import backgrounder
 import pysilcam.process
 from pysilcam.process import statextract
@@ -85,10 +85,11 @@ def silcam():
         silcam_acquire()
 
 def silcam_acquire():
+    acq = Acquire(USE_PYMBA=True) # ini class
     while True:
         t1 = time.time()
         try:
-            aqgen = acquire()
+            aqgen = acq.get_generator()
             for i, (timestamp, imraw) in enumerate(aqgen):
                 filename = timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc')
                 with open(filename, 'wb') as fh:
@@ -153,8 +154,10 @@ def silcam_process(config_filename, datapath, multiProcess=True, nbImages=None, 
 
     logger.info('Processing path: ' + datapath)
 
+
     #Initialize the image acquisition generator
-    aqgen = acquire(datapath)
+    aq = Acquire()
+    aqgen = aq.get_generator(datapath)
 
     #Get number of images to use for background correction from config
     print('* Initializing background image handler')
@@ -185,7 +188,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, nbImages=None, 
 
 
     # If only one core is available, no multiprocessing will be done
-    multiProcess = multiProcess and multiprocessing.cpu_count() > 1
+    multiProcess = multiProcess and (multiprocessing.cpu_count() > 1)
 
     print('* Commencing image acquisition and processing')
 
