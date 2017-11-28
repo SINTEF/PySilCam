@@ -108,7 +108,7 @@ def silcam():
             multiProcess = False
         silcam_process(args['<configfile>'], datapath, multiProcess=multiProcess, discWrite=discWrite)
 
-def silcam_acquire(datapath=False):
+def silcam_acquire(datapath=None):
     while True:
         t1 = time.time()
         try:

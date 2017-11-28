@@ -2,13 +2,14 @@
 import numpy as np
 from subprocess import check_output
 import pysilcam.acquisition
+import os
 
 def test_acquire_five_frames():
     '''Testing frame acquisition'''
 
     #Check that we can generate frames
     prev_img = None
-    for i, (timestamp, img) in  enumerate(pysilcam.acquisition.acquire()):
+    for i, (timestamp, img) in  enumerate(pysilcam.acquisition.acquire():
         #Check that frames (images) have non-zero size
         assert(img.size > 0)
 
