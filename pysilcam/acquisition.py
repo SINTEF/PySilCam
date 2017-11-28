@@ -20,6 +20,7 @@ if 'PYSILCAM_FAKEPYMBA' in os.environ.keys():
 else:
     try:
         import pymba
+        pymba.get_time_stamp = lambda x: pd.Timestamp.now()
     except:
         warnings.warn('Pymba not available, using mocked version', ImportWarning)
         print('Pymba not available, using mocked version')
