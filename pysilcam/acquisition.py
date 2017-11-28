@@ -5,8 +5,10 @@ import time
 import numpy as np
 import pandas as pd
 import logging
-
 import pysilcam.fakepymba as fakepymba
+
+logger = logging.getLogger(__name__)
+
 try:
     import pymba
 except:
@@ -14,8 +16,6 @@ except:
     warnings.warn('Pymba not available, using mocked version', ImportWarning)
     print('Pymba not available, using mocked version')
     logger.debug('Pymba not available, using mocked version')
-
-logger = logging.getLogger(__name__)
 
 
 def _init_camera(vimba):
