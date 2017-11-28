@@ -40,17 +40,17 @@ def test_camera_config_parser():
     assert 'configversion' in conf
     assert conf['configversion'] == 1
 
-    #assert 'TriggerSource' in conf
-    #assert 'AcquisitionMode' in conf
-    #assert 'ExposureTimeAbs' in conf
-    #assert 'PixelFormat' in conf
-    #assert 'StrobeDuration' in conf
-    #assert 'StrobeDelay' in conf
-    #assert 'StrobeDurationMode' in conf
-    #assert 'StrobeSource' in conf
-    #assert 'SyncOutPolarity' in conf
-    #assert 'SyncOutSelector' in conf
-    #assert 'SyncOutSource' in conf
+    assert 'TriggerSource' in conf
+    assert 'AcquisitionMode' in conf
+    assert 'ExposureTimeAbs' in conf
+    assert 'PixelFormat' in conf
+    assert 'StrobeDuration' in conf
+    assert 'StrobeDelay' in conf
+    assert 'StrobeDurationMode' in conf
+    assert 'StrobeSource' in conf
+    assert 'SyncOutPolarity' in conf
+    assert 'SyncOutSelector' in conf
+    assert 'SyncOutSource' in conf
 
 if __name__ == '__main__':
    test_camera_config_parser()

@@ -91,6 +91,7 @@ def _configure_camera(camera, config_file=None):
 
     #If a config is specified, override those values
     for k, v in config.items():
+        print(k,'=',v)
         setattr(camera, k, v)
 
     return camera
