@@ -73,8 +73,11 @@ def load_camera_config(filename):
         logger.debug('Camera config file not found: {0}'.format(filename))
         return config
 
-    #Create ConfigParser and populate from file
-    config_parser = configparser.ConfigParser()
+    #Create SafeConfigParser and make it case sensitive
+    config_parser = configparser.SafeConfigParser()
+    config_parser.optionxform = str;
+
+    #Populate the parser from the file
     files_parsed = config_parser.read(filename)
     if filename not in files_parsed:
         logger.debug('Could not parse camera config file {0}'.format(filename))
