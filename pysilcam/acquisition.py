@@ -171,14 +171,8 @@ class Acquire():
             self.get_generator_camera(datapath=datapath)
         except KeyboardInterrupt:
             print('User interrupt with ctrl+c, terminating PySilCam.')
-            #camera.revokeAllFrames()
             sys.exit(0)
            
-#        finally:
-#            #Clean up after capture
-
-                #Close camera
-                #@todo
 
     def _acquire_frame(self, camera, frame0):
         '''Aquire a single frame'''

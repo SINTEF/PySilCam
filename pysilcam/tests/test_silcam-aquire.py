@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 from subprocess import check_output
-import os
 from pysilcam.acquisition import Acquire
 
 def test_acquire_five_frames():
