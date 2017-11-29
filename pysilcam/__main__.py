@@ -88,31 +88,24 @@ def silcam_acquire():
     acq = Acquire(USE_PYMBA=True) # ini class
     while True:
         t1 = time.time()
-        try:
-            aqgen = acq.get_generator()
-            for i, (timestamp, imraw) in enumerate(aqgen):
-                filename = timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc')
-                with open(filename, 'wb') as fh:
-                    np.save(fh, imraw, allow_pickle=False)
-                    fh.flush()
-                    os.fsync(fh.fileno())
-                print('Written', filename)
+        aqgen = acq.get_generator()
+        for i, (timestamp, imraw) in enumerate(aqgen):
+            filename = timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc')
+            with open(filename, 'wb') as fh:
+                np.save(fh, imraw, allow_pickle=False)
+                fh.flush()
+                os.fsync(fh.fileno())
+            print('Written', filename)
 
-                t2 = time.time()
-                aq_freq = np.round(1.0/(t2 - t1), 1)
-                requested_freq = 16.0
-                rest_time = (1 / requested_freq) - (1 / aq_freq)
-                rest_time = np.max([rest_time, 0.])
-                time.sleep(rest_time)
-                actual_aq_freq = 1/(1/aq_freq + rest_time)
-                print('Image {0} acquired at frequency {1:.1f} Hz'.format(i, actual_aq_freq))
-                t1 = time.time()
-        except KeyboardInterrupt:
-            print('User interrupt with ctrl+c, terminating PySilCam.')
-            sys.exit(0)
-        except:
-            etype, emsg, etrace = sys.exc_info()
-            print('Exception occurred: {0}. Restarting acquisition.'.format(emsg))
+            t2 = time.time()
+            aq_freq = np.round(1.0/(t2 - t1), 1)
+            requested_freq = 16.0
+            rest_time = (1 / requested_freq) - (1 / aq_freq)
+            rest_time = np.max([rest_time, 0.])
+            time.sleep(rest_time)
+            actual_aq_freq = 1/(1/aq_freq + rest_time)
+            print('Image {0} acquired at frequency {1:.1f} Hz'.format(i, actual_aq_freq))
+            t1 = time.time()
 
 
 # the standard processing method under active development

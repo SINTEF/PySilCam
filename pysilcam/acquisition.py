@@ -6,16 +6,16 @@ import numpy as np
 import pandas as pd
 import logging
 import pysilcam.fakepymba as fakepymba
+import sys
 
 logger = logging.getLogger(__name__)
 
 try:
     import pymba
 except:
-    import pysilcam.fakepymba as pymba
-    warnings.warn('Pymba not available, using mocked version', ImportWarning)
-    print('Pymba not available, using mocked version')
-    logger.debug('Pymba not available, using mocked version')
+    warnings.warn('Pymba not available. Cannot use camera.', ImportWarning)
+    print('Pymba not available. Cannot use camera')
+    logger.debug('Pymba not available. Cannot use camera')
 
 
 def _init_camera(vimba):
@@ -107,17 +107,17 @@ class Acquire():
             self.pymba = pymba
             self.pymba.get_time_stamp = lambda x: pd.Timestamp.now()
             print('Pymba imported')
+            self.get_generator = self.get_generator_camera
         else:
             self.pymba = fakepymba
             print('using fakepymba')
+            self.get_generator = self.get_generator_disc
 
-    def get_generator(self, datapath=None):
-        '''Aquire images from SilCam'''
-
+    def get_generator_disc(self, datapath=None):
+        '''Aquire images from disc'''
         if datapath != None:
             os.environ['PYSILCAM_TESTDATA'] = datapath
 
-        #Wait until camera wakes up
         self.wait_for_camera()
 
         with self.pymba.Vimba() as vimba:
@@ -131,22 +131,51 @@ class Acquire():
             frame0.announceFrame()
 
             #Aquire raw images and yield to calling context
-            try:
+            while True:
+                try:
+                    timestamp, img = self._acquire_frame(camera, frame0)
+                    yield timestamp, img
+                except Exception:
+                    frame0.img_idx += 1
+                    if frame0.img_idx > len(frame0.files):
+                        print('  END OF FILE LIST.')
+                        logger.debug('  END OF FILE LIST.')
+                        break
+
+
+    def get_generator_camera(self, datapath=None):
+        '''Aquire images from SilCam'''
+
+        if datapath != None:
+            os.environ['PYSILCAM_TESTDATA'] = datapath
+
+        try:
+            #Wait until camera wakes up
+            self.wait_for_camera()
+
+            with self.pymba.Vimba() as vimba:
+                camera = _init_camera(vimba)
+
+                #Configure camera
+                camera = _configure_camera(camera)
+
+                #Prepare for image acquisition and create a frame
+                frame0 = camera.getFrame()
+                frame0.announceFrame()
+
+                #Aquire raw images and yield to calling context
                 while True:
-                    try:
-                        timestamp, img = self._acquire_frame(camera, frame0)
-                        yield timestamp, img
-                    except Exception:
-                        print('  FAILED CAPTURE!')
-                        logger.warning("FAILED CAPTURE!")
-                        frame0.img_idx += 1
-                        if frame0.img_idx > len(frame0.files):
-                            print('  END OF FILE LIST.')
-                            logger.debug('  END OF FILE LIST.')
-                            break
-            finally:
-                #Clean up after capture
-                camera.revokeAllFrames()
+                    timestamp, img = self._acquire_frame(camera, frame0)
+                    yield timestamp, img
+        except pymba.vimbaexception.VimbaException:
+            self.get_generator_camera(datapath=datapath)
+        except KeyboardInterrupt:
+            print('User interrupt with ctrl+c, terminating PySilCam.')
+            #camera.revokeAllFrames()
+            sys.exit(0)
+           
+#        finally:
+#            #Clean up after capture
 
                 #Close camera
                 #@todo
