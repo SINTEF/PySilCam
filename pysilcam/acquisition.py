@@ -5,30 +5,17 @@ import time
 import numpy as np
 import pandas as pd
 import logging
+import pysilcam.fakepymba as fakepymba
+import sys
 
 logger = logging.getLogger(__name__)
 
-#Try import pymba, if not available, revert to in-package mockup
-#If environment variable PYSILCAM_FAKEPYMBA is defined, use
-#in-package mockup regardless.
-if 'PYSILCAM_FAKEPYMBA' in os.environ.keys():
-    import pysilcam.fakepymba as pymba
-    # @todo this means that processing on a mchine with pymba installed will
-    # not work with the correct timestamp
-    #pymba.get_time_stamp = lambda x: pd.Timestamp.now()
-else:
-    try:
-        import pymba
-        pymba.get_time_stamp = lambda x: pd.Timestamp.now()
-    except:
-        warnings.warn('Pymba not available, using mocked version', ImportWarning)
-        print('Pymba not available, using mocked version')
-        logger.debug('Pymba not available, using mocked version')
-        import pysilcam.fakepymba as pymba
-    #else:
-        #Monkey-patch in a real-time timestamp getter to be consistent with
-        #FakePymba
-        #pymba.get_time_stamp = lambda x: pd.Timestamp.now()
+try:
+    import pymba
+except:
+    warnings.warn('Pymba not available. Cannot use camera.', ImportWarning)
+    print('Pymba not available. Cannot use camera')
+    logger.debug('Pymba not available. Cannot use camera')
 
 
 def _init_camera(vimba):
@@ -68,7 +55,7 @@ def _configure_camera(camera, config=dict()):
     camera.AcquisitionFrameRateAbs = 1
     camera.TriggerSource = 'FixedRate'
     camera.AcquisitionMode = 'SingleFrame'
-    camera.ExposureTimeAbs = 200
+    camera.ExposureTimeAbs = 30000
     #camera.PixelFormat = 'BayerRG8'
     camera.PixelFormat = 'RGB8Packed'
     camera.StrobeDuration = 600
@@ -90,29 +77,6 @@ def _configure_camera(camera, config=dict()):
     return camera
 
 
-def _acquire_frame(camera, frame0):
-    '''Aquire a single frame in Bayer format'''
-
-    #Aquire single fram from camera
-    camera.startCapture()
-    frame0.queueFrameCapture()
-    camera.runFeatureCommand('AcquisitionStart')
-    camera.runFeatureCommand('AcquisitionStop')
-    frame0.waitFrameCapture()
-
-    #Copy frame data to numpy array (Bayer format)
-    #bayer_img = np.ndarray(buffer = frame0.getBufferByteData(),
-    #                       dtype = np.uint8,
-    #                       shape = (frame0.height, frame0.width, 3))
-    img = np.ndarray(buffer = frame0.getBufferByteData(),
-                    dtype = np.uint8,
-                    shape = (frame0.height, frame0.width, 3))
-
-    timestamp = pymba.get_time_stamp(frame0)
-
-    camera.endCapture()
-
-    return timestamp, img
 
 
 def print_camera_config(camera):
@@ -136,101 +100,113 @@ def print_camera_config(camera):
     print(config_info)
     logger.debug(config_info)
 
-def camera_awake_check():
-    with pymba.Vimba() as vimba_check:
-        cameraIds = []
-        # get system object
-        system_check = vimba_check.getSystem()
 
-        # list available cameras (after enabling discovery for GigE cameras)
-        if system_check.GeVTLIsPresent:
-            system_check.runFeatureCommand("GeVDiscoveryAllOnce")
-            time.sleep(0.2)
-        cameraId_check = vimba_check.getCameraIds()
+class Acquire():
+    def __init__(self, USE_PYMBA=False):
+        if USE_PYMBA:
+            self.pymba = pymba
+            self.pymba.get_time_stamp = lambda x: pd.Timestamp.now()
+            print('Pymba imported')
+            self.get_generator = self.get_generator_camera
+        else:
+            self.pymba = fakepymba
+            print('using fakepymba')
+            self.get_generator = self.get_generator_disc
 
-    lcid = len(cameraId_check)
-    return lcid
+    def get_generator_disc(self, datapath=None):
+        '''Aquire images from disc'''
+        if datapath != None:
+            os.environ['PYSILCAM_TESTDATA'] = datapath
 
+        self.wait_for_camera()
 
-def wait_for_camera():
-    camera = None
-    while not camera:
-        with pymba.Vimba() as vimba:
-            try:
-                camera = _init_camera(vimba)
-            except RuntimeError:
-                msg = 'Could not connect to camera, sleeping five seconds and then retrying'
-                print(msg)
-                logger.warning(msg, exc_info=True)
-                time.sleep(5)
+        with self.pymba.Vimba() as vimba:
+            camera = _init_camera(vimba)
 
+            #Configure camera
+            camera = _configure_camera(camera)
 
-def acquire(datapath=None):
-    '''Aquire images from SilCam'''
+            #Prepare for image acquisition and create a frame
+            frame0 = camera.getFrame()
+            frame0.announceFrame()
 
-    #Initialize the camera interface, retry every five seconds if camera not found
-    #while not camera_awake_check():
-    #    print('Could not connect to camera, sleeping five seconds and then retrying')
-    #    time.sleep(5)
-
-    if datapath != None:
-        os.environ['PYSILCAM_TESTDATA'] = datapath
-
-    #Wait until camera wakes up
-    wait_for_camera()
-
-    with pymba.Vimba() as vimba:
-        camera = _init_camera(vimba)
-
-        #Configure camera
-        camera = _configure_camera(camera)
-
-        #Prepare for image acquisition and create a frame
-        frame0 = camera.getFrame()
-        frame0.announceFrame()
-
-        #Aquire raw images and yield to calling context
-        try:
+            #Aquire raw images and yield to calling context
             while True:
                 try:
-                    timestamp, img = _acquire_frame(camera, frame0)
+                    timestamp, img = self._acquire_frame(camera, frame0)
                     yield timestamp, img
                 except Exception:
-                    print('  FAILED CAPTURE!')
-                    logger.warning("FAILED CAPTURE!")
                     frame0.img_idx += 1
                     if frame0.img_idx > len(frame0.files):
                         print('  END OF FILE LIST.')
                         logger.debug('  END OF FILE LIST.')
                         break
-        finally:
-            #Clean up after capture
-            camera.revokeAllFrames()
-
-            #Close camera
-            #@todo
 
 
-def acquire_rgb():
-    '''Aquire images and convert to RGB color space'''
-    for timestamp, img_bayer in acquire():
-        #@todo Implement a working Bayer->RGB conversion
-        yield timestamp, img_bayer
+    def get_generator_camera(self, datapath=None):
+        '''Aquire images from SilCam'''
 
+        if datapath != None:
+            os.environ['PYSILCAM_TESTDATA'] = datapath
 
-def acquire_gray64():
-    '''Aquire images and convert to float64 grayscale'''
-    for timestamp, img_bayer in acquire():
-        #@todo Implement a working Bayer->grayscale conversion
-        imgray = img_bayer[:, :, 0]
+        try:
+            #Wait until camera wakes up
+            self.wait_for_camera()
 
-        #Yield float64 image
-        yield timestamp, np.float64(imgray)
+            with self.pymba.Vimba() as vimba:
+                camera = _init_camera(vimba)
 
+                #Configure camera
+                camera = _configure_camera(camera)
 
-def acquire_disk():
-    '''Aquire images from SilCam and write them to disk.'''
-    for count, (timestamp, img) in enumerate(acquire()):
-        filename = 'data/foo{0}.bmp'.format(count)
-        imageio.imwrite(filename, img)
-        logger.debug("Stored image image {0} to file {1}.".format(count, filename))
+                #Prepare for image acquisition and create a frame
+                frame0 = camera.getFrame()
+                frame0.announceFrame()
+
+                #Aquire raw images and yield to calling context
+                while True:
+                    timestamp, img = self._acquire_frame(camera, frame0)
+                    yield timestamp, img
+        except pymba.vimbaexception.VimbaException:
+            self.get_generator_camera(datapath=datapath)
+        except KeyboardInterrupt:
+            print('User interrupt with ctrl+c, terminating PySilCam.')
+            sys.exit(0)
+           
+
+    def _acquire_frame(self, camera, frame0):
+        '''Aquire a single frame'''
+
+        #Aquire single fram from camera
+        camera.startCapture()
+        frame0.queueFrameCapture()
+        camera.runFeatureCommand('AcquisitionStart')
+        camera.runFeatureCommand('AcquisitionStop')
+        frame0.waitFrameCapture()
+
+        #Copy frame data to numpy array (Bayer format)
+        #bayer_img = np.ndarray(buffer = frame0.getBufferByteData(),
+        #                       dtype = np.uint8,
+        #                       shape = (frame0.height, frame0.width, 3))
+        img = np.ndarray(buffer = frame0.getBufferByteData(),
+                        dtype = np.uint8,
+                        shape = (frame0.height, frame0.width, 3))
+
+        timestamp = self.pymba.get_time_stamp(frame0)
+
+        camera.endCapture()
+
+        return timestamp, img
+
+    def wait_for_camera(self):
+        camera = None
+        while not camera:
+            with self.pymba.Vimba() as vimba:
+                try:
+                    camera = _init_camera(vimba)
+                except RuntimeError:
+                    msg = 'Could not connect to camera, sleeping five seconds and then retrying'
+                    print(msg)
+                    logger.warning(msg, exc_info=True)
+                    time.sleep(5)
+
