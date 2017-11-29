@@ -94,7 +94,7 @@ def silcam():
             except ValueError:
                 print('Expected type int for --nbimages.')
                 sys.exit(0)
-        silcam_process(args['<configfile>'] ,datapath, multiProcess=multiProcess, nbImages=nbImages)
+        silcam_process(args['<configfile>'] ,datapath, multiProcess=multiProcess, realtime=False, nbImages=nbImages)
 
     elif args['acquire']: # this is the standard acquisition method under development now
         silcam_acquire(args['<datapath>'])
@@ -106,7 +106,7 @@ def silcam():
         multiProcess = True
         if args['--nomultiproc']:
             multiProcess = False
-        silcam_process(args['<configfile>'], datapath, multiProcess=multiProcess, discWrite=discWrite)
+        silcam_process(args['<configfile>'], datapath, multiProcess=multiProcess, realtime=True, discWrite=discWrite)
 
 def silcam_acquire(datapath=None):
     while True:
@@ -139,7 +139,7 @@ def silcam_acquire(datapath=None):
 
 
 # the standard processing method under active development
-def silcam_process(config_filename, datapath, multiProcess=True, discWrite=False, nbImages=None, gui=None):
+def silcam_process(config_filename, datapath, multiProcess=True, realtime=False, discWrite=False, nbImages=None, gui=None):
 
     '''Run processing of SilCam images
 
@@ -209,18 +209,10 @@ def silcam_process(config_filename, datapath, multiProcess=True, discWrite=False
         proc_list = []
         mem = psutil.virtual_memory()
         memAvailableMb = mem.available >> 20
-        
-        manager = MyManager()
-        manager.start()
-        # Each queue cannot occupy more that half of the available memory (memFreeMb).
-        # Each image has a size of approx. 15Mb.
-        inputQueue = manager.LifoQueue(int(memAvailableMb / 2 * 1/15))
-        outputQueue = manager.LifoQueue(int(memAvailableMb / 2 * 1/15))
-        
+                
+        inputQueue, outputQueue = defineQueues(realtime, int(memAvailableMb / 2 * 1/15))
+      
         distributor(inputQueue, outputQueue, config_filename, proc_list, gui)
-
-        for p in proc_list:
-            inputQueue.put(None)
 
         # iterate on the bggen generator to obtain images
         for i, (timestamp, imc) in enumerate(bggen):
@@ -229,8 +221,14 @@ def silcam_process(config_filename, datapath, multiProcess=True, discWrite=False
                 if (nbImages <= i):
                     break
             inputQueue.put_nowait((i, timestamp, imc)) # the tuple (i, timestamp, imc) is added to the inputQueue
+            print("image added to input Queue")
             # write the images that are available for the moment into the csv file
             collector(inputQueue, outputQueue, datafilename, proc_list, False)
+
+        if (not realtime):
+            for p in proc_list:
+                print("None added to intput Queue")
+                inputQueue.put(None)
 
         # some images might still be waiting to be written to the csv file
         collector(inputQueue, outputQueue, datafilename, proc_list, True)
@@ -260,6 +258,25 @@ def silcam_process(config_filename, datapath, multiProcess=True, discWrite=False
                 writeCSV( datafilename, stats_all)
 
     #---- END ----
+
+
+def defineQueues(realtime, size):
+    createQueues = createRTQueues if realtime else createHistQueues
+    return createQueues(size)
+
+def createRTQueues(size):
+    print("realtime queue")
+    manager = MyManager()
+    manager.start()
+    inputQueue = manager.LifoQueue(size)
+    outputQueue = manager.LifoQueue(size)
+    return inputQueue, outputQueue
+
+def createHistQueues(size):
+    print("hist queue")
+    inputQueue = multiprocessing.Queue(size)
+    outputQueue = multiprocessing.Queue(size)
+    return inputQueue, outputQueue
 
 class MyManager(BaseManager):
     pass
@@ -337,16 +354,20 @@ def loop(config_filename, inputQueue, outputQueue, gui=None):
     nnmodel = []
     nnmodel, class_labels = sccl.load_model(model_path=settings.NNClassify.model_path)
 
-    outputQueue.put(None)
+
 
     while True:
         task = inputQueue.get()
         if task is None:
+            outputQueue.put(None)
+            print("None recieved from inputLoop")
             break
+        print("Image received from inputLoop")
         stats_all = processImage(nnmodel, class_labels, task, settings, logger, gui)
 
         if not stats_all is None:
             outputQueue.put(stats_all)
+
  
 
 def distributor(inputQueue, outputQueue, config_filename, proc_list, gui=None):
