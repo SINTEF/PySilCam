@@ -202,6 +202,9 @@ def acquire(datapath=None, writeToDisk=False):
                             os.fsync(fh.fileno())
                             print('Written', filename)
                     yield timestamp, img
+                except VimbaException:
+                    print("raise vimba exception")
+                    raise
                 except Exception:
                     print('  FAILED CAPTURE!')
                     logger.warning("FAILED CAPTURE!")
@@ -210,6 +213,7 @@ def acquire(datapath=None, writeToDisk=False):
                         print('  END OF FILE LIST.')
                         logger.debug('  END OF FILE LIST.')
                         break
+
         finally:
             #Clean up after capture
             camera.revokeAllFrames()
