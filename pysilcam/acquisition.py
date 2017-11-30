@@ -77,8 +77,6 @@ def _configure_camera(camera, config=dict()):
     return camera
 
 
-
-
 def print_camera_config(camera):
     '''Print the camera configuration'''
     config_info_map = {
@@ -151,7 +149,6 @@ class Acquire():
 
         while True:
             try:
-                print('setting up camera....')
                 #Wait until camera wakes up
                 self.wait_for_camera()
 
@@ -167,23 +164,17 @@ class Acquire():
 
                     #Aquire raw images and yield to calling context
                     while True:
-                        print('acquiring frame')
                         timestamp, img = self._acquire_frame(camera, frame0)
                         if writeToDisk:
-                            print('writing to disc')
                             filename = os.path.join(datapath, timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc'))
                             with open(filename, 'wb') as fh:
                                 np.save(fh, img, allow_pickle=False)
                                 fh.flush()
                                 os.fsync(fh.fileno())
                                 print('Written', filename)
-                        print('yielding data')
                         yield timestamp, img
             except pymba.vimbaexception.VimbaException:
                 print('Camera error. Restarting')
-                # Restart the generator
-                #self.get_generator_camera(datapath=datapath,
-                #        writeToDisk=writeToDisk)
             except KeyboardInterrupt:
                 print('User interrupt with ctrl+c, terminating PySilCam.')
                 sys.exit(0)

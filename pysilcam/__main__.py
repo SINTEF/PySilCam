@@ -347,9 +347,7 @@ def loop(config_filename, inputQueue, outputQueue, gui=None):
         task = inputQueue.get()
         if task is None:
             outputQueue.put(None)
-            print("None recieved from inputLoop")
             break
-        print("Image received from inputLoop")
         stats_all = processImage(nnmodel, class_labels, task, settings, logger, gui)
 
         if not stats_all is None:
