@@ -9,6 +9,8 @@ import pysilcam.oilgas as scog
 import numpy as np
 import pysilcam.postprocess as sc_pp
 import pandas as pd
+from enum import Enum
+
 
 def get_data(self):
     try:
@@ -24,8 +26,13 @@ def extract_stats_im(guidata):
     stats = pd.DataFrame.from_dict(guidata)
     return stats, imc
 
+class process_mode(Enum):
+    process = 1
+    aquire = 2
+    real_time = 3
 
 class ProcThread(Process):
+    run_type = process_mode.process
 
     def __init__(self, datadir):
         super(ProcThread, self).__init__()
@@ -35,10 +42,20 @@ class ProcThread(Process):
         self.configfile = ''
         self.settings = ''
         self.rts = ''
+        self.disc_write = False
+        self.multi_process = True
 
 
     def run(self):
-        psc.silcam_process(self.configfile, self.datadir, gui=self.q)
+        if(self.run_type == process_mode.process):
+            psc.silcam_process(self.configfile, self.datadir, multiProcess=self.multi_process, realtime=False,
+            gui=self.q)
+        elif(self.run_type == process_mode.aquire):
+            psc.silcam_acquire(self.datadir)
+        elif(self.run_type == process_mode.real_time):
+            psc.silcam_process(self.configfile, self.datadir, multiProcess=self.multi_process, realtime=True,
+                               discWrite=self.disc_write, gui=self.q)
+
         #psc.silcam_sim(self.datadir, self.q)
 
 
