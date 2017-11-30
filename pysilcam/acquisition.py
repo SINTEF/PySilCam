@@ -143,7 +143,7 @@ class Acquire():
                         break
 
 
-    def get_generator_camera(self, datapath=None):
+    def get_generator_camera(self, datapath=None, writeToDisk=False):
         '''Aquire images from SilCam'''
 
         if datapath != None:
