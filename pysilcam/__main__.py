@@ -264,7 +264,10 @@ def addToQueue(realtime, inputQueue, i, timestamp, imc):
         imc: corrected image
     '''
     if (realtime):
-        inputQueue.put_nowait((i, timestamp, imc))
+        try:
+            inputQueue.put_nowait((i, timestamp, imc))
+        except:
+            pass
     else:
         inputQueue.put((i, timestamp, imc))
 
