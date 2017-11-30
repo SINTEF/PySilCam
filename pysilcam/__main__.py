@@ -257,11 +257,11 @@ def addToQueue(realtime, inputQueue, i, timestamp, imc):
     Put a new image into the Queue.
 
     Args:
-        realtime : boolean indicating wether the processing is done in realtime
-        inputQueue : queue where the images are added for processing
-        i : index of the image acquired
-        timestamp : timestqmp of the acquired image
-        imc : corrected image
+        realtime: boolean indicating wether the processing is done in realtime
+        inputQueue: queue where the images are added for processing
+        i: index of the image acquired
+        timestamp: timestqmp of the acquired image
+        imc: corrected image
     '''
     if (realtime):
         inputQueue.put_nowait((i, timestamp, imc))
@@ -273,8 +273,8 @@ def defineQueues(realtime, size):
     Define the input and output queues depending on wether we are in realtime mode
 
     Args:
-        realtime : boolean indicating wether the processing is done in realtime
-        size : max size of the queue
+        realtime: boolean indicating wether the processing is done in realtime
+        size: max size of the queue
 
     Returns:
         inputQueue
@@ -288,7 +288,7 @@ def createLIFOQueues(size):
     Create a LIFOQueue (Last In First Out)
 
     Args:
-        size : max size of the queue
+        size: max size of the queue
 
     Returns:
         inputQueue
@@ -305,7 +305,7 @@ def createFIFOQueues(size):
     Create a FIFOQueue (First In First Out)
 
     Args:
-        size : max size of the queue
+        size: max size of the queue
 
     Returns:
         inputQueue
