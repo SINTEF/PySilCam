@@ -211,14 +211,37 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
 
         # iterate on the bggen generator to obtain images
         for i, (timestamp, imc) in enumerate(bggen):
+            print('begin')
             # handle errors if the loop function fails for any reason
             if (nbImages != None):
                 if (nbImages <= i):
                     break
-            inputQueue.put_nowait((i, timestamp, imc)) # the tuple (i, timestamp, imc) is added to the inputQueue
+            try:
+                inputQueue.put_nowait((i, timestamp, imc)) # the tuple (i, timestamp, imc) is added to the inputQueue
+            except:
+                continue
             # write the images that are available for the moment into the csv file
             collector(inputQueue, outputQueue, datafilename, proc_list, False,
                       settings, rts=rts)
+
+            if not gui==None:
+                while (gui.qsize() > 0):
+                    print('flushing gui queue')
+                    try:
+                        gui.get_nowait()
+                        time.sleep(0.001)
+                    except:
+                        continue
+                #try:
+                rtdict = dict()
+                rtdict = {'dias': rts.dias,
+                        'vd_oil': rts.vd_oil,
+                        'vd_gas': rts.vd_gas,
+                        'oil_d50': rts.oil_d50,
+                        'gas_d50': rts.gas_d50}
+                gui.put_nowait((timestamp, imc, rtdict))
+                #except:
+                #    continue
 
         if (not realtime):
             for p in proc_list:
@@ -321,10 +344,6 @@ def processImage(nnmodel, class_labels, image, settings, logger, gui):
 
         #---- END MAIN PROCESSING LOOP ----
         #---- DO SOME ADMIN ----
-        if not gui==None:
-            guidata = stats_all.to_dict()
-            guidata['imc'] = imc
-            gui.put(guidata)
 
     except:
         infostr = 'Failed to process frame {0}, skipping.'.format(i)
