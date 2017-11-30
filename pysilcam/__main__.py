@@ -17,7 +17,7 @@ from pysilcam.process import statextract
 import pysilcam.postprocess as sc_pp
 import pysilcam.plotting as scplt
 import pysilcam.datalogger as datalogger
-import pysilcam.oilgas as oilgas
+import pysilcam.oilgas as scog
 from pysilcam.config import PySilcamSettings
 from skimage import color
 import imageio
@@ -198,6 +198,8 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
 
     print('* Commencing image acquisition and processing')
 
+    rts = scog.rt_stats(settings)
+
     if (multiProcess):
         proc_list = []
         mem = psutil.virtual_memory()
@@ -215,14 +217,16 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
                     break
             inputQueue.put_nowait((i, timestamp, imc)) # the tuple (i, timestamp, imc) is added to the inputQueue
             # write the images that are available for the moment into the csv file
-            collector(inputQueue, outputQueue, datafilename, proc_list, False)
+            collector(inputQueue, outputQueue, datafilename, proc_list, False,
+                      settings, rts=rts)
 
         if (not realtime):
             for p in proc_list:
                 inputQueue.put(None)
 
         # some images might still be waiting to be written to the csv file
-        collector(inputQueue, outputQueue, datafilename, proc_list, True)
+        collector(inputQueue, outputQueue, datafilename, proc_list, True,
+                  settings, rts=rts)
 
         for p in proc_list:
             p.join()
@@ -366,7 +370,8 @@ def distributor(inputQueue, outputQueue, config_filename, proc_list, gui=None):
         proc_list.append(proc)
         proc.start()
 
-def collector(inputQueue, outputQueue, datafilename, proc_list, testInputQueue):
+def collector(inputQueue, outputQueue, datafilename, proc_list, testInputQueue,
+        settings, rts=None):
     '''
     collects all the results and write them into the stats.csv file
     '''
@@ -387,6 +392,19 @@ def collector(inputQueue, outputQueue, datafilename, proc_list, testInputQueue):
             continue
 
         writeCSV(datafilename, task)
+        collect_rts(settings, rts, task)
+
+
+def collect_rts(settings, rts, stats_all):
+    if settings.Process.real_time_stats:
+        try:
+            rts.stats = rts.stats().append(stats_all)
+        except:
+            rts.stats = rts.stats.append(stats_all)
+        rts.update()
+        filename = os.path.join(settings.General.datafile,
+                'OilGasd50.csv')
+        rts.to_csv(filename)
 
 
 def writeCSV(datafilename, stats_all):
