@@ -17,7 +17,7 @@ from pysilcam.process import statextract
 import pysilcam.postprocess as sc_pp
 import pysilcam.plotting as scplt
 import pysilcam.datalogger as datalogger
-import pysilcam.oilgas as oilgas
+import pysilcam.oilgas as scog
 from pysilcam.config import PySilcamSettings
 from skimage import color
 import imageio
@@ -198,6 +198,8 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
 
     print('* Commencing image acquisition and processing')
 
+    rts = scog.rt_stats(settings)
+
     if (multiProcess):
         proc_list = []
         mem = psutil.virtual_memory()
@@ -209,22 +211,45 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
 
         # iterate on the bggen generator to obtain images
         for i, (timestamp, imc) in enumerate(bggen):
+            print('begin')
             # handle errors if the loop function fails for any reason
             if (nbImages != None):
                 if (nbImages <= i):
                     break
-
-            # the tuple (i, timestamp, imc) is added to the inputQueue
-            addToQueue(realtime, inputQueue, i, timestamp, imc)
+            try:
+                inputQueue.put_nowait((i, timestamp, imc)) # the tuple (i, timestamp, imc) is added to the inputQueue
+            except:
+                continue
             # write the images that are available for the moment into the csv file
-            collector(inputQueue, outputQueue, datafilename, proc_list, False)
+            collector(inputQueue, outputQueue, datafilename, proc_list, False,
+                      settings, rts=rts)
+
+            if not gui==None:
+                while (gui.qsize() > 0):
+                    print('flushing gui queue')
+                    try:
+                        gui.get_nowait()
+                        time.sleep(0.001)
+                    except:
+                        continue
+                #try:
+                rtdict = dict()
+                rtdict = {'dias': rts.dias,
+                        'vd_oil': rts.vd_oil,
+                        'vd_gas': rts.vd_gas,
+                        'oil_d50': rts.oil_d50,
+                        'gas_d50': rts.gas_d50}
+                gui.put_nowait((timestamp, imc, rtdict))
+                #except:
+                #    continue
 
         if (not realtime):
             for p in proc_list:
                 inputQueue.put(None)
 
         # some images might still be waiting to be written to the csv file
-        collector(inputQueue, outputQueue, datafilename, proc_list, True)
+        collector(inputQueue, outputQueue, datafilename, proc_list, True,
+                  settings, rts=rts)
 
         for p in proc_list:
             p.join()
@@ -371,10 +396,6 @@ def processImage(nnmodel, class_labels, image, settings, logger, gui):
 
         #---- END MAIN PROCESSING LOOP ----
         #---- DO SOME ADMIN ----
-        if not gui==None:
-            guidata = stats_all.to_dict()
-            guidata['imc'] = imc
-            gui.put(guidata)
 
     except:
         infostr = 'Failed to process frame {0}, skipping.'.format(i)
@@ -420,7 +441,8 @@ def distributor(inputQueue, outputQueue, config_filename, proc_list, gui=None):
         proc_list.append(proc)
         proc.start()
 
-def collector(inputQueue, outputQueue, datafilename, proc_list, testInputQueue):
+def collector(inputQueue, outputQueue, datafilename, proc_list, testInputQueue,
+        settings, rts=None):
     '''
     collects all the results and write them into the stats.csv file
     '''
@@ -441,6 +463,19 @@ def collector(inputQueue, outputQueue, datafilename, proc_list, testInputQueue):
             continue
 
         writeCSV(datafilename, task)
+        collect_rts(settings, rts, task)
+
+
+def collect_rts(settings, rts, stats_all):
+    if settings.Process.real_time_stats:
+        try:
+            rts.stats = rts.stats().append(stats_all)
+        except:
+            rts.stats = rts.stats.append(stats_all)
+        rts.update()
+        filename = os.path.join(settings.General.datafile,
+                'OilGasd50.csv')
+        rts.to_csv(filename)
 
 
 def writeCSV(datafilename, stats_all):

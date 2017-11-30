@@ -9,13 +9,15 @@ import pysilcam.oilgas as scog
 import numpy as np
 import pysilcam.postprocess as sc_pp
 import pandas as pd
+from enum import Enum
+
 
 def get_data(self):
     try:
-        stats = self.q.get(timeout=0.1)
+        rts = self.q.get(timeout=0.1)
     except:
-        stats = None
-    return stats
+        rts = None
+    return rts
 
 
 def extract_stats_im(guidata):
@@ -24,21 +26,36 @@ def extract_stats_im(guidata):
     stats = pd.DataFrame.from_dict(guidata)
     return stats, imc
 
+class process_mode(Enum):
+    process = 1
+    aquire = 2
+    real_time = 3
 
 class ProcThread(Process):
+    run_type = process_mode.process
 
     def __init__(self, datadir):
         super(ProcThread, self).__init__()
-        self.q = Queue()
+        self.q = Queue(1)
         self.info = 'ini done'
         self.datadir = datadir
         self.configfile = ''
         self.settings = ''
         self.rts = ''
+        self.disc_write = False
+        self.multi_process = True
 
 
     def run(self):
-        psc.silcam_process(self.configfile, self.datadir, gui=self.q)
+        if(self.run_type == process_mode.process):
+            psc.silcam_process(self.configfile, self.datadir, multiProcess=self.multi_process, realtime=False,
+            gui=self.q)
+        elif(self.run_type == process_mode.aquire):
+            psc.silcam_acquire(self.datadir)
+        elif(self.run_type == process_mode.real_time):
+            psc.silcam_process(self.configfile, self.datadir, multiProcess=self.multi_process, realtime=True,
+                               discWrite=self.disc_write, gui=self.q)
+
         #psc.silcam_sim(self.datadir, self.q)
 
 
@@ -63,22 +80,15 @@ class ProcThread(Process):
         if self.is_alive():
             guidata = get_data(self)
             if not guidata == None:
-                stats, imc = extract_stats_im(guidata)
-                timestamp = np.max(stats['timestamp'])
+                #stats, imc = extract_stats_im(guidata)
+                timestamp = guidata[0]
+                imc = guidata[1]
+                dias = guidata[2]['dias']
+                vd_oil = guidata[2]['vd_oil']
+                vd_gas = guidata[2]['vd_gas']
+                oil_d50 = guidata[2]['oil_d50']
+                gas_d50 = guidata[2]['gas_d50']
 
-                try:
-                    self.rts.stats = self.rts.stats().append(stats)
-                except:
-                    self.rts.stats = self.rts.stats.append(stats)
-                self.rts.update()
-                filename = os.path.join(self.settings.General.datafile,
-                    'OilGasd50.csv')
-                self.rts.to_csv(filename)
-
-                dias, vd_oil = sc_pp.vd_from_stats(self.rts.oil_stats,
-                    self.settings.PostProcess)
-                dias, vd_gas = sc_pp.vd_from_stats(self.rts.gas_stats,
-                    self.settings.PostProcess)
 
                 #infostr = data['infostr']
                 infostr = 'got data'
@@ -98,8 +108,8 @@ class ProcThread(Process):
 
                 plt.subplot(2,2,3)
                 ttlstr = (
-                        'Oil d50: {:0.0f}um'.format(self.rts.oil_d50) + '\n' +
-                        'Gas d50: {:0.0f}um'.format(self.rts.gas_d50) + '\n'
+                        'Oil d50: {:0.0f}um'.format(oil_d50) + '\n' +
+                        'Gas d50: {:0.0f}um'.format(gas_d50) + '\n'
                         )
                 plt.title(ttlstr)
                 plt.axis('off')
@@ -116,9 +126,6 @@ class ProcThread(Process):
             #except:
             #    infostr = 'failed to get data from process'
             #    print('failed to get data from process')
-
-            while not self.q.empty():
-                self.q.get_nowait()
 
             self.info = infostr
 
