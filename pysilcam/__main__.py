@@ -84,41 +84,10 @@ def silcam():
     elif args['acquire']: # this is the standard acquisition method under development now
         silcam_acquire(config_file_name=args['<configfile>'])
 
-<<<<<<< HEAD
 def silcam_acquire(config_file_name=None):
-    
-    while True:
-        t1 = time.time()
-        try:
-            aqgen = acquire(camera_config_file = config_file_name)
-            for i, (timestamp, imraw) in enumerate(aqgen):
-                filename = timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc')
-                with open(filename, 'wb') as fh:
-                    np.save(fh, imraw, allow_pickle=False)
-                    fh.flush()
-                    os.fsync(fh.fileno())
-                print('Written', filename)
-
-                t2 = time.time()
-                aq_freq = np.round(1.0/(t2 - t1), 1)
-                requested_freq = 16.0
-                rest_time = (1 / requested_freq) - (1 / aq_freq)
-                rest_time = np.max([rest_time, 0.])
-                time.sleep(rest_time)
-                actual_aq_freq = 1/(1/aq_freq + rest_time)
-                print('Image {0} acquired at frequency {1:.1f} Hz'.format(i, actual_aq_freq))
-                t1 = time.time()
-        except KeyboardInterrupt:
-            print('User interrupt with ctrl+c, terminating PySilCam.')
-            sys.exit(0)
-        except:
-            etype, emsg, etrace = sys.exc_info()
-            print('Exception occurred: {0}. Restarting acquisition.'.format(emsg))
-=======
-def silcam_acquire():
     acq = Acquire(USE_PYMBA=True) # ini class
     t1 = time.time()
-    aqgen = acq.get_generator()
+    aqgen = acq.get_generator(camera_config_file = config_file_name)
     for i, (timestamp, imraw) in enumerate(aqgen):
         filename = timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc')
         with open(filename, 'wb') as fh:
@@ -136,7 +105,6 @@ def silcam_acquire():
         actual_aq_freq = 1/(1/aq_freq + rest_time)
         print('Image {0} acquired at frequency {1:.1f} Hz'.format(i, actual_aq_freq))
         t1 = time.time()
->>>>>>> 08d81f8afb059a895f4cffe7b1ea6140345eb193
 
 
 # the standard processing method under active development

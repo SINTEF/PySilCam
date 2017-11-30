@@ -5,12 +5,9 @@ import time
 import numpy as np
 import pandas as pd
 import logging
-<<<<<<< HEAD
 from pysilcam.config import load_camera_config
-=======
 import pysilcam.fakepymba as fakepymba
 import sys
->>>>>>> 08d81f8afb059a895f4cffe7b1ea6140345eb193
 
 logger = logging.getLogger(__name__)
 
@@ -124,15 +121,10 @@ class Acquire():
             print('using fakepymba')
             self.get_generator = self.get_generator_disc
 
-<<<<<<< HEAD
-def acquire(camera_config_file=None, datapath=None):
-    '''Aquire images from SilCam'''
-=======
-    def get_generator_disc(self, datapath=None):
+    def get_generator_disc(self, datapath=None, camera_config_file=None):
         '''Aquire images from disc'''
         if datapath != None:
             os.environ['PYSILCAM_TESTDATA'] = datapath
->>>>>>> 08d81f8afb059a895f4cffe7b1ea6140345eb193
 
         self.wait_for_camera()
 
@@ -140,25 +132,13 @@ def acquire(camera_config_file=None, datapath=None):
             camera = _init_camera(vimba)
 
             #Configure camera
-            camera = _configure_camera(camera)
+            camera = _configure_camera(camera, config_file=camera_config_file)
 
             #Prepare for image acquisition and create a frame
             frame0 = camera.getFrame()
             frame0.announceFrame()
 
-<<<<<<< HEAD
-        #Configure camera
-        camera = _configure_camera(camera, config_file=camera_config_file)
-
-        #Prepare for image acquisition and create a frame
-        frame0 = camera.getFrame()
-        frame0.announceFrame()
-
-        #Aquire raw images and yield to calling context
-        try:
-=======
             #Aquire raw images and yield to calling context
->>>>>>> 08d81f8afb059a895f4cffe7b1ea6140345eb193
             while True:
                 try:
                     timestamp, img = self._acquire_frame(camera, frame0)
@@ -171,20 +151,11 @@ def acquire(camera_config_file=None, datapath=None):
                         break
 
 
-    def get_generator_camera(self, datapath=None):
+    def get_generator_camera(self, datapath=None, camera_config_file=None):
         '''Aquire images from SilCam'''
 
-<<<<<<< HEAD
-
-def acquire_rgb():
-    '''Aquire images and convert to RGB color space'''
-    for timestamp, img_bayer in acquire():
-        #@todo Implement a working Bayer->RGB conversion
-        yield timestamp, img_bayer
-=======
         if datapath != None:
             os.environ['PYSILCAM_TESTDATA'] = datapath
->>>>>>> 08d81f8afb059a895f4cffe7b1ea6140345eb193
 
         try:
             #Wait until camera wakes up
@@ -194,7 +165,7 @@ def acquire_rgb():
                 camera = _init_camera(vimba)
 
                 #Configure camera
-                camera = _configure_camera(camera)
+                camera = _configure_camera(camera, camera_config_file=None)
 
                 #Prepare for image acquisition and create a frame
                 frame0 = camera.getFrame()
