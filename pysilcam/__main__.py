@@ -85,7 +85,7 @@ def silcam():
         silcam_acquire(config_file_name=args['<configfile>'])
 
 def silcam_acquire(config_file_name=None):
-    acq = Acquire(USE_PYMBA=True) # ini class
+    acq = Acquire(USE_PYMBA=False) # ini class
     t1 = time.time()
     aqgen = acq.get_generator(camera_config_file = config_file_name)
     for i, (timestamp, imraw) in enumerate(aqgen):
