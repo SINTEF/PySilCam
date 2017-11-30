@@ -77,8 +77,6 @@ def _configure_camera(camera, config=dict()):
     return camera
 
 
-
-
 def print_camera_config(camera):
     '''Print the camera configuration'''
     config_info_map = {
@@ -113,8 +111,19 @@ class Acquire():
             print('using fakepymba')
             self.get_generator = self.get_generator_disc
 
-    def get_generator_disc(self, datapath=None):
-        '''Aquire images from disc'''
+    def get_generator_disc(self, datapath=None, writeToDisk=False):
+        '''
+        Aquire images from disc
+        
+        Args:
+            datapath: path from where the images are acquired.
+            writeToDisk: this boolean is not used in this function, but the signature has 
+                to be the same as get_generator_camera.
+
+        Yields:
+            timestamp: timestamp of the acquired image
+            img: acquired image
+        '''
         if datapath != None:
             os.environ['PYSILCAM_TESTDATA'] = datapath
 
@@ -143,35 +152,53 @@ class Acquire():
                         break
 
 
-    def get_generator_camera(self, datapath=None):
-        '''Aquire images from SilCam'''
+    def get_generator_camera(self, datapath=None, writeToDisk=False):
+        '''
+        Aquire images from Silcam
+        
+        Args:
+            datapath: path from where the images are acquired.
+            writeToDisk: boolean indicating wether the acquired 
+                images have to be written to disc.
 
+        Yields:
+            timestamp: timestamp of the acquired image.
+            img: acquired image.
+        '''
         if datapath != None:
             os.environ['PYSILCAM_TESTDATA'] = datapath
 
-        try:
-            #Wait until camera wakes up
-            self.wait_for_camera()
+        while True:
+            try:
+                #Wait until camera wakes up
+                self.wait_for_camera()
 
-            with self.pymba.Vimba() as vimba:
-                camera = _init_camera(vimba)
+                with self.pymba.Vimba() as vimba:
+                    camera = _init_camera(vimba)
 
-                #Configure camera
-                camera = _configure_camera(camera)
+                    #Configure camera
+                    camera = _configure_camera(camera)
 
-                #Prepare for image acquisition and create a frame
-                frame0 = camera.getFrame()
-                frame0.announceFrame()
+                    #Prepare for image acquisition and create a frame
+                    frame0 = camera.getFrame()
+                    frame0.announceFrame()
 
-                #Aquire raw images and yield to calling context
-                while True:
-                    timestamp, img = self._acquire_frame(camera, frame0)
-                    yield timestamp, img
-        except pymba.vimbaexception.VimbaException:
-            self.get_generator_camera(datapath=datapath)
-        except KeyboardInterrupt:
-            print('User interrupt with ctrl+c, terminating PySilCam.')
-            sys.exit(0)
+                    #Aquire raw images and yield to calling context
+                    while True:
+                        timestamp, img = self._acquire_frame(camera, frame0)
+                        if writeToDisk:
+                            filename = os.path.join(datapath, timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc'))
+                            with open(filename, 'wb') as fh:
+                                np.save(fh, img, allow_pickle=False)
+                                fh.flush()
+                                os.fsync(fh.fileno())
+                                print('Written', filename)
+                        yield timestamp, img
+            except pymba.vimbaexception.VimbaException:
+                print('Camera error. Restarting')
+            except KeyboardInterrupt:
+                print('User interrupt with ctrl+c, terminating PySilCam.')
+                sys.exit(0)
            
 
     def _acquire_frame(self, camera, frame0):
@@ -196,7 +223,7 @@ class Acquire():
 
         camera.endCapture()
 
-        return timestamp, img
+        return timestamp, img.copy()
 
     def wait_for_camera(self):
         camera = None
