@@ -112,7 +112,18 @@ class Acquire():
             self.get_generator = self.get_generator_disc
 
     def get_generator_disc(self, datapath=None, writeToDisk=False):
-        '''Aquire images from disc'''
+        '''
+        Aquire images from disc
+        
+        Args:
+            datapath: path from where the images are acquired.
+            writeToDisk: this boolean is not used in this function, but the signature has 
+                to be the same as get_generator_camera.
+
+        Yields:
+            timestamp: timestamp of the acquired image
+            img: acquired image
+        '''
         if datapath != None:
             os.environ['PYSILCAM_TESTDATA'] = datapath
 
@@ -142,8 +153,18 @@ class Acquire():
 
 
     def get_generator_camera(self, datapath=None, writeToDisk=False):
-        '''Aquire images from SilCam'''
+        '''
+        Aquire images from Silcam
+        
+        Args:
+            datapath: path from where the images are acquired.
+            writeToDisk: boolean indicating wether the acquired 
+                images have to be written to disc.
 
+        Yields:
+            timestamp: timestamp of the acquired image.
+            img: acquired image.
+        '''
         if datapath != None:
             os.environ['PYSILCAM_TESTDATA'] = datapath
 

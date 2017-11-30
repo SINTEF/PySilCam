@@ -213,7 +213,9 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
             if (nbImages != None):
                 if (nbImages <= i):
                     break
-            inputQueue.put_nowait((i, timestamp, imc)) # the tuple (i, timestamp, imc) is added to the inputQueue
+
+            # the tuple (i, timestamp, imc) is added to the inputQueue
+            addToQueue(realtime, inputQueue, i, timestamp, imc)
             # write the images that are available for the moment into the csv file
             collector(inputQueue, outputQueue, datafilename, proc_list, False)
 
@@ -250,12 +252,48 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
 
     #---- END ----
 
+def addToQueue(realtime, inputQueue, i, timestamp, imc):
+    '''
+    Put a new image into the Queue.
+
+    Args:
+        realtime : boolean indicating wether the processing is done in realtime
+        inputQueue : queue where the images are added for processing
+        i : index of the image acquired
+        timestamp : timestqmp of the acquired image
+        imc : corrected image
+    '''
+    if (realtime):
+        inputQueue.put_nowait((i, timestamp, imc))
+    else:
+        inputQueue.put((i, timestamp, imc))
 
 def defineQueues(realtime, size):
+    '''
+    Define the input and output queues depending on wether we are in realtime mode
+
+    Args:
+        realtime : boolean indicating wether the processing is done in realtime
+        size : max size of the queue
+
+    Returns:
+        inputQueue
+        outputQueue
+    '''
     createQueues = createLIFOQueues if realtime else createFIFOQueues
     return createQueues(size)
 
 def createLIFOQueues(size):
+    '''
+    Create a LIFOQueue (Last In First Out)
+
+    Args:
+        size : max size of the queue
+
+    Returns:
+        inputQueue
+        outputQueue
+    '''
     manager = MyManager()
     manager.start()
     inputQueue = manager.LifoQueue(size)
@@ -263,11 +301,24 @@ def createLIFOQueues(size):
     return inputQueue, outputQueue
 
 def createFIFOQueues(size):
+    '''
+    Create a FIFOQueue (First In First Out)
+
+    Args:
+        size : max size of the queue
+
+    Returns:
+        inputQueue
+        outputQueue
+    '''
     inputQueue = multiprocessing.Queue(size)
     outputQueue = multiprocessing.Queue(size)
     return inputQueue, outputQueue
 
 class MyManager(BaseManager):
+    ''' 
+    Customized manager class used to register LifoQueues
+    '''
     pass
 
 MyManager.register('LifoQueue', LifoQueue)
