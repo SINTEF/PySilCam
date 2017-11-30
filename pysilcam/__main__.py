@@ -108,7 +108,7 @@ def silcam():
             multiProcess = False
         silcam_process(args['<configfile>'], datapath, multiProcess=multiProcess, realtime=True, discWrite=discWrite)
 
-def silcam_acquire():
+def silcam_acquire(datapath):
     acq = Acquire(USE_PYMBA=True) # ini class
     t1 = time.time()
     aqgen = acq.get_generator()

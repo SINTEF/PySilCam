@@ -149,37 +149,44 @@ class Acquire():
         if datapath != None:
             os.environ['PYSILCAM_TESTDATA'] = datapath
 
-        try:
-            #Wait until camera wakes up
-            self.wait_for_camera()
+        while True:
+            try:
+                print('setting up camera....')
+                #Wait until camera wakes up
+                self.wait_for_camera()
 
-            with self.pymba.Vimba() as vimba:
-                camera = _init_camera(vimba)
+                with self.pymba.Vimba() as vimba:
+                    camera = _init_camera(vimba)
 
-                #Configure camera
-                camera = _configure_camera(camera)
+                    #Configure camera
+                    camera = _configure_camera(camera)
 
-                #Prepare for image acquisition and create a frame
-                frame0 = camera.getFrame()
-                frame0.announceFrame()
+                    #Prepare for image acquisition and create a frame
+                    frame0 = camera.getFrame()
+                    frame0.announceFrame()
 
-                #Aquire raw images and yield to calling context
-                while True:
-                    timestamp, img = self._acquire_frame(camera, frame0)
-                    if writeToDisk:
-                        filename = os.path.join(datapath, timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc'))
-                        with open(filename, 'wb') as fh:
-                            np.save(fh, img, allow_pickle=False)
-                            fh.flush()
-                            os.fsync(fh.fileno())
-                            print('Written', filename)
-                    yield timestamp, img
-        except pymba.vimbaexception.VimbaException:
-            # Restart the generator
-            self.get_generator_camera(datapath=datapath)
-        except KeyboardInterrupt:
-            print('User interrupt with ctrl+c, terminating PySilCam.')
-            sys.exit(0)
+                    #Aquire raw images and yield to calling context
+                    while True:
+                        print('acquiring frame')
+                        timestamp, img = self._acquire_frame(camera, frame0)
+                        if writeToDisk:
+                            print('writing to disc')
+                            filename = os.path.join(datapath, timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc'))
+                            with open(filename, 'wb') as fh:
+                                np.save(fh, img, allow_pickle=False)
+                                fh.flush()
+                                os.fsync(fh.fileno())
+                                print('Written', filename)
+                        print('yielding data')
+                        yield timestamp, img
+            except pymba.vimbaexception.VimbaException:
+                print('Camera error. Restarting')
+                # Restart the generator
+                #self.get_generator_camera(datapath=datapath,
+                #        writeToDisk=writeToDisk)
+            except KeyboardInterrupt:
+                print('User interrupt with ctrl+c, terminating PySilCam.')
+                sys.exit(0)
            
 
     def _acquire_frame(self, camera, frame0):
@@ -204,7 +211,7 @@ class Acquire():
 
         camera.endCapture()
 
-        return timestamp, img
+        return timestamp, img.copy()
 
     def wait_for_camera(self):
         camera = None
