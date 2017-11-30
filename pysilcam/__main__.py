@@ -10,7 +10,7 @@ import cProfile
 import pstats
 from io import StringIO
 from pysilcam import __version__
-from pysilcam.acquisition import acquire
+from pysilcam.acquisition import Acquire
 from pysilcam.background import backgrounder
 import pysilcam.process
 from pysilcam.process import statextract
@@ -84,6 +84,7 @@ def silcam():
     elif args['acquire']: # this is the standard acquisition method under development now
         silcam_acquire(config_file_name=args['<configfile>'])
 
+<<<<<<< HEAD
 def silcam_acquire(config_file_name=None):
     
     while True:
@@ -113,6 +114,29 @@ def silcam_acquire(config_file_name=None):
         except:
             etype, emsg, etrace = sys.exc_info()
             print('Exception occurred: {0}. Restarting acquisition.'.format(emsg))
+=======
+def silcam_acquire():
+    acq = Acquire(USE_PYMBA=True) # ini class
+    t1 = time.time()
+    aqgen = acq.get_generator()
+    for i, (timestamp, imraw) in enumerate(aqgen):
+        filename = timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc')
+        with open(filename, 'wb') as fh:
+            np.save(fh, imraw, allow_pickle=False)
+            fh.flush()
+            os.fsync(fh.fileno())
+        print('Written', filename)
+
+        t2 = time.time()
+        aq_freq = np.round(1.0/(t2 - t1), 1)
+        requested_freq = 16.0
+        rest_time = (1 / requested_freq) - (1 / aq_freq)
+        rest_time = np.max([rest_time, 0.])
+        time.sleep(rest_time)
+        actual_aq_freq = 1/(1/aq_freq + rest_time)
+        print('Image {0} acquired at frequency {1:.1f} Hz'.format(i, actual_aq_freq))
+        t1 = time.time()
+>>>>>>> 08d81f8afb059a895f4cffe7b1ea6140345eb193
 
 
 # the standard processing method under active development
@@ -154,8 +178,10 @@ def silcam_process(config_filename, datapath, multiProcess=True, nbImages=None, 
 
     logger.info('Processing path: ' + datapath)
 
+
     #Initialize the image acquisition generator
-    aqgen = acquire(datapath)
+    aq = Acquire()
+    aqgen = aq.get_generator(datapath)
 
     #Get number of images to use for background correction from config
     print('* Initializing background image handler')
@@ -186,7 +212,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, nbImages=None, 
 
 
     # If only one core is available, no multiprocessing will be done
-    multiProcess = multiProcess and multiprocessing.cpu_count() > 1
+    multiProcess = multiProcess and (multiprocessing.cpu_count() > 1)
 
     print('* Commencing image acquisition and processing')
 

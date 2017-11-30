@@ -52,5 +52,3 @@ def test_camera_config_parser():
     assert 'SyncOutSelector' in conf
     assert 'SyncOutSource' in conf
 
-if __name__ == '__main__':
-   test_camera_config_parser()

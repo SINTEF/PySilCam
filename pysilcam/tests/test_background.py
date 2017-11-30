@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 import numpy as np
-from pysilcam.acquisition import acquire
+from pysilcam.acquisition import Acquire
 from pysilcam.background import backgrounder
 
 
 def test_background_aquire():
     '''Testing background-corrected frame acquisition'''
     
-    aqgen = acquire()
+    aq = Acquire()
+    aqgen = aq.get_generator()
 
     #Check that we can generate background-corredted frames. 
     #Use 5 frames for correction.
