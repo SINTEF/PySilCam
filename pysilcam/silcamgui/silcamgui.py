@@ -17,15 +17,15 @@ import pysilcam.postprocess as scpp
 import pysilcam.plotting as scplt
 import pysilcam.datalogger as scdl
 import pysilcam.oilgas as scog
-sns.set_style('ticks')
-sns.set_context(font_scale=2)
 import cmocean
 import subprocess
 import datetime
 import pysilcam.silcamgui.guicalcs as gc
+from pysilcam.silcamgui.guicalcs import process_mode
 
+sns.set_style('ticks')
+sns.set_context(font_scale=2)
 DATADIR = os.getcwd()
-#DATADIR = '/mnt/DATA/'
 IP = '192.168.1.2'
 
 def names_to_times(names):
@@ -62,6 +62,13 @@ class controller(QMainWindow):
         QMainWindow.__init__(self, parent)
         self.ui = Ui_SilCamController()
         self.ui.setupUi(self)
+
+    def toggle_browse(self, disable):
+        self.ui.le_path_to_data.setDisabled(disable)
+        self.ui.pb_browse.setDisabled(disable)
+
+    def update_dir_path(self, dir_path):
+        self.ui.le_path_to_data.setText(dir_path)
 
 
 def main():
@@ -124,14 +131,23 @@ def main():
             self.ctrl.ui.pb_live_raw.clicked.connect(self.lv_raw_switch)
             self.ctrl.ui.pb_start.clicked.connect(self.record)
             self.ctrl.ui.pb_stop.clicked.connect(self.stop_record)
+            self.ctrl.ui.pb_browse.clicked.connect(self.change_directory)
+            self.ctrl.ui.rb_to_disc.toggled.connect(lambda: self.ctrl.toggle_browse(disable=True))
+            self.ctrl.ui.rb_to_disc.toggled.connect(lambda: self.setProcessMode(process_mode.aquire))
+            self.ctrl.ui.rb_process_historical.toggled.connect(lambda: self.ctrl.toggle_browse(disable=False))
+            self.ctrl.ui.rb_process_historical.toggled.connect(lambda: self.setProcessMode(process_mode.process))
+            self.ctrl.ui.rb_real_time.toggled.connect(lambda: self.ctrl.toggle_browse(disable=False))
+            self.ctrl.ui.rb_real_time.toggled.connect(lambda: self.setProcessMode(process_mode.real_time))
+            self.ctrl.ui.rb_to_disc.setChecked(True)
             self.status_update('opening acquisition controller')
             self.lv_raw_check()
             self.ctrl.show()
-            self.ctrl.ui.pb_start.setStyleSheet(('QPushButton {' +
-                'background-color: rgb(150,150,255) }'))
-            self.ctrl.ui.pb_stop.setStyleSheet(('QPushButton {' +
-                'background-color: rgb(150,150,255) }'))
+            self.ctrl.ui.pb_start.setStyleSheet(('QPushButton {' + 'background-color: rgb(150,150,255) }'))
+            self.ctrl.ui.pb_stop.setStyleSheet(('QPushButton {' + 'background-color: rgb(150,150,255) }'))
 
+        def setProcessMode(self, mode):
+            self.process.run_type = mode
+            app.processEvents()
 
         def monitor_switch(self):
             self.monitor_toggle = np.invert(self.monitor_toggle)
@@ -166,11 +182,9 @@ def main():
 
         def lv_raw_check(self):
             if self.lv_raw_toggle:
-                self.ctrl.ui.pb_live_raw.setStyleSheet(('QPushButton {' +
-                        'background-color: rgb(0,150,0) }'))
+                self.ctrl.ui.pb_live_raw.setStyleSheet(('QPushButton {' + 'background-color: rgb(0,150,0) }'))
             else:
-                self.ctrl.ui.pb_live_raw.setStyleSheet(('QPushButton {' +
-                        'background-color: rgb(150,150,255) }'))
+                self.ctrl.ui.pb_live_raw.setStyleSheet(('QPushButton {' + 'background-color: rgb(150,150,255) }'))
 
 
         def status_update(self, string):
@@ -187,6 +201,7 @@ def main():
                 self.process.datadir = inidir
             else:
                 self.status_update('(new directory)')
+            self.ctrl.update_dir_path(self.process.datadir)
             app.processEvents()
 
 
@@ -199,15 +214,9 @@ def main():
 
             self.status_update('STARTING SILCAM!')
             self.process.go()
-
             app.processEvents()
-
-            #psc.silcam_process('config.ini', self.datadir)
-            #self.process=subprocess.Popen(['./logsilcam.sh'])
-            self.ctrl.ui.pb_start.setStyleSheet(('QPushButton {' +
-                'background-color: rgb(0,150,0) }'))
-            self.ctrl.ui.pb_stop.setStyleSheet(('QPushButton {' +
-                'background-color: rgb(150,150,255) }'))
+            self.ctrl.ui.pb_start.setStyleSheet(('QPushButton {' + 'background-color: rgb(0,150,0) }'))
+            self.ctrl.ui.pb_stop.setStyleSheet(('QPushButton {' + 'background-color: rgb(150,150,255) }'))
             self.ctrl.ui.pb_start.setEnabled(False)
             app.processEvents()
 
