@@ -37,6 +37,15 @@ title = '''
        |___/
 '''
 
+def check_path(filename):
+   file = os.path.normpath(filename)
+   path = os.path.dirname(file)
+   if path:
+      if not os.path.isdir(path):
+         try:
+            os.makedirs(path)
+         except:
+            print('Could not create catalog:',path)
 
 def configure_logger(settings):
     '''
@@ -49,6 +58,7 @@ def configure_logger(settings):
         type: description
     '''
     if settings.logfile:
+        check_path(settings.logfile)
         logging.basicConfig(filename=settings.logfile,
                             level=getattr(logging, settings.loglevel))
     else:
