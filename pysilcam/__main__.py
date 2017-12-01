@@ -41,7 +41,9 @@ def silcam():
     '''Aquire/process images from the SilCam
 
     Usage:
+      silcam acquire [<configfile>] [-l | --liveview]
       silcam acquire <datapath>
+
       silcam process <configfile> <datapath> [--nbimages=<number of images>] [--nomultiproc]
       silcam realtime <configfile> <datapath> [--discwrite] [--nomultiproc]
       silcam -h | --help
@@ -88,7 +90,7 @@ def silcam():
         silcam_process(args['<configfile>'] ,datapath, multiProcess=multiProcess, realtime=False, nbImages=nbImages)
 
     elif args['acquire']: # this is the standard acquisition method under development now
-        silcam_acquire(args['<datapath>'])
+        silcam_acquire(config_file_name=args['<configfile>'])
 
     elif args['realtime']:
         discWrite = False
@@ -99,7 +101,7 @@ def silcam():
             multiProcess = False
         silcam_process(args['<configfile>'], datapath, multiProcess=multiProcess, realtime=True, discWrite=discWrite)
 
-def silcam_acquire(datapath):
+def silcam_acquire(datapath, config_file_name=None):
     '''Aquire images from the SilCam
 
     Args:
@@ -108,7 +110,7 @@ def silcam_acquire(datapath):
 
     acq = Acquire(USE_PYMBA=True) # ini class
     t1 = time.time()
-    aqgen = acq.get_generator()
+    aqgen = acq.get_generator(camera_config_file = config_file_name)
     for i, (timestamp, imraw) in enumerate(aqgen):
         filename = os.path.join(datapath, timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc'))
         with open(filename, 'wb') as fh:

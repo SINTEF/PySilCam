@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
-from pysilcam.config import load_config, PySilcamSettings
+from pysilcam.config import load_config, PySilcamSettings, load_camera_config
 
-
+   
 def test_config_parser():
     path = os.path.dirname(__file__)
     filename = os.path.join(path, '..', 'config_example.ini')
@@ -29,3 +29,26 @@ def test_settings():
     assert hasattr(settings, 'PostProcess')
     assert hasattr(settings, 'ExportParticles')
     assert hasattr(settings, 'NNClassify')
+
+def test_camera_config_parser():
+    path = os.path.dirname(__file__)
+    filename = os.path.join(path, '..', 'camera_config_example.ini')
+    filename = os.path.normpath(filename)
+    conf = load_camera_config(filename)
+
+    assert conf.get('configversion') != None
+    assert 'configversion' in conf
+    assert conf['configversion'] == 1
+
+    assert 'TriggerSource' in conf
+    assert 'AcquisitionMode' in conf
+    assert 'ExposureTimeAbs' in conf
+    assert 'PixelFormat' in conf
+    assert 'StrobeDuration' in conf
+    assert 'StrobeDelay' in conf
+    assert 'StrobeDurationMode' in conf
+    assert 'StrobeSource' in conf
+    assert 'SyncOutPolarity' in conf
+    assert 'SyncOutSelector' in conf
+    assert 'SyncOutSource' in conf
+

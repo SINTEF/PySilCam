@@ -5,6 +5,7 @@ import time
 import numpy as np
 import pandas as pd
 import logging
+from pysilcam.config import load_camera_config
 import pysilcam.fakepymba as fakepymba
 import sys
 
@@ -43,11 +44,18 @@ def _init_camera(vimba):
     return camera
 
 
-def _configure_camera(camera, config=dict()):
+def _configure_camera(camera, config_file=None):
     '''Configure the camera.
 
-    Config is an optioinal dictionary of parameter-value pairs.
+    Config is an optioinal dictionary of parameter-value pairs,
+    or a file name
     '''
+
+    # chek for config parser
+    if (config_file == None):
+       config = dict()
+    else:
+       config = load_camera_config(config_file)
 
     #Default settings
     camera.AcquisitionFrameRateAbs = 1
@@ -67,9 +75,9 @@ def _configure_camera(camera, config=dict()):
     #camera.GVSPPacketSize = 9194
     camera.GVSPPacketSize = 1500
 
-
     #If a config is specified, override those values
     for k, v in config.items():
+        print(k,'=',v)
         setattr(camera, k, v)
 
     return camera
@@ -109,7 +117,7 @@ class Acquire():
             print('using fakepymba')
             self.get_generator = self.get_generator_disc
 
-    def get_generator_disc(self, datapath=None, writeToDisk=False):
+    def get_generator_disc(self, datapath=None, writeToDisk=False, camera_config_file=None):
         '''
         Aquire images from disc
         
@@ -131,7 +139,7 @@ class Acquire():
             camera = _init_camera(vimba)
 
             #Configure camera
-            camera = _configure_camera(camera)
+            camera = _configure_camera(camera, config_file=camera_config_file)
 
             #Prepare for image acquisition and create a frame
             frame0 = camera.getFrame()
@@ -150,7 +158,7 @@ class Acquire():
                         break
 
 
-    def get_generator_camera(self, datapath=None, writeToDisk=False):
+    def get_generator_camera(self, datapath=None, writeToDisk=False, camera_config_file=None):
         '''
         Aquire images from Silcam
         
@@ -175,7 +183,7 @@ class Acquire():
                     camera = _init_camera(vimba)
 
                     #Configure camera
-                    camera = _configure_camera(camera)
+                    camera = _configure_camera(camera, camera_config_file)
 
                     #Prepare for image acquisition and create a frame
                     frame0 = camera.getFrame()
