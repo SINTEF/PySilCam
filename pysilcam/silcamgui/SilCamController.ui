@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>191</width>
-    <height>161</height>
+    <width>569</width>
+    <height>204</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,7 +19,7 @@
   <widget class="QPushButton" name="pb_start">
    <property name="geometry">
     <rect>
-     <x>10</x>
+     <x>390</x>
      <y>10</y>
      <width>168</width>
      <height>41</height>
@@ -41,7 +41,7 @@
   <widget class="QPushButton" name="pb_stop">
    <property name="geometry">
     <rect>
-     <x>10</x>
+     <x>390</x>
      <y>60</y>
      <width>168</width>
      <height>41</height>
@@ -63,7 +63,7 @@
   <widget class="QPushButton" name="pb_live_raw">
    <property name="geometry">
     <rect>
-     <x>10</x>
+     <x>390</x>
      <y>110</y>
      <width>168</width>
      <height>41</height>
@@ -80,6 +80,94 @@
    </property>
    <property name="flat">
     <bool>false</bool>
+   </property>
+  </widget>
+  <widget class="Line" name="line">
+   <property name="geometry">
+    <rect>
+     <x>360</x>
+     <y>10</y>
+     <width>20</width>
+     <height>141</height>
+    </rect>
+   </property>
+   <property name="orientation">
+    <enum>Qt::Vertical</enum>
+   </property>
+  </widget>
+  <widget class="QRadioButton" name="rb_to_disc">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>30</y>
+     <width>171</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Aquire images to disk</string>
+   </property>
+  </widget>
+  <widget class="QRadioButton" name="rb_process_historical">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>60</y>
+     <width>191</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Process historical data</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="le_path_to_data">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>140</y>
+     <width>331</width>
+     <height>20</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pb_browse">
+   <property name="geometry">
+    <rect>
+     <x>280</x>
+     <y>170</y>
+     <width>75</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Browse</string>
+   </property>
+  </widget>
+  <widget class="QRadioButton" name="rb_real_time">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>90</y>
+     <width>191</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Realtime processing</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="cb_store_to_disc">
+   <property name="geometry">
+    <rect>
+     <x>220</x>
+     <y>90</y>
+     <width>111</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Store to disk</string>
    </property>
   </widget>
  </widget>

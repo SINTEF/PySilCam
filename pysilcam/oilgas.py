@@ -47,6 +47,11 @@ class rt_stats():
     def __init__(self, settings):
         self.stats = pd.DataFrame
         self.settings = settings
+        self.dias = []
+        self.vd_oil = []
+        self.vd_gas = []
+        self.oil_d50 = 0
+        self.gas_d50 = 0
 
     def update(self):
         # remove data from before the specified window of seconds
@@ -63,6 +68,11 @@ class rt_stats():
             self.settings.PostProcess)
         self.gas_d50 = sc_pp.d50_from_stats(self.gas_stats,
                 self.settings.PostProcess)
+
+        self.dias, self.vd_oil = sc_pp.vd_from_stats(self.oil_stats,
+                    self.settings.PostProcess)
+        self.dias, self.vd_gas = sc_pp.vd_from_stats(self.gas_stats,
+                    self.settings.PostProcess)
 
     def to_csv(self, filename):
         df = pd.DataFrame()

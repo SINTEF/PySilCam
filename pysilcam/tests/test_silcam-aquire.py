@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 from subprocess import check_output
-import pysilcam.acquisition
+from pysilcam.acquisition import Acquire
 
 def test_acquire_five_frames():
-    '''Testing frame acquisition'''
+    '''Testing frame acquisition using fakepymba'''
+    aq = Acquire()
+    aqgen = aq.get_generator()
 
     #Check that we can generate frames
     prev_img = None
-    for i, (timestamp, img) in  enumerate(pysilcam.acquisition.acquire()):
+    for i, (timestamp, img) in  enumerate(aqgen):
         #Check that frames (images) have non-zero size
         assert(img.size > 0)
 
