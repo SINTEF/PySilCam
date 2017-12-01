@@ -92,6 +92,7 @@ def main():
             self.lvwaitseconds = 1
             self.disc_write = False
             self.run_type = process_mode.process
+            self.process = gc.ProcThread(DATADIR, self.disc_write, self.run_type)
 
             # ---- figure in middle
             f = plt.figure()
@@ -105,7 +106,6 @@ def main():
             plt.imshow(im)
             plt.axis('off')
             self.canvas.draw()
-            # ----
 
             # ---- define some callbacks
             self.ui.actionExit.triggered.connect(self.exit)
@@ -227,7 +227,6 @@ def main():
 
         def record(self):
             self.process = gc.ProcThread(DATADIR, self.disc_write, self.run_type)
-
             if self.process.settings == '':
                 self.status_update('config file not found. please load one.')
                 self.load_sc_config()
