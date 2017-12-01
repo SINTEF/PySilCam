@@ -13,8 +13,6 @@ logger = logging.getLogger(__name__)
 try:
     import pymba
 except:
-    warnings.warn('Pymba not available. Cannot use camera.', ImportWarning)
-    print('Pymba not available. Cannot use camera')
     logger.debug('Pymba not available. Cannot use camera')
 
 
