@@ -38,6 +38,12 @@ title = '''
 '''
 
 def check_path(filename):
+   '''Check if a path exist, and create it if not
+
+   Args:
+       filename (str): filame that may or may not include a path
+   '''
+
    file = os.path.normpath(filename)
    path = os.path.dirname(file)
    if path:
@@ -48,14 +54,12 @@ def check_path(filename):
             print('Could not create catalog:',path)
 
 def configure_logger(settings):
-    '''
-    Description of the function.
+    '''Configure a logger according to the setting.
 
     Args:
-        param1 (type): description
-        param2 (type): description
-    Returns:
-        type: description
+        setting (PySilcamSettings): Setting read from a .ini file
+                                    settings.logfile is optional
+                                    settings.loglevel mest exist
     '''
     if settings.logfile:
         check_path(settings.logfile)
@@ -128,6 +132,12 @@ def silcam():
         silcam_process(args['<configfile>'], datapath, multiProcess=multiProcess, realtime=True, discWrite=discWrite)
 
 def silcam_acquire(datapath):
+    '''Aquire images from the SilCam
+
+    Args:
+          datapath (str): Path to the image storage
+    '''
+
     acq = Acquire(USE_PYMBA=True) # ini class
     t1 = time.time()
     aqgen = acq.get_generator()
@@ -156,8 +166,10 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
 
     The goal is to make this as fast as possible so it can be used in real-time
 
-    Function requires the filename (including path) of the config.ini file
-    which contains the processing settings
+    Args:
+      config_filename (str):  The filename (including path) of the config.ini file
+      datapath        (str):  Oath 
+
 
     '''
     print(config_filename)
