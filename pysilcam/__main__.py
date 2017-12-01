@@ -39,6 +39,15 @@ title = '''
 
 
 def configure_logger(settings):
+    '''
+    Description of the function.
+
+    Args:
+        param1 (type): description
+        param2 (type): description
+    Returns:
+        type: description
+    '''
     if settings.logfile:
         logging.basicConfig(filename=settings.logfile,
                             level=getattr(logging, settings.loglevel))
