@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 import re
+import os
 import sys
 from setuptools import setup
 from setuptools.command.test import test as TestCommand
 from pysilcam import __version__
-
+from sphinx.setup_command import BuildDoc
+import sphinx.apidoc
+import distutils.cmd
 
 REQUIRES = [
     'docopt',
@@ -32,6 +35,33 @@ class PyTest(TestCommand):
         params["args"] +=  ["--junitxml", "test-report/output.xml"]
         errcode = pytest.main(self.test_args)
         sys.exit(errcode)
+
+class Documentation(distutils.cmd.Command):
+    description = '''Build the documentation with Sphinx.
+                   sphinx-apidoc is run for automatic generation of the sources.
+                   sphinx-build then creates the html from these sources.'''
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        command = 'sphinx-apidoc -f -o docs/source pysilcam/'
+        os.system(command)
+        with open("docs/source/pysilcam.rst", "a") as file:
+            file.write("\npysilcam\.silcam\__main__ module \n"
+                        "--------------------------------- \n\n"
+                        ".. automodule:: pysilcam.__main__ \n"
+                        "    :members: \n"
+                        "    :undoc-members: \n"
+                        "    :show-inheritance: \n")
+
+        command = 'sphinx-build -b html ./docs/source ./docs/build'
+        os.system(command)
+        sys.exit()
 
 
 def read(fname):
@@ -75,5 +105,5 @@ setup(
         ]
     },
     tests_require=['pytest'],
-    cmdclass={'test': PyTest}
+    cmdclass={'test': PyTest, 'build_sphinx': Documentation}
 )
