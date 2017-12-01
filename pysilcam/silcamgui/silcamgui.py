@@ -92,7 +92,8 @@ def main():
             self.lvwaitseconds = 1
             self.disc_write = False
             self.run_type = process_mode.process
-            self.process = gc.ProcThread(DATADIR, self.disc_write, self.run_type)
+            self.datadir = DATADIR
+            self.process = gc.ProcThread(self.datadir, self.disc_write, self.run_type)
 
             # ---- figure in middle
             f = plt.figure()
@@ -172,8 +173,8 @@ def main():
         def monitor_switch(self):
             self.monitor_toggle = np.invert(self.monitor_toggle)
             if self.monitor_toggle:
-                self.status_update('monitoring ' + self.process.datadir)
-                self.status_update(' ' + self.process.datadir)
+                self.status_update('monitoring ' + self.datadir)
+                self.status_update(' ' + self.datadir)
                 self.monitor()
             else:
                 self.status_update(' drive monitor disabled')
@@ -208,25 +209,25 @@ def main():
 
 
         def status_update(self, string):
-            string = string + '  |  Directory: ' + self.process.datadir
+            string = string + '  |  Directory: ' + self.datadir
             self.ui.statusBar.setText(string)
             app.processEvents()
 
 
         def change_directory(self):
-            inidir = self.process.datadir
-            self.process.datadir=QFileDialog.getExistingDirectory(self,'open',
-                    self.process.datadir,QFileDialog.ShowDirsOnly)
-            if self.process.datadir == '':
-                self.process.datadir = inidir
+            inidir = self.datadir
+            self.datadir=QFileDialog.getExistingDirectory(self,'open',
+                    self.datadir,QFileDialog.ShowDirsOnly)
+            if self.datadir == '':
+                self.datadir = inidir
             else:
                 self.status_update('(new directory)')
-            self.ctrl.update_dir_path(self.process.datadir)
+            self.ctrl.update_dir_path(self.datadir)
             app.processEvents()
 
 
         def record(self):
-            self.process = gc.ProcThread(DATADIR, self.disc_write, self.run_type)
+            self.process = gc.ProcThread(self.datadir, self.disc_write, self.run_type)
             if self.process.settings == '':
                 self.status_update('config file not found. please load one.')
                 self.load_sc_config()
@@ -262,7 +263,7 @@ def main():
         def load_sc_config(self):
             self.process.configfile = QFileDialog.getOpenFileName(self,
                     caption = 'Load config ini file',
-                    directory = self.process.datadir,
+                    directory = self.datadir,
                     filter = (('*.ini'))
                     )[0]
             if self.process.configfile == '':

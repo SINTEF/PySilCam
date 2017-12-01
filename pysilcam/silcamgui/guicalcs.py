@@ -48,12 +48,12 @@ class ProcThread(Process):
 
     def run(self):
         if(self.run_type == process_mode.process):
-            psc.silcam_process(self.configfile, self.datadir, multiProcess=self.multi_process, realtime=False,
+            psc.silcam_process(self.configfile, self.datadir, multiProcess=True, realtime=False,
             gui=self.q)
         elif(self.run_type == process_mode.aquire):
             psc.silcam_acquire(self.datadir)
         elif(self.run_type == process_mode.real_time):
-            psc.silcam_process(self.configfile, self.datadir, multiProcess=self.multi_process, realtime=True,
+            psc.silcam_process(self.configfile, self.datadir, multiProcess=True, realtime=True,
                                discWrite=self.disc_write, gui=self.q)
 
         #psc.silcam_sim(self.datadir, self.q)
