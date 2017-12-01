@@ -5,6 +5,7 @@ import os
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QPushButton, QWidget,
 QAction, QTabWidget,QVBoxLayout, QFileDialog)
 from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtCore import pyqtSlot
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
 import matplotlib
@@ -66,6 +67,9 @@ class controller(QMainWindow):
     def toggle_browse(self, disable):
         self.ui.le_path_to_data.setDisabled(disable)
         self.ui.pb_browse.setDisabled(disable)
+
+    def toggle_write_to_disc(self, disable):
+        self.ui.cb_store_to_disc.setDisabled(disable)
 
     def update_dir_path(self, dir_path):
         self.ui.le_path_to_data.setText(dir_path)
@@ -133,11 +137,18 @@ def main():
             self.ctrl.ui.pb_stop.clicked.connect(self.stop_record)
             self.ctrl.ui.pb_browse.clicked.connect(self.change_directory)
             self.ctrl.ui.rb_to_disc.toggled.connect(lambda: self.ctrl.toggle_browse(disable=True))
+            self.ctrl.ui.rb_to_disc.toggled.connect(lambda: self.ctrl.toggle_write_to_disc(disable=True))
+            self.ctrl.ui.rb_to_disc.toggled.connect(lambda checked: self.ctrl.ui.cb_store_to_disc.setChecked(checked))
             self.ctrl.ui.rb_to_disc.toggled.connect(lambda: self.setProcessMode(process_mode.aquire))
             self.ctrl.ui.rb_process_historical.toggled.connect(lambda: self.ctrl.toggle_browse(disable=False))
+            self.ctrl.ui.rb_process_historical.toggled.connect(lambda: self.ctrl.toggle_write_to_disc(disable=True))
+            self.ctrl.ui.rb_process_historical.toggled.connect(
+                lambda checked: self.ctrl.ui.cb_store_to_disc.setChecked(False))
             self.ctrl.ui.rb_process_historical.toggled.connect(lambda: self.setProcessMode(process_mode.process))
             self.ctrl.ui.rb_real_time.toggled.connect(lambda: self.ctrl.toggle_browse(disable=False))
+            self.ctrl.ui.rb_real_time.toggled.connect(lambda: self.ctrl.toggle_write_to_disc(disable=False))
             self.ctrl.ui.rb_real_time.toggled.connect(lambda: self.setProcessMode(process_mode.real_time))
+            self.ctrl.ui.cb_store_to_disc.toggled.connect(lambda checked: self.setStoreToDisc(checked))
             self.ctrl.ui.rb_to_disc.setChecked(True)
             self.status_update('opening acquisition controller')
             self.lv_raw_check()
@@ -148,6 +159,10 @@ def main():
         def setProcessMode(self, mode):
             self.process.run_type = mode
             app.processEvents()
+
+        @pyqtSlot(bool, name='checked')
+        def setStoreToDisc(self, checked):
+            self.process.disc_write = checked
 
         def monitor_switch(self):
             self.monitor_toggle = np.invert(self.monitor_toggle)
