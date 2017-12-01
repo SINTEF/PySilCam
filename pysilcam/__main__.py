@@ -37,38 +37,6 @@ title = '''
        |___/
 '''
 
-def check_path(filename):
-   '''Check if a path exist, and create it if not
-
-   Args:
-       filename (str): filame that may or may not include a path
-   '''
-
-   file = os.path.normpath(filename)
-   path = os.path.dirname(file)
-   if path:
-      if not os.path.isdir(path):
-         try:
-            os.makedirs(path)
-         except:
-            print('Could not create catalog:',path)
-
-def configure_logger(settings):
-    '''Configure a logger according to the setting.
-
-    Args:
-        setting (PySilcamSettings): Setting read from a .ini file
-                                    settings.logfile is optional
-                                    settings.loglevel mest exist
-    '''
-    if settings.logfile:
-        check_path(settings.logfile)
-        logging.basicConfig(filename=settings.logfile,
-                            level=getattr(logging, settings.loglevel))
-    else:
-        logging.basicConfig(level=getattr(logging, settings.loglevel))
-
-
 def silcam():
     '''Aquire/process images from the SilCam
 
@@ -528,3 +496,36 @@ def writeCSV(datafilename, stats_all):
 
 def silcam_process_batch():
     print('Placeholder for silcam-process-batch entry point')
+
+
+def check_path(filename):
+   '''Check if a path exist, and create it if not
+
+   Args:
+       filename (str): filame that may or may not include a path
+   '''
+
+   file = os.path.normpath(filename)
+   path = os.path.dirname(file)
+   if path:
+      if not os.path.isdir(path):
+         try:
+            os.makedirs(path)
+         except:
+            print('Could not create catalog:',path)
+
+def configure_logger(settings):
+    '''Configure a logger according to the setting.
+
+    Args:
+        setting (PySilcamSettings): Setting read from a .ini file
+                                    settings.logfile is optional
+                                    settings.loglevel mest exist
+    '''
+    if settings.logfile:
+        check_path(settings.logfile)
+        logging.basicConfig(filename=settings.logfile,
+                            level=getattr(logging, settings.loglevel))
+    else:
+        logging.basicConfig(level=getattr(logging, settings.loglevel))
+
