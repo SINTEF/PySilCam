@@ -90,7 +90,8 @@ def main():
             self.lv_raw_toggle = False
             self.monitor_toggle = False
             self.lvwaitseconds = 1
-            self.process = gc.ProcThread(DATADIR)
+            self.disc_write = False
+            self.run_type = process_mode.process
 
             # ---- figure in middle
             f = plt.figure()
@@ -136,19 +137,23 @@ def main():
             self.ctrl.ui.pb_start.clicked.connect(self.record)
             self.ctrl.ui.pb_stop.clicked.connect(self.stop_record)
             self.ctrl.ui.pb_browse.clicked.connect(self.change_directory)
+
             self.ctrl.ui.rb_to_disc.toggled.connect(lambda: self.ctrl.toggle_browse(disable=True))
             self.ctrl.ui.rb_to_disc.toggled.connect(lambda: self.ctrl.toggle_write_to_disc(disable=True))
             self.ctrl.ui.rb_to_disc.toggled.connect(lambda checked: self.ctrl.ui.cb_store_to_disc.setChecked(checked))
             self.ctrl.ui.rb_to_disc.toggled.connect(lambda: self.setProcessMode(process_mode.aquire))
+
             self.ctrl.ui.rb_process_historical.toggled.connect(lambda: self.ctrl.toggle_browse(disable=False))
             self.ctrl.ui.rb_process_historical.toggled.connect(lambda: self.ctrl.toggle_write_to_disc(disable=True))
             self.ctrl.ui.rb_process_historical.toggled.connect(
                 lambda checked: self.ctrl.ui.cb_store_to_disc.setChecked(False))
             self.ctrl.ui.rb_process_historical.toggled.connect(lambda: self.setProcessMode(process_mode.process))
+
             self.ctrl.ui.rb_real_time.toggled.connect(lambda: self.ctrl.toggle_browse(disable=False))
             self.ctrl.ui.rb_real_time.toggled.connect(lambda: self.ctrl.toggle_write_to_disc(disable=False))
             self.ctrl.ui.rb_real_time.toggled.connect(lambda: self.setProcessMode(process_mode.real_time))
             self.ctrl.ui.cb_store_to_disc.toggled.connect(lambda checked: self.setStoreToDisc(checked))
+
             self.ctrl.ui.rb_to_disc.setChecked(True)
             self.status_update('opening acquisition controller')
             self.lv_raw_check()
@@ -157,12 +162,12 @@ def main():
             self.ctrl.ui.pb_stop.setStyleSheet(('QPushButton {' + 'background-color: rgb(150,150,255) }'))
 
         def setProcessMode(self, mode):
-            self.process.run_type = mode
+            self.run_type = mode
             app.processEvents()
 
         @pyqtSlot(bool, name='checked')
         def setStoreToDisc(self, checked):
-            self.process.disc_write = checked
+            self.disc_write = checked
 
         def monitor_switch(self):
             self.monitor_toggle = np.invert(self.monitor_toggle)
@@ -221,6 +226,8 @@ def main():
 
 
         def record(self):
+            self.process = gc.ProcThread(DATADIR, self.disc_write, self.run_type)
+
             if self.process.settings == '':
                 self.status_update('config file not found. please load one.')
                 self.load_sc_config()
@@ -243,7 +250,6 @@ def main():
             self.status_update('KILLING SILCAM PROCESS')
             self.status_update('  ----  ')
                 #subprocess.call('killall silcam-acquire', shell=True)
-            self.process = gc.ProcThread(self.process.datadir)
             app.processEvents()
 
             self.ctrl.ui.pb_start.setStyleSheet(('QPushButton {' +
