@@ -224,7 +224,7 @@ def main():
             if self.process.settings == '':
                 self.status_update('config file not found. please load one.')
                 self.load_sc_config()
-                if self.process.settings == '':
+                if self.process.configfile == '':
                     return
 
             self.status_update('STARTING SILCAM!')
@@ -262,7 +262,7 @@ def main():
                     )[0]
             if self.process.configfile == '':
                 return
-            self.process.load_settings(self.process.configfile)
+            #self.process.load_settings(self.process.configfile)
 
 
         def closeEvent(self, event):
