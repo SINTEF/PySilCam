@@ -211,7 +211,6 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
 
         # iterate on the bggen generator to obtain images
         for i, (timestamp, imc) in enumerate(bggen):
-            print('begin')
             # handle errors if the loop function fails for any reason
             if (nbImages != None):
                 if (nbImages <= i):
@@ -226,7 +225,6 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
 
             if not gui==None:
                 while (gui.qsize() > 0):
-                    print('flushing gui queue')
                     try:
                         gui.get_nowait()
                         time.sleep(0.001)
