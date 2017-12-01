@@ -46,9 +46,10 @@ def _init_camera(vimba):
 
 def _configure_camera(camera, config_file=None):
     '''Configure the camera.
+       Setting camera default values, and override with values found in the config file
 
-    Config is an optioinal dictionary of parameter-value pairs,
-    or a file name
+    Args:
+      config_file=None (str) : File of the camera config file
     '''
 
     # chek for config parser

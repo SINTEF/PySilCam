@@ -14,7 +14,18 @@ logger = logging.getLogger(__name__)
 __configversion__ = 2
 
 def load_config(filename):
-    '''Load config file and validate content'''
+    '''Load config file and validate content
+    
+    Args:
+      filename (str) : filename including path
+
+    Raises:
+      RuntimeError when file rcould not be read
+
+    Returs:
+      ConfigParser with the file parsed
+
+    '''
     #Check that the file exists
     if not os.path.exists(filename):
         raise RuntimeError('Config file not found: {0}'.format(filename))
@@ -59,7 +70,16 @@ class PySilcamSettings:
             self.__dict__[sec] = C(**cursec)
 
 def load_camera_config(filename):
-    '''Load camera config file and validate content'''
+    '''Load camera config file and validate content
+   
+    
+    Args:
+      filename (str) : filename including path to camera config file
+
+    Returs:
+      dict() with key value pairs of camera settings  
+    
+    '''
 
     # Return an empty dict if the file is not ok
     config = dict();

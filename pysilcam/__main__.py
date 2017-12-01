@@ -105,7 +105,8 @@ def silcam_acquire(datapath, config_file_name=None):
     '''Aquire images from the SilCam
 
     Args:
-          datapath (str): Path to the image storage
+       datapath              (str)  : Path to the image storage
+       config_file_name=None (str)  : Camera config file
     '''
 
     acq = Acquire(USE_PYMBA=True) # ini class
@@ -137,9 +138,13 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     The goal is to make this as fast as possible so it can be used in real-time
 
     Args:
-      config_filename (str):  The filename (including path) of the config.ini file
-      datapath        (str):  Oath 
-
+      config_filename   (str) :  The filename (including path) of the config.ini file
+      datapath          (str) :  Path to the data directory
+      multiProcess=True (bool):  True if multiprocessing is uses
+      realtime=False    (bool):
+      discWrite=False   (bool):
+      nbImages=None     (int) :  Number of mages to skip
+      gui=None          ()    :
 
     '''
     print(config_filename)
@@ -281,11 +286,11 @@ def addToQueue(realtime, inputQueue, i, timestamp, imc):
     Put a new image into the Queue.
 
     Args:
-        realtime: boolean indicating wether the processing is done in realtime
-        inputQueue: queue where the images are added for processing
-        i: index of the image acquired
-        timestamp: timestqmp of the acquired image
-        imc: corrected image
+        realtime     (bool): boolean indicating wether the processing is done in realtime
+        inputQueue   ()   : queue where the images are added for processing
+        i            (int) : index of the image acquired
+        timestamp    ()   : timestqmp of the acquired image
+        imc          ()   : corrected image
     '''
     if (realtime):
         try:
