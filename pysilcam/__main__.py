@@ -143,7 +143,6 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     '''
     print(config_filename)
 
-    print('PROCESS MODE')
     print('')
     #---- SETUP ----
 
@@ -205,27 +204,35 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
         mem = psutil.virtual_memory()
         memAvailableMb = mem.available >> 20
                 
+        logger.debug('setting up processing queues')
         inputQueue, outputQueue = defineQueues(realtime, int(memAvailableMb / 2 * 1/15))
       
+        logger.debug('setting up processing distributor')
         distributor(inputQueue, outputQueue, config_filename, proc_list, gui)
 
         # iterate on the bggen generator to obtain images
+        logger.debug('Starting acquisition loop')
         for i, (timestamp, imc) in enumerate(bggen):
-            print('begin')
+            logger.debug('Corrected image ' + str(timestamp) +
+                        ' acquired from backgrounder')
             # handle errors if the loop function fails for any reason
             if (nbImages != None):
                 if (nbImages <= i):
                     break
 
+            logger.debug('Adding data to processing Queue')
             addToQueue(realtime, inputQueue, i, timestamp, imc) # the tuple (i, timestamp, imc) is added to the inputQueue
+            logger.debug('Processing queue updated')
 
             # write the images that are available for the moment into the csv file
+            logger.debug('Collecting data')
             collector(inputQueue, outputQueue, datafilename, proc_list, False,
                       settings, rts=rts)
+            logger.debug('Data collected')
 
             if not gui==None:
+                logger.debug('adding data to GUI queue')
                 while (gui.qsize() > 0):
-                    print('flushing gui queue')
                     try:
                         gui.get_nowait()
                         time.sleep(0.001)
@@ -239,16 +246,22 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
                         'oil_d50': rts.oil_d50,
                         'gas_d50': rts.gas_d50}
                 gui.put_nowait((timestamp, imc, rtdict))
-                #except:
-                #    continue
+                logger.debug('GUI queue updated')
 
+            logger.dsebug('end of acquisition loop')
+
+
+        logger.debug('Acquisition loop finished')
         if (not realtime):
+            logger.debug('Halting processes')
             for p in proc_list:
                 inputQueue.put(None)
 
         # some images might still be waiting to be written to the csv file
+        logger.debug('Collecting remaining data')
         collector(inputQueue, outputQueue, datafilename, proc_list, True,
                   settings, rts=rts)
+        logger.debug('All data collected')
 
         for p in proc_list:
             p.join()
@@ -424,7 +437,8 @@ def loop(config_filename, inputQueue, outputQueue, gui=None):
             break
         stats_all = processImage(nnmodel, class_labels, task, settings, logger, gui)
 
-        if not stats_all is None:
+        if (not stats_all is None):
+            logger.debug('adding stats to processing output queue')
             outputQueue.put(stats_all)
 
 
@@ -495,6 +509,3 @@ def writeCSV(datafilename, stats_all):
         stats_all.to_csv(datafilename + '-STATS.csv',
                 mode='a', header=False)
 
-
-def silcam_process_batch():
-    print('Placeholder for silcam-process-batch entry point')
