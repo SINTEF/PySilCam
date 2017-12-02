@@ -212,7 +212,11 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
 
         # iterate on the bggen generator to obtain images
         logger.debug('Starting acquisition loop')
+        t2 = time.time()
         for i, (timestamp, imc) in enumerate(bggen):
+            t1 = np.copy(t2)
+            t2 = time.time()
+            print(t2-t1, 'Acquisition loop time')
             logger.debug('Corrected image ' + str(timestamp) +
                         ' acquired from backgrounder')
             # handle errors if the loop function fails for any reason
