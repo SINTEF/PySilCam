@@ -248,8 +248,6 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
                 gui.put_nowait((timestamp, imc, rtdict))
                 logger.debug('GUI queue updated')
 
-            logger.dsebug('end of acquisition loop')
-
 
         logger.debug('Acquisition loop finished')
         if (not realtime):
@@ -437,7 +435,7 @@ def loop(config_filename, inputQueue, outputQueue, gui=None):
             break
         stats_all = processImage(nnmodel, class_labels, task, settings, logger, gui)
 
-        if (not stats_all is None):
+        if not stats_all is None:
             logger.debug('adding stats to processing output queue')
             outputQueue.put(stats_all)
 

@@ -268,7 +268,10 @@ def main():
                     )[0]
             if self.process.configfile == '':
                 return
-            #self.process.load_settings(self.process.configfile)
+
+            # move current directory to the config file folder in order to
+            # handle relative paths fened from the config file
+            os.chdir(os.path.split(self.process.configfile)[0])
 
 
         def closeEvent(self, event):
