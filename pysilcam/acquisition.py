@@ -46,35 +46,22 @@ def _init_camera(vimba):
 
 def _configure_camera(camera, config_file=None):
     '''Configure the camera.
-       Setting camera default values, and override with values found in the config file
-
     Args:
-      config_file=None (str) : File of the camera config file
+       config_file (str)    : Configuration file                           
+    Returns:
+      camera       (Camera) : The camera with settings from the congig
+
     '''
 
-    # chek for config parser
-    if (config_file == None):
-       config = dict()
-    else:
-       config = load_camera_config(config_file)
+    # Read the configiration values from default config file
+    defaultpath = os.path.dirname(os.path.abspath(__file__))
+    defaultfile = os.path.join(defaultpath,'camera_config_defaults.ini')
+    config = load_camera_config(defaultfile)
 
-    #Default settings
-    camera.AcquisitionFrameRateAbs = 1
-    camera.TriggerSource = 'FixedRate'
-    camera.AcquisitionMode = 'SingleFrame'
-    camera.ExposureTimeAbs = 30000
-    #camera.PixelFormat = 'BayerRG8'
-    camera.PixelFormat = 'RGB8Packed'
-    camera.StrobeDuration = 600
-    camera.StrobeDelay = 0
-    camera.StrobeDurationMode = 'Controlled'
-    camera.StrobeSource = 'FrameTriggerReady'
-    camera.SyncOutPolarity = 'Normal'
-    camera.SyncOutSelector = 'SyncOut1'
-    camera.SyncOutSource = 'Strobe1'
-
-    #camera.GVSPPacketSize = 9194
-    camera.GVSPPacketSize = 1500
+    # Read the configiration values from users config file
+    # The values found in this file, overrides those fro the default file
+    # The rest keep the values from the defaults file
+    config = load_camera_config(config_file, config)
 
     #If a config is specified, override those values
     for k, v in config.items():

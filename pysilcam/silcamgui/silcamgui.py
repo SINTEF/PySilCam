@@ -5,6 +5,7 @@ import os
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QPushButton, QWidget,
 QAction, QTabWidget,QVBoxLayout, QFileDialog)
 from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtCore import pyqtSlot
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
 import matplotlib
@@ -67,6 +68,9 @@ class controller(QMainWindow):
         self.ui.le_path_to_data.setDisabled(disable)
         self.ui.pb_browse.setDisabled(disable)
 
+    def toggle_write_to_disc(self, disable):
+        self.ui.cb_store_to_disc.setDisabled(disable)
+
     def update_dir_path(self, dir_path):
         self.ui.le_path_to_data.setText(dir_path)
 
@@ -86,7 +90,10 @@ def main():
             self.lv_raw_toggle = False
             self.monitor_toggle = False
             self.lvwaitseconds = 1
-            self.process = gc.ProcThread(DATADIR)
+            self.disc_write = False
+            self.run_type = process_mode.process
+            self.datadir = DATADIR
+            self.process = gc.ProcThread(self.datadir, self.disc_write, self.run_type)
 
             # ---- figure in middle
             f = plt.figure()
@@ -100,7 +107,6 @@ def main():
             plt.imshow(im)
             plt.axis('off')
             self.canvas.draw()
-            # ----
 
             # ---- define some callbacks
             self.ui.actionExit.triggered.connect(self.exit)
@@ -132,12 +138,23 @@ def main():
             self.ctrl.ui.pb_start.clicked.connect(self.record)
             self.ctrl.ui.pb_stop.clicked.connect(self.stop_record)
             self.ctrl.ui.pb_browse.clicked.connect(self.change_directory)
+
             self.ctrl.ui.rb_to_disc.toggled.connect(lambda: self.ctrl.toggle_browse(disable=True))
+            self.ctrl.ui.rb_to_disc.toggled.connect(lambda: self.ctrl.toggle_write_to_disc(disable=True))
+            self.ctrl.ui.rb_to_disc.toggled.connect(lambda checked: self.ctrl.ui.cb_store_to_disc.setChecked(checked))
             self.ctrl.ui.rb_to_disc.toggled.connect(lambda: self.setProcessMode(process_mode.aquire))
+
             self.ctrl.ui.rb_process_historical.toggled.connect(lambda: self.ctrl.toggle_browse(disable=False))
+            self.ctrl.ui.rb_process_historical.toggled.connect(lambda: self.ctrl.toggle_write_to_disc(disable=True))
+            self.ctrl.ui.rb_process_historical.toggled.connect(
+                lambda checked: self.ctrl.ui.cb_store_to_disc.setChecked(False))
             self.ctrl.ui.rb_process_historical.toggled.connect(lambda: self.setProcessMode(process_mode.process))
+
             self.ctrl.ui.rb_real_time.toggled.connect(lambda: self.ctrl.toggle_browse(disable=False))
+            self.ctrl.ui.rb_real_time.toggled.connect(lambda: self.ctrl.toggle_write_to_disc(disable=False))
             self.ctrl.ui.rb_real_time.toggled.connect(lambda: self.setProcessMode(process_mode.real_time))
+            self.ctrl.ui.cb_store_to_disc.toggled.connect(lambda checked: self.setStoreToDisc(checked))
+
             self.ctrl.ui.rb_to_disc.setChecked(True)
             self.status_update('opening acquisition controller')
             self.lv_raw_check()
@@ -146,14 +163,18 @@ def main():
             self.ctrl.ui.pb_stop.setStyleSheet(('QPushButton {' + 'background-color: rgb(150,150,255) }'))
 
         def setProcessMode(self, mode):
-            self.process.run_type = mode
+            self.run_type = mode
             app.processEvents()
+
+        @pyqtSlot(bool, name='checked')
+        def setStoreToDisc(self, checked):
+            self.disc_write = checked
 
         def monitor_switch(self):
             self.monitor_toggle = np.invert(self.monitor_toggle)
             if self.monitor_toggle:
-                self.status_update('monitoring ' + self.process.datadir)
-                self.status_update(' ' + self.process.datadir)
+                self.status_update('monitoring ' + self.datadir)
+                self.status_update(' ' + self.datadir)
                 self.monitor()
             else:
                 self.status_update(' drive monitor disabled')
@@ -188,28 +209,29 @@ def main():
 
 
         def status_update(self, string):
-            string = string + '  |  Directory: ' + self.process.datadir
+            string = string + '  |  Directory: ' + self.datadir
             self.ui.statusBar.setText(string)
             app.processEvents()
 
 
         def change_directory(self):
-            inidir = self.process.datadir
-            self.process.datadir=QFileDialog.getExistingDirectory(self,'open',
-                    self.process.datadir,QFileDialog.ShowDirsOnly)
-            if self.process.datadir == '':
-                self.process.datadir = inidir
+            inidir = self.datadir
+            self.datadir=QFileDialog.getExistingDirectory(self,'open',
+                    self.datadir,QFileDialog.ShowDirsOnly)
+            if self.datadir == '':
+                self.datadir = inidir
             else:
                 self.status_update('(new directory)')
-            self.ctrl.update_dir_path(self.process.datadir)
+            self.ctrl.update_dir_path(self.datadir)
             app.processEvents()
 
 
         def record(self):
+            self.process = gc.ProcThread(self.datadir, self.disc_write, self.run_type)
             if self.process.settings == '':
                 self.status_update('config file not found. please load one.')
                 self.load_sc_config()
-                if self.process.settings == '':
+                if self.process.configfile == '':
                     return
 
             self.status_update('STARTING SILCAM!')
@@ -228,7 +250,6 @@ def main():
             self.status_update('KILLING SILCAM PROCESS')
             self.status_update('  ----  ')
                 #subprocess.call('killall silcam-acquire', shell=True)
-            self.process = gc.ProcThread(self.process.datadir)
             app.processEvents()
 
             self.ctrl.ui.pb_start.setStyleSheet(('QPushButton {' +
@@ -242,12 +263,12 @@ def main():
         def load_sc_config(self):
             self.process.configfile = QFileDialog.getOpenFileName(self,
                     caption = 'Load config ini file',
-                    directory = self.process.datadir,
+                    directory = self.datadir,
                     filter = (('*.ini'))
                     )[0]
             if self.process.configfile == '':
                 return
-            self.process.load_settings(self.process.configfile)
+            #self.process.load_settings(self.process.configfile)
 
 
         def closeEvent(self, event):

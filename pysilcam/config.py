@@ -69,7 +69,7 @@ class PySilcamSettings:
             C = namedtuple(sec, cursec.keys())
             self.__dict__[sec] = C(**cursec)
 
-def load_camera_config(filename):
+def load_camera_config(filename, config=None):
     '''Load camera config file and validate content
    
     
@@ -81,12 +81,25 @@ def load_camera_config(filename):
     
     '''
 
-    # Return an empty dict if the file is not ok
-    config = dict();
+    Args:
+      filename (str)  : file name of the config file
+                        do nothing if the file could not be read
+      config   (dict) : a dictionary to add key-values to
+                        creates an ampty dict if its None
+
+    Returns:
+      config  (dict) : 
+      
+    '''
+
+    if (config == None):
+      config = dict()
 
     #Check that the file exists
     if (filename == None):
         return config
+
+    filename = os.path.normpath(filename)
 
     if not os.path.exists(filename):
         print('Camera config file not found: {0}'.format(filename))
