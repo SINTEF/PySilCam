@@ -75,21 +75,12 @@ def load_camera_config(filename, config=None):
     
     Args:
       filename (str) : filename including path to camera config file
-
-    Returs:
-      dict() with key value pairs of camera settings  
-    
-    '''
-
-    Args:
-      filename (str)  : file name of the config file
-                        do nothing if the file could not be read
       config   (dict) : a dictionary to add key-values to
                         creates an ampty dict if its None
 
     Returns:
-      config  (dict) : 
-      
+      dict() with key value pairs of camera settings  
+    
     '''
 
     if (config == None):
