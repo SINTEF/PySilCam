@@ -216,10 +216,9 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
             if (nbImages != None):
                 if (nbImages <= i):
                     break
-            try:
-                inputQueue.put_nowait((i, timestamp, imc)) # the tuple (i, timestamp, imc) is added to the inputQueue
-            except:
-                continue
+
+            addToQueue(realtime, inputQueue, i, timestamp, imc) # the tuple (i, timestamp, imc) is added to the inputQueue
+
             # write the images that are available for the moment into the csv file
             collector(inputQueue, outputQueue, datafilename, proc_list, False,
                       settings, rts=rts)

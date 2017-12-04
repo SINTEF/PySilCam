@@ -34,7 +34,7 @@ class process_mode(Enum):
 class ProcThread(Process):
     run_type = process_mode.process
 
-    def __init__(self, datadir):
+    def __init__(self, datadir, disc_write, run_type):
         super(ProcThread, self).__init__()
         self.q = Queue(1)
         self.info = 'ini done'
@@ -42,18 +42,18 @@ class ProcThread(Process):
         self.configfile = ''
         self.settings = ''
         self.rts = ''
-        self.disc_write = False
-        self.multi_process = True
+        self.disc_write = disc_write
+        self.run_type = run_type
 
 
     def run(self):
         if(self.run_type == process_mode.process):
-            psc.silcam_process(self.configfile, self.datadir, multiProcess=self.multi_process, realtime=False,
+            psc.silcam_process(self.configfile, self.datadir, multiProcess=True, realtime=False,
             gui=self.q)
         elif(self.run_type == process_mode.aquire):
             psc.silcam_acquire(self.datadir)
         elif(self.run_type == process_mode.real_time):
-            psc.silcam_process(self.configfile, self.datadir, multiProcess=self.multi_process, realtime=True,
+            psc.silcam_process(self.configfile, self.datadir, multiProcess=True, realtime=True,
                                discWrite=self.disc_write, gui=self.q)
 
         #psc.silcam_sim(self.datadir, self.q)
