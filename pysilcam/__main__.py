@@ -50,9 +50,7 @@ def silcam():
     '''Aquire/process images from the SilCam
 
     Usage:
-      silcam acquire [<configfile>] [-l | --liveview]
-      silcam acquire <datapath>
-
+      silcam acquire <datapath> [<configfile>]
       silcam process <configfile> <datapath> [--nbimages=<number of images>] [--nomultiproc]
       silcam realtime <configfile> <datapath> [--discwrite] [--nomultiproc]
       silcam -h | --help
@@ -99,7 +97,7 @@ def silcam():
         silcam_process(args['<configfile>'] ,datapath, multiProcess=multiProcess, realtime=False, nbImages=nbImages)
 
     elif args['acquire']: # this is the standard acquisition method under development now
-        silcam_acquire(config_file_name=args['<configfile>'])
+        silcam_acquire(datapath, config_file_name=args['<configfile>'])
 
     elif args['realtime']:
         discWrite = False
