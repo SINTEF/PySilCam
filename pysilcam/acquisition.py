@@ -46,8 +46,10 @@ def _init_camera(vimba):
 
 def _configure_camera(camera, config_file=None):
     '''Configure the camera.
+
     Args:
-       config_file (str)    : Configuration file                           
+       config_file (str)    : Configuration file
+
     Returns:
       camera       (Camera) : The camera with settings from the congig
 

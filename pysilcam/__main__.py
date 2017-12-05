@@ -138,10 +138,10 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     Args:
       config_filename   (str) :  The filename (including path) of the config.ini file
       datapath          (str) :  Path to the data directory
-      multiProcess=True (bool):  True if multiprocessing is uses
+      multiProcess=True (bool):  If True, multiprocessing is used
       realtime=False    (bool):
       discWrite=False   (bool):
-      nbImages=None     (int) :  Number of mages to skip
+      nbImages=None     (int) :  Number of images to skip
       gui=None          ()    :
 
     '''
@@ -284,10 +284,10 @@ def addToQueue(realtime, inputQueue, i, timestamp, imc):
 
     Args:
         realtime     (bool): boolean indicating wether the processing is done in realtime
-        inputQueue   ()   : queue where the images are added for processing
+        inputQueue   ()    : queue where the images are added for processing
         i            (int) : index of the image acquired
-        timestamp    ()   : timestqmp of the acquired image
-        imc          ()   : corrected image
+        timestamp    ()    : timestamp of the acquired image
+        imc          ()    : corrected image
     '''
     if (realtime):
         try:
@@ -302,7 +302,7 @@ def defineQueues(realtime, size):
     Define the input and output queues depending on wether we are in realtime mode
 
     Args:
-        realtime: boolean indicating wether the processing is done in realtime
+        realtime: boolean indicating whether the processing is done in realtime
         size: max size of the queue
 
     Returns:
@@ -503,7 +503,7 @@ def silcam_process_batch():
 
 
 def check_path(filename):
-   '''Check if a path exist, and create it if not
+   '''Check if a path exists, and create it if not
 
    Args:
        filename (str): filame that may or may not include a path
@@ -519,12 +519,12 @@ def check_path(filename):
             print('Could not create catalog:',path)
 
 def configure_logger(settings):
-    '''Configure a logger according to the setting.
+    '''Configure a logger according to the settings.
 
     Args:
-        setting (PySilcamSettings): Setting read from a .ini file
-                                    settings.logfile is optional
-                                    settings.loglevel mest exist
+        settings (PySilcamSettings): Settings read from a .ini file
+                                     settings.logfile is optional
+                                     settings.loglevel mest exist
     '''
     if settings.logfile:
         check_path(settings.logfile)
