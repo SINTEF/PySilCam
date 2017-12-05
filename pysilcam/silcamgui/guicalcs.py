@@ -123,9 +123,6 @@ class ProcThread(Process):
                 plt.title(ttlstr)
 
                 plt.tight_layout()
-            #except:
-            #    infostr = 'failed to get data from process'
-            #    print('failed to get data from process')
 
             self.info = infostr
 

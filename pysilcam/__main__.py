@@ -100,6 +100,13 @@ def silcam():
         silcam_process(args['<configfile>'], datapath, multiProcess=multiProcess, realtime=True, discWrite=discWrite)
 
 def silcam_acquire(datapath, config_file_name=None):
+    '''Aquire images from the SilCam
+
+    Args:
+       datapath              (str)  : Path to the image storage
+       config_file_name=None (str)  : Camera config file
+    '''
+
     acq = Acquire(USE_PYMBA=True) # ini class
     t1 = time.time()
     aqgen = acq.get_generator(camera_config_file = config_file_name)
@@ -128,8 +135,14 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
 
     The goal is to make this as fast as possible so it can be used in real-time
 
-    Function requires the filename (including path) of the config.ini file
-    which contains the processing settings
+    Args:
+      config_filename   (str) :  The filename (including path) of the config.ini file
+      datapath          (str) :  Path to the data directory
+      multiProcess=True (bool):  If True, multiprocessing is used
+      realtime=False    (bool):
+      discWrite=False   (bool):
+      nbImages=None     (int) :  Number of images to skip
+      gui=None          ()    :
 
     '''
     print(config_filename)
@@ -202,7 +215,6 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
 
         # iterate on the bggen generator to obtain images
         for i, (timestamp, imc) in enumerate(bggen):
-            print('begin')
             # handle errors if the loop function fails for any reason
             if (nbImages != None):
                 if (nbImages <= i):
@@ -216,7 +228,6 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
 
             if not gui==None:
                 while (gui.qsize() > 0):
-                    print('flushing gui queue')
                     try:
                         gui.get_nowait()
                         time.sleep(0.001)
@@ -272,11 +283,11 @@ def addToQueue(realtime, inputQueue, i, timestamp, imc):
     Put a new image into the Queue.
 
     Args:
-        realtime: boolean indicating wether the processing is done in realtime
-        inputQueue: queue where the images are added for processing
-        i: index of the image acquired
-        timestamp: timestqmp of the acquired image
-        imc: corrected image
+        realtime     (bool): boolean indicating wether the processing is done in realtime
+        inputQueue   ()    : queue where the images are added for processing
+        i            (int) : index of the image acquired
+        timestamp    ()    : timestamp of the acquired image
+        imc          ()    : corrected image
     '''
     if (realtime):
         try:
@@ -291,7 +302,7 @@ def defineQueues(realtime, size):
     Define the input and output queues depending on wether we are in realtime mode
 
     Args:
-        realtime: boolean indicating wether the processing is done in realtime
+        realtime: boolean indicating whether the processing is done in realtime
         size: max size of the queue
 
     Returns:
@@ -492,6 +503,12 @@ def silcam_process_batch():
 
 
 def check_path(filename):
+   '''Check if a path exists, and create it if not
+
+   Args:
+       filename (str): filame that may or may not include a path
+   '''
+
    file = os.path.normpath(filename)
    path = os.path.dirname(file)
    if path:
@@ -502,9 +519,17 @@ def check_path(filename):
             print('Could not create catalog:',path)
 
 def configure_logger(settings):
+    '''Configure a logger according to the settings.
+
+    Args:
+        settings (PySilcamSettings): Settings read from a .ini file
+                                     settings.logfile is optional
+                                     settings.loglevel mest exist
+    '''
     if settings.logfile:
         check_path(settings.logfile)
         logging.basicConfig(filename=settings.logfile,
                             level=getattr(logging, settings.loglevel))
     else:
         logging.basicConfig(level=getattr(logging, settings.loglevel))
+
