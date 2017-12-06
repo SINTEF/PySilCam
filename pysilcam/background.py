@@ -44,7 +44,7 @@ def shift_bgstack(bgstack, imbg, imnew, stacklength):
     return bgstack, imbg
 
 
-def correct_im(imbg, imraw):
+def correct_im_old(imbg, imraw):
     '''corrects raw image by subtracting the background
     inputs:
       imbg (the actual background averaged image)
@@ -58,6 +58,7 @@ def correct_im(imbg, imraw):
     #imc[:,:,1] += 255 - np.percentile(imc[:,:,1], 99)
     #imc[:,:,2] += 255 - np.percentile(imc[:,:,2], 99)
     imc += 255 - np.percentile(imc, 99)
+    #imc += 255 - imc.max()
 
     imc[imc>255] = 255
     imc[imc<0] = 0
@@ -66,7 +67,7 @@ def correct_im(imbg, imraw):
     return imc
 
 
-def correct_im_old(imbg, imraw):
+def correct_im(imbg, imraw):
     '''corrects raw image by subtracting the background
     inputs:
       imbg (the actual background averaged image)
@@ -77,9 +78,8 @@ def correct_im_old(imbg, imraw):
     '''
     imc = imraw - imbg
 
-    m = imc.max()
-    imc += 255/2.
-#    imc += 255-m
+    #imc += 255/2.
+    imc += 200
     imc[imc<0] = 0
     imc[imc>255] = 255
     imc = np.uint8(imc)
