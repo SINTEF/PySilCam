@@ -483,7 +483,6 @@ def collector(inputQueue, outputQueue, datafilename, proc_list, testInputQueue,
 
 def collect_rts(settings, rts, stats_all):
     if settings.Process.real_time_stats:
-        logger.debug('Collecting realtime stats')
         try:
             rts.stats = rts.stats().append(stats_all)
         except:
@@ -498,8 +497,6 @@ def writeCSV(datafilename, stats_all):
     '''
     writes into the csv ouput file
     '''
-
-    logger.debug('Writing stats csv')
     # create or append particle statistics to output file
     # if the output file does not already exist, create it
     # otherwise data will be appended
