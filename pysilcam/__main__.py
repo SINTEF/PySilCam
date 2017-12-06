@@ -203,10 +203,10 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
         proc_list = []
         mem = psutil.virtual_memory()
         memAvailableMb = mem.available >> 20
-                
+
         logger.debug('setting up processing queues')
         inputQueue, outputQueue = defineQueues(realtime, int(memAvailableMb / 2 * 1/15))
-      
+
         logger.debug('setting up processing distributor')
         distributor(inputQueue, outputQueue, config_filename, proc_list, gui)
 
@@ -224,18 +224,18 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
                 if (nbImages <= i):
                     break
 
-            logger.debug('Adding data to processing Queue')
+            logger.debug('Adding image to processing queue: ' + str(timestamp))
             addToQueue(realtime, inputQueue, i, timestamp, imc) # the tuple (i, timestamp, imc) is added to the inputQueue
             logger.debug('Processing queue updated')
 
             # write the images that are available for the moment into the csv file
-            logger.debug('Collecting data')
+            logger.debug('Running collector')
             collector(inputQueue, outputQueue, datafilename, proc_list, False,
                       settings, rts=rts)
             logger.debug('Data collected')
 
             if not gui==None:
-                logger.debug('adding data to GUI queue')
+                logger.debug('Putting data on GUI Queue')
                 while (gui.qsize() > 0):
                     try:
                         gui.get_nowait()
@@ -252,15 +252,14 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
                 gui.put_nowait((timestamp, imc, rtdict))
                 logger.debug('GUI queue updated')
 
-
-        logger.debug('Acquisition loop finished')
+        logger.debug('Acquisition loop completed')
         if (not realtime):
             logger.debug('Halting processes')
             for p in proc_list:
                 inputQueue.put(None)
 
         # some images might still be waiting to be written to the csv file
-        logger.debug('Collecting remaining data')
+        logger.debug('Running collector on left over data')
         collector(inputQueue, outputQueue, datafilename, proc_list, True,
                   settings, rts=rts)
         logger.debug('All data collected')
@@ -285,7 +284,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
             # one single image is processed at a time
             stats_all = processImage(nnmodel, class_labels, image, settings, logger, gui)
 
-            if (not stats_all is None): # if frame processed 
+            if (not stats_all is None): # if frame processed
                 # write the image into the csv file
                 writeCSV( datafilename, stats_all)
 
@@ -358,7 +357,7 @@ def createFIFOQueues(size):
     return inputQueue, outputQueue
 
 class MyManager(BaseManager):
-    ''' 
+    '''
     Customized manager class used to register LifoQueues
     '''
     pass
@@ -439,16 +438,17 @@ def loop(config_filename, inputQueue, outputQueue, gui=None):
             break
         stats_all = processImage(nnmodel, class_labels, task, settings, logger, gui)
 
-        if not stats_all is None:
-            logger.debug('adding stats to processing output queue')
+        if (not stats_all is None):
             outputQueue.put(stats_all)
+        else:
+            logger.debug('No stats found. skipping image.')
 
 
 def distributor(inputQueue, outputQueue, config_filename, proc_list, gui=None):
     '''
     distributes the images in the input queue to the different loop processes
     '''
-    
+
     numCores = max(1, multiprocessing.cpu_count() - 2)
 
     for nbCore in range(numCores):
@@ -483,6 +483,7 @@ def collector(inputQueue, outputQueue, datafilename, proc_list, testInputQueue,
 
 def collect_rts(settings, rts, stats_all):
     if settings.Process.real_time_stats:
+        logger.debug('Collecting realtime stats')
         try:
             rts.stats = rts.stats().append(stats_all)
         except:
@@ -498,6 +499,7 @@ def writeCSV(datafilename, stats_all):
     writes into the csv ouput file
     '''
 
+    logger.debug('Writing stats csv')
     # create or append particle statistics to output file
     # if the output file does not already exist, create it
     # otherwise data will be appended

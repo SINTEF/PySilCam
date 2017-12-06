@@ -40,7 +40,7 @@ def im2bw_fancy(imc, greythresh):
     # some flicker in the illumination by tracking the 50th percentile of the
     # image histogram
     thresh = np.uint8(greythresh * np.percentile(img, 50))
-    
+
     # create a segmented image using the crude threshold
     #imbw1 = np.invert(img > thresh)
     imbw1 = img < thresh
@@ -50,7 +50,7 @@ def im2bw_fancy(imc, greythresh):
     img_adapteq = skimage.exposure.equalize_adapthist(img,
             clip_limit=(1-greythresh),
             nbins=256)
-    
+
     # use the equalised image to estimate a second semi-automated threshold
     newthresh = np.percentile(img_adapteq, 0.75) * greythresh
 
@@ -103,7 +103,7 @@ def filter_bad_stats(stats,settings):
     ''' remove unacceptable particles from the stats
     '''
     # calculate minor-major axis ratio
-    mmr = stats['minor_axis_length'] / stats['major_axis_length']   
+    mmr = stats['minor_axis_length'] / stats['major_axis_length']
     # remove stats where particles are too deformed
     stats = stats[mmr > settings.Process.min_deformation]
 
@@ -138,7 +138,7 @@ def concentration_check(imbw, settings):
     set_check is a flag, which is True if the image is acceptable
     saturation is the percentaage saturated
     '''
-    
+
     # calcualte the area covered by particles in the binary image
     covered_area = float(imbw.sum())
 
@@ -226,7 +226,7 @@ def measure_particles(imbw, imc, settings, timestamp, nnmodel, class_labels):
 
 def statextract(imc, settings, timestamp, nnmodel, class_labels):
     '''extracts statistics of particles in imc (raw corrected image)
-    
+
     returns:
       stats (list of particle statistics for every particle, according to
       Partstats class)
@@ -292,14 +292,14 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
         data[i, :] = [getattr(el, p) for p in propnames]
         bboxes[i, :] = el.bbox
 
-        # Find particles that match export criteria 
+        # Find particles that match export criteria
         if ((data[i, 0] > settings.ExportParticles.min_length) & #major_axis_length in pixels
             (data[i, 1] > 2)): # minor length in pixels
-            
+
             nb_extractable_part += 1
             # extract the region of interest from the corrected colour image
             roi = extract_roi(imc,bboxes[i, :].astype(int))
-            
+
             # add the roi to the HDF5 file
             filenames[int(i)] = filename + '-PN' + str(i)
             if settings.ExportParticles.export_images:
@@ -322,8 +322,8 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
     # put particle statistics into a DataFrame
     stats = pd.DataFrame(columns=column_names, data=cat_data)
 
-    logger.info('EXTRACTING {0} IMAGES from {1}'.format(nb_extractable_part, len(stats['major_axis_length']))) 
-    
+    logger.info('EXTRACTING {0} IMAGES from {1}'.format(nb_extractable_part, len(stats['major_axis_length'])))
+
     # add classification predictions to the particle statistics data
     for n,c in enumerate(class_labels):
        stats['probability_' + c] = predictions[:,n]
