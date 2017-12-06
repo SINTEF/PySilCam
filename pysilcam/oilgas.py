@@ -50,8 +50,8 @@ class rt_stats():
         self.dias = []
         self.vd_oil = []
         self.vd_gas = []
-        self.oil_d50 = 0
-        self.gas_d50 = 0
+        self.oil_d50 = np.nan
+        self.gas_d50 = np.nan
 
     def update(self):
         # remove data from before the specified window of seconds
