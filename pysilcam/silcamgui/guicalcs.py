@@ -108,8 +108,8 @@ class ProcThread(Process):
 
                 plt.subplot(2,2,3)
                 ttlstr = (
-                        'Oil d50: {:0.0f}um'.format(oil_d50) + '\n' +
-                        'Gas d50: {:0.0f}um'.format(gas_d50) + '\n'
+                        'Oil d50: {:0.0f} [um]'.format(oil_d50) + '\n' +
+                        'Gas d50: {:0.0f} [um]'.format(gas_d50) + '\n'
                         )
                 plt.title(ttlstr)
                 plt.axis('off')
