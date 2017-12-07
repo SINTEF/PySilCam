@@ -147,6 +147,7 @@ def nd(stats, settings, ax, line=None, c='k', sample_volume=1.):
     return line
 
 
+
 def show_imc(imc, mag=2):
     PIX_SIZE = 35.2 / 2448 * 1000
     r, c = np.shape(imc[:,:,0])

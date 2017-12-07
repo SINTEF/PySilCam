@@ -271,14 +271,14 @@ def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
             continue
 
         # contrast exploding:
-        particle_image = explode_contrast(particle_image)
+        #particle_image = explode_contrast(particle_image)
         particle_image = np.float64(particle_image)
 
         # eye-candy normalization:
-        peak = np.median(particle_image.flatten())
-        bm = brightness - peak
-        particle_image = np.float64(particle_image) + bm
-        particle_image[particle_image>255] = 255
+        #peak = np.median(particle_image.flatten())
+        #bm = brightness - peak
+        #particle_image = np.float64(particle_image) + bm
+        #particle_image[particle_image>255] = 255
 
 
         # tighpack checks fitting within the canvas based on an approximation
@@ -425,6 +425,27 @@ def extract_nth_longest(stats,settings,n=0):
     stats.sort_values(by=['major_axis_length'], ascending=False, inplace=True)
     stats = stats.iloc[n]
     return stats
+
+
+def d50_timeseries(stats, settings, window_size=10):
+    ''' Calcualtes time series of d50 from stats
+    '''
+    stats = stats.sort_values(by='timestamp')
+
+    td = pd.to_timedelta('00:00:' + str(window_size))
+    d50 = []
+    time = []
+
+    u = pd.to_datetime(stats['timestamp'].unique())
+
+    for t in u:
+        dt = pd.to_datetime(t)
+        stats_ = stats[(pd.to_datetime(stats['timestamp'])<(dt)) & (pd.to_datetime(stats['timestamp'])>(dt-td))]
+        d50.append(d50_from_stats(stats_, settings))
+        time.append(t)
+
+    return d50, time
+
 
 
 def explode_contrast(im):
