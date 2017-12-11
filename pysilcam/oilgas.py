@@ -30,7 +30,7 @@ def extract_gas(stats, THRESH=0.9):
     return stats
 
 
-def extract_oil(stats, THRESH=0.9):
+def extract_oil(stats, THRESH=1):
     ma = stats['minor_axis_length'] / stats['major_axis_length']
     stats = stats[ma>0.3]
     stats = stats[stats['solidity']>0.98]
@@ -189,13 +189,18 @@ class PathLength():
         self.ser.write(bytes(sendstring,'latin-1'))
         time.sleep(0.1)
         readout1 = self.ser.read(1000)
+        readpos = self.readpos()
+        print ('Setpoint: %d' %newpos)
+        print('Actual pos: %d' %readpos)
+
+    def readpos(self):
         sendstring = self.makepacket('p',1,0)
         self.ser.write(bytes(sendstring,'latin-1'))
         time.sleep(0.1)
         readout2 = self.ser.read(1000)
         readpos = int.from_bytes(bytearray(readout2[5:9]),byteorder='big')
-        print ('Setpoint: %d' %newpos)
-        print('Actual pos: %d' %readpos)
+        return readpos
+
         
     def convert_pos(self, pos):
         '''takes mm and converts to integer thousandths of an inch
