@@ -108,17 +108,21 @@ def silcam():
             multiProcess = False
         silcam_process(args['<configfile>'], datapath, multiProcess=multiProcess, realtime=True, discWrite=discWrite)
 
-def silcam_acquire(datapath):
+def silcam_acquire(datapath, gui=None, writeToDisk=False):
     acq = Acquire(USE_PYMBA=True) # ini class
     t1 = time.time()
-    aqgen = acq.get_generator()
+    aqgen = acq.get_generator(datapath=datapath, writeToDisk=writeToDisk)
+
     for i, (timestamp, imraw) in enumerate(aqgen):
-        filename = os.path.join(datapath, timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc'))
-        with open(filename, 'wb') as fh:
-            np.save(fh, imraw, allow_pickle=False)
-            fh.flush()
-            os.fsync(fh.fileno())
-        print('Written', filename)
+
+        if False:
+            for i, (timestamp, imraw) in enumerate(aqgen):
+                filename = os.path.join(datapath, timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc'))
+                with open(filename, 'wb') as fh:
+                    np.save(fh, imraw, allow_pickle=False)
+                    fh.flush()
+                    os.fsync(fh.fileno())
+                print('Written', filename)
 
         t2 = time.time()
         aq_freq = np.round(1.0/(t2 - t1), 1)
@@ -129,6 +133,22 @@ def silcam_acquire(datapath):
         actual_aq_freq = 1/(1/aq_freq + rest_time)
         print('Image {0} acquired at frequency {1:.1f} Hz'.format(i, actual_aq_freq))
         t1 = time.time()
+
+        if not gui==None:
+            while (gui.qsize() > 0):
+                try:
+                    gui.get_nowait()
+                    time.sleep(0.001)
+                except:
+                    continue
+            #try:
+            rtdict = dict()
+            rtdict = {'dias': 0,
+                    'vd_oil': 0,
+                    'vd_gas': 0,
+                    'oil_d50': 0,
+                    'gas_d50': 0}
+            gui.put_nowait((timestamp, imraw, rtdict))
 
 # the standard processing method under active development
 def silcam_process(config_filename, datapath, multiProcess=True, realtime=False, discWrite=False, nbImages=None, gui=None):

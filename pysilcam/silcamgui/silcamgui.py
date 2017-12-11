@@ -139,9 +139,12 @@ def main():
             self.ctrl.ui.pb_stop.clicked.connect(self.stop_record)
             self.ctrl.ui.pb_browse.clicked.connect(self.change_directory)
 
-            self.ctrl.ui.rb_to_disc.toggled.connect(lambda: self.ctrl.toggle_browse(disable=True))
-            self.ctrl.ui.rb_to_disc.toggled.connect(lambda: self.ctrl.toggle_write_to_disc(disable=True))
-            self.ctrl.ui.rb_to_disc.toggled.connect(lambda checked: self.ctrl.ui.cb_store_to_disc.setChecked(checked))
+            self.ctrl.ui.rb_to_disc.toggled.connect(lambda:
+                    self.ctrl.toggle_browse(disable=False))
+            self.ctrl.ui.rb_to_disc.toggled.connect(lambda:
+                    self.ctrl.toggle_write_to_disc(disable=False))
+            self.ctrl.ui.rb_to_disc.toggled.connect(lambda checked:
+                    self.ctrl.ui.cb_store_to_disc.setChecked(False))
             self.ctrl.ui.rb_to_disc.toggled.connect(lambda: self.setProcessMode(process_mode.aquire))
 
             self.ctrl.ui.rb_process_historical.toggled.connect(lambda: self.ctrl.toggle_browse(disable=False))
