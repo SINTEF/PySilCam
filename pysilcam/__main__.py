@@ -37,20 +37,11 @@ title = '''
        |___/
 '''
 
-
-def configure_logger(settings):
-    if settings.logfile:
-        logging.basicConfig(filename=settings.logfile,
-                            level=getattr(logging, settings.loglevel))
-    else:
-        logging.basicConfig(level=getattr(logging, settings.loglevel))
-
-
 def silcam():
     '''Aquire/process images from the SilCam
 
     Usage:
-      silcam acquire <datapath>
+      silcam acquire <datapath> [<configfile>]
       silcam process <configfile> <datapath> [--nbimages=<number of images>] [--nomultiproc]
       silcam realtime <configfile> <datapath> [--discwrite] [--nomultiproc]
       silcam -h | --help
@@ -97,7 +88,7 @@ def silcam():
         silcam_process(args['<configfile>'] ,datapath, multiProcess=multiProcess, realtime=False, nbImages=nbImages)
 
     elif args['acquire']: # this is the standard acquisition method under development now
-        silcam_acquire(args['<datapath>'])
+        silcam_acquire(datapath, config_file_name=args['<configfile>'])
 
     elif args['realtime']:
         discWrite = False
@@ -109,22 +100,18 @@ def silcam():
         silcam_process(args['<configfile>'], datapath, multiProcess=multiProcess, realtime=True, discWrite=discWrite)
 
 
-def silcam_acquire(datapath, writeToDisk=False, gui=None):
+def silcam_acquire(datapath, config_file_name=None, writeToDisk=False, gui=None):
+    '''Aquire images from the SilCam
+
+    Args:
+       datapath              (str)  : Path to the image storage
+       config_file_name=None (str)  : Camera config file
+    '''
     acq = Acquire(USE_PYMBA=True) # ini class
     t1 = time.time()
-    aqgen = acq.get_generator(datapath, writeToDisk=writeToDisk)
+    aqgen = acq.get_generator(datapath, camera_config_file=config_file_name, writeToDisk=writeToDisk)
 
     for i, (timestamp, imraw) in enumerate(aqgen):
-
-        if False:
-            for i, (timestamp, imraw) in enumerate(aqgen):
-                filename = os.path.join(datapath, timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc'))
-                with open(filename, 'wb') as fh:
-                    np.save(fh, imraw, allow_pickle=False)
-                    fh.flush()
-                    os.fsync(fh.fileno())
-                print('Written', filename)
-
         t2 = time.time()
         aq_freq = np.round(1.0/(t2 - t1), 1)
         requested_freq = 16.0
@@ -158,8 +145,14 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
 
     The goal is to make this as fast as possible so it can be used in real-time
 
-    Function requires the filename (including path) of the config.ini file
-    which contains the processing settings
+    Args:
+      config_filename   (str) :  The filename (including path) of the config.ini file
+      datapath          (str) :  Path to the data directory
+      multiProcess=True (bool):  If True, multiprocessing is used
+      realtime=False    (bool):
+      discWrite=False   (bool):
+      nbImages=None     (int) :  Number of images to skip
+      gui=None          ()    :
 
     '''
     print(config_filename)
@@ -235,11 +228,14 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
         logger.debug('Starting acquisition loop')
         t2 = time.time()
         for i, (timestamp, imc) in enumerate(bggen):
+<<<<<<< HEAD
             t1 = np.copy(t2)
             t2 = time.time()
             print(t2-t1, 'Acquisition loop time')
             logger.debug('Corrected image ' + str(timestamp) +
                         ' acquired from backgrounder')
+=======
+>>>>>>> 4a1f5f8af583e26ed87c1d22e09098b9a47892fa
             # handle errors if the loop function fails for any reason
             if (nbImages != None):
                 if (nbImages <= i):
@@ -316,11 +312,11 @@ def addToQueue(realtime, inputQueue, i, timestamp, imc):
     Put a new image into the Queue.
 
     Args:
-        realtime: boolean indicating wether the processing is done in realtime
-        inputQueue: queue where the images are added for processing
-        i: index of the image acquired
-        timestamp: timestqmp of the acquired image
-        imc: corrected image
+        realtime     (bool): boolean indicating wether the processing is done in realtime
+        inputQueue   ()    : queue where the images are added for processing
+        i            (int) : index of the image acquired
+        timestamp    ()    : timestamp of the acquired image
+        imc          ()    : corrected image
     '''
     if (realtime):
         try:
@@ -335,7 +331,7 @@ def defineQueues(realtime, size):
     Define the input and output queues depending on wether we are in realtime mode
 
     Args:
-        realtime: boolean indicating wether the processing is done in realtime
+        realtime: boolean indicating whether the processing is done in realtime
         size: max size of the queue
 
     Returns:
@@ -531,3 +527,42 @@ def writeCSV(datafilename, stats_all):
         stats_all.to_csv(datafilename + '-STATS.csv',
                 mode='a', header=False)
 
+<<<<<<< HEAD
+=======
+
+def silcam_process_batch():
+    print('Placeholder for silcam-process-batch entry point')
+
+
+def check_path(filename):
+   '''Check if a path exists, and create it if not
+
+   Args:
+       filename (str): filame that may or may not include a path
+   '''
+
+   file = os.path.normpath(filename)
+   path = os.path.dirname(file)
+   if path:
+      if not os.path.isdir(path):
+         try:
+            os.makedirs(path)
+         except:
+            print('Could not create catalog:',path)
+
+def configure_logger(settings):
+    '''Configure a logger according to the settings.
+
+    Args:
+        settings (PySilcamSettings): Settings read from a .ini file
+                                     settings.logfile is optional
+                                     settings.loglevel mest exist
+    '''
+    if settings.logfile:
+        check_path(settings.logfile)
+        logging.basicConfig(filename=settings.logfile,
+                            level=getattr(logging, settings.loglevel))
+    else:
+        logging.basicConfig(level=getattr(logging, settings.loglevel))
+
+>>>>>>> 4a1f5f8af583e26ed87c1d22e09098b9a47892fa

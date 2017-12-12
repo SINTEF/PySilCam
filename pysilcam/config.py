@@ -8,11 +8,24 @@ import ast
 from collections import namedtuple
 import logging
 
+logger = logging.getLogger(__name__)
+
 # This is the required version of the configuration file
 __configversion__ = 2
 
 def load_config(filename):
-    '''Load config file and validate content'''
+    '''Load config file and validate content
+    
+    Args:
+      filename (str) : filename including path
+
+    Raises:
+      RuntimeError when file could not be read
+
+    Returns:
+      ConfigParser with the file parsed
+
+    '''
     #Check that the file exists
     if not os.path.exists(filename):
         raise RuntimeError('Config file not found: {0}'.format(filename))
@@ -55,3 +68,58 @@ class PySilcamSettings:
                 cursec[k] = parsed_val
             C = namedtuple(sec, cursec.keys())
             self.__dict__[sec] = C(**cursec)
+
+def load_camera_config(filename, config=None):
+    '''Load camera config file and validate content
+    
+    Args:
+      filename (str) : filename including path to camera config file
+      config   (dict) : a dictionnary to store key-values. If config does not exist, an empty dict is created
+
+    Returns:
+      dict() with key value pairs of camera settings  
+    
+    '''
+
+    if (config == None):
+       config = dict()
+
+    #Check that the file exists
+    if (filename == None):
+       return config
+
+    filename = os.path.normpath(filename)
+
+    if not os.path.exists(filename):
+       print('Camera config file not found: {0}'.format(filename))
+       logger.debug('Camera config file not found: {0}'.format(filename))
+       return config
+
+    #Create SafeConfigParser and make it case sensitive
+    config_parser = configparser.SafeConfigParser()
+    config_parser.optionxform = str
+
+    #Populate the parser from the file
+    files_parsed = config_parser.read(filename)
+    if filename not in files_parsed:
+       logger.debug('Could not parse camera config file {0}'.format(filename))
+       return config
+
+    try:
+       if not config_parser.has_section('Camera'):
+          logger.debug('No Camera section in ini file:', filename)
+          return config
+
+       # File is read, find the camera section
+       for k, v in config_parser.items('Camera'):
+          try:
+             parsed_val = ast.literal_eval(v)
+          except:
+             parsed_val = v
+          config[k] = parsed_val
+
+    except:
+       logger.debug('Could not read camera config file:', filename)
+
+    # return the configuration as a dict
+    return config

@@ -5,6 +5,7 @@ import time
 import numpy as np
 import pandas as pd
 import logging
+from pysilcam.config import load_camera_config
 import pysilcam.fakepymba as fakepymba
 import sys
 
@@ -13,8 +14,6 @@ logger = logging.getLogger(__name__)
 try:
     import pymba
 except:
-    warnings.warn('Pymba not available. Cannot use camera.', ImportWarning)
-    print('Pymba not available. Cannot use camera')
     logger.debug('Pymba not available. Cannot use camera')
 
 
@@ -45,33 +44,30 @@ def _init_camera(vimba):
     return camera
 
 
-def _configure_camera(camera, config=dict()):
+def _configure_camera(camera, config_file=None):
     '''Configure the camera.
 
-    Config is an optioinal dictionary of parameter-value pairs.
+    Args:
+       config_file (str)    : Configuration file
+
+    Returns:
+      camera       (Camera) : The camera with settings from the congig
+
     '''
 
-    #Default settings
-    camera.AcquisitionFrameRateAbs = 1
-    camera.TriggerSource = 'FixedRate'
-    camera.AcquisitionMode = 'SingleFrame'
-    camera.ExposureTimeAbs = 200
-    #camera.PixelFormat = 'BayerRG8'
-    camera.PixelFormat = 'RGB8Packed'
-    camera.StrobeDuration = 200
-    camera.StrobeDelay = 0
-    camera.StrobeDurationMode = 'Controlled'
-    camera.StrobeSource = 'FrameTriggerReady'
-    camera.SyncOutPolarity = 'Normal'
-    camera.SyncOutSelector = 'SyncOut1'
-    camera.SyncOutSource = 'Strobe1'
+    # Read the configiration values from default config file
+    defaultpath = os.path.dirname(os.path.abspath(__file__))
+    defaultfile = os.path.join(defaultpath,'camera_config_defaults.ini')
+    config = load_camera_config(defaultfile)
 
-    #camera.GVSPPacketSize = 9194
-    camera.GVSPPacketSize = 1500
-
+    # Read the configiration values from users config file
+    # The values found in this file, overrides those fro the default file
+    # The rest keep the values from the defaults file
+    config = load_camera_config(config_file, config)
 
     #If a config is specified, override those values
     for k, v in config.items():
+        print(k,'=',v)
         setattr(camera, k, v)
 
     return camera
@@ -111,7 +107,7 @@ class Acquire():
             print('using fakepymba')
             self.get_generator = self.get_generator_disc
 
-    def get_generator_disc(self, datapath=None, writeToDisk=False):
+    def get_generator_disc(self, datapath=None, writeToDisk=False, camera_config_file=None):
         '''
         Aquire images from disc
         
@@ -133,7 +129,7 @@ class Acquire():
             camera = _init_camera(vimba)
 
             #Configure camera
-            camera = _configure_camera(camera)
+            camera = _configure_camera(camera, config_file=camera_config_file)
 
             #Prepare for image acquisition and create a frame
             frame0 = camera.getFrame()
@@ -152,7 +148,7 @@ class Acquire():
                         break
 
 
-    def get_generator_camera(self, datapath=None, writeToDisk=False):
+    def get_generator_camera(self, datapath=None, writeToDisk=False, camera_config_file=None):
         '''
         Aquire images from Silcam
         
@@ -177,7 +173,7 @@ class Acquire():
                     camera = _init_camera(vimba)
 
                     #Configure camera
-                    camera = _configure_camera(camera)
+                    camera = _configure_camera(camera, camera_config_file)
 
                     #Prepare for image acquisition and create a frame
                     frame0 = camera.getFrame()
