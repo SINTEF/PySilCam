@@ -136,7 +136,7 @@ def silcam_acquire(datapath, config_filename=None, writeToDisk=False, gui=None):
                     'vd_gas': 0,
                     'oil_d50': 0,
                     'gas_d50': 0}
-            gui.put_nowait((timestamp, imraw, rtdict))
+            gui.put_nowait((timestamp, imraw, imraw, rtdict))
 
 # the standard processing method under active development
 def silcam_process(config_filename, datapath, multiProcess=True, realtime=False, discWrite=False, nbImages=None, gui=None):
@@ -228,7 +228,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
         # iterate on the bggen generator to obtain images
         logger.debug('Starting acquisition loop')
         t2 = time.time()
-        for i, (timestamp, imc) in enumerate(bggen):
+        for i, (timestamp, imc, imraw) in enumerate(bggen):
             t1 = np.copy(t2)
             t2 = time.time()
             print(t2-t1, 'Acquisition loop time')
@@ -265,7 +265,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
                         'vd_gas': rts.vd_gas,
                         'oil_d50': rts.oil_d50,
                         'gas_d50': rts.gas_d50}
-                gui.put_nowait((timestamp, imc, rtdict))
+                gui.put_nowait((timestamp, imc, imraw, rtdict))
                 logger.debug('GUI queue updated')
 
         logger.debug('Acquisition loop completed')
@@ -290,7 +290,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
         nnmodel, class_labels = sccl.load_model(model_path=settings.NNClassify.model_path)
 
         # iterate on the bggen generator to obtain images
-        for i, (timestamp, imc) in enumerate(bggen):
+        for i, (timestamp, imc, imraw) in enumerate(bggen):
             # handle errors if the loop function fails for any reason
             if (nbImages != None):
                 if (nbImages <= i):

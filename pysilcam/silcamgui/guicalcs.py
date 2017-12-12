@@ -84,11 +84,12 @@ class ProcThread(Process):
                 #stats, imc = extract_stats_im(guidata)
                 timestamp = guidata[0]
                 imc = guidata[1]
-                dias = guidata[2]['dias']
-                vd_oil = guidata[2]['vd_oil']
-                vd_gas = guidata[2]['vd_gas']
-                oil_d50 = guidata[2]['oil_d50']
-                gas_d50 = guidata[2]['gas_d50']
+                imraw = guidata[2]
+                dias = guidata[3]['dias']
+                vd_oil = guidata[3]['vd_oil']
+                vd_gas = guidata[3]['vd_gas']
+                oil_d50 = guidata[3]['oil_d50']
+                gas_d50 = guidata[3]['gas_d50']
 
 
                 #infostr = data['infostr']
@@ -108,11 +109,13 @@ class ProcThread(Process):
                 plt.xlabel('Diameter [um]')
 
                 plt.subplot(2,2,3)
+                plt.cla()
                 ttlstr = (
                         'Oil d50: {:0.0f} [um]'.format(oil_d50) + '\n' +
                         'Gas d50: {:0.0f} [um]'.format(gas_d50) + '\n'
                         )
                 plt.title(ttlstr)
+                plt.imshow(imraw)
                 plt.axis('off')
 
                 plt.subplot(1,2,2)

@@ -151,4 +151,4 @@ def backgrounder(av_window, acquire, bad_lighting_limit=False):
         else:
             bgstack, imbg, imc = shift_and_correct(bgstack, imbg, imraw,
                     stacklength)
-            yield timestamp, imc
+            yield timestamp, imc, imraw
