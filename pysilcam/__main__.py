@@ -557,4 +557,3 @@ def configure_logger(settings):
     else:
         logging.basicConfig(level=getattr(logging, settings.loglevel))
 
->>>>>>> 4a1f5f8af583e26ed87c1d22e09098b9a47892fa
