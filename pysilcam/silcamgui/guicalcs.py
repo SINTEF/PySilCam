@@ -52,7 +52,7 @@ class ProcThread(Process):
             psc.silcam_process(self.configfile, self.datadir, multiProcess=True, realtime=False,
             gui=self.q)
         elif(self.run_type == process_mode.aquire):
-            psc.silcam_acquire(self.datadir, writeToDisk=self.disc_write, gui=self.q)
+            psc.silcam_acquire(self.datadir, config_filename=self.configfile, writeToDisk=self.disc_write, gui=self.q)
         elif(self.run_type == process_mode.real_time):
             psc.silcam_process(self.configfile, self.datadir, multiProcess=True, realtime=True,
                                discWrite=self.disc_write, gui=self.q)

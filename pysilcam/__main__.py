@@ -100,16 +100,16 @@ def silcam():
         silcam_process(args['<configfile>'], datapath, multiProcess=multiProcess, realtime=True, discWrite=discWrite)
 
 
-def silcam_acquire(datapath, config_file_name=None, writeToDisk=False, gui=None):
+def silcam_acquire(datapath, config_filename=None, writeToDisk=False, gui=None):
     '''Aquire images from the SilCam
 
     Args:
        datapath              (str)  : Path to the image storage
-       config_file_name=None (str)  : Camera config file
+       config_filename=None (str)  : Camera config file
     '''
     acq = Acquire(USE_PYMBA=True) # ini class
     t1 = time.time()
-    aqgen = acq.get_generator(datapath, camera_config_file=config_file_name, writeToDisk=writeToDisk)
+    aqgen = acq.get_generator(datapath, camera_config_file=config_filename, writeToDisk=writeToDisk)
 
     for i, (timestamp, imraw) in enumerate(aqgen):
         t2 = time.time()
@@ -176,7 +176,8 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
 
     #Initialize the image acquisition generator
     aq = Acquire(USE_PYMBA=realtime)
-    aqgen = aq.get_generator(datapath, writeToDisk=discWrite)
+    aqgen = aq.get_generator(datapath, writeToDisk=discWrite,
+            camera_config_file=config_filename)
 
     #Get number of images to use for background correction from config
     print('* Initializing background image handler')
