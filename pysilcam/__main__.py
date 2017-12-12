@@ -228,14 +228,12 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
         logger.debug('Starting acquisition loop')
         t2 = time.time()
         for i, (timestamp, imc) in enumerate(bggen):
-<<<<<<< HEAD
             t1 = np.copy(t2)
             t2 = time.time()
             print(t2-t1, 'Acquisition loop time')
             logger.debug('Corrected image ' + str(timestamp) +
                         ' acquired from backgrounder')
-=======
->>>>>>> 4a1f5f8af583e26ed87c1d22e09098b9a47892fa
+
             # handle errors if the loop function fails for any reason
             if (nbImages != None):
                 if (nbImages <= i):
@@ -526,12 +524,6 @@ def writeCSV(datafilename, stats_all):
     else:
         stats_all.to_csv(datafilename + '-STATS.csv',
                 mode='a', header=False)
-
-<<<<<<< HEAD
-=======
-
-def silcam_process_batch():
-    print('Placeholder for silcam-process-batch entry point')
 
 
 def check_path(filename):
