@@ -147,6 +147,7 @@ def nd(stats, settings, ax, line=None, c='k', sample_volume=1.):
     return line
 
 
+
 def show_imc(imc, mag=2):
     PIX_SIZE = 35.2 / 2448 * 1000
     r, c = np.shape(imc[:,:,0])
@@ -177,7 +178,7 @@ def montage_plot(montage, pixel_size):
 
 
 def summarise_fancy_stats(stats_csv_file, config_file, monitor=False,
-        maxlength=100000):
+        maxlength=100000, msize=2048):
     sns.set_style('ticks')
 
     settings = PySilcamSettings(config_file)
@@ -193,7 +194,7 @@ def summarise_fancy_stats(stats_csv_file, config_file, monitor=False,
         montage = sc_pp.make_montage(stats_csv_file,
                 settings.PostProcess.pix_size,
                 roidir=settings.ExportParticles.outputpath,
-                auto_scaler=1600, msize=2048, maxlength=maxlength)
+                auto_scaler=msize, msize=msize, maxlength=maxlength)
 
         stats = pd.read_csv(stats_csv_file)
         stats = stats[(stats['major_axis_length'] *

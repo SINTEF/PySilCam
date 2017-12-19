@@ -99,25 +99,19 @@ def silcam():
             multiProcess = False
         silcam_process(args['<configfile>'], datapath, multiProcess=multiProcess, realtime=True, discWrite=discWrite)
 
-def silcam_acquire(datapath, config_file_name=None):
+
+def silcam_acquire(datapath, config_filename=None, writeToDisk=False, gui=None):
     '''Aquire images from the SilCam
 
     Args:
        datapath              (str)  : Path to the image storage
-       config_file_name=None (str)  : Camera config file
+       config_filename=None (str)  : Camera config file
     '''
-
     acq = Acquire(USE_PYMBA=True) # ini class
     t1 = time.time()
-    aqgen = acq.get_generator(camera_config_file = config_file_name)
-    for i, (timestamp, imraw) in enumerate(aqgen):
-        filename = os.path.join(datapath, timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc'))
-        with open(filename, 'wb') as fh:
-            np.save(fh, imraw, allow_pickle=False)
-            fh.flush()
-            os.fsync(fh.fileno())
-        print('Written', filename)
+    aqgen = acq.get_generator(datapath, camera_config_file=config_filename, writeToDisk=writeToDisk)
 
+    for i, (timestamp, imraw) in enumerate(aqgen):
         t2 = time.time()
         aq_freq = np.round(1.0/(t2 - t1), 1)
         requested_freq = 16.0
@@ -127,6 +121,22 @@ def silcam_acquire(datapath, config_file_name=None):
         actual_aq_freq = 1/(1/aq_freq + rest_time)
         print('Image {0} acquired at frequency {1:.1f} Hz'.format(i, actual_aq_freq))
         t1 = time.time()
+
+        if not gui==None:
+            while (gui.qsize() > 0):
+                try:
+                    gui.get_nowait()
+                    time.sleep(0.001)
+                except:
+                    continue
+            #try:
+            rtdict = dict()
+            rtdict = {'dias': 0,
+                    'vd_oil': 0,
+                    'vd_gas': 0,
+                    'oil_d50': 0,
+                    'gas_d50': 0}
+            gui.put_nowait((timestamp, imraw, imraw, rtdict))
 
 # the standard processing method under active development
 def silcam_process(config_filename, datapath, multiProcess=True, realtime=False, discWrite=False, nbImages=None, gui=None):
@@ -147,7 +157,6 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     '''
     print(config_filename)
 
-    print('PROCESS MODE')
     print('')
     #---- SETUP ----
 
@@ -167,7 +176,8 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
 
     #Initialize the image acquisition generator
     aq = Acquire(USE_PYMBA=realtime)
-    aqgen = aq.get_generator(datapath, writeToDisk=discWrite)
+    aqgen = aq.get_generator(datapath, writeToDisk=discWrite,
+            camera_config_file=config_filename)
 
     #Get number of images to use for background correction from config
     print('* Initializing background image handler')
@@ -208,25 +218,40 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
         proc_list = []
         mem = psutil.virtual_memory()
         memAvailableMb = mem.available >> 20
-                
+
+        logger.debug('setting up processing queues')
         inputQueue, outputQueue = defineQueues(realtime, int(memAvailableMb / 2 * 1/15))
-      
+
+        logger.debug('setting up processing distributor')
         distributor(inputQueue, outputQueue, config_filename, proc_list, gui)
 
         # iterate on the bggen generator to obtain images
-        for i, (timestamp, imc) in enumerate(bggen):
+        logger.debug('Starting acquisition loop')
+        t2 = time.time()
+        for i, (timestamp, imc, imraw) in enumerate(bggen):
+            t1 = np.copy(t2)
+            t2 = time.time()
+            print(t2-t1, 'Acquisition loop time')
+            logger.debug('Corrected image ' + str(timestamp) +
+                        ' acquired from backgrounder')
+
             # handle errors if the loop function fails for any reason
             if (nbImages != None):
                 if (nbImages <= i):
                     break
 
+            logger.debug('Adding image to processing queue: ' + str(timestamp))
             addToQueue(realtime, inputQueue, i, timestamp, imc) # the tuple (i, timestamp, imc) is added to the inputQueue
+            logger.debug('Processing queue updated')
 
             # write the images that are available for the moment into the csv file
+            logger.debug('Running collector')
             collector(inputQueue, outputQueue, datafilename, proc_list, False,
                       settings, rts=rts)
+            logger.debug('Data collected')
 
             if not gui==None:
+                logger.debug('Putting data on GUI Queue')
                 while (gui.qsize() > 0):
                     try:
                         gui.get_nowait()
@@ -240,17 +265,20 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
                         'vd_gas': rts.vd_gas,
                         'oil_d50': rts.oil_d50,
                         'gas_d50': rts.gas_d50}
-                gui.put_nowait((timestamp, imc, rtdict))
-                #except:
-                #    continue
+                gui.put_nowait((timestamp, imc, imraw, rtdict))
+                logger.debug('GUI queue updated')
 
+        logger.debug('Acquisition loop completed')
         if (not realtime):
+            logger.debug('Halting processes')
             for p in proc_list:
                 inputQueue.put(None)
 
         # some images might still be waiting to be written to the csv file
+        logger.debug('Running collector on left over data')
         collector(inputQueue, outputQueue, datafilename, proc_list, True,
                   settings, rts=rts)
+        logger.debug('All data collected')
 
         for p in proc_list:
             p.join()
@@ -262,7 +290,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
         nnmodel, class_labels = sccl.load_model(model_path=settings.NNClassify.model_path)
 
         # iterate on the bggen generator to obtain images
-        for i, (timestamp, imc) in enumerate(bggen):
+        for i, (timestamp, imc, imraw) in enumerate(bggen):
             # handle errors if the loop function fails for any reason
             if (nbImages != None):
                 if (nbImages <= i):
@@ -272,7 +300,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
             # one single image is processed at a time
             stats_all = processImage(nnmodel, class_labels, image, settings, logger, gui)
 
-            if (not stats_all is None): # if frame processed 
+            if (not stats_all is None): # if frame processed
                 # write the image into the csv file
                 writeCSV( datafilename, stats_all)
 
@@ -345,7 +373,7 @@ def createFIFOQueues(size):
     return inputQueue, outputQueue
 
 class MyManager(BaseManager):
-    ''' 
+    '''
     Customized manager class used to register LifoQueues
     '''
     pass
@@ -426,15 +454,17 @@ def loop(config_filename, inputQueue, outputQueue, gui=None):
             break
         stats_all = processImage(nnmodel, class_labels, task, settings, logger, gui)
 
-        if not stats_all is None:
+        if (not stats_all is None):
             outputQueue.put(stats_all)
+        else:
+            logger.debug('No stats found. skipping image.')
 
 
 def distributor(inputQueue, outputQueue, config_filename, proc_list, gui=None):
     '''
     distributes the images in the input queue to the different loop processes
     '''
-    
+
     numCores = max(1, multiprocessing.cpu_count() - 2)
 
     for nbCore in range(numCores):
@@ -483,7 +513,6 @@ def writeCSV(datafilename, stats_all):
     '''
     writes into the csv ouput file
     '''
-
     # create or append particle statistics to output file
     # if the output file does not already exist, create it
     # otherwise data will be appended
@@ -496,10 +525,6 @@ def writeCSV(datafilename, stats_all):
     else:
         stats_all.to_csv(datafilename + '-STATS.csv',
                 mode='a', header=False)
-
-
-def silcam_process_batch():
-    print('Placeholder for silcam-process-batch entry point')
 
 
 def check_path(filename):

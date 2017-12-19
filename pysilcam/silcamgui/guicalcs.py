@@ -51,7 +51,7 @@ class ProcThread(Process):
             psc.silcam_process(self.configfile, self.datadir, multiProcess=True, realtime=False,
             gui=self.q)
         elif(self.run_type == process_mode.aquire):
-            psc.silcam_acquire(self.datadir)
+            psc.silcam_acquire(self.datadir, config_filename=self.configfile, writeToDisk=self.disc_write, gui=self.q)
         elif(self.run_type == process_mode.real_time):
             psc.silcam_process(self.configfile, self.datadir, multiProcess=True, realtime=True,
                                discWrite=self.disc_write, gui=self.q)
@@ -83,11 +83,12 @@ class ProcThread(Process):
                 #stats, imc = extract_stats_im(guidata)
                 timestamp = guidata[0]
                 imc = guidata[1]
-                dias = guidata[2]['dias']
-                vd_oil = guidata[2]['vd_oil']
-                vd_gas = guidata[2]['vd_gas']
-                oil_d50 = guidata[2]['oil_d50']
-                gas_d50 = guidata[2]['gas_d50']
+                imraw = guidata[2]
+                dias = guidata[3]['dias']
+                vd_oil = guidata[3]['vd_oil']
+                vd_gas = guidata[3]['vd_gas']
+                oil_d50 = guidata[3]['oil_d50']
+                gas_d50 = guidata[3]['gas_d50']
 
 
                 #infostr = data['infostr']
@@ -102,16 +103,18 @@ class ProcThread(Process):
                 plt.plot(dias, vd_oil ,'r')
                 plt.plot(dias, vd_gas ,'b')
                 plt.xscale('log')
-                plt.xlim((10, 10000))
+                plt.xlim((100, 10000))
                 plt.ylabel('Volume Concentration [uL/L]')
-                plt.xlabel('Diamter [um]')
+                plt.xlabel('Diameter [um]')
 
                 plt.subplot(2,2,3)
+                plt.cla()
                 ttlstr = (
-                        'Oil d50: {:0.0f}um'.format(oil_d50) + '\n' +
-                        'Gas d50: {:0.0f}um'.format(gas_d50) + '\n'
+                        'Oil d50: {:0.0f} [um]'.format(oil_d50) + '\n' +
+                        'Gas d50: {:0.0f} [um]'.format(gas_d50) + '\n'
                         )
                 plt.title(ttlstr)
+                plt.imshow(imraw)
                 plt.axis('off')
 
                 plt.subplot(1,2,2)

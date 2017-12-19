@@ -29,7 +29,7 @@ def ini_background(av_window, acquire):
     return bgstack, imbg
 
 
-def shift_bgstack(bgstack, imbg, imnew):
+def shift_bgstack(bgstack, imbg, imnew, stacklength):
     '''shofts the background by popping the oldest and added a new image
     returns:
       bgstack (updated list of all background images)
@@ -37,14 +37,14 @@ def shift_bgstack(bgstack, imbg, imnew):
     '''
     imold = bgstack.pop(0)  # pop the oldest image from the stack,
     # subtract the old image from the average (scaled by the average window)
-    imbg -= (imold/len(bgstack))
+    imbg -= (imold/stacklength)
     # add the new image to the average (scaled by the average window)
-    imbg += (imnew/len(bgstack))
+    imbg += (imnew/stacklength)
     bgstack.append(imnew)  # append the new image to the stack
     return bgstack, imbg
 
 
-def correct_im(imbg, imraw):
+def correct_im_old(imbg, imraw):
     '''corrects raw image by subtracting the background
     inputs:
       imbg (the actual background averaged image)
@@ -58,6 +58,7 @@ def correct_im(imbg, imraw):
     #imc[:,:,1] += 255 - np.percentile(imc[:,:,1], 99)
     #imc[:,:,2] += 255 - np.percentile(imc[:,:,2], 99)
     imc += 255 - np.percentile(imc, 99)
+    #imc += 255 - imc.max()
 
     imc[imc>255] = 255
     imc[imc<0] = 0
@@ -66,7 +67,7 @@ def correct_im(imbg, imraw):
     return imc
 
 
-def correct_im_old(imbg, imraw):
+def correct_im(imbg, imraw):
     '''corrects raw image by subtracting the background
     inputs:
       imbg (the actual background averaged image)
@@ -77,9 +78,7 @@ def correct_im_old(imbg, imraw):
     '''
     imc = imraw - imbg
 
-    m = imc.max()
-    imc += 255/2.
-#    imc += 255-m
+    imc += 215
     imc[imc<0] = 0
     imc[imc>255] = 255
     imc = np.uint8(imc)
@@ -87,7 +86,7 @@ def correct_im_old(imbg, imraw):
     return imc
 
 
-def shift_and_correct(bgstack, imbg, imraw):
+def shift_and_correct(bgstack, imbg, imraw, stacklength):
     '''shifts the background stack and averaged image and corrects the new
     raw image.
 
@@ -105,12 +104,12 @@ def shift_and_correct(bgstack, imbg, imraw):
     '''
 
     imc = correct_im(imbg, imraw)
-    bgstack, imbg = shift_bgstack(bgstack, imbg, imraw)
+    bgstack, imbg = shift_bgstack(bgstack, imbg, imraw, stacklength)
 
     return bgstack, imbg, imc
 
 
-def backgrounder(av_window, acquire, bad_lighting_limit=10000):
+def backgrounder(av_window, acquire, bad_lighting_limit=None):
     '''generator which interracts with acquire to return a corrcted image
     given av_window number of frame to use in creating a moving background
 
@@ -126,18 +125,28 @@ def backgrounder(av_window, acquire, bad_lighting_limit=10000):
 
     # Set up initial background image stack
     bgstack, imbg = ini_background(av_window, acquire)
+    stacklength = len(bgstack)
 
     # Aquire images, apply background correction and yield result
     for timestamp, imraw in acquire:
-        bgstack, imbg, imc = shift_and_correct(bgstack, imbg, imraw)
 
-        # basic check of image quality
-        r = imc[:, :, 0]
-        g = imc[:, :, 1]
-        b = imc[:, :, 2]
-        s = np.std([r, g, b])
-        # ignore bad images
-        if (s <= bad_lighting_limit):
-           yield timestamp, imc
+        if not (bad_lighting_limit==None):
+            bgstack_new, imbg_new, imc = shift_and_correct(bgstack, imbg,
+                    imraw, stacklength)
+
+            # basic check of image quality
+            r = imc[:, :, 0]
+            g = imc[:, :, 1]
+            b = imc[:, :, 2]
+            s = np.std([r, g, b])
+            # ignore bad images
+            if (s <= bad_lighting_limit):
+                bgstack = bgstack_new
+                imbg = imbg_new
+                yield timestamp, imc, imraw
+            else:
+                logger.info('bad lighting, std={0}'.format(s))
         else:
-            logger.info('bad lighting, std={0}'.format(s))
+            bgstack, imbg, imc = shift_and_correct(bgstack, imbg, imraw,
+                    stacklength)
+            yield timestamp, imc, imraw
