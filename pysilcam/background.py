@@ -143,7 +143,7 @@ def backgrounder(av_window, acquire, bad_lighting_limit=None):
             if (s <= bad_lighting_limit):
                 bgstack = bgstack_new
                 imbg = imbg_new
-                yield timestamp, imc
+                yield timestamp, imc, imraw
             else:
                 logger.info('bad lighting, std={0}'.format(s))
         else:
