@@ -47,7 +47,6 @@ class ProcThread(Process):
 
 
     def run(self):
-        print(self.run_type)
         if(self.run_type == process_mode.process):
             psc.silcam_process(self.configfile, self.datadir, multiProcess=True, realtime=False,
             gui=self.q)

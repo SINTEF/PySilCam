@@ -78,8 +78,6 @@ def correct_im(imbg, imraw):
     '''
     imc = imraw - imbg
 
-    #imc += 255/2.
-    #imc += 200
     imc += 215
     imc[imc<0] = 0
     imc[imc>255] = 255
@@ -111,7 +109,7 @@ def shift_and_correct(bgstack, imbg, imraw, stacklength):
     return bgstack, imbg, imc
 
 
-def backgrounder(av_window, acquire, bad_lighting_limit=False):
+def backgrounder(av_window, acquire, bad_lighting_limit=None):
     '''generator which interracts with acquire to return a corrcted image
     given av_window number of frame to use in creating a moving background
 
@@ -132,7 +130,7 @@ def backgrounder(av_window, acquire, bad_lighting_limit=False):
     # Aquire images, apply background correction and yield result
     for timestamp, imraw in acquire:
 
-        if not (bad_lighting_limit==False):
+        if not (bad_lighting_limit==None):
             bgstack_new, imbg_new, imc = shift_and_correct(bgstack, imbg,
                     imraw, stacklength)
 
