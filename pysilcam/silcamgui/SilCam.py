@@ -32,7 +32,7 @@ class Ui_SilCam(object):
         self.gridLayout.addWidget(self.fig_widget, 1, 0, 1, 2)
         SilCam.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(SilCam)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 814, 27))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 814, 25))
         self.menubar.setObjectName("menubar")
         self.menuProcessing = QtWidgets.QMenu(self.menubar)
         self.menuProcessing.setEnabled(True)
@@ -60,7 +60,10 @@ class Ui_SilCam(object):
         self.actionSilc_viewer.setObjectName("actionSilc_viewer")
         self.actionServer = QtWidgets.QAction(SilCam)
         self.actionServer.setObjectName("actionServer")
+        self.actionConvert_silc_to_bmp = QtWidgets.QAction(SilCam)
+        self.actionConvert_silc_to_bmp.setObjectName("actionConvert_silc_to_bmp")
         self.menuProcessing.addAction(self.actionServer)
+        self.menuProcessing.addAction(self.actionConvert_silc_to_bmp)
         self.menubar.addAction(self.menuProcessing.menuAction())
 
         self.retranslateUi(SilCam)
@@ -81,4 +84,5 @@ class Ui_SilCam(object):
         self.actionExport_Time_series.setText(_translate("SilCam", "Export VD Time-series"))
         self.actionSilc_viewer.setText(_translate("SilCam", "silc viewer"))
         self.actionServer.setText(_translate("SilCam", "Server"))
+        self.actionConvert_silc_to_bmp.setText(_translate("SilCam", "Convert silc to bmp"))
 

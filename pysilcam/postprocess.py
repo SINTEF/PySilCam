@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import os
-import imageio
+import imageio as imo
 import matplotlib.pyplot as plt
 from skimage.filters.rank import median
 from skimage.morphology import disk
@@ -542,4 +542,21 @@ def extract_latest_stats(stats, window_size):
     start = end - pd.to_timedelta('00:00:' + str(window_size))
     stats = stats[pd.to_datetime(stats['timestamp'])>start]
     return stats
+
+
+def silc_to_bmp(directory):
+    files = [s for s in os.listdir(directory) if s.endswith('.silc')]
+    
+    for f in files:
+        try:
+            with open(os.path.join(directory, f), 'rb') as fh:
+                im = np.load(fh, allow_pickle=False)
+                fout = os.path.splitext(f)[0] + '.bmp'
+            outname = os.path.join(directory, fout)
+            imo.imwrite(outname, im)
+        except:
+            print(f, ' failed!')
+            continue
+
+    print('Done.')
 

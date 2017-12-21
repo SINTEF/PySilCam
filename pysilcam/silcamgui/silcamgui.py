@@ -115,6 +115,7 @@ def main():
             #self.ui.actionServer.triggered.connect(scog.ServerThread)
             self.ui.actionServer.triggered.connect(self.server)
             self.ui.actionController.triggered.connect(self.acquire_controller)
+            self.ui.actionConvert_silc_to_bmp.triggered.connect(self.convert_silc)
 
             self.layout = layout
 
@@ -123,6 +124,12 @@ def main():
             app.processEvents()
 
             self.acquire_controller()
+
+
+        def convert_silc(self):
+            self.status_update('converting data to bmp...')
+            scpp.silc_to_bmp(self.datadir) 
+            self.status_update('converting finished.')
 
 
         def server(self):
@@ -198,7 +205,7 @@ def main():
 
             self.status_update('asking for plot')
             self.process.plot()
-            self.status_update(self.process.info)
+            self.status_update('', uselog=True)
             self.canvas.draw()
 
             QtCore.QTimer.singleShot(self.lvwaitseconds*1000, self.lv_raw)
@@ -211,14 +218,15 @@ def main():
                 self.ctrl.ui.pb_live_raw.setStyleSheet(('QPushButton {' + 'background-color: rgb(150,150,255) }'))
 
 
-        def status_update(self, string):
-            try:
-                settings = PySilcamSettings(self.process.configfile)
-                with open(settings.General.logfile, 'r') as a:
-                    lines = a.readlines()
-                    string = str(lines[-1])
-            except:
-                pass
+        def status_update(self, string, uselog=False):
+            if uselog:
+                try:
+                    settings = PySilcamSettings(self.process.configfile)
+                    with open(settings.General.logfile, 'r') as a:
+                        lines = a.readlines()
+                        string = str(lines[-1])
+                except:
+                    pass
             string = string + '  |  Directory: ' + self.datadir
             self.ui.statusBar.setText(string)
             app.processEvents()
