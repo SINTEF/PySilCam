@@ -24,13 +24,6 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="0" alignment="Qt::AlignLeft">
-     <widget class="QPushButton" name="pb_ChangeDirectory">
-      <property name="text">
-       <string>Working Folder</string>
-      </property>
-     </widget>
-    </item>
     <item row="0" column="1" alignment="Qt::AlignTop">
      <widget class="QLabel" name="statusBar">
       <property name="text">
@@ -56,37 +49,9 @@
      <x>0</x>
      <y>0</y>
      <width>814</width>
-     <height>22</height>
+     <height>27</height>
     </rect>
    </property>
-   <widget class="QMenu" name="menuTest">
-    <property name="title">
-     <string>File</string>
-    </property>
-    <addaction name="actionSave_Figure"/>
-    <addaction name="actionExit"/>
-   </widget>
-   <widget class="QMenu" name="menuData">
-    <property name="title">
-     <string>Data</string>
-    </property>
-    <widget class="QMenu" name="menuProcessed">
-     <property name="title">
-      <string>Processed</string>
-     </property>
-     <addaction name="actionLoadProcessed"/>
-     <addaction name="actionVD_Time_series"/>
-     <addaction name="actionExport_Time_series"/>
-    </widget>
-    <addaction name="actionRaw"/>
-    <addaction name="menuProcessed"/>
-   </widget>
-   <widget class="QMenu" name="menuAcquire">
-    <property name="title">
-     <string>Acquire</string>
-    </property>
-    <addaction name="actionController"/>
-   </widget>
    <widget class="QMenu" name="menuProcessing">
     <property name="enabled">
      <bool>true</bool>
@@ -94,12 +59,8 @@
     <property name="title">
      <string>Processing</string>
     </property>
-    <addaction name="actionSilc_viewer"/>
     <addaction name="actionServer"/>
    </widget>
-   <addaction name="menuTest"/>
-   <addaction name="menuData"/>
-   <addaction name="menuAcquire"/>
    <addaction name="menuProcessing"/>
   </widget>
   <action name="actionOpen">

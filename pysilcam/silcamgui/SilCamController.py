@@ -64,7 +64,7 @@ class Ui_SilCamController(object):
         self.pb_start.setText(_translate("SilCamController", "START"))
         self.pb_stop.setText(_translate("SilCamController", "STOP"))
         self.pb_live_raw.setText(_translate("SilCamController", "Live raw"))
-        self.rb_to_disc.setText(_translate("SilCamController", "Aquire images to disk"))
+        self.rb_to_disc.setText(_translate("SilCamController", "Aquire images"))
         self.rb_process_historical.setText(_translate("SilCamController", "Process historical data"))
         self.pb_browse.setText(_translate("SilCamController", "Browse"))
         self.rb_real_time.setText(_translate("SilCamController", "Realtime processing"))

@@ -105,7 +105,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Aquire images to disk</string>
+    <string>Aquire images</string>
    </property>
   </widget>
   <widget class="QRadioButton" name="rb_process_historical">

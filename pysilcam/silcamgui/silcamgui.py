@@ -114,7 +114,6 @@ def main():
             #self.ui.actionServer.triggered.connect(scog.ServerThread)
             self.ui.actionServer.triggered.connect(self.server)
             self.ui.actionController.triggered.connect(self.acquire_controller)
-            self.ui.pb_ChangeDirectory.clicked.connect(self.change_directory)
 
             self.layout = layout
 
@@ -243,6 +242,7 @@ def main():
             self.ctrl.ui.pb_start.setStyleSheet(('QPushButton {' + 'background-color: rgb(0,150,0) }'))
             self.ctrl.ui.pb_stop.setStyleSheet(('QPushButton {' + 'background-color: rgb(150,150,255) }'))
             self.ctrl.ui.pb_start.setEnabled(False)
+            self.ctrl.ui.cb_store_to_disc.setEnabled(False)
             app.processEvents()
 
 
@@ -260,6 +260,7 @@ def main():
             self.ctrl.ui.pb_stop.setStyleSheet(('QPushButton {' +
                 'background-color: rgb(150,150,255) }'))
             self.ctrl.ui.pb_start.setEnabled(True)
+            self.ctrl.ui.cb_store_to_disc.setEnabled(True)
             app.processEvents()
 
 
