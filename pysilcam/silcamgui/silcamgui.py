@@ -23,6 +23,7 @@ import subprocess
 import datetime
 import pysilcam.silcamgui.guicalcs as gc
 from pysilcam.silcamgui.guicalcs import process_mode
+from pysilcam.config import PySilcamSettings
 
 sns.set_style('ticks')
 sns.set_context(font_scale=2)
@@ -211,6 +212,13 @@ def main():
 
 
         def status_update(self, string):
+            try:
+                settings = PySilcamSettings(self.process.configfile)
+                with open(settings.General.logfile, 'r') as a:
+                    lines = a.readlines()
+                    string = str(lines[-1])
+            except:
+                pass
             string = string + '  |  Directory: ' + self.datadir
             self.ui.statusBar.setText(string)
             app.processEvents()
