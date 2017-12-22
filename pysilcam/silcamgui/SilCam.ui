@@ -62,6 +62,7 @@
     <addaction name="actionExport_summary_data"/>
     <addaction name="actionExport_summary_figure"/>
     <addaction name="actionConvert_silc_to_bmp"/>
+    <addaction name="actionSilc_file_player"/>
     <addaction name="actionServer"/>
    </widget>
    <addaction name="menuProcessing"/>
@@ -118,7 +119,7 @@
   </action>
   <action name="actionServer">
    <property name="text">
-    <string>Realtime server</string>
+    <string>Realtime data server</string>
    </property>
   </action>
   <action name="actionConvert_silc_to_bmp">
@@ -134,6 +135,11 @@
   <action name="actionExport_summary_figure">
    <property name="text">
     <string>Export summary figure (to png)</string>
+   </property>
+  </action>
+  <action name="actionSilc_file_player">
+   <property name="text">
+    <string>silc file player</string>
    </property>
   </action>
  </widget>

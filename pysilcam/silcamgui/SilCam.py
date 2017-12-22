@@ -66,9 +66,12 @@ class Ui_SilCam(object):
         self.actionExport_summary_data.setObjectName("actionExport_summary_data")
         self.actionExport_summary_figure = QtWidgets.QAction(SilCam)
         self.actionExport_summary_figure.setObjectName("actionExport_summary_figure")
+        self.actionSilc_file_player = QtWidgets.QAction(SilCam)
+        self.actionSilc_file_player.setObjectName("actionSilc_file_player")
         self.menuProcessing.addAction(self.actionExport_summary_data)
         self.menuProcessing.addAction(self.actionExport_summary_figure)
         self.menuProcessing.addAction(self.actionConvert_silc_to_bmp)
+        self.menuProcessing.addAction(self.actionSilc_file_player)
         self.menuProcessing.addAction(self.actionServer)
         self.menubar.addAction(self.menuProcessing.menuAction())
 
@@ -89,8 +92,9 @@ class Ui_SilCam(object):
         self.actionVD_Time_series.setText(_translate("SilCam", "VD Time-series"))
         self.actionExport_Time_series.setText(_translate("SilCam", "Export VD Time-series"))
         self.actionSilc_viewer.setText(_translate("SilCam", "silc viewer"))
-        self.actionServer.setText(_translate("SilCam", "Realtime server"))
+        self.actionServer.setText(_translate("SilCam", "Realtime data server"))
         self.actionConvert_silc_to_bmp.setText(_translate("SilCam", "Convert silc to bmp"))
         self.actionExport_summary_data.setText(_translate("SilCam", "Export summary data (to xls)"))
         self.actionExport_summary_figure.setText(_translate("SilCam", "Export summary figure (to png)"))
+        self.actionSilc_file_player.setText(_translate("SilCam", "silc file player"))
 

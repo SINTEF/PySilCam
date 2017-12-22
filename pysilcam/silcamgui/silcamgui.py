@@ -122,6 +122,7 @@ def main():
             self.ui.actionConvert_silc_to_bmp.triggered.connect(self.convert_silc)
             self.ui.actionExport_summary_data.triggered.connect(self.export_summary_data)
             self.ui.actionExport_summary_figure.triggered.connect(self.export_summary_figure)
+            self.ui.actionSilc_file_player.triggered.connect(self.silc_player)
 
             self.layout = layout
 
@@ -310,7 +311,12 @@ def main():
             else:
                 self.status_update('(new directory)')
             self.ctrl.update_dir_path(self.datadir)
+            self.process = gc.ProcThread(self.datadir, self.disc_write, self.run_type)
             app.processEvents()
+
+
+        def silc_player(self):
+            self.process.silcview()
 
 
         def record(self):
