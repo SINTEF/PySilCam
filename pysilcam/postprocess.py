@@ -619,10 +619,5 @@ def stats_to_xls_png(config_file, stats_filename):
     dfa['Time'] = timestamp
     
     dfa.to_excel(stats_filename.strip('-STATS.csv') + '-AVERAGE.xlsx')
-    
-    #plt.figure(figsize=(20,12))
-    #scplt.summarise_fancy_stats(stats_filename, config_file, monitor=False)
-    #plt.savefig(stats_filename.strip('-STATS.csv') + '-Summary.png',
-    #        dpi=600, bbox_inches='tight')
    
     print('----END----')

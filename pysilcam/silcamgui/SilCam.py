@@ -64,8 +64,11 @@ class Ui_SilCam(object):
         self.actionConvert_silc_to_bmp.setObjectName("actionConvert_silc_to_bmp")
         self.actionExport_summary_data = QtWidgets.QAction(SilCam)
         self.actionExport_summary_data.setObjectName("actionExport_summary_data")
-        self.menuProcessing.addAction(self.actionConvert_silc_to_bmp)
+        self.actionExport_summary_figure = QtWidgets.QAction(SilCam)
+        self.actionExport_summary_figure.setObjectName("actionExport_summary_figure")
         self.menuProcessing.addAction(self.actionExport_summary_data)
+        self.menuProcessing.addAction(self.actionExport_summary_figure)
+        self.menuProcessing.addAction(self.actionConvert_silc_to_bmp)
         self.menuProcessing.addAction(self.actionServer)
         self.menubar.addAction(self.menuProcessing.menuAction())
 
@@ -75,7 +78,7 @@ class Ui_SilCam(object):
     def retranslateUi(self, SilCam):
         _translate = QtCore.QCoreApplication.translate
         self.statusBar.setText(_translate("SilCam", "STATUS"))
-        self.menuProcessing.setTitle(_translate("SilCam", "Processing"))
+        self.menuProcessing.setTitle(_translate("SilCam", "Tools"))
         self.actionOpen.setText(_translate("SilCam", "Open"))
         self.actionExit.setText(_translate("SilCam", "Exit"))
         self.actionRaw.setText(_translate("SilCam", "Raw"))
@@ -88,5 +91,6 @@ class Ui_SilCam(object):
         self.actionSilc_viewer.setText(_translate("SilCam", "silc viewer"))
         self.actionServer.setText(_translate("SilCam", "Realtime server"))
         self.actionConvert_silc_to_bmp.setText(_translate("SilCam", "Convert silc to bmp"))
-        self.actionExport_summary_data.setText(_translate("SilCam", "Export summary data"))
+        self.actionExport_summary_data.setText(_translate("SilCam", "Export summary data (to xls)"))
+        self.actionExport_summary_figure.setText(_translate("SilCam", "Export summary figure (to png)"))
 

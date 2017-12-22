@@ -57,10 +57,11 @@
      <bool>true</bool>
     </property>
     <property name="title">
-     <string>Processing</string>
+     <string>Tools</string>
     </property>
-    <addaction name="actionConvert_silc_to_bmp"/>
     <addaction name="actionExport_summary_data"/>
+    <addaction name="actionExport_summary_figure"/>
+    <addaction name="actionConvert_silc_to_bmp"/>
     <addaction name="actionServer"/>
    </widget>
    <addaction name="menuProcessing"/>
@@ -127,7 +128,12 @@
   </action>
   <action name="actionExport_summary_data">
    <property name="text">
-    <string>Export summary data</string>
+    <string>Export summary data (to xls)</string>
+   </property>
+  </action>
+  <action name="actionExport_summary_figure">
+   <property name="text">
+    <string>Export summary figure (to png)</string>
    </property>
   </action>
  </widget>

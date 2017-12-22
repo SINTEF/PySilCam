@@ -144,7 +144,7 @@ class Acquire():
                     frame0.img_idx += 1
                     if frame0.img_idx > len(frame0.files):
                         print('  END OF FILE LIST.')
-                        logger.debug('  END OF FILE LIST.')
+                        logger.info('  END OF FILE LIST.')
                         break
 
 

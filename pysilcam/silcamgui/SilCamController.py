@@ -11,8 +11,15 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_SilCamController(object):
     def setupUi(self, SilCamController):
         SilCamController.setObjectName("SilCamController")
-        SilCamController.resize(569, 204)
-        SilCamController.setWindowOpacity(0.9)
+        SilCamController.setEnabled(True)
+        SilCamController.resize(560, 200)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(SilCamController.sizePolicy().hasHeightForWidth())
+        SilCamController.setSizePolicy(sizePolicy)
+        SilCamController.setMinimumSize(QtCore.QSize(560, 200))
+        SilCamController.setWindowOpacity(1.0)
         self.pb_start = QtWidgets.QPushButton(SilCamController)
         self.pb_start.setGeometry(QtCore.QRect(390, 10, 168, 41))
         self.pb_start.setAutoDefault(False)

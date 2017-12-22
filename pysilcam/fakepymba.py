@@ -32,7 +32,7 @@ def silcam_name2time(fname):
     return timestamp
 
 #Fake aqusition frequency
-FPS = 15
+FPS = 5
 
 #Module-wide logger
 logger = logging.getLogger(__name__)

@@ -282,7 +282,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
 
         for p in proc_list:
             p.join()
-            print ('%s.exitcode = %s' % (p.name, p.exitcode) )
+            logger.info('%s.exitcode = %s' % (p.name, p.exitcode) )
 
     else:
         # load the model for particle classification and keep it for later
