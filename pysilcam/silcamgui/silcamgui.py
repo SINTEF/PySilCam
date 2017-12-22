@@ -101,8 +101,8 @@ def main():
             self.process = gc.ProcThread(self.datadir, self.disc_write, self.run_type)
 
             # ---- figure in middle
-            f = plt.figure()
-            self.canvas = FigureCanvas(f)
+            self.fig_main = plt.figure()
+            self.canvas = FigureCanvas(self.fig_main)
             layout = QVBoxLayout()
             layout.addWidget(self.canvas)
             self.ui.fig_widget.setLayout(layout)
@@ -163,6 +163,8 @@ def main():
                     dpi=600, bbox_inches='tight')
 
             self.status_update('Summary figure done.')
+
+            plt.figure(self.fig_main.number)
 
 
         def export_summary_data(self):
