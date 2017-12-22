@@ -11,6 +11,7 @@ from scipy import ndimage as ndi
 import skimage
 from skimage.exposure import rescale_intensity
 import h5py
+from pysilcam.config import PySilcamSettings
 
 
 def d50_from_stats(stats, settings):
@@ -562,7 +563,8 @@ def silc_to_bmp(directory):
 
 
 def stats_to_xls_png(config_file, stats_filename):
-    '''summarises stats in two excel sheets of time-series PSD and averaged PSD, and also a png file with nice figures.
+    '''summarises stats in two excel sheets of time-series PSD and averaged
+    PSD.
 
     Args:
         config_file (string): Path of the config file for this data
@@ -571,26 +573,25 @@ def stats_to_xls_png(config_file, stats_filename):
     Returns:
         Nothing (only data files in the proc folder)
     '''
-    conf = load_config(config_file)
-    settings = PySilcamSettings(conf)
+    settings = PySilcamSettings(config_file)
     
     stats = pd.read_csv(stats_filename)
     
     u = stats['timestamp'].unique()
     
-    sample_volume = sc_pp.get_sample_volume(settings.PostProcess.pix_size, path_length=settings.PostProcess.path_length)
+    sample_volume = get_sample_volume(settings.PostProcess.pix_size, path_length=settings.PostProcess.path_length)
     
     vdts = []
     d50 = []
     timestamp = []
     print('glue particles....')
     for s in u:
-        dias, vd = sc_pp.vd_from_stats(stats[stats['timestamp']==s],
+        dias, vd = vd_from_stats(stats[stats['timestamp']==s],
                 settings.PostProcess)
-        nims = sc_pp.count_images_in_stats(stats[stats['timestamp']==s])
+        nims = count_images_in_stats(stats[stats['timestamp']==s])
         sv = sample_volume * nims
         vd /= sv
-        d50_ = sc_pp.d50_from_vd(vd, dias)
+        d50_ = d50_from_vd(vd, dias)
         d50.append(d50_)
         timestamp.append(pd.to_datetime(s))
         vdts.append(vd)
@@ -601,16 +602,15 @@ def stats_to_xls_png(config_file, stats_filename):
     df['D50'] = d50
     df['Time'] = timestamp
     
-    df.to_excel(os.path.join('proc', os.path.split(datapath)[-1] + '-TIMESERIES.xlsx'))
+    df.to_excel(stats_filename.strip('-STATS.csv') + '-TIMESERIES.xlsx')
     
-    
-    dias, vd = sc_pp.vd_from_stats(stats,
+    dias, vd = vd_from_stats(stats,
                 settings.PostProcess)
-    nims = sc_pp.count_images_in_stats(stats)
+    nims = count_images_in_stats(stats)
     sv = sample_volume * nims
     vd /= sv
     
-    d50 = sc_pp.d50_from_vd(vd, dias)
+    d50 = d50_from_vd(vd, dias)
     
     dfa = pd.DataFrame(data=[vd], columns=dias)
     dfa['d50'] = d50
@@ -618,12 +618,11 @@ def stats_to_xls_png(config_file, stats_filename):
     timestamp = np.min(pd.to_datetime(timestamp))
     dfa['Time'] = timestamp
     
-    dfa.to_excel(os.path.join('proc', os.path.split(datapath)[-1] + '-AVERAGE.xlsx'))
+    dfa.to_excel(stats_filename.strip('-STATS.csv') + '-AVERAGE.xlsx')
     
-    plt.figure(figsize=(20,12))
-    
-    scplt.summarise_fancy_stats(filename, config_file, monitor=False)
-    
-    plt.savefig(os.path.join('proc', os.path.split(datapath)[-1] + '-Summary.png'), dpi=600, bbox_inches='tight')
-    
+    #plt.figure(figsize=(20,12))
+    #scplt.summarise_fancy_stats(stats_filename, config_file, monitor=False)
+    #plt.savefig(stats_filename.strip('-STATS.csv') + '-Summary.png',
+    #        dpi=600, bbox_inches='tight')
+   
     print('----END----')

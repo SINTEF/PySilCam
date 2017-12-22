@@ -116,6 +116,7 @@ def main():
             self.ui.actionServer.triggered.connect(self.server)
             self.ui.actionController.triggered.connect(self.acquire_controller)
             self.ui.actionConvert_silc_to_bmp.triggered.connect(self.convert_silc)
+            self.ui.actionExport_summary_data.triggered.connect(self.export_summary_data)
 
             self.layout = layout
 
@@ -130,6 +131,26 @@ def main():
             self.status_update('converting data to bmp...')
             scpp.silc_to_bmp(self.datadir) 
             self.status_update('converting finished.')
+
+
+        def export_summary_data(self):
+
+            self.status_update('Asking user for config file')
+            self.load_sc_config()
+            if self.process.configfile == '':
+                self.status_update('Did not get config file')
+                return
+
+            self.stats_filename = ''
+            self.status_update('Asking user for *-STATS.csv file')
+            self.load_stats_filename()
+            if self.stats_filename == '':
+                self.status_update('Did not get STATS file')
+                return
+
+            self.status_update('Exporting data...')
+            scpp.stats_to_xls_png(self.process.configfile, self.stats_filename)
+            self.status_update('Export finished.')
 
 
         def server(self):
@@ -278,6 +299,16 @@ def main():
             self.ctrl.ui.pb_start.setEnabled(True)
             self.ctrl.ui.cb_store_to_disc.setEnabled(True)
             app.processEvents()
+
+
+        def load_stats_filename(self):
+            self.stats_filename = QFileDialog.getOpenFileName(self,
+                    caption = 'Load a *-STATS.csv file',
+                    directory = self.datadir,
+                    filter = (('*-STATS.csv'))
+                    )[0]
+            if self.stats_filename == '':
+                return
 
 
         def load_sc_config(self):
