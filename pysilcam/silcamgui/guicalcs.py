@@ -21,6 +21,16 @@ def get_data(self):
         rts = None
     return rts
 
+def count_data(datadir):
+    silcfiles = [os.path.join(datadir, f) for f in
+            sorted(os.listdir(datadir))
+            if f.endswith('.silc')]
+    bmpfiles = [os.path.join(datadir, f) for f in
+            sorted(os.listdir(datadir))
+            if f.endswith('.bmp')]
+    silc = len(silcfiles)
+    bmp = len(bmpfiles)
+    return silc, bmp
 
 def extract_stats_im(guidata):
     imc = guidata['imc']

@@ -302,14 +302,21 @@ def main():
             app.processEvents()
 
 
+        def count_data(self):
+            silc, bmp = gc.count_data(self.datadir)
+            self.status_update(('New directory contains ' +
+                    str(silc) + ' silc files and ' +
+                    str(bmp) + ' bmp files'))
+
+
         def change_directory(self):
             inidir = self.datadir
             self.datadir=QFileDialog.getExistingDirectory(self,'open',
                     self.datadir,QFileDialog.ShowDirsOnly)
             if self.datadir == '':
                 self.datadir = inidir
-            else:
-                self.status_update('(new directory)')
+
+            self.count_data()
             self.ctrl.update_dir_path(self.datadir)
             self.process = gc.ProcThread(self.datadir, self.disc_write, self.run_type)
             app.processEvents()
