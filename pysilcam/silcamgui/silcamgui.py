@@ -107,7 +107,7 @@ def main():
             layout.addWidget(self.canvas)
             self.ui.fig_widget.setLayout(layout)
             path_here = os.path.realpath(__file__)
-            imfile = os.path.join(os.path.split(path_here)[0], 'ojleutslipp.jpg')
+            imfile = os.path.join(os.path.split(path_here)[0], 'startimg.png')
             im = skimage.io.imread(imfile)
             plt.imshow(im)
             plt.axis('off')
