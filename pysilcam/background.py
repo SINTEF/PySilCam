@@ -30,7 +30,19 @@ def ini_background(av_window, acquire):
 
 
 def shift_bgstack(bgstack, imbg, imnew, stacklength):
-    '''shofts the background by popping the oldest and added a new image
+    '''shifts the background by popping the oldest and added a new image
+    returns:
+    bgstack (updated list of all background images)
+    imbg (updated actual background image)
+    '''
+    imold = bgstack.pop(0)  # pop the oldest image from the stack,
+    bgstack.append(imnew)  # append the new image to the stack
+    imbg = np.mean(bgstack, axis=0)
+    return bgstack, imbg
+
+
+def shift_bgstack_old(bgstack, imbg, imnew, stacklength):
+    '''shifts the background by popping the oldest and added a new image
     returns:
       bgstack (updated list of all background images)
       imbg (updated actual background image)
