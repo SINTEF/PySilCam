@@ -194,7 +194,7 @@ def summarise_fancy_stats(stats_csv_file, config_file, monitor=False,
         montage = sc_pp.make_montage(stats_csv_file,
                 settings.PostProcess.pix_size,
                 roidir=settings.ExportParticles.outputpath,
-                auto_scaler=msize, msize=msize, maxlength=maxlength)
+                auto_scaler=msize*2, msize=msize, maxlength=maxlength)
 
         stats = pd.read_csv(stats_csv_file)
         stats = stats[(stats['major_axis_length'] *
