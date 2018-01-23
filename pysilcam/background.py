@@ -66,23 +66,12 @@ def correct_im(imbg, imraw):
       imc (a corrected image)
     '''
 
-    imraw[:,:,0] += 255 - np.max(imraw[:,:,0])
-    imraw[:,:,1] += 255 - np.max(imraw[:,:,1])
-    imraw[:,:,2] += 255 - np.max(imraw[:,:,2])
-
-    #imraw[:,:,0] = imraw[:,:,0] + (np.max(imbg) - np.max(imraw[:,:,0]))
-    #imraw[:,:,1] = imraw[:,:,1] + (np.max(imbg) - np.max(imraw[:,:,1]))
-    #imraw[:,:,2] = imraw[:,:,2] + (np.max(imbg) - np.max(imraw[:,:,2]))
-    print('imraw_max:', np.max(imraw))
-    print('imbg_max:', np.max(imbg))
-    print('max_diff:', np.max(imbg) - np.max(imraw))
-
     imc = np.float64(imraw) - np.float64(imbg)
-    #imc[:,:,0] += 255 - np.percentile(imc[:,:,0], 99)
-    #imc[:,:,1] += 255 - np.percentile(imc[:,:,1], 99)
-    #imc[:,:,2] += 255 - np.percentile(imc[:,:,2], 99)
-    imc += 255 - np.percentile(imc, 99)
-    #imc += 255 - imc.max()
+    imc[:,:,0] += (255/2 - np.percentile(imc[:,:,0], 50))
+    imc[:,:,1] += (255/2 - np.percentile(imc[:,:,1], 50))
+    imc[:,:,2] += (255/2 - np.percentile(imc[:,:,2], 50))
+    #imc += 255 - np.percentile(imc, 99)
+    imc += 255 - imc.max()
 
     imc[imc>255] = 255
     imc[imc<0] = 0
