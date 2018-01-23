@@ -219,7 +219,9 @@ class Acquire():
 
         camera.endCapture()
 
-        return timestamp, img.copy()
+        output = img.copy()
+        
+        return timestamp, output
 
     def wait_for_camera(self):
         camera = None
