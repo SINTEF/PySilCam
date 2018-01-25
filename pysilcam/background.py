@@ -56,7 +56,7 @@ def shift_bgstack_old(bgstack, imbg, imnew, stacklength):
     return bgstack, imbg
 
 
-def correct_im(imbg, imraw):
+def correct_im_fancy(imbg, imraw):
     '''corrects raw image by subtracting the background
     inputs:
       imbg (the actual background averaged image)
@@ -80,7 +80,7 @@ def correct_im(imbg, imraw):
     return imc
 
 
-def correct_im_old(imbg, imraw):
+def correct_im(imbg, imraw):
     '''corrects raw image by subtracting the background
     inputs:
       imbg (the actual background averaged image)
@@ -116,7 +116,7 @@ def shift_and_correct(bgstack, imbg, imraw, stacklength):
       imc (corrcted image)
     '''
 
-    imc = correct_im(imbg, imraw)
+    imc = correct_im_fancy(imbg, imraw)
     bgstack, imbg = shift_bgstack(bgstack, imbg, imraw, stacklength)
 
     return bgstack, imbg, imc

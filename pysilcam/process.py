@@ -236,8 +236,8 @@ def statextract(imc, settings, timestamp, nnmodel, class_labels):
     # simplyfy processing by squeezing the image dimentions into a 2D array
     # min is used for squeezing to represent the highest attenuation of all wavelengths
     img = np.uint8(np.min(imc, axis=2))
-    imbw = im2bw(img, settings.Process.threshold) # im2bw is less fancy but
-    # faster than im2bw_fancy. This might cause problems when trying to
+    imbw = im2bw_fancy(img, settings.Process.threshold) # im2bw is less fancy but
+    # im2bw is faster than im2bw_fancy but might cause problems when trying to
     # process images with bad lighting
 
     logger.debug('clean')
@@ -253,7 +253,7 @@ def statextract(imc, settings, timestamp, nnmodel, class_labels):
     stats, saturation = measure_particles(imbw, imc, settings, timestamp, nnmodel, class_labels)
 
     # remove bad particles from data
-    stats = filter_bad_stats(stats, settings)
+    #stats = filter_bad_stats(stats, settings)
 
     return stats, imbw, saturation
 
