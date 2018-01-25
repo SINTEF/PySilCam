@@ -29,7 +29,7 @@ def ini_background(av_window, acquire):
     return bgstack, imbg
 
 
-def shift_bgstack(bgstack, imbg, imnew, stacklength):
+def shift_bgstack_fancy(bgstack, imbg, imnew, stacklength):
     '''shifts the background by popping the oldest and added a new image
     returns:
     bgstack (updated list of all background images)
@@ -41,7 +41,7 @@ def shift_bgstack(bgstack, imbg, imnew, stacklength):
     return bgstack, imbg
 
 
-def shift_bgstack_old(bgstack, imbg, imnew, stacklength):
+def shift_bgstack(bgstack, imbg, imnew, stacklength):
     '''shifts the background by popping the oldest and added a new image
     returns:
       bgstack (updated list of all background images)
@@ -99,7 +99,7 @@ def correct_im(imbg, imraw):
     return imc
 
 
-def shift_and_correct(bgstack, imbg, imraw, stacklength):
+def shift_and_correct(bgstack, imbg, imraw, stacklength, fancy=True):
     '''shifts the background stack and averaged image and corrects the new
     raw image.
 
@@ -116,8 +116,12 @@ def shift_and_correct(bgstack, imbg, imraw, stacklength):
       imc (corrcted image)
     '''
 
-    imc = correct_im_fancy(imbg, imraw)
-    bgstack, imbg = shift_bgstack(bgstack, imbg, imraw, stacklength)
+    if fancy:
+        imc = correct_im_fancy(imbg, imraw)
+        bgstack, imbg = shift_bgstack_fancy(bgstack, imbg, imraw, stacklength)
+    else:
+        imc = correct_im(imbg, imraw)
+        bgstack, imbg = shift_bgstack(bgstack, imbg, imraw, stacklength)
 
     return bgstack, imbg, imc
 
@@ -145,7 +149,7 @@ def backgrounder(av_window, acquire, bad_lighting_limit=None):
 
         if not (bad_lighting_limit==None):
             bgstack_new, imbg_new, imc = shift_and_correct(bgstack, imbg,
-                    imraw, stacklength)
+                    imraw, stacklength, settings.Process.real_time_stats)
 
             # basic check of image quality
             r = imc[:, :, 0]
