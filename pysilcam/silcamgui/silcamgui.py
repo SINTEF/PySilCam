@@ -182,10 +182,36 @@ def main():
                 self.status_update('Did not get STATS file')
                 return
 
-            self.status_update('Exporting data....')
-            scpp.stats_to_xls_png(self.process.configfile, self.stats_filename)
+            self.status_update('Exporting all data....')
+            df = scpp.stats_to_xls_png(self.process.configfile,
+                    self.stats_filename)
+            plt.figure(figsize=(20,12))
+            plt.plot(df['Time'], df['D50'],'k.')
+            plt.ylabel('d50 [um]')
+            plt.savefig(self.stats_filename.strip('-STATS.csv') +
+                    '-d50_TimeSeries.png', dpi=600, bbox_inches='tight')
+
+            self.status_update('Exporting oil data....')
+            df = scpp.stats_to_xls_png(self.process.configfile,
+                    self.stats_filename, oilgas='oil')
+            plt.figure(figsize=(20,12))
+            plt.plot(df['Time'], df['D50'],'k.')
+            plt.ylabel('d50 [um]')
+            plt.savefig(self.stats_filename.strip('-STATS.csv') +
+                    '-d50_TimeSeries_oil.png', dpi=600, bbox_inches='tight')
+
+            self.status_update('Exporting gas data....')
+            df = scpp.stats_to_xls_png(self.process.configfile,
+                    self.stats_filename, oilgas='gas')
+            plt.figure(figsize=(20,12))
+            plt.plot(df['Time'], df['D50'],'k.')
+            plt.ylabel('d50 [um]')
+            plt.savefig(self.stats_filename.strip('-STATS.csv') +
+                    '-d50_TimeSeries_gas.png', dpi=600, bbox_inches='tight')
+
             self.status_update('Export finished.')
 
+            plt.figure(self.fig_main.number)
 
         def server(self):
             print('opening serverdlg')

@@ -562,7 +562,7 @@ def silc_to_bmp(directory):
     print('Done.')
 
 
-def stats_to_xls_png(config_file, stats_filename):
+def stats_to_xls_png(config_file, stats_filename, oilgas=''):
     '''summarises stats in two excel sheets of time-series PSD and averaged
     PSD.
 
@@ -576,6 +576,13 @@ def stats_to_xls_png(config_file, stats_filename):
     settings = PySilcamSettings(config_file)
     
     stats = pd.read_csv(stats_filename)
+
+    if oilgas=='oil':
+        from pysilcam.oilgas import extract_oil
+        stats = extract_oil(stats)
+    elif oilgas=='gas':
+        from pysilcam.oilgas import extract_gas
+        stats = extract_gas(stats)
     
     u = stats['timestamp'].unique()
     
@@ -602,7 +609,8 @@ def stats_to_xls_png(config_file, stats_filename):
     df['D50'] = d50
     df['Time'] = timestamp
     
-    df.to_excel(stats_filename.strip('-STATS.csv') + '-TIMESERIES.xlsx')
+    df.to_excel(stats_filename.strip('-STATS.csv') +
+            '-TIMESERIES' + oilgas + '.xlsx')
     
     dias, vd = vd_from_stats(stats,
                 settings.PostProcess)
@@ -618,6 +626,9 @@ def stats_to_xls_png(config_file, stats_filename):
     timestamp = np.min(pd.to_datetime(timestamp))
     dfa['Time'] = timestamp
     
-    dfa.to_excel(stats_filename.strip('-STATS.csv') + '-AVERAGE.xlsx')
+    dfa.to_excel(stats_filename.strip('-STATS.csv') +
+            '-AVERAGE' + oilgas + '.xlsx')
    
     print('----END----')
+
+    return df

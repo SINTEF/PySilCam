@@ -115,7 +115,7 @@ class ProcThread(Process):
                 plt.plot(dias, vd_oil ,'r')
                 plt.plot(dias, vd_gas ,'b')
                 plt.xscale('log')
-                plt.xlim((100, 10000))
+                plt.xlim((50, 10000))
                 plt.ylabel('Volume Concentration [uL/L]')
                 plt.xlabel('Diameter [um]')
 
