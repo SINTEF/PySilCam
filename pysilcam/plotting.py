@@ -178,7 +178,7 @@ def montage_plot(montage, pixel_size):
 
 
 def summarise_fancy_stats(stats_csv_file, config_file, monitor=False,
-        maxlength=100000, msize=2048):
+        maxlength=100000, msize=2048, oilgas=''):
     sns.set_style('ticks')
 
     settings = PySilcamSettings(config_file)
@@ -194,14 +194,26 @@ def summarise_fancy_stats(stats_csv_file, config_file, monitor=False,
         montage = sc_pp.make_montage(stats_csv_file,
                 settings.PostProcess.pix_size,
                 roidir=settings.ExportParticles.outputpath,
-                auto_scaler=msize*2, msize=msize, maxlength=maxlength)
+                auto_scaler=msize*2, msize=msize,
+                maxlength=maxlength,
+                oilgas=oilgas)
 
         stats = pd.read_csv(stats_csv_file)
         stats = stats[(stats['major_axis_length'] *
                 settings.PostProcess.pix_size) < maxlength]
 
         # average numer and volume concentrations
-        nc, vc, sv_total, junge = sc_pp.nc_vc_from_stats(stats, settings.PostProcess)
+        nc, vc, sv_total, junge = sc_pp.nc_vc_from_stats(stats,
+                settings.PostProcess, oilgas=oilgas)
+
+        # extract only wanted particle stats
+        if oilgas=='oil':
+            from pysilcam.oilgas import extract_oil
+            stats = extract_oil(stats)
+        elif oilgas=='gas':
+            from pysilcam.oilgas import extract_gas
+            stats = extract_gas(stats)
+
         d50 = sc_pp.d50_from_stats(stats, settings.PostProcess)
         total_measured_particles = len(stats['major_axis_length'])
 

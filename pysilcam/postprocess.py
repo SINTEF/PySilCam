@@ -92,7 +92,7 @@ def nc_from_nd(count,sv):
     nc = np.sum(count) / sv
     return nc
 
-def nc_vc_from_stats(stats, settings):
+def nc_vc_from_stats(stats, settings, oilgas=''):
     ''' calculate:
             number concentration
             volume concentration
@@ -102,9 +102,6 @@ def nc_vc_from_stats(stats, settings):
     USEAGE: nc, vc, sample_volume, junge = nc_vc_from_stats(stats, settings)
 
     '''
-    # calculate the number distribution
-    dias, necd = nd_from_stats(stats, settings)
-
     # get the path length from the config file
     path_length = settings.path_length
 
@@ -119,6 +116,17 @@ def nc_vc_from_stats(stats, settings):
 
     # scale the sample volume by the number of images recorded
     sample_volume *= nims
+
+    # extract only wanted particle stats
+    if oilgas=='oil':
+        from pysilcam.oilgas import extract_oil
+        stats = extract_oil(stats)
+    elif oilgas=='gas':
+        from pysilcam.oilgas import extract_gas
+        stats = extract_gas(stats)
+
+    # calculate the number distribution
+    dias, necd = nd_from_stats(stats, settings)
 
     # calculate the volume distribution from the number distribution
     vd = vd_from_nd(necd, dias, sample_volume)
@@ -341,7 +349,8 @@ def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
 
 
 def make_montage(stats_csv_file, pixel_size, roidir,
-        auto_scaler=500, msize=1024, maxlength=100000):
+        auto_scaler=500, msize=1024, maxlength=100000,
+        oilgas=''):
     ''' wrapper function for montage_maker
     '''
 
@@ -352,6 +361,14 @@ def make_montage(stats_csv_file, pixel_size, roidir,
     stats = stats[~np.isnan(stats['major_axis_length'])]
     stats = stats[(stats['major_axis_length'] *
             pixel_size) < maxlength]
+
+    # extract only wanted particle stats
+    if oilgas=='oil':
+        from pysilcam.oilgas import extract_oil
+        stats = extract_oil(stats)
+    elif oilgas=='gas':
+        from pysilcam.oilgas import extract_gas
+        stats = extract_gas(stats)
 
     # sort the particles based on their length
     stats.sort_values(by=['major_axis_length'], ascending=False, inplace=True)

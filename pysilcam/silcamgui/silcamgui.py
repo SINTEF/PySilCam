@@ -154,12 +154,29 @@ def main():
                 self.status_update('Did not get STATS file')
                 return
 
-            self.status_update('Creating summary figure....')
+            self.status_update('Creating summary figure (all)....')
+
             plt.figure(figsize=(20,12))
             scplt.summarise_fancy_stats(self.stats_filename,
                     self.process.configfile, monitor=False)
-            self.status_update('Saving summary figure....')
+            self.status_update('Saving summary figure (all)....')
             plt.savefig(self.stats_filename.strip('-STATS.csv') + '-Summary.png',
+                    dpi=600, bbox_inches='tight')
+
+            plt.figure(figsize=(20,12))
+            self.status_update('Creating summary figure (oil)....')
+            scplt.summarise_fancy_stats(self.stats_filename,
+                    self.process.configfile, monitor=False, oilgas='oil')
+            self.status_update('Saving summary figure (oil)....')
+            plt.savefig(self.stats_filename.strip('-STATS.csv') + '-Summary_oil.png',
+                    dpi=600, bbox_inches='tight')
+
+            plt.figure(figsize=(20,12))
+            self.status_update('Creating summary figure (gas)....')
+            scplt.summarise_fancy_stats(self.stats_filename,
+                    self.process.configfile, monitor=False, oilgas='gas')
+            self.status_update('Saving summary figure (gas)....')
+            plt.savefig(self.stats_filename.strip('-STATS.csv') + '-Summary_gas.png',
                     dpi=600, bbox_inches='tight')
 
             self.status_update('Summary figure done.')
