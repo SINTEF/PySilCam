@@ -126,7 +126,8 @@ def shift_and_correct(bgstack, imbg, imraw, stacklength, fancy=True):
     return bgstack, imbg, imc
 
 
-def backgrounder(av_window, acquire, bad_lighting_limit=None):
+def backgrounder(av_window, acquire, bad_lighting_limit=None,
+        real_time_stats=False):
     '''generator which interracts with acquire to return a corrcted image
     given av_window number of frame to use in creating a moving background
 
@@ -149,7 +150,7 @@ def backgrounder(av_window, acquire, bad_lighting_limit=None):
 
         if not (bad_lighting_limit==None):
             bgstack_new, imbg_new, imc = shift_and_correct(bgstack, imbg,
-                    imraw, stacklength, settings.Process.real_time_stats)
+                    imraw, stacklength, real_time_stats)
 
             # basic check of image quality
             r = imc[:, :, 0]
