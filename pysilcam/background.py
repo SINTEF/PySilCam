@@ -99,7 +99,7 @@ def correct_im_fast(imbg, imraw):
     return imc
 
 
-def shift_and_correct(bgstack, imbg, imraw, stacklength, accurate=True):
+def shift_and_correct(bgstack, imbg, imraw, stacklength, real_time_stats=False):
     '''shifts the background stack and averaged image and corrects the new
     raw image.
 
@@ -116,12 +116,12 @@ def shift_and_correct(bgstack, imbg, imraw, stacklength, accurate=True):
       imc (corrected image)
     '''
 
-    if accurate:
-        imc = correct_im_accurate(imbg, imraw)
-        bgstack, imbg = shift_bgstack_accurate(bgstack, imbg, imraw, stacklength)
-    else:
+    if real_time_stats:
         imc = correct_im_fast(imbg, imraw)
         bgstack, imbg = shift_bgstack_fast(bgstack, imbg, imraw, stacklength)
+    else:
+        imc = correct_im_accurate(imbg, imraw)
+        bgstack, imbg = shift_bgstack_accurate(bgstack, imbg, imraw, stacklength)
 
     return bgstack, imbg, imc
 
