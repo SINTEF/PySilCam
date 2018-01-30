@@ -10,6 +10,7 @@ sns.set_style('ticks')
 from pysilcam.config import PySilcamSettings
 import pandas as pd
 
+
 class ParticleSizeDistPlot:
     '''Plot particle size distribution information on 2x2 layout'''
 
@@ -178,7 +179,7 @@ def montage_plot(montage, pixel_size):
 
 
 def summarise_fancy_stats(stats_csv_file, config_file, monitor=False,
-        maxlength=100000, msize=2048, oilgas=''):
+        maxlength=100000, msize=2048, oilgas=sc_pp.outputPartType.all):
     sns.set_style('ticks')
 
     settings = PySilcamSettings(config_file)
@@ -207,10 +208,10 @@ def summarise_fancy_stats(stats_csv_file, config_file, monitor=False,
                 settings.PostProcess, oilgas=oilgas)
 
         # extract only wanted particle stats
-        if oilgas=='oil':
+        if oilgas==sc_pp.outputPartType.oil:
             from pysilcam.oilgas import extract_oil
             stats = extract_oil(stats)
-        elif oilgas=='gas':
+        elif oilgas==sc_pp.outputPartType.gas:
             from pysilcam.oilgas import extract_gas
             stats = extract_gas(stats)
 

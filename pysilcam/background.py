@@ -29,7 +29,7 @@ def ini_background(av_window, acquire):
     return bgstack, imbg
 
 
-def shift_bgstack_fancy(bgstack, imbg, imnew, stacklength):
+def shift_bgstack_accurate(bgstack, imbg, imnew, stacklength):
     '''shifts the background by popping the oldest and added a new image
     returns:
     bgstack (updated list of all background images)
@@ -41,7 +41,7 @@ def shift_bgstack_fancy(bgstack, imbg, imnew, stacklength):
     return bgstack, imbg
 
 
-def shift_bgstack(bgstack, imbg, imnew, stacklength):
+def shift_bgstack_fast(bgstack, imbg, imnew, stacklength):
     '''shifts the background by popping the oldest and added a new image
     returns:
       bgstack (updated list of all background images)
@@ -56,7 +56,7 @@ def shift_bgstack(bgstack, imbg, imnew, stacklength):
     return bgstack, imbg
 
 
-def correct_im_fancy(imbg, imraw):
+def correct_im_accurate(imbg, imraw):
     '''corrects raw image by subtracting the background
     inputs:
       imbg (the actual background averaged image)
@@ -80,7 +80,7 @@ def correct_im_fancy(imbg, imraw):
     return imc
 
 
-def correct_im(imbg, imraw):
+def correct_im_fast(imbg, imraw):
     '''corrects raw image by subtracting the background
     inputs:
       imbg (the actual background averaged image)
@@ -99,7 +99,7 @@ def correct_im(imbg, imraw):
     return imc
 
 
-def shift_and_correct(bgstack, imbg, imraw, stacklength, fancy=True):
+def shift_and_correct(bgstack, imbg, imraw, stacklength, accurate=True):
     '''shifts the background stack and averaged image and corrects the new
     raw image.
 
@@ -113,22 +113,22 @@ def shift_and_correct(bgstack, imbg, imraw, stacklength, fancy=True):
     returns:
       bgstack (updated stack)
       imbg (updated averaged image)
-      imc (corrcted image)
+      imc (corrected image)
     '''
 
-    if fancy:
-        imc = correct_im_fancy(imbg, imraw)
-        bgstack, imbg = shift_bgstack_fancy(bgstack, imbg, imraw, stacklength)
+    if accurate:
+        imc = correct_im_accurate(imbg, imraw)
+        bgstack, imbg = shift_bgstack_accurate(bgstack, imbg, imraw, stacklength)
     else:
-        imc = correct_im(imbg, imraw)
-        bgstack, imbg = shift_bgstack(bgstack, imbg, imraw, stacklength)
+        imc = correct_im_fast(imbg, imraw)
+        bgstack, imbg = shift_bgstack_fast(bgstack, imbg, imraw, stacklength)
 
     return bgstack, imbg, imc
 
 
 def backgrounder(av_window, acquire, bad_lighting_limit=None,
         real_time_stats=False):
-    '''generator which interracts with acquire to return a corrcted image
+    '''generator which interacts with acquire to return a corrected image
     given av_window number of frame to use in creating a moving background
 
     example useage:

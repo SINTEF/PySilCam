@@ -12,7 +12,13 @@ import skimage
 from skimage.exposure import rescale_intensity
 import h5py
 from pysilcam.config import PySilcamSettings
+from enum import Enum
 
+
+class outputPartType(Enum):
+    all = 1
+    oil = 2
+    gas = 3
 
 def d50_from_stats(stats, settings):
     '''calculate the d50 from the stats and settings
@@ -92,7 +98,7 @@ def nc_from_nd(count,sv):
     nc = np.sum(count) / sv
     return nc
 
-def nc_vc_from_stats(stats, settings, oilgas=''):
+def nc_vc_from_stats(stats, settings, oilgas=outputPartType.all):
     ''' calculate:
             number concentration
             volume concentration
@@ -108,7 +114,7 @@ def nc_vc_from_stats(stats, settings, oilgas=''):
     # get pixel_size from config file
     pix_size = settings.pix_size
 
-    # calcualte the sample volume per image
+    # calculate the sample volume per image
     sample_volume = get_sample_volume(pix_size, path_length=path_length, imx=2048, imy=2448)
 
     # count the number of images analysed
@@ -118,10 +124,10 @@ def nc_vc_from_stats(stats, settings, oilgas=''):
     sample_volume *= nims
 
     # extract only wanted particle stats
-    if oilgas=='oil':
+    if oilgas==outputPartType.oil:
         from pysilcam.oilgas import extract_oil
         stats = extract_oil(stats)
-    elif oilgas=='gas':
+    elif oilgas==outputPartType.gas:
         from pysilcam.oilgas import extract_gas
         stats = extract_gas(stats)
 
@@ -350,7 +356,7 @@ def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
 
 def make_montage(stats_csv_file, pixel_size, roidir,
         auto_scaler=500, msize=1024, maxlength=100000,
-        oilgas=''):
+        oilgas=outputPartType.all):
     ''' wrapper function for montage_maker
     '''
 
@@ -363,10 +369,10 @@ def make_montage(stats_csv_file, pixel_size, roidir,
             pixel_size) < maxlength]
 
     # extract only wanted particle stats
-    if oilgas=='oil':
+    if oilgas==outputPartType.oil:
         from pysilcam.oilgas import extract_oil
         stats = extract_oil(stats)
-    elif oilgas=='gas':
+    elif oilgas==outputPartType.gas:
         from pysilcam.oilgas import extract_gas
         stats = extract_gas(stats)
 
@@ -579,7 +585,7 @@ def silc_to_bmp(directory):
     print('Done.')
 
 
-def stats_to_xls_png(config_file, stats_filename, oilgas=''):
+def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
     '''summarises stats in two excel sheets of time-series PSD and averaged
     PSD.
 
@@ -594,10 +600,10 @@ def stats_to_xls_png(config_file, stats_filename, oilgas=''):
     
     stats = pd.read_csv(stats_filename)
 
-    if oilgas=='oil':
+    if oilgas==outputPartType.oil:
         from pysilcam.oilgas import extract_oil
         stats = extract_oil(stats)
-    elif oilgas=='gas':
+    elif oilgas==outputPartType.gas:
         from pysilcam.oilgas import extract_gas
         stats = extract_gas(stats)
     

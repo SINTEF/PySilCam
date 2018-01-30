@@ -166,7 +166,7 @@ def main():
             plt.figure(figsize=(20,12))
             self.status_update('Creating summary figure (oil)....')
             scplt.summarise_fancy_stats(self.stats_filename,
-                    self.process.configfile, monitor=False, oilgas='oil')
+                    self.process.configfile, monitor=False, oilgas=scpp.outputPartType.oil)
             self.status_update('Saving summary figure (oil)....')
             plt.savefig(self.stats_filename.strip('-STATS.csv') + '-Summary_oil.png',
                     dpi=600, bbox_inches='tight')
@@ -174,7 +174,7 @@ def main():
             plt.figure(figsize=(20,12))
             self.status_update('Creating summary figure (gas)....')
             scplt.summarise_fancy_stats(self.stats_filename,
-                    self.process.configfile, monitor=False, oilgas='gas')
+                    self.process.configfile, monitor=False, oilgas=scpp.outputPartType.gas)
             self.status_update('Saving summary figure (gas)....')
             plt.savefig(self.stats_filename.strip('-STATS.csv') + '-Summary_gas.png',
                     dpi=600, bbox_inches='tight')
@@ -210,7 +210,7 @@ def main():
 
             self.status_update('Exporting oil data....')
             df = scpp.stats_to_xls_png(self.process.configfile,
-                    self.stats_filename, oilgas='oil')
+                    self.stats_filename, oilgas=scpp.outputPartType.oil)
             plt.figure(figsize=(20,12))
             plt.plot(df['Time'], df['D50'],'k.')
             plt.ylabel('d50 [um]')
@@ -219,7 +219,7 @@ def main():
 
             self.status_update('Exporting gas data....')
             df = scpp.stats_to_xls_png(self.process.configfile,
-                    self.stats_filename, oilgas='gas')
+                    self.stats_filename, oilgas=scpp.outputPartType.gas)
             plt.figure(figsize=(20,12))
             plt.plot(df['Time'], df['D50'],'k.')
             plt.ylabel('d50 [um]')

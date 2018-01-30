@@ -257,8 +257,6 @@ def statextract(imc, settings, timestamp, nnmodel, class_labels):
     stats, saturation = measure_particles(imbw, imc, settings, timestamp, nnmodel, class_labels)
 
     # remove bad particles from data
-    #stats = filter_bad_stats(stats, settings)
-
     return stats, imbw, saturation
 
 
