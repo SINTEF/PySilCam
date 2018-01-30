@@ -6,7 +6,7 @@ from pysilcam.__main__ import silcam_process
 import unittest
 
 @unittest.skipIf(not os.path.isdir(
-    '//sintef.no/mk20/nasgul/Miljoteknologi/MK102013220_SILCAM_IPR_EJD/hello_silcam/unittest_entries/STN04'), 
+    'E:/test data/hello_silcam/unittest_entries/STN04'),
     "test path not accessible")
 def test_csv_file():
     '''Testing that the appropriate STATS.csv file is created'''
@@ -14,8 +14,8 @@ def test_csv_file():
     path = os.path.dirname(__file__)
     conf_file = os.path.join(path, 'config.ini')
 
-    data_file = '//sintef.no/mk20/nasgul/Miljoteknologi/MK102013220_SILCAM_IPR_EJD/hello_silcam/unittest_entries/STN04'
-    stats_file = '//sintef.no/mk20/nasgul/Miljoteknologi/MK102013220_SILCAM_IPR_EJD/hello_silcam/unittest_entries/STN04-STATS.csv'
+    data_file = 'E:/test data/hello_silcam/unittest_entries/STN04'
+    stats_file = 'E:/test data/hello_silcam/unittest_entries/STN04-STATS.csv'
     
     # if csv file already exists, it has to be deleted
     if (os.path.isfile(stats_file)):
