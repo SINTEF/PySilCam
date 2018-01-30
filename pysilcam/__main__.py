@@ -406,7 +406,7 @@ def processImage(nnmodel, class_labels, image, settings, logger, gui):
         # obtained, without any particles. Therefore fill all values with nans
         # and add the image timestamp
         if len(stats_all) == 0:
-            print('ZERO particles idenfitied')
+            print('ZERO particles identified')
             z = np.zeros(len(stats_all.columns)) * np.nan
             stats_all.loc[0] = z
             # 'export name' should not be nan because then this column of the
