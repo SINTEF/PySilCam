@@ -166,5 +166,5 @@ def backgrounder(av_window, acquire, bad_lighting_limit=None,
                 logger.info('bad lighting, std={0}'.format(s))
         else:
             bgstack, imbg, imc = shift_and_correct(bgstack, imbg, imraw,
-                    stacklength)
+                    stacklength, real_time_stats)
             yield timestamp, imc, imraw
