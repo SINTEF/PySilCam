@@ -24,7 +24,7 @@ def test_big_standards():
     conf_file = os.path.join(path, 'config_glass_standards.ini')
 
     data_file = 'E:/test data/hello_silcam/unittest_entries/STANDARDS/StandardsBig'
-    stats_file = 'E:/test data/hello_silcam/STANDARDS/proc/StandardsBig-STATS.csv'
+    stats_file = 'E:/test data/hello_silcam/unittest_entries/STANDARDS/proc/StandardsBig-STATS.csv'
 
     # if csv file already exists, it has to be deleted
     if (os.path.isfile(stats_file)):
