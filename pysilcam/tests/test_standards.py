@@ -11,10 +11,10 @@ from pysilcam.config import PySilcamSettings
 import tensorflow as tf
 
 @unittest.skipIf(not os.path.isdir(
-    '//sintef.no/mk20/nasgul/Miljoteknologi/MK102013220_SILCAM_IPR_EJD/hello_silcam/unittest_entries/STANDARDS/StandardsBig'),
+    'E:/test data/hello_silcam/unittest_entries/STANDARDS/StandardsBig'),
     "test path not accessible")
 @unittest.skipIf(not os.path.isdir(
-    '//sintef.no/mk20/nasgul/Miljoteknologi/MK102013220_SILCAM_IPR_EJD/hello_silcam/unittest_entries/STANDARDS/StandardsSmall'),
+    'E:/test data/hello_silcam/unittest_entries/STANDARDS/StandardsSmall'),
     "test path not accessible")
 
 def test_big_standards():
@@ -23,8 +23,8 @@ def test_big_standards():
     path = os.path.dirname(__file__)
     conf_file = os.path.join(path, 'config_glass_standards.ini')
 
-    data_file = '//sintef.no/mk20/nasgul/Miljoteknologi/MK102013220_SILCAM_IPR_EJD/hello_silcam/unittest_entries/STANDARDS/StandardsBig'
-    stats_file = '//sintef.no/mk20/nasgul/Miljoteknologi/MK102013220_SILCAM_IPR_EJD/hello_silcam/unittest_entries/STANDARDS/proc/StandardsBig-STATS.csv'
+    data_file = 'E:/test data/hello_silcam/unittest_entries/STANDARDS/StandardsBig'
+    stats_file = 'E:/test data/hello_silcam/STANDARDS/proc/StandardsBig-STATS.csv'
 
     # if csv file already exists, it has to be deleted
     if (os.path.isfile(stats_file)):
@@ -54,10 +54,10 @@ def test_big_standards():
 
 
 @unittest.skipIf(not os.path.isdir(
-    '//sintef.no/mk20/nasgul/Miljoteknologi/MK102013220_SILCAM_IPR_EJD/hello_silcam/unittest_entries/STANDARDS/StandardsBig'),
+    'E:/test data/hello_silcam/unittest_entries/STANDARDS/StandardsBig'),
     "test path not accessible")
 @unittest.skipIf(not os.path.isdir(
-    '//sintef.no/mk20/nasgul/Miljoteknologi/MK102013220_SILCAM_IPR_EJD/hello_silcam/unittest_entries/STANDARDS/StandardsSmall'),
+    'E:/test data/hello_silcam/unittest_entries/STANDARDS/StandardsSmall'),
     "test path not accessible")
 def test_small_standards():
     '''Testing that the small standards are sized correctly'''
@@ -65,8 +65,8 @@ def test_small_standards():
     path = os.path.dirname(__file__)
     conf_file = os.path.join(path, 'config_glass_standards.ini')
 
-    data_file = '//sintef.no/mk20/nasgul/Miljoteknologi/MK102013220_SILCAM_IPR_EJD/hello_silcam/unittest_entries/STANDARDS/StandardsSmall'
-    stats_file = '//sintef.no/mk20/nasgul/Miljoteknologi/MK102013220_SILCAM_IPR_EJD/hello_silcam/unittest_entries/STANDARDS/proc/StandardsSmall-STATS.csv'
+    data_file = 'E:/test data/hello_silcam/unittest_entries/STANDARDS/StandardsSmall'
+    stats_file = 'E:/test data/hello_silcam/unittest_entries/STANDARDS/proc/StandardsSmall-STATS.csv'
 
     # if csv file already exists, it has to be deleted
     if (os.path.isfile(stats_file)):
