@@ -27,7 +27,7 @@ TODO: add tests for this module
 logger = logging.getLogger(__name__)
 
 
-def im2bw_accurate(imc, greythresh):
+def image2blackwhite_accurate(imc, greythresh):
     ''' converts corrected image (imc) to a binary image
     using greythresh as the threshold value (some auto-scaling of greythresh is done inside)
 
@@ -64,7 +64,7 @@ def im2bw_accurate(imc, greythresh):
     return imbw
 
 
-def im2bw_fast(imc, greythresh):
+def image2blackwhite_fast(imc, greythresh):
     ''' converts corrected image (imc) to a binary image
     using greythresh as the threshold value (fixed scaling of greythresh is done inside)
 
@@ -238,10 +238,10 @@ def statextract(imc, settings, timestamp, nnmodel, class_labels):
     img = np.uint8(np.min(imc, axis=2))
 
     if settings.Process.real_time_stats:
-        imbw = im2bw_fast(img, settings.Process.threshold) # im2bw is less fancy but
+        imbw = image2blackwhite_fast(img, settings.Process.threshold) # image2blackwhite_fast is less fancy but
     else:
-        imbw = im2bw_accurate(img, settings.Process.threshold) # im2bw_fast is less fancy but
-    # im2bw_fast is faster than im2bw_accurate but might cause problems when trying to
+        imbw = image2blackwhite_accurate(img, settings.Process.threshold) # image2blackwhite_fast is less fancy but
+    # image2blackwhite_fast is faster than image2blackwhite_accurate but might cause problems when trying to
     # process images with bad lighting
 
     logger.debug('clean')
@@ -256,7 +256,6 @@ def statextract(imc, settings, timestamp, nnmodel, class_labels):
     # calculate particle statistics
     stats, saturation = measure_particles(imbw, imc, settings, timestamp, nnmodel, class_labels)
 
-    # remove bad particles from data
     return stats, imbw, saturation
 
 

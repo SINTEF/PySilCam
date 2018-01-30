@@ -298,7 +298,7 @@ def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
         # of the particle area. If not tightpack, then the fitting will be done
         # based on bounding boxes instead
         if tightpack:
-            imbw = scpr.im2bw_accurate(np.uint8(particle_image[:,:,0]), 0.95)
+            imbw = scpr.image2blackwhite_accurate(np.uint8(particle_image[:,:,0]), 0.95)
             imbw = ndi.binary_fill_holes(imbw)
 
             for J in range(5):
