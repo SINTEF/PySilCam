@@ -23,6 +23,7 @@ import subprocess
 import datetime
 import pysilcam.silcamgui.guicalcs as gc
 from pysilcam.silcamgui.guicalcs import process_mode
+from pysilcam.config import PySilcamSettings
 
 sns.set_style('ticks')
 sns.set_context(font_scale=2)
@@ -74,6 +75,10 @@ class controller(QMainWindow):
     def update_dir_path(self, dir_path):
         self.ui.le_path_to_data.setText(dir_path)
 
+    def closeEvent(self, event):
+        print('closing acquisition dlg is not allowed')
+        event.ignore()
+
 
 def main():
     app = QApplication(sys.argv)
@@ -96,13 +101,13 @@ def main():
             self.process = gc.ProcThread(self.datadir, self.disc_write, self.run_type)
 
             # ---- figure in middle
-            f = plt.figure()
-            self.canvas = FigureCanvas(f)
+            self.fig_main = plt.figure()
+            self.canvas = FigureCanvas(self.fig_main)
             layout = QVBoxLayout()
             layout.addWidget(self.canvas)
             self.ui.fig_widget.setLayout(layout)
             path_here = os.path.realpath(__file__)
-            imfile = os.path.join(os.path.split(path_here)[0], 'ojleutslipp.jpg')
+            imfile = os.path.join(os.path.split(path_here)[0], 'startimg.png')
             im = skimage.io.imread(imfile)
             plt.imshow(im)
             plt.axis('off')
@@ -114,7 +119,10 @@ def main():
             #self.ui.actionServer.triggered.connect(scog.ServerThread)
             self.ui.actionServer.triggered.connect(self.server)
             self.ui.actionController.triggered.connect(self.acquire_controller)
-            self.ui.pb_ChangeDirectory.clicked.connect(self.change_directory)
+            self.ui.actionConvert_silc_to_bmp.triggered.connect(self.convert_silc)
+            self.ui.actionExport_summary_data.triggered.connect(self.export_summary_data)
+            self.ui.actionExport_summary_figure.triggered.connect(self.export_summary_figure)
+            self.ui.actionSilc_file_player.triggered.connect(self.silc_player)
 
             self.layout = layout
 
@@ -124,6 +132,103 @@ def main():
 
             self.acquire_controller()
 
+
+        def convert_silc(self):
+            self.status_update('converting data to bmp....')
+            scpp.silc_to_bmp(self.datadir) 
+            self.status_update('converting finished.')
+
+
+        def export_summary_figure(self):
+
+            self.status_update('Asking user for config file')
+            self.load_sc_config()
+            if self.process.configfile == '':
+                self.status_update('Did not get config file')
+                return
+
+            self.stats_filename = ''
+            self.status_update('Asking user for *-STATS.csv file')
+            self.load_stats_filename()
+            if self.stats_filename == '':
+                self.status_update('Did not get STATS file')
+                return
+
+            self.status_update('Creating summary figure (all)....')
+
+            plt.figure(figsize=(20,12))
+            scplt.summarise_fancy_stats(self.stats_filename,
+                    self.process.configfile, monitor=False)
+            self.status_update('Saving summary figure (all)....')
+            plt.savefig(self.stats_filename.strip('-STATS.csv') + '-Summary.png',
+                    dpi=600, bbox_inches='tight')
+
+            plt.figure(figsize=(20,12))
+            self.status_update('Creating summary figure (oil)....')
+            scplt.summarise_fancy_stats(self.stats_filename,
+                    self.process.configfile, monitor=False, oilgas=scpp.outputPartType.oil)
+            self.status_update('Saving summary figure (oil)....')
+            plt.savefig(self.stats_filename.strip('-STATS.csv') + '-Summary_oil.png',
+                    dpi=600, bbox_inches='tight')
+
+            plt.figure(figsize=(20,12))
+            self.status_update('Creating summary figure (gas)....')
+            scplt.summarise_fancy_stats(self.stats_filename,
+                    self.process.configfile, monitor=False, oilgas=scpp.outputPartType.gas)
+            self.status_update('Saving summary figure (gas)....')
+            plt.savefig(self.stats_filename.strip('-STATS.csv') + '-Summary_gas.png',
+                    dpi=600, bbox_inches='tight')
+
+            self.status_update('Summary figure done.')
+
+            plt.figure(self.fig_main.number)
+
+
+        def export_summary_data(self):
+
+            self.status_update('Asking user for config file')
+            self.load_sc_config()
+            if self.process.configfile == '':
+                self.status_update('Did not get config file')
+                return
+
+            self.stats_filename = ''
+            self.status_update('Asking user for *-STATS.csv file')
+            self.load_stats_filename()
+            if self.stats_filename == '':
+                self.status_update('Did not get STATS file')
+                return
+
+            self.status_update('Exporting all data....')
+            df = scpp.stats_to_xls_png(self.process.configfile,
+                    self.stats_filename)
+            plt.figure(figsize=(20,12))
+            plt.plot(df['Time'], df['D50'],'k.')
+            plt.ylabel('d50 [um]')
+            plt.savefig(self.stats_filename.strip('-STATS.csv') +
+                    '-d50_TimeSeries.png', dpi=600, bbox_inches='tight')
+
+            self.status_update('Exporting oil data....')
+            df = scpp.stats_to_xls_png(self.process.configfile,
+                    self.stats_filename, oilgas=scpp.outputPartType.oil)
+            plt.figure(figsize=(20,12))
+            plt.plot(df['Time'], df['D50'],'k.')
+            plt.ylabel('d50 [um]')
+            plt.savefig(self.stats_filename.strip('-STATS.csv') +
+                    '-d50_TimeSeries_oil.png', dpi=600, bbox_inches='tight')
+
+            self.status_update('Exporting gas data....')
+            df = scpp.stats_to_xls_png(self.process.configfile,
+                    self.stats_filename, oilgas=scpp.outputPartType.gas)
+            plt.figure(figsize=(20,12))
+            plt.plot(df['Time'], df['D50'],'k.')
+            plt.ylabel('d50 [um]')
+            plt.savefig(self.stats_filename.strip('-STATS.csv') +
+                    '-d50_TimeSeries_gas.png', dpi=600, bbox_inches='tight')
+
+            self.status_update('Export finished.')
+
+            plt.figure(self.fig_main.number)
 
         def server(self):
             print('opening serverdlg')
@@ -138,6 +243,8 @@ def main():
             self.ctrl.ui.pb_start.clicked.connect(self.record)
             self.ctrl.ui.pb_stop.clicked.connect(self.stop_record)
             self.ctrl.ui.pb_browse.clicked.connect(self.change_directory)
+
+            self.status_update('opening acquisition controller')
 
             self.ctrl.ui.rb_to_disc.toggled.connect(lambda:
                     self.ctrl.toggle_browse(disable=False))
@@ -158,20 +265,35 @@ def main():
             self.ctrl.ui.rb_real_time.toggled.connect(lambda: self.setProcessMode(process_mode.real_time))
             self.ctrl.ui.cb_store_to_disc.toggled.connect(lambda checked: self.setStoreToDisc(checked))
 
-            self.ctrl.ui.rb_to_disc.setChecked(True)
-            self.status_update('opening acquisition controller')
+            self.reset_acquire_dlg()
+
+        def reset_acquire_dlg(self):
+            if(self.run_type == process_mode.process):
+                self.ctrl.ui.rb_process_historical.setChecked(True)
+                self.ctrl.ui.cb_store_to_disc.setEnabled(False)
+            elif(self.run_type == process_mode.aquire):
+                self.ctrl.ui.rb_to_disc.setChecked(True)
+                self.ctrl.ui.cb_store_to_disc.setEnabled(True)
+            elif(self.run_type == process_mode.real_time):
+                self.ctrl.ui.rb_real_time.setChecked(True)
+                self.ctrl.ui.cb_store_to_disc.setEnabled(True)
+ 
             self.lv_raw_check()
             self.ctrl.show()
             self.ctrl.ui.pb_start.setStyleSheet(('QPushButton {' + 'background-color: rgb(150,150,255) }'))
             self.ctrl.ui.pb_stop.setStyleSheet(('QPushButton {' + 'background-color: rgb(150,150,255) }'))
 
+
+
         def setProcessMode(self, mode):
             self.run_type = mode
             app.processEvents()
 
+
         @pyqtSlot(bool, name='checked')
         def setStoreToDisc(self, checked):
             self.disc_write = checked
+
 
         def monitor_switch(self):
             self.monitor_toggle = np.invert(self.monitor_toggle)
@@ -181,6 +303,7 @@ def main():
                 self.monitor()
             else:
                 self.status_update(' drive monitor disabled')
+
 
         def lv_raw_switch(self):
             self.lv_raw_toggle = np.invert(self.lv_raw_toggle)
@@ -196,9 +319,8 @@ def main():
             if not self.lv_raw_toggle:
                 return
 
-            self.status_update('asking for plot')
             self.process.plot()
-            self.status_update(self.process.info)
+            self.status_update('', uselog=True)
             self.canvas.draw()
 
             QtCore.QTimer.singleShot(self.lvwaitseconds*1000, self.lv_raw)
@@ -211,10 +333,25 @@ def main():
                 self.ctrl.ui.pb_live_raw.setStyleSheet(('QPushButton {' + 'background-color: rgb(150,150,255) }'))
 
 
-        def status_update(self, string):
+        def status_update(self, string, uselog=False):
+            if uselog:
+                try:
+                    settings = PySilcamSettings(self.process.configfile)
+                    with open(settings.General.logfile, 'r') as a:
+                        lines = a.readlines()
+                        string = str(lines[-1])
+                except:
+                    pass
             string = string + '  |  Directory: ' + self.datadir
             self.ui.statusBar.setText(string)
             app.processEvents()
+
+
+        def count_data(self):
+            silc, bmp = gc.count_data(self.datadir)
+            self.status_update(('New directory contains ' +
+                    str(silc) + ' silc files and ' +
+                    str(bmp) + ' bmp files'))
 
 
         def change_directory(self):
@@ -223,10 +360,15 @@ def main():
                     self.datadir,QFileDialog.ShowDirsOnly)
             if self.datadir == '':
                 self.datadir = inidir
-            else:
-                self.status_update('(new directory)')
+
+            self.count_data()
             self.ctrl.update_dir_path(self.datadir)
+            self.process = gc.ProcThread(self.datadir, self.disc_write, self.run_type)
             app.processEvents()
+
+
+        def silc_player(self):
+            self.process.silcview()
 
 
         def record(self):
@@ -243,16 +385,15 @@ def main():
             self.ctrl.ui.pb_start.setStyleSheet(('QPushButton {' + 'background-color: rgb(0,150,0) }'))
             self.ctrl.ui.pb_stop.setStyleSheet(('QPushButton {' + 'background-color: rgb(150,150,255) }'))
             self.ctrl.ui.pb_start.setEnabled(False)
+            self.ctrl.ui.cb_store_to_disc.setEnabled(False)
             app.processEvents()
 
 
         def stop_record(self):
+            self.status_update('Asking silcam to stop')
             self.process.stop_silcam()
-
-            self.status_update('  ----  ')
-            self.status_update('KILLING SILCAM PROCESS')
-            self.status_update('  ----  ')
-                #subprocess.call('killall silcam-acquire', shell=True)
+            self.status_update('Asking silcam to stop.. OK')
+            self.reset_acquire_dlg()
             app.processEvents()
 
             self.ctrl.ui.pb_start.setStyleSheet(('QPushButton {' +
@@ -261,6 +402,16 @@ def main():
                 'background-color: rgb(150,150,255) }'))
             self.ctrl.ui.pb_start.setEnabled(True)
             app.processEvents()
+
+
+        def load_stats_filename(self):
+            self.stats_filename = QFileDialog.getOpenFileName(self,
+                    caption = 'Load a *-STATS.csv file',
+                    directory = self.datadir,
+                    filter = (('*-STATS.csv'))
+                    )[0]
+            if self.stats_filename == '':
+                return
 
 
         def load_sc_config(self):

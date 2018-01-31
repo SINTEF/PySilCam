@@ -29,8 +29,20 @@ def ini_background(av_window, acquire):
     return bgstack, imbg
 
 
-def shift_bgstack(bgstack, imbg, imnew, stacklength):
-    '''shofts the background by popping the oldest and added a new image
+def shift_bgstack_accurate(bgstack, imbg, imnew, stacklength):
+    '''shifts the background by popping the oldest and added a new image
+    returns:
+    bgstack (updated list of all background images)
+    imbg (updated actual background image)
+    '''
+    imold = bgstack.pop(0)  # pop the oldest image from the stack,
+    bgstack.append(imnew)  # append the new image to the stack
+    imbg = np.mean(bgstack, axis=0)
+    return bgstack, imbg
+
+
+def shift_bgstack_fast(bgstack, imbg, imnew, stacklength):
+    '''shifts the background by popping the oldest and added a new image
     returns:
       bgstack (updated list of all background images)
       imbg (updated actual background image)
@@ -44,7 +56,7 @@ def shift_bgstack(bgstack, imbg, imnew, stacklength):
     return bgstack, imbg
 
 
-def correct_im_old(imbg, imraw):
+def correct_im_accurate(imbg, imraw):
     '''corrects raw image by subtracting the background
     inputs:
       imbg (the actual background averaged image)
@@ -53,12 +65,13 @@ def correct_im_old(imbg, imraw):
     returns:
       imc (a corrected image)
     '''
+
     imc = np.float64(imraw) - np.float64(imbg)
-    #imc[:,:,0] += 255 - np.percentile(imc[:,:,0], 99)
-    #imc[:,:,1] += 255 - np.percentile(imc[:,:,1], 99)
-    #imc[:,:,2] += 255 - np.percentile(imc[:,:,2], 99)
-    imc += 255 - np.percentile(imc, 99)
-    #imc += 255 - imc.max()
+    imc[:,:,0] += (255/2 - np.percentile(imc[:,:,0], 50))
+    imc[:,:,1] += (255/2 - np.percentile(imc[:,:,1], 50))
+    imc[:,:,2] += (255/2 - np.percentile(imc[:,:,2], 50))
+    #imc += 255 - np.percentile(imc, 99)
+    imc += 255 - imc.max()
 
     imc[imc>255] = 255
     imc[imc<0] = 0
@@ -67,7 +80,7 @@ def correct_im_old(imbg, imraw):
     return imc
 
 
-def correct_im(imbg, imraw):
+def correct_im_fast(imbg, imraw):
     '''corrects raw image by subtracting the background
     inputs:
       imbg (the actual background averaged image)
@@ -86,7 +99,7 @@ def correct_im(imbg, imraw):
     return imc
 
 
-def shift_and_correct(bgstack, imbg, imraw, stacklength):
+def shift_and_correct(bgstack, imbg, imraw, stacklength, real_time_stats=False):
     '''shifts the background stack and averaged image and corrects the new
     raw image.
 
@@ -100,17 +113,22 @@ def shift_and_correct(bgstack, imbg, imraw, stacklength):
     returns:
       bgstack (updated stack)
       imbg (updated averaged image)
-      imc (corrcted image)
+      imc (corrected image)
     '''
 
-    imc = correct_im(imbg, imraw)
-    bgstack, imbg = shift_bgstack(bgstack, imbg, imraw, stacklength)
+    if real_time_stats:
+        imc = correct_im_fast(imbg, imraw)
+        bgstack, imbg = shift_bgstack_fast(bgstack, imbg, imraw, stacklength)
+    else:
+        imc = correct_im_accurate(imbg, imraw)
+        bgstack, imbg = shift_bgstack_accurate(bgstack, imbg, imraw, stacklength)
 
     return bgstack, imbg, imc
 
 
-def backgrounder(av_window, acquire, bad_lighting_limit=None):
-    '''generator which interracts with acquire to return a corrcted image
+def backgrounder(av_window, acquire, bad_lighting_limit=None,
+        real_time_stats=False):
+    '''generator which interacts with acquire to return a corrected image
     given av_window number of frame to use in creating a moving background
 
     example useage:
@@ -132,7 +150,7 @@ def backgrounder(av_window, acquire, bad_lighting_limit=None):
 
         if not (bad_lighting_limit==None):
             bgstack_new, imbg_new, imc = shift_and_correct(bgstack, imbg,
-                    imraw, stacklength)
+                    imraw, stacklength, real_time_stats)
 
             # basic check of image quality
             r = imc[:, :, 0]
@@ -148,5 +166,5 @@ def backgrounder(av_window, acquire, bad_lighting_limit=None):
                 logger.info('bad lighting, std={0}'.format(s))
         else:
             bgstack, imbg, imc = shift_and_correct(bgstack, imbg, imraw,
-                    stacklength)
+                    stacklength, real_time_stats)
             yield timestamp, imc, imraw

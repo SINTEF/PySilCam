@@ -10,6 +10,8 @@ import numpy as np
 import pysilcam.postprocess as sc_pp
 import pandas as pd
 from enum import Enum
+import pygame
+import time
 
 
 def get_data(self):
@@ -19,6 +21,16 @@ def get_data(self):
         rts = None
     return rts
 
+def count_data(datadir):
+    silcfiles = [os.path.join(datadir, f) for f in
+            sorted(os.listdir(datadir))
+            if f.endswith('.silc')]
+    bmpfiles = [os.path.join(datadir, f) for f in
+            sorted(os.listdir(datadir))
+            if f.endswith('.bmp')]
+    silc = len(silcfiles)
+    bmp = len(bmpfiles)
+    return silc, bmp
 
 def extract_stats_im(guidata):
     imc = guidata['imc']
@@ -103,7 +115,7 @@ class ProcThread(Process):
                 plt.plot(dias, vd_oil ,'r')
                 plt.plot(dias, vd_gas ,'b')
                 plt.xscale('log')
-                plt.xlim((100, 10000))
+                plt.xlim((50, 10000))
                 plt.ylabel('Volume Concentration [uL/L]')
                 plt.xlabel('Diameter [um]')
 
@@ -129,14 +141,25 @@ class ProcThread(Process):
 
             self.info = infostr
 
+    def load_image(self, filename, size):
+        if filename.endswith('.silc'):
+            with open(filename, 'rb') as fh:
+                im = np.load(fh, allow_pickle=False)
+            im = pygame.surfarray.make_surface(np.uint8(im))
+            im = pygame.transform.flip(im, False, True)
+            im = pygame.transform.rotate(im, -90)
+            im = pygame.transform.scale(im, size)
+        else:
+            im = pygame.image.load(filename).convert()
+
+        return im
 
     def silcview(self):
-        self.raw()
         files = [os.path.join(self.datadir, f) for f in
                 sorted(os.listdir(self.datadir))
-                if f.endswith('.bmp')]
-        import pygame
-        import time
+                if f.endswith('.silc') or f.endswith('.bmp')]
+        if len(files)==0:
+            return
         pygame.init()
         info = pygame.display.Info()
         size = (int(info.current_h / (2048/2448))-100, info.current_h-100)
@@ -174,7 +197,8 @@ class ProcThread(Process):
             f = files[counter]
 
             if not (counter == 0 | counter==len(files)-1):
-                im = pygame.image.load(os.path.join(self.datadir, f)).convert()
+                filename = os.path.join(self.datadir, f)
+                im = self.load_image(filename, size)
 
             if zoom:
                 label = font.render('ZOOM [F]: ON', 1, (255, 255, 0))
@@ -228,8 +252,6 @@ class ProcThread(Process):
                     if event.key == pygame.K_p:
                         pause = np.invert(pause)
                         direction = 0
-
-
 
             pygame.display.flip()
 

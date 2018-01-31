@@ -61,7 +61,6 @@ def test_big_standards():
     "test path not accessible")
 def test_small_standards():
     '''Testing that the small standards are sized correctly'''
-
     path = os.path.dirname(__file__)
     conf_file = os.path.join(path, 'config_glass_standards.ini')
 

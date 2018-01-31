@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import os
-import imageio
+import imageio as imo
 import matplotlib.pyplot as plt
 from skimage.filters.rank import median
 from skimage.morphology import disk
@@ -11,7 +11,14 @@ from scipy import ndimage as ndi
 import skimage
 from skimage.exposure import rescale_intensity
 import h5py
+from pysilcam.config import PySilcamSettings
+from enum import Enum
 
+
+class outputPartType(Enum):
+    all = 1
+    oil = 2
+    gas = 3
 
 def d50_from_stats(stats, settings):
     '''calculate the d50 from the stats and settings
@@ -91,7 +98,7 @@ def nc_from_nd(count,sv):
     nc = np.sum(count) / sv
     return nc
 
-def nc_vc_from_stats(stats, settings):
+def nc_vc_from_stats(stats, settings, oilgas=outputPartType.all):
     ''' calculate:
             number concentration
             volume concentration
@@ -101,16 +108,13 @@ def nc_vc_from_stats(stats, settings):
     USEAGE: nc, vc, sample_volume, junge = nc_vc_from_stats(stats, settings)
 
     '''
-    # calculate the number distribution
-    dias, necd = nd_from_stats(stats, settings)
-
     # get the path length from the config file
     path_length = settings.path_length
 
     # get pixel_size from config file
     pix_size = settings.pix_size
 
-    # calcualte the sample volume per image
+    # calculate the sample volume per image
     sample_volume = get_sample_volume(pix_size, path_length=path_length, imx=2048, imy=2448)
 
     # count the number of images analysed
@@ -118,6 +122,17 @@ def nc_vc_from_stats(stats, settings):
 
     # scale the sample volume by the number of images recorded
     sample_volume *= nims
+
+    # extract only wanted particle stats
+    if oilgas==outputPartType.oil:
+        from pysilcam.oilgas import extract_oil
+        stats = extract_oil(stats)
+    elif oilgas==outputPartType.gas:
+        from pysilcam.oilgas import extract_gas
+        stats = extract_gas(stats)
+
+    # calculate the number distribution
+    dias, necd = nd_from_stats(stats, settings)
 
     # calculate the volume distribution from the number distribution
     vd = vd_from_nd(necd, dias, sample_volume)
@@ -283,7 +298,7 @@ def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
         # of the particle area. If not tightpack, then the fitting will be done
         # based on bounding boxes instead
         if tightpack:
-            imbw = scpr.im2bw_fancy(np.uint8(particle_image[:,:,0]), 0.95)
+            imbw = scpr.image2blackwhite_accurate(np.uint8(particle_image[:,:,0]), 0.95)
             imbw = ndi.binary_fill_holes(imbw)
 
             for J in range(5):
@@ -340,7 +355,8 @@ def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
 
 
 def make_montage(stats_csv_file, pixel_size, roidir,
-        auto_scaler=500, msize=1024, maxlength=100000):
+        auto_scaler=500, msize=1024, maxlength=100000,
+        oilgas=outputPartType.all):
     ''' wrapper function for montage_maker
     '''
 
@@ -351,6 +367,14 @@ def make_montage(stats_csv_file, pixel_size, roidir,
     stats = stats[~np.isnan(stats['major_axis_length'])]
     stats = stats[(stats['major_axis_length'] *
             pixel_size) < maxlength]
+
+    # extract only wanted particle stats
+    if oilgas==outputPartType.oil:
+        from pysilcam.oilgas import extract_oil
+        stats = extract_oil(stats)
+    elif oilgas==outputPartType.gas:
+        from pysilcam.oilgas import extract_gas
+        stats = extract_gas(stats)
 
     # sort the particles based on their length
     stats.sort_values(by=['major_axis_length'], ascending=False, inplace=True)
@@ -543,3 +567,91 @@ def extract_latest_stats(stats, window_size):
     stats = stats[pd.to_datetime(stats['timestamp'])>start]
     return stats
 
+
+def silc_to_bmp(directory):
+    files = [s for s in os.listdir(directory) if s.endswith('.silc')]
+    
+    for f in files:
+        try:
+            with open(os.path.join(directory, f), 'rb') as fh:
+                im = np.load(fh, allow_pickle=False)
+                fout = os.path.splitext(f)[0] + '.bmp'
+            outname = os.path.join(directory, fout)
+            imo.imwrite(outname, im)
+        except:
+            print(f, ' failed!')
+            continue
+
+    print('Done.')
+
+
+def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
+    '''summarises stats in two excel sheets of time-series PSD and averaged
+    PSD.
+
+    Args:
+        config_file (string): Path of the config file for this data
+        stats_filename (string): Path of the stats csv file
+
+    Returns:
+        Nothing (only data files in the proc folder)
+    '''
+    settings = PySilcamSettings(config_file)
+    
+    stats = pd.read_csv(stats_filename)
+
+    if oilgas==outputPartType.oil:
+        from pysilcam.oilgas import extract_oil
+        stats = extract_oil(stats)
+    elif oilgas==outputPartType.gas:
+        from pysilcam.oilgas import extract_gas
+        stats = extract_gas(stats)
+    
+    u = stats['timestamp'].unique()
+    
+    sample_volume = get_sample_volume(settings.PostProcess.pix_size, path_length=settings.PostProcess.path_length)
+    
+    vdts = []
+    d50 = []
+    timestamp = []
+    print('glue particles....')
+    for s in u:
+        dias, vd = vd_from_stats(stats[stats['timestamp']==s],
+                settings.PostProcess)
+        nims = count_images_in_stats(stats[stats['timestamp']==s])
+        sv = sample_volume * nims
+        vd /= sv
+        d50_ = d50_from_vd(vd, dias)
+        d50.append(d50_)
+        timestamp.append(pd.to_datetime(s))
+        vdts.append(vd)
+    print('    OK.')
+    
+    df = pd.DataFrame(data=np.squeeze(vdts), columns=dias)
+    
+    df['D50'] = d50
+    df['Time'] = timestamp
+    
+    df.to_excel(stats_filename.strip('-STATS.csv') +
+            '-TIMESERIES' + oilgas + '.xlsx')
+    
+    dias, vd = vd_from_stats(stats,
+                settings.PostProcess)
+    nims = count_images_in_stats(stats)
+    sv = sample_volume * nims
+    vd /= sv
+    
+    d50 = d50_from_vd(vd, dias)
+    
+    dfa = pd.DataFrame(data=[vd], columns=dias)
+    dfa['d50'] = d50
+    
+    timestamp = np.min(pd.to_datetime(timestamp))
+    dfa['Time'] = timestamp
+    
+    dfa.to_excel(stats_filename.strip('-STATS.csv') +
+            '-AVERAGE' + oilgas + '.xlsx')
+   
+    print('----END----')
+
+    return df
