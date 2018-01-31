@@ -585,6 +585,43 @@ def silc_to_bmp(directory):
     print('Done.')
 
 
+def make_timeseries_vd(stats, settings):
+    '''makes a dataframe of time-series volume distribution and d50
+
+    Args:
+        stats (silcam stats dataframe): loaded from a *-STATS.csv file
+        settings (silcam settings): loaded from PySilCamSettings
+
+    Returns:
+        dataframe: of time series
+    '''
+   
+    u = stats['timestamp'].unique()
+    
+    sample_volume = get_sample_volume(settings.PostProcess.pix_size, path_length=settings.PostProcess.path_length)
+
+    vdts = []
+    d50 = []
+    timestamp = []
+    for s in u:
+        dias, vd = vd_from_stats(stats[stats['timestamp']==s],
+                settings.PostProcess)
+        nims = count_images_in_stats(stats[stats['timestamp']==s])
+        sv = sample_volume * nims
+        vd /= sv
+        d50_ = d50_from_vd(vd, dias)
+        d50.append(d50_)
+        timestamp.append(pd.to_datetime(s))
+        vdts.append(vd)
+    
+    time_series = pd.DataFrame(data=np.squeeze(vdts), columns=dias)
+    
+    time_series['D50'] = d50
+    time_series['Time'] = timestamp
+
+    return time_series
+
+
 def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
     '''summarises stats in two excel sheets of time-series PSD and averaged
     PSD.
@@ -594,7 +631,8 @@ def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
         stats_filename (string): Path of the stats csv file
 
     Returns:
-        Nothing (only data files in the proc folder)
+        dataframe: of time series
+        files: in the proc folder)
     '''
     settings = PySilcamSettings(config_file)
     
@@ -606,35 +644,14 @@ def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
     elif oilgas==outputPartType.gas:
         from pysilcam.oilgas import extract_gas
         stats = extract_gas(stats)
-    
-    u = stats['timestamp'].unique()
-    
-    sample_volume = get_sample_volume(settings.PostProcess.pix_size, path_length=settings.PostProcess.path_length)
-    
-    vdts = []
-    d50 = []
-    timestamp = []
-    print('glue particles....')
-    for s in u:
-        dias, vd = vd_from_stats(stats[stats['timestamp']==s],
-                settings.PostProcess)
-        nims = count_images_in_stats(stats[stats['timestamp']==s])
-        sv = sample_volume * nims
-        vd /= sv
-        d50_ = d50_from_vd(vd, dias)
-        d50.append(d50_)
-        timestamp.append(pd.to_datetime(s))
-        vdts.append(vd)
-    print('    OK.')
-    
-    df = pd.DataFrame(data=np.squeeze(vdts), columns=dias)
-    
-    df['D50'] = d50
-    df['Time'] = timestamp
-    
+   
+    df = make_time_series_vd(stats)
+
     df.to_excel(stats_filename.strip('-STATS.csv') +
             '-TIMESERIES' + oilgas + '.xlsx')
     
+    sample_volume = get_sample_volume(settings.PostProcess.pix_size, path_length=settings.PostProcess.path_length)
+   
     dias, vd = vd_from_stats(stats,
                 settings.PostProcess)
     nims = count_images_in_stats(stats)
