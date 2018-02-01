@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'SilCam.ui'
+# Form implementation generated from reading ui file 'E:\emmal\pysilcam\pysilcam\silcamgui\SilCam.ui'
 #
 # Created by: PyQt5 UI code generator 5.6
 #
@@ -32,7 +32,7 @@ class Ui_SilCam(object):
         self.gridLayout.addWidget(self.fig_widget, 1, 0, 1, 2)
         SilCam.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(SilCam)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 814, 27))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 814, 26))
         self.menubar.setObjectName("menubar")
         self.menuProcessing = QtWidgets.QMenu(self.menubar)
         self.menuProcessing.setEnabled(True)
@@ -68,11 +68,14 @@ class Ui_SilCam(object):
         self.actionExport_summary_figure.setObjectName("actionExport_summary_figure")
         self.actionSilc_file_player = QtWidgets.QAction(SilCam)
         self.actionSilc_file_player.setObjectName("actionSilc_file_player")
+        self.actionEditConfig = QtWidgets.QAction(SilCam)
+        self.actionEditConfig.setObjectName("actionEditConfig")
         self.menuProcessing.addAction(self.actionExport_summary_data)
         self.menuProcessing.addAction(self.actionExport_summary_figure)
         self.menuProcessing.addAction(self.actionConvert_silc_to_bmp)
         self.menuProcessing.addAction(self.actionSilc_file_player)
         self.menuProcessing.addAction(self.actionServer)
+        self.menuProcessing.addAction(self.actionEditConfig)
         self.menubar.addAction(self.menuProcessing.menuAction())
 
         self.retranslateUi(SilCam)
@@ -97,4 +100,5 @@ class Ui_SilCam(object):
         self.actionExport_summary_data.setText(_translate("SilCam", "Export summary data (to xls)"))
         self.actionExport_summary_figure.setText(_translate("SilCam", "Export summary figure (to png)"))
         self.actionSilc_file_player.setText(_translate("SilCam", "silc file player"))
+        self.actionEditConfig.setText(_translate("SilCam", "Edit config file"))
 
