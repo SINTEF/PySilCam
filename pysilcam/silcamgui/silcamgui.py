@@ -25,7 +25,6 @@ import datetime
 import pysilcam.silcamgui.guicalcs as gc
 from pysilcam.silcamgui.guicalcs import process_mode
 from pysilcam.config import PySilcamSettings
-from enum import Enum
 
 sns.set_style('ticks')
 sns.set_context(font_scale=2)
