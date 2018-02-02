@@ -349,7 +349,7 @@ def main():
                         string = str(lines[-1])
                 except:
                     pass
-            string = string + '  |  Directory: ' + self.datadir
+            string = string + '  |  Directory: ' + self.datadir + '  |  Config file: ' + self.configfile
             self.ui.statusBar.setText(string)
             app.processEvents()
 
@@ -435,8 +435,8 @@ def main():
             # move current directory to the config file folder in order to
             # handle relative paths fened from the config file
             os.chdir(os.path.split(configfile)[0])
-
             self.configfile = configfile
+            self.status_update('Config file loaded.')
 
 
 
