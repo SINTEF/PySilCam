@@ -91,14 +91,15 @@ def main():
 
             # --- some default states
             self.settings = ''
+            self.configfile = ''
+            self.datadir = DATADIR
             self.stats = []
             self.lv_raw_toggle = False
             self.monitor_toggle = False
             self.lvwaitseconds = 1
             self.disc_write = False
             self.run_type = process_mode.process
-            self.datadir = DATADIR
-            self.process = gc.ProcThread(self.datadir, self.disc_write, self.run_type)
+            self.process = None
 
             # ---- figure in middle
             self.fig_main = plt.figure()
@@ -115,8 +116,6 @@ def main():
 
             # ---- define some callbacks
             self.ui.actionExit.triggered.connect(self.exit)
-            self.ui.actionSilc_viewer.triggered.connect(self.process.silcview)
-            #self.ui.actionServer.triggered.connect(scog.ServerThread)
             self.ui.actionServer.triggered.connect(self.server)
             self.ui.actionController.triggered.connect(self.acquire_controller)
             self.ui.actionConvert_silc_to_bmp.triggered.connect(self.convert_silc)
@@ -141,11 +140,12 @@ def main():
 
         def export_summary_figure(self):
 
-            self.status_update('Asking user for config file')
-            self.load_sc_config()
-            if self.process.configfile == '':
-                self.status_update('Did not get config file')
-                return
+            if self.configfile == '':
+                self.status_update('Asking user for config file')
+                self.load_sc_config()
+                if (self.configfile == ''):
+                    self.status_update('Did not get config file')
+                    return
 
             self.stats_filename = ''
             self.status_update('Asking user for *-STATS.csv file')
@@ -158,7 +158,7 @@ def main():
 
             plt.figure(figsize=(20,12))
             scplt.summarise_fancy_stats(self.stats_filename,
-                    self.process.configfile, monitor=False)
+                    self.configfile, monitor=False)
             self.status_update('Saving summary figure (all)....')
             plt.savefig(self.stats_filename.strip('-STATS.csv') + '-Summary.png',
                     dpi=600, bbox_inches='tight')
@@ -166,7 +166,7 @@ def main():
             plt.figure(figsize=(20,12))
             self.status_update('Creating summary figure (oil)....')
             scplt.summarise_fancy_stats(self.stats_filename,
-                    self.process.configfile, monitor=False, oilgas=scpp.outputPartType.oil)
+                    self.configfile, monitor=False, oilgas=scpp.outputPartType.oil)
             self.status_update('Saving summary figure (oil)....')
             plt.savefig(self.stats_filename.strip('-STATS.csv') + '-Summary_oil.png',
                     dpi=600, bbox_inches='tight')
@@ -174,7 +174,7 @@ def main():
             plt.figure(figsize=(20,12))
             self.status_update('Creating summary figure (gas)....')
             scplt.summarise_fancy_stats(self.stats_filename,
-                    self.process.configfile, monitor=False, oilgas=scpp.outputPartType.gas)
+                    self.configfile, monitor=False, oilgas=scpp.outputPartType.gas)
             self.status_update('Saving summary figure (gas)....')
             plt.savefig(self.stats_filename.strip('-STATS.csv') + '-Summary_gas.png',
                     dpi=600, bbox_inches='tight')
@@ -186,11 +186,12 @@ def main():
 
         def export_summary_data(self):
 
-            self.status_update('Asking user for config file')
-            self.load_sc_config()
-            if self.process.configfile == '':
-                self.status_update('Did not get config file')
-                return
+            if self.configfile == '':
+                self.status_update('Asking user for config file')
+                self.load_sc_config()
+                if self.configfile == '':
+                    self.status_update('Did not get STATS file')
+                    return
 
             self.stats_filename = ''
             self.status_update('Asking user for *-STATS.csv file')
@@ -200,7 +201,7 @@ def main():
                 return
 
             self.status_update('Exporting all data....')
-            df = scpp.stats_to_xls_png(self.process.configfile,
+            df = scpp.stats_to_xls_png(self.configfile,
                     self.stats_filename)
             plt.figure(figsize=(20,12))
             plt.plot(df['Time'], df['D50'],'k.')
@@ -209,7 +210,7 @@ def main():
                     '-d50_TimeSeries.png', dpi=600, bbox_inches='tight')
 
             self.status_update('Exporting oil data....')
-            df = scpp.stats_to_xls_png(self.process.configfile,
+            df = scpp.stats_to_xls_png(self.configfile,
                     self.stats_filename, oilgas=scpp.outputPartType.oil)
             plt.figure(figsize=(20,12))
             plt.plot(df['Time'], df['D50'],'k.')
@@ -218,7 +219,7 @@ def main():
                     '-d50_TimeSeries_oil.png', dpi=600, bbox_inches='tight')
 
             self.status_update('Exporting gas data....')
-            df = scpp.stats_to_xls_png(self.process.configfile,
+            df = scpp.stats_to_xls_png(self.configfile,
                     self.stats_filename, oilgas=scpp.outputPartType.gas)
             plt.figure(figsize=(20,12))
             plt.plot(df['Time'], df['D50'],'k.')
@@ -239,6 +240,9 @@ def main():
 
         def acquire_controller(self):
             self.ctrl = controller(self)
+            self.ctrl.ui.pb_start.setEnabled(False)
+            self.ctrl.ui.pb_stop.setEnabled(False)
+            self.ctrl.ui.pb_live_raw.setEnabled(False)
             self.ctrl.ui.pb_live_raw.clicked.connect(self.lv_raw_switch)
             self.ctrl.ui.pb_start.clicked.connect(self.record)
             self.ctrl.ui.pb_stop.clicked.connect(self.stop_record)
@@ -264,7 +268,7 @@ def main():
             self.ctrl.ui.rb_real_time.toggled.connect(lambda: self.ctrl.toggle_write_to_disc(disable=False))
             self.ctrl.ui.rb_real_time.toggled.connect(lambda: self.setProcessMode(process_mode.real_time))
             self.ctrl.ui.cb_store_to_disc.toggled.connect(lambda checked: self.setStoreToDisc(checked))
-
+            self.ctrl.ui.pb_load_config.clicked.connect(self.load_sc_config)
             self.reset_acquire_dlg()
 
         def reset_acquire_dlg(self):
@@ -319,6 +323,9 @@ def main():
             if not self.lv_raw_toggle:
                 return
 
+            if (not self.process):
+                return
+
             self.process.plot()
             self.status_update('', uselog=True)
             self.canvas.draw()
@@ -363,7 +370,6 @@ def main():
 
             self.count_data()
             self.ctrl.update_dir_path(self.datadir)
-            self.process = gc.ProcThread(self.datadir, self.disc_write, self.run_type)
             app.processEvents()
 
 
@@ -372,13 +378,7 @@ def main():
 
 
         def record(self):
-            self.process = gc.ProcThread(self.datadir, self.disc_write, self.run_type)
-            if self.process.settings == '':
-                self.status_update('config file not found. please load one.')
-                self.load_sc_config()
-                if self.process.configfile == '':
-                    return
-
+            self.process = gc.ProcThread(self.datadir, self.configfile, self.disc_write, self.run_type)
             self.status_update('STARTING SILCAM!')
             self.process.go()
             app.processEvents()
@@ -387,10 +387,15 @@ def main():
             self.ctrl.ui.pb_start.setEnabled(False)
             self.ctrl.ui.cb_store_to_disc.setEnabled(False)
             app.processEvents()
+            self.ctrl.ui.pb_stop.setEnabled(True)
+            self.ctrl.ui.pb_live_raw.setEnabled(True)
 
 
         def stop_record(self):
             self.status_update('Asking silcam to stop')
+            if (not self.process):
+                return
+
             self.process.stop_silcam()
             self.status_update('Asking silcam to stop.. OK')
             self.reset_acquire_dlg()
@@ -401,6 +406,8 @@ def main():
             self.ctrl.ui.pb_stop.setStyleSheet(('QPushButton {' +
                 'background-color: rgb(150,150,255) }'))
             self.ctrl.ui.pb_start.setEnabled(True)
+            self.ctrl.ui.pb_stop.setEnabled(False)
+            self.ctrl.ui.pb_live_raw.setEnabled(False)
             app.processEvents()
 
 
@@ -415,17 +422,22 @@ def main():
 
 
         def load_sc_config(self):
-            self.process.configfile = QFileDialog.getOpenFileName(self,
+            configfile = QFileDialog.getOpenFileName(self,
                     caption = 'Load config ini file',
                     directory = self.datadir,
                     filter = (('*.ini'))
                     )[0]
-            if self.process.configfile == '':
+            if configfile == '':
                 return
+
+            self.ctrl.ui.pb_start.setEnabled(True)
 
             # move current directory to the config file folder in order to
             # handle relative paths fened from the config file
-            os.chdir(os.path.split(self.process.configfile)[0])
+            os.chdir(os.path.split(configfile)[0])
+
+            self.configfile = configfile
+
 
 
         def closeEvent(self, event):

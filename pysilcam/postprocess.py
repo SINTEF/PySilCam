@@ -599,13 +599,16 @@ def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
     settings = PySilcamSettings(config_file)
     
     stats = pd.read_csv(stats_filename)
+    oilgasTxt = ''
 
     if oilgas==outputPartType.oil:
         from pysilcam.oilgas import extract_oil
         stats = extract_oil(stats)
+        oilgasTxt = 'oil'
     elif oilgas==outputPartType.gas:
         from pysilcam.oilgas import extract_gas
         stats = extract_gas(stats)
+        oilgasTxt = 'gas'
     
     u = stats['timestamp'].unique()
     
@@ -631,9 +634,9 @@ def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
     
     df['D50'] = d50
     df['Time'] = timestamp
-    
+
     df.to_excel(stats_filename.strip('-STATS.csv') +
-            '-TIMESERIES' + oilgas + '.xlsx')
+            '-TIMESERIES' + oilgasTxt + '.xlsx')
     
     dias, vd = vd_from_stats(stats,
                 settings.PostProcess)
@@ -650,7 +653,7 @@ def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
     dfa['Time'] = timestamp
     
     dfa.to_excel(stats_filename.strip('-STATS.csv') +
-            '-AVERAGE' + oilgas + '.xlsx')
+            '-AVERAGE' + oilgasTxt + '.xlsx')
    
     print('----END----')
 
