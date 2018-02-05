@@ -12,6 +12,7 @@ import pandas as pd
 from enum import Enum
 import pygame
 import time
+import psutil
 
 
 def get_data(self):
@@ -76,8 +77,14 @@ class ProcThread(Process):
 
 
     def stop_silcam(self):
+
         if self.is_alive():
             self.terminate()
+            # terminate all children processes
+            list = psutil.Process(self.pid).children()
+            for p in list:
+                p.terminate()
+            self.join()
             self.info = 'termination sent'
         else:
             self.info = 'nothing to terminate'
