@@ -30,7 +30,8 @@ sns.set_style('ticks')
 sns.set_context(font_scale=2)
 DATADIR = os.getcwd()
 IP = '192.168.1.2'
-DEFAULT_CONFIG = "../config_example.ini"
+DEFAULT_CONFIG = os.path.join(os.path.dirname(__file__), '../config_example.ini')
+
 
 def names_to_times(names):
     times = []
@@ -89,6 +90,7 @@ class ConfigEditor(QDialog):
         self.ui.setupUi(self)
         self.configfileToModify = configfile
         self.fillInConfigEditor(configfile)
+        print(DEFAULT_CONFIG)
         self.ui.defaultPushButton.clicked.connect(lambda: self.fillInConfigEditor(DEFAULT_CONFIG))
         self.ui.browseDataPathPB.clicked.connect(self.browseDataPath)
         self.ui.browseLogFilePB.clicked.connect(self.browseLogFile)

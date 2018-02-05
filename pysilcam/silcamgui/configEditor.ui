@@ -61,7 +61,7 @@
     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
    </property>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -179,7 +179,7 @@
        <item row="2" column="3">
         <widget class="QLabel" name="label_12">
          <property name="text">
-          <string>[um]Minimum length of particles to save to disk.</string>
+          <string>[µm]Minimum length of particles to save to disk.</string>
          </property>
         </widget>
        </item>
