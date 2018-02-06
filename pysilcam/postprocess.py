@@ -603,6 +603,7 @@ def make_timeseries_vd(stats, settings):
     vdts = []
     d50 = []
     timestamp = []
+    dias = []
     for s in u:
         dias, vd = vd_from_stats(stats[stats['timestamp']==s],
                 settings.PostProcess)
