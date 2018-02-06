@@ -7,8 +7,14 @@
     <x>0</x>
     <y>0</y>
     <width>694</width>
-    <height>611</height>
+    <height>609</height>
    </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
   </property>
   <property name="windowTitle">
    <string>Edit configuration file</string>
@@ -41,6 +47,12 @@
      <height>28</height>
     </rect>
    </property>
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
    <property name="text">
     <string>Default configuration</string>
    </property>
@@ -48,11 +60,17 @@
   <widget class="QLabel" name="configPathLabel">
    <property name="geometry">
     <rect>
-     <x>16</x>
+     <x>0</x>
      <y>10</y>
      <width>671</width>
      <height>20</height>
     </rect>
+   </property>
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
    </property>
    <property name="text">
     <string>TextLabel</string>
@@ -65,14 +83,23 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>30</y>
-     <width>681</width>
-     <height>491</height>
+     <y>40</y>
+     <width>672</width>
+     <height>481</height>
     </rect>
    </property>
    <layout class="QGridLayout" name="gridLayout_5">
+    <property name="sizeConstraint">
+     <enum>QLayout::SetMinAndMaxSize</enum>
+    </property>
     <item row="3" column="0">
      <widget class="QGroupBox" name="groupBox_2">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="maximumSize">
        <size>
         <width>1000</width>
@@ -82,9 +109,9 @@
       <property name="title">
        <string>Export</string>
       </property>
-      <layout class="QGridLayout" name="gridLayout_4" columnminimumwidth="100,180,0,320">
+      <layout class="QGridLayout" name="gridLayout_4" columnminimumwidth="100,180,25,320">
        <property name="sizeConstraint">
-        <enum>QLayout::SetFixedSize</enum>
+        <enum>QLayout::SetMinAndMaxSize</enum>
        </property>
        <item row="0" column="2">
         <spacer name="horizontalSpacer_4">
@@ -92,7 +119,7 @@
           <enum>Qt::Horizontal</enum>
          </property>
          <property name="sizeType">
-          <enum>QSizePolicy::Fixed</enum>
+          <enum>QSizePolicy::Expanding</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -189,7 +216,7 @@
           <enum>Qt::Horizontal</enum>
          </property>
          <property name="sizeType">
-          <enum>QSizePolicy::Fixed</enum>
+          <enum>QSizePolicy::Expanding</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -204,6 +231,12 @@
     </item>
     <item row="0" column="0">
      <widget class="QGroupBox" name="generalgroupBox">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="maximumSize">
        <size>
         <width>1000</width>
@@ -213,9 +246,9 @@
       <property name="title">
        <string>General</string>
       </property>
-      <layout class="QGridLayout" name="gridLayout" columnminimumwidth="100,180,0,320">
+      <layout class="QGridLayout" name="gridLayout" columnminimumwidth="100,180,25,320">
        <property name="sizeConstraint">
-        <enum>QLayout::SetFixedSize</enum>
+        <enum>QLayout::SetMinAndMaxSize</enum>
        </property>
        <item row="0" column="0">
         <widget class="QLabel" name="label">
@@ -229,6 +262,12 @@
        </item>
        <item row="0" column="2">
         <widget class="QPushButton" name="browseDataPathPB">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="maximumSize">
           <size>
            <width>20</width>
@@ -307,6 +346,12 @@
        </item>
        <item row="2" column="2">
         <widget class="QPushButton" name="browseLogFilePB">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="maximumSize">
           <size>
            <width>20</width>
@@ -330,6 +375,12 @@
     </item>
     <item row="1" column="0">
      <widget class="QGroupBox" name="processgroupBox">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="maximumSize">
        <size>
         <width>1000</width>
@@ -339,9 +390,9 @@
       <property name="title">
        <string>Process</string>
       </property>
-      <layout class="QGridLayout" name="gridLayout_2" columnminimumwidth="100,180,0,320">
+      <layout class="QGridLayout" name="gridLayout_2" columnminimumwidth="100,180,25,320">
        <property name="sizeConstraint">
-        <enum>QLayout::SetFixedSize</enum>
+        <enum>QLayout::SetMinAndMaxSize</enum>
        </property>
        <item row="1" column="1">
         <widget class="QLineEdit" name="path_lengthEdit"/>
@@ -366,7 +417,7 @@
           <enum>Qt::Horizontal</enum>
          </property>
          <property name="sizeType">
-          <enum>QSizePolicy::Fixed</enum>
+          <enum>QSizePolicy::Expanding</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -389,7 +440,7 @@
           <enum>Qt::Horizontal</enum>
          </property>
          <property name="sizeType">
-          <enum>QSizePolicy::Fixed</enum>
+          <enum>QSizePolicy::Expanding</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -442,7 +493,7 @@
           <enum>Qt::Horizontal</enum>
          </property>
          <property name="sizeType">
-          <enum>QSizePolicy::Fixed</enum>
+          <enum>QSizePolicy::Expanding</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -464,6 +515,12 @@
     </item>
     <item row="4" column="0">
      <widget class="QGroupBox" name="groupBox">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="maximumSize">
        <size>
         <width>1000</width>
@@ -473,9 +530,9 @@
       <property name="title">
        <string>Advanced</string>
       </property>
-      <layout class="QGridLayout" name="gridLayout_3" columnminimumwidth="100,180,0,320">
+      <layout class="QGridLayout" name="gridLayout_3" columnminimumwidth="100,180,25,320">
        <property name="sizeConstraint">
-        <enum>QLayout::SetFixedSize</enum>
+        <enum>QLayout::SetMinAndMaxSize</enum>
        </property>
        <item row="0" column="3">
         <widget class="QLabel" name="label_22">
@@ -514,7 +571,7 @@
           <enum>Qt::Horizontal</enum>
          </property>
          <property name="sizeType">
-          <enum>QSizePolicy::Fixed</enum>
+          <enum>QSizePolicy::Expanding</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -533,7 +590,7 @@
           <enum>Qt::Horizontal</enum>
          </property>
          <property name="sizeType">
-          <enum>QSizePolicy::Fixed</enum>
+          <enum>QSizePolicy::Expanding</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -559,7 +616,7 @@
           <enum>Qt::Horizontal</enum>
          </property>
          <property name="sizeType">
-          <enum>QSizePolicy::Fixed</enum>
+          <enum>QSizePolicy::Expanding</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>

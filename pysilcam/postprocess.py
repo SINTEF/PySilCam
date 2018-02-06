@@ -595,7 +595,7 @@ def make_timeseries_vd(stats, settings):
     Returns:
         dataframe: of time series
     '''
-   
+
     u = stats['timestamp'].unique()
     
     sample_volume = get_sample_volume(settings.PostProcess.pix_size, path_length=settings.PostProcess.path_length)
@@ -603,6 +603,7 @@ def make_timeseries_vd(stats, settings):
     vdts = []
     d50 = []
     timestamp = []
+    dias = []
     for s in u:
         dias, vd = vd_from_stats(stats[stats['timestamp']==s],
                 settings.PostProcess)
@@ -615,7 +616,7 @@ def make_timeseries_vd(stats, settings):
         vdts.append(vd)
     
     time_series = pd.DataFrame(data=np.squeeze(vdts), columns=dias)
-    
+
     time_series['D50'] = d50
     time_series['Time'] = timestamp
 
@@ -637,18 +638,21 @@ def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
     settings = PySilcamSettings(config_file)
     
     stats = pd.read_csv(stats_filename)
+    oilgasTxt = ''
 
     if oilgas==outputPartType.oil:
         from pysilcam.oilgas import extract_oil
         stats = extract_oil(stats)
+        oilgasTxt = 'oil'
     elif oilgas==outputPartType.gas:
         from pysilcam.oilgas import extract_gas
         stats = extract_gas(stats)
+        oilgasTxt = 'gas'
    
-    df = make_time_series_vd(stats)
+    df = make_timeseries_vd(stats, settings)
 
     df.to_excel(stats_filename.strip('-STATS.csv') +
-            '-TIMESERIES' + oilgas + '.xlsx')
+            '-TIMESERIES' + oilgasTxt + '.xlsx')
     
     sample_volume = get_sample_volume(settings.PostProcess.pix_size, path_length=settings.PostProcess.path_length)
    
@@ -667,7 +671,7 @@ def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
     dfa['Time'] = timestamp
     
     dfa.to_excel(stats_filename.strip('-STATS.csv') +
-            '-AVERAGE' + oilgas + '.xlsx')
+            '-AVERAGE' + oilgasTxt + '.xlsx')
    
     print('----END----')
 
