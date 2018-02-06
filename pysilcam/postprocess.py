@@ -585,39 +585,24 @@ def silc_to_bmp(directory):
     print('Done.')
 
 
-def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
-    '''summarises stats in two excel sheets of time-series PSD and averaged
-    PSD.
+def make_timeseries_vd(stats, settings):
+    '''makes a dataframe of time-series volume distribution and d50
 
     Args:
-        config_file (string): Path of the config file for this data
-        stats_filename (string): Path of the stats csv file
+        stats (silcam stats dataframe): loaded from a *-STATS.csv file
+        settings (silcam settings): loaded from PySilCamSettings
 
     Returns:
-        Nothing (only data files in the proc folder)
+        dataframe: of time series
     '''
-    settings = PySilcamSettings(config_file)
-    
-    stats = pd.read_csv(stats_filename)
-    oilgasTxt = ''
 
-    if oilgas==outputPartType.oil:
-        from pysilcam.oilgas import extract_oil
-        stats = extract_oil(stats)
-        oilgasTxt = 'oil'
-    elif oilgas==outputPartType.gas:
-        from pysilcam.oilgas import extract_gas
-        stats = extract_gas(stats)
-        oilgasTxt = 'gas'
-    
     u = stats['timestamp'].unique()
     
     sample_volume = get_sample_volume(settings.PostProcess.pix_size, path_length=settings.PostProcess.path_length)
-    
+
     vdts = []
     d50 = []
     timestamp = []
-    print('glue particles....')
     for s in u:
         dias, vd = vd_from_stats(stats[stats['timestamp']==s],
                 settings.PostProcess)
@@ -628,16 +613,47 @@ def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
         d50.append(d50_)
         timestamp.append(pd.to_datetime(s))
         vdts.append(vd)
-    print('    OK.')
     
-    df = pd.DataFrame(data=np.squeeze(vdts), columns=dias)
+    time_series = pd.DataFrame(data=np.squeeze(vdts), columns=dias)
+
+    time_series['D50'] = d50
+    time_series['Time'] = timestamp
+
+    return time_series
+
+
+def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
+    '''summarises stats in two excel sheets of time-series PSD and averaged
+    PSD.
+
+    Args:
+        config_file (string): Path of the config file for this data
+        stats_filename (string): Path of the stats csv file
+
+    Returns:
+        dataframe: of time series
+        files: in the proc folder)
+    '''
+    settings = PySilcamSettings(config_file)
     
-    df['D50'] = d50
-    df['Time'] = timestamp
+    stats = pd.read_csv(stats_filename)
+
+    if oilgas==outputPartType.oil:
+        from pysilcam.oilgas import extract_oil
+        stats = extract_oil(stats)
+        oilgasTxt = 'oil'
+    elif oilgas==outputPartType.gas:
+        from pysilcam.oilgas import extract_gas
+        stats = extract_gas(stats)
+        oilgasTxt = 'gas'
+   
+    df = make_timeseries_vd(stats)
 
     df.to_excel(stats_filename.strip('-STATS.csv') +
             '-TIMESERIES' + oilgasTxt + '.xlsx')
     
+    sample_volume = get_sample_volume(settings.PostProcess.pix_size, path_length=settings.PostProcess.path_length)
+   
     dias, vd = vd_from_stats(stats,
                 settings.PostProcess)
     nims = count_images_in_stats(stats)

@@ -48,11 +48,14 @@ class Ui_SilCam(object):
         self.actionExport_summary_figure.setObjectName("actionExport_summary_figure")
         self.actionSilc_file_player = QtWidgets.QAction(SilCam)
         self.actionSilc_file_player.setObjectName("actionSilc_file_player")
+        self.actionEditConfig = QtWidgets.QAction(SilCam)
+        self.actionEditConfig.setObjectName("actionEditConfig")
         self.menuProcessing.addAction(self.actionExport_summary_data)
         self.menuProcessing.addAction(self.actionExport_summary_figure)
         self.menuProcessing.addAction(self.actionConvert_silc_to_bmp)
         self.menuProcessing.addAction(self.actionSilc_file_player)
         self.menuProcessing.addAction(self.actionServer)
+        self.menuProcessing.addAction(self.actionEditConfig)
         self.menubar.addAction(self.menuProcessing.menuAction())
 
         self.retranslateUi(SilCam)
@@ -67,4 +70,5 @@ class Ui_SilCam(object):
         self.actionExport_summary_data.setText(_translate("SilCam", "Export summary data (to xls)"))
         self.actionExport_summary_figure.setText(_translate("SilCam", "Export summary figure (to png)"))
         self.actionSilc_file_player.setText(_translate("SilCam", "silc file player"))
+        self.actionEditConfig.setText(_translate("SilCam", "Edit config file"))
 

@@ -64,6 +64,7 @@
     <addaction name="actionConvert_silc_to_bmp"/>
     <addaction name="actionSilc_file_player"/>
     <addaction name="actionServer"/>
+    <addaction name="actionEditConfig"/>
    </widget>
    <addaction name="menuProcessing"/>
   </widget>
@@ -90,6 +91,11 @@
   <action name="actionSilc_file_player">
    <property name="text">
     <string>silc file player</string>
+   </property>
+  </action>
+  <action name="actionEditConfig">
+   <property name="text">
+    <string>Edit config file</string>
    </property>
   </action>
  </widget>

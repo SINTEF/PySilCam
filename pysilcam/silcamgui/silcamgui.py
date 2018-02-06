@@ -2,7 +2,7 @@ import sys
 import numpy as np
 import pandas as pd
 import os
-from PyQt5.QtWidgets import (QMainWindow, QApplication, QPushButton, QWidget,
+from PyQt5.QtWidgets import (QMainWindow, QApplication, QPushButton, QWidget, QDialog,
 QAction, QTabWidget,QVBoxLayout, QFileDialog)
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import pyqtSlot
@@ -13,6 +13,7 @@ import skimage.io
 from pysilcam.silcamgui.SilCam import Ui_SilCam
 from pysilcam.silcamgui.SilCamController import Ui_SilCamController
 from pysilcam.silcamgui.ServerDLG import Ui_Server
+from pysilcam.silcamgui.configEditor import Ui_Editconfig
 import seaborn as sns
 import pysilcam.postprocess as scpp
 import pysilcam.plotting as scplt
@@ -29,6 +30,8 @@ sns.set_style('ticks')
 sns.set_context(font_scale=2)
 DATADIR = os.getcwd()
 IP = '192.168.1.2'
+DEFAULT_CONFIG = os.path.join(os.path.dirname(__file__), '../config_example.ini')
+
 
 def names_to_times(names):
     times = []
@@ -79,6 +82,98 @@ class controller(QMainWindow):
         print('closing acquisition dlg is not allowed')
         event.ignore()
 
+class ConfigEditor(QDialog):
+
+    def __init__(self, configfile, parent=None):
+        QMainWindow.__init__(self, parent)
+        self.ui = Ui_Editconfig()
+        self.ui.setupUi(self)
+        self.configfileToModify = configfile
+        self.fillInConfigEditor(configfile)
+        print(DEFAULT_CONFIG)
+        self.ui.defaultPushButton.clicked.connect(lambda: self.fillInConfigEditor(DEFAULT_CONFIG))
+        self.ui.browseDataPathPB.clicked.connect(self.browseDataPath)
+        self.ui.browseLogFilePB.clicked.connect(self.browseLogFile)
+        self.ui.browseOutputPathPB.clicked.connect(self.browseOutputPath)
+
+    def fillInConfigEditor(self, inputFile):
+        self.ui.configPathLabel.setText(self.configfileToModify)
+        self.settings = PySilcamSettings(inputFile)
+        self.ui.datafileEdit.setText(self.settings.General.datafile)
+        idx = self.ui.loglevelEdit.findText(self.settings.General.loglevel, QtCore.Qt.MatchFixedString)
+        if (idx == -1):
+            idx = 0
+        self.ui.loglevelEdit.setCurrentIndex(idx)
+        self.ui.logfileEdit.setText(self.settings.General.logfile)
+        if (self.settings.Process.real_time_stats == True):
+            self.ui.real_time_statsEdit.setCurrentIndex(1)
+        else:
+            self.ui.real_time_statsEdit.setCurrentIndex(0)
+        self.ui.path_lengthEdit.setText(str(self.settings.PostProcess.path_length))
+        self.ui.window_sizeEdit.setText(str(self.settings.PostProcess.window_size))
+
+        if (self.settings.ExportParticles.export_images == True):
+            self.ui.export_imagesEdit.setCurrentIndex(1)
+        else:
+            self.ui.export_imagesEdit.setCurrentIndex(0)
+        self.ui.outputpathEdit.setText(self.settings.ExportParticles.outputpath)
+        self.ui.min_lengthEdit.setText(str(self.settings.ExportParticles.min_length))
+        self.ui.num_imagesEdit.setText(str(self.settings.Background.num_images))
+        self.ui.thresholdEdit.setText(str(self.settings.Process.threshold))
+        self.ui.max_particlesEdit.setText(str(self.settings.Process.max_particles))
+
+
+    def browseDataPath(self):
+        dataPath = QFileDialog.getExistingDirectory(self,'Select output data folder',
+                    DATADIR,QFileDialog.ShowDirsOnly)
+        if dataPath == '':
+            return
+
+        self.ui.datafileEdit.setText(dataPath)
+
+    def browseLogFile(self):
+        dialog = QFileDialog(self)
+        #logFile = dialog.getSaveFileName(self, "Select log file",
+        #                                        DATADIR, "log file (*.log)")
+        dialog.setLabelText(QFileDialog.Accept, "Select")
+        dialog.setWindowTitle("Select path and enter name for log file")
+
+        if dialog.exec():
+            logFile = dialog.selectedFiles()
+            logFileFinal = logFile[0]
+            if logFile == '':
+                return
+            if ("." not in logFile[0]):
+                logFileFinal = logFile[0] + ".log"
+        else:
+            return
+
+        self.ui.logfileEdit.setText(logFileFinal)
+
+    def browseOutputPath(self):
+        outputPath = QFileDialog.getExistingDirectory(self,'Select output folder for export',
+                    DATADIR,QFileDialog.ShowDirsOnly)
+        if outputPath == '':
+            return
+
+        self.ui.outputpathEdit.setText(outputPath)
+
+    def saveModif(self):
+        self.settings.config.set("General", "datafile", self.ui.datafileEdit.text())
+        self.settings.config.set("General", "loglevel", self.ui.loglevelEdit.currentText())
+        self.settings.config.set("General", "logfile", self.ui.logfileEdit.text())
+        self.settings.config.set("Process", "real_time_stats", self.ui.real_time_statsEdit.currentText())
+        self.settings.config.set("PostProcess", "path_length", self.ui.path_lengthEdit.text())
+        self.settings.config.set("PostProcess", "window_size", self.ui.window_sizeEdit.text())
+        self.settings.config.set("ExportParticles", "export_images", self.ui.export_imagesEdit.currentText())
+        self.settings.config.set("ExportParticles", "outputpath", self.ui.outputpathEdit.text())
+        self.settings.config.set("ExportParticles", "min_length", self.ui.min_lengthEdit.text())
+        self.settings.config.set("Background", "num_images", self.ui.num_imagesEdit.text())
+        self.settings.config.set("Process", "threshold", self.ui.thresholdEdit.text())
+        self.settings.config.set("Process", "max_particles", self.ui.max_particlesEdit.text())
+
+        with open(self.configfileToModify, 'w') as configfile:
+            self.settings.config.write(configfile)
 
 def main():
     app = QApplication(sys.argv)
@@ -120,6 +215,7 @@ def main():
             self.ui.actionExport_summary_data.triggered.connect(self.export_summary_data)
             self.ui.actionExport_summary_figure.triggered.connect(self.export_summary_figure)
             self.ui.actionSilc_file_player.triggered.connect(self.silc_player)
+            self.ui.actionEditConfig.triggered.connect(self.editConfig)
 
             self.layout = layout
 
@@ -132,7 +228,7 @@ def main():
 
         def convert_silc(self):
             self.status_update('converting data to bmp....')
-            scpp.silc_to_bmp(self.datadir) 
+            scpp.silc_to_bmp(self.datadir)
             self.status_update('converting finished.')
 
 
@@ -279,7 +375,7 @@ def main():
             elif(self.run_type == process_mode.real_time):
                 self.ctrl.ui.rb_real_time.setChecked(True)
                 self.ctrl.ui.cb_store_to_disc.setEnabled(True)
- 
+
             self.lv_raw_check()
             self.ctrl.show()
             self.ctrl.ui.pb_start.setStyleSheet(('QPushButton {' + 'background-color: rgb(150,150,255) }'))
@@ -437,6 +533,18 @@ def main():
             self.status_update('Config file loaded.')
 
 
+        def editConfig(self):
+            configfile = QFileDialog.getOpenFileName(self,
+                    caption = 'Select config ini file',
+                    directory = self.datadir,
+                    filter = (('*.ini'))
+                    )[0]
+            if configfile == '':
+                return
+
+            configEditor = ConfigEditor(configfile)
+            if (configEditor.exec() == QDialog.Accepted):
+                configEditor.saveModif()
 
         def closeEvent(self, event):
             self.stop_record()
