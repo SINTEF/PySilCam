@@ -115,9 +115,7 @@ def main():
             self.canvas.draw()
 
             # ---- define some callbacks
-            self.ui.actionExit.triggered.connect(self.exit)
             self.ui.actionServer.triggered.connect(self.server)
-            self.ui.actionController.triggered.connect(self.acquire_controller)
             self.ui.actionConvert_silc_to_bmp.triggered.connect(self.convert_silc)
             self.ui.actionExport_summary_data.triggered.connect(self.export_summary_data)
             self.ui.actionExport_summary_figure.triggered.connect(self.export_summary_figure)
