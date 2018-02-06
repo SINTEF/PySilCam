@@ -637,6 +637,7 @@ def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
     settings = PySilcamSettings(config_file)
     
     stats = pd.read_csv(stats_filename)
+    oilgasTxt = ''
 
     if oilgas==outputPartType.oil:
         from pysilcam.oilgas import extract_oil
@@ -647,7 +648,7 @@ def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
         stats = extract_gas(stats)
         oilgasTxt = 'gas'
    
-    df = make_timeseries_vd(stats)
+    df = make_timeseries_vd(stats, settings)
 
     df.to_excel(stats_filename.strip('-STATS.csv') +
             '-TIMESERIES' + oilgasTxt + '.xlsx')
