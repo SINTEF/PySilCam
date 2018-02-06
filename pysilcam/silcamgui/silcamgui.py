@@ -374,7 +374,7 @@ def main():
 
 
         def silc_player(self):
-            self.process.silcview()
+            gc.silcview(self.datadir)
 
 
         def record(self):
