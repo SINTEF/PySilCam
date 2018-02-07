@@ -139,6 +139,13 @@ class Acquire():
             while True:
                 try:
                     timestamp, img = self._acquire_frame(camera, frame0)
+                    if writeToDisk:
+                        filename = os.path.join(datapath, timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc'))
+                        with open(filename, 'wb') as fh:
+                            np.save(fh, img, allow_pickle=False)
+                            fh.flush()
+                            os.fsync(fh.fileno())
+                            print('Written', filename)
                     yield timestamp, img
                 except Exception:
                     frame0.img_idx += 1

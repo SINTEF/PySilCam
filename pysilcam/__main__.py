@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
 import time
+import datetime
 import logging
 from docopt import docopt
 import numpy as np
@@ -27,6 +28,7 @@ import multiprocessing
 from multiprocessing.managers import BaseManager
 from queue import LifoQueue
 import psutil
+from shutil import copyfile
 
 title = '''
  ____        ____  _ _  ____
@@ -41,7 +43,7 @@ def silcam():
     '''Aquire/process images from the SilCam
 
     Usage:
-      silcam acquire <datapath> [<configfile>]
+      silcam acquire <configfile> <datapath>
       silcam process <configfile> <datapath> [--nbimages=<number of images>] [--nomultiproc]
       silcam realtime <configfile> <datapath> [--discwrite] [--nomultiproc]
       silcam -h | --help
@@ -88,7 +90,7 @@ def silcam():
         silcam_process(args['<configfile>'] ,datapath, multiProcess=multiProcess, realtime=False, nbImages=nbImages)
 
     elif args['acquire']: # this is the standard acquisition method under development now
-        silcam_acquire(datapath, config_file_name=args['<configfile>'])
+        silcam_acquire(datapath, args['<configfile>'])
 
     elif args['realtime']:
         discWrite = False
@@ -100,15 +102,36 @@ def silcam():
         silcam_process(args['<configfile>'], datapath, multiProcess=multiProcess, realtime=True, discWrite=discWrite)
 
 
-def silcam_acquire(datapath, config_filename=None, writeToDisk=False, gui=None):
+def silcam_acquire(datapath, config_filename, writeToDisk=False, gui=None):
     '''Aquire images from the SilCam
 
     Args:
        datapath              (str)  : Path to the image storage
        config_filename=None (str)  : Camera config file
     '''
-    acq = Acquire(USE_PYMBA=True) # ini class
+
+    #Load the configuration, create settings object
+    settings = PySilcamSettings(config_filename)
+
+    #Print configuration to screen
+    print('---- CONFIGURATION ----\n')
+    settings.config.write(sys.stdout)
+    print('-----------------------\n')
+
+    if (writeToDisk):
+        # Copy config file
+        configFile2Copy = datetime.datetime.now().strftime('D%Y%m%dT%H%M%S.%f') + os.path.basename(config_filename)
+        copyfile(config_filename, os.path.join(datapath, configFile2Copy))
+
+    configure_logger(settings.General)
+    logger = logging.getLogger(__name__ + '.silcam_acquire')
+
+    # update path_length
+    updatePathLength(settings, logger)
+
+    acq = Acquire(USE_PYMBA=False) # ini class
     t1 = time.time()
+
     aqgen = acq.get_generator(datapath, camera_config_file=config_filename, writeToDisk=writeToDisk)
 
     for i, (timestamp, imraw) in enumerate(aqgen):
@@ -174,8 +197,17 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
 
     logger.info('Processing path: ' + datapath)
 
+    if realtime:
+        if discWrite:
+            # copy config file into data path
+            configFile2Copy = datetime.datetime.now().strftime('D%Y%m%dT%H%M%S.%f') + os.path.basename(config_filename)
+            copyfile(config_filename, os.path.join(datapath, configFile2Copy))
+
+        # update path_length
+        updatePathLength(settings, logger)
+
     #Initialize the image acquisition generator
-    aq = Acquire(USE_PYMBA=realtime)
+    aq = Acquire(USE_PYMBA=False)
     aqgen = aq.get_generator(datapath, writeToDisk=discWrite,
             camera_config_file=config_filename)
 
@@ -560,3 +592,11 @@ def configure_logger(settings):
     else:
         logging.basicConfig(level=getattr(logging, settings.loglevel))
 
+def updatePathLength(settings, logger):
+    try:
+        logger.info('Updating path length')
+        pl = scog.PathLength(settings.PostProcess.com_port)
+        pl.gap_to_mm(settings.PostProcess.path_length)
+        pl.finish()
+    except:
+        logger.warning('Could not open port. Path length will not be adjusted.')

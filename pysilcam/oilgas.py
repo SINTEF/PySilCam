@@ -16,6 +16,9 @@ import serial
 
 solidityThresh = 0.9
 
+def getListPortCom():
+    return serial.tools.list_ports
+
 def extract_gas(stats, THRESH=0.9):
     ma = stats['minor_axis_length'] / stats['major_axis_length']
     stats = stats[ma>0.3]
@@ -134,8 +137,8 @@ def cat_data(timestamp, stats, settings):
 
 
 class PathLength():
-    def __init__(self):
-        self.ser = serial.Serial('/dev/ttyUSB0',115200, timeout=1)
+    def __init__(self, com_port):
+        self.ser = serial.Serial(com_port, 115200, timeout=1)
         print('actuator port open!')
         self.motoronoff(self.ser,1)
 
