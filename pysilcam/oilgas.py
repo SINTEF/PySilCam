@@ -13,11 +13,12 @@ from multiprocessing import Process, Queue
 import time
 import struct
 import serial
+import serial.tools.list_ports
 
 solidityThresh = 0.9
 
 def getListPortCom():
-    return serial.tools.list_ports
+    return [comport.device for comport in serial.tools.list_ports.comports()]
 
 def extract_gas(stats, THRESH=0.9):
     ma = stats['minor_axis_length'] / stats['major_axis_length']

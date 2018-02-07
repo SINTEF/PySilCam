@@ -205,18 +205,14 @@ class ConfigEditor(QDialog):
         self.ui.com_portEdit.clear()
 
         listPortCom = []
-        try:
-            listPortCom = scog.getListPortCom()
-        except:
-            pass
+        listPortCom = scog.getListPortCom()
+
+        self.ui.com_portEdit.addItem(self.settings.PostProcess.com_port)
         self.ui.com_portEdit.setCurrentIndex(0)
-        if (self.settings.PostProcess.com_port not in listPortCom):
-            self.ui.com_portEdit.addItem(self.settings.PostProcess.com_port)
-        else:
-            self.ui.com_portEdit.addItem(self.settings.PostProcess.com_port)
 
         for port in listPortCom:
-            self.ui.com_portEdit.addItem(port)
+            if (port != self.settings.PostProcess.com_port):
+                self.ui.com_portEdit.addItem(port)
 
         self.ui.window_sizeEdit.setText(str(self.settings.PostProcess.window_size))
 
