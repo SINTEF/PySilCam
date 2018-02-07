@@ -3,11 +3,7 @@ import numpy as np
 import pandas as pd
 import os
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QPushButton, QWidget, QDialog,
-<<<<<<< HEAD
 QAction, QTabWidget,QVBoxLayout, QFileDialog, QMessageBox)
-=======
-QAction, QTabWidget,QVBoxLayout, QFileDialog)
->>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import pyqtSlot
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -35,10 +31,6 @@ sns.set_context(font_scale=2)
 DATADIR = os.getcwd()
 IP = '192.168.1.2'
 DEFAULT_CONFIG = os.path.join(os.path.dirname(__file__), '../config_example.ini')
-<<<<<<< HEAD
-=======
-
->>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
 
 def names_to_times(names):
     times = []
@@ -581,7 +573,6 @@ def main():
 
             self.count_data()
             self.ctrl.update_dir_path(self.datadir)
-<<<<<<< HEAD
 
             if (self.run_type == process_mode.process):
                 # try to find a config file in the chosen repository
@@ -595,8 +586,6 @@ def main():
                         self.ctrl.ui.pb_start.setEnabled(True)
                         self.status_update('Config file loaded.')
 
-=======
->>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
             app.processEvents()
 
 
