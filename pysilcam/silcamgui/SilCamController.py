@@ -61,6 +61,9 @@ class Ui_SilCamController(object):
         self.cb_store_to_disc = QtWidgets.QCheckBox(SilCamController)
         self.cb_store_to_disc.setGeometry(QtCore.QRect(220, 90, 111, 17))
         self.cb_store_to_disc.setObjectName("cb_store_to_disc")
+        self.pb_load_config = QtWidgets.QPushButton(SilCamController)
+        self.pb_load_config.setGeometry(QtCore.QRect(220, 30, 93, 28))
+        self.pb_load_config.setObjectName("pb_load_config")
 
         self.retranslateUi(SilCamController)
         QtCore.QMetaObject.connectSlotsByName(SilCamController)
@@ -76,4 +79,5 @@ class Ui_SilCamController(object):
         self.pb_browse.setText(_translate("SilCamController", "Browse"))
         self.rb_real_time.setText(_translate("SilCamController", "Realtime processing"))
         self.cb_store_to_disc.setText(_translate("SilCamController", "Store to disk"))
+        self.pb_load_config.setText(_translate("SilCamController", "Load config file"))
 

@@ -3,7 +3,11 @@ import numpy as np
 import pandas as pd
 import os
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QPushButton, QWidget, QDialog,
+<<<<<<< HEAD
 QAction, QTabWidget,QVBoxLayout, QFileDialog, QMessageBox)
+=======
+QAction, QTabWidget,QVBoxLayout, QFileDialog)
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import pyqtSlot
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -31,6 +35,10 @@ sns.set_context(font_scale=2)
 DATADIR = os.getcwd()
 IP = '192.168.1.2'
 DEFAULT_CONFIG = os.path.join(os.path.dirname(__file__), '../config_example.ini')
+<<<<<<< HEAD
+=======
+
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
 
 def names_to_times(names):
     times = []
@@ -81,6 +89,98 @@ class controller(QMainWindow):
         print('closing acquisition dlg is not allowed')
         event.ignore()
 
+class ConfigEditor(QDialog):
+
+    def __init__(self, configfile, parent=None):
+        QMainWindow.__init__(self, parent)
+        self.ui = Ui_Editconfig()
+        self.ui.setupUi(self)
+        self.configfileToModify = configfile
+        self.fillInConfigEditor(configfile)
+        print(DEFAULT_CONFIG)
+        self.ui.defaultPushButton.clicked.connect(lambda: self.fillInConfigEditor(DEFAULT_CONFIG))
+        self.ui.browseDataPathPB.clicked.connect(self.browseDataPath)
+        self.ui.browseLogFilePB.clicked.connect(self.browseLogFile)
+        self.ui.browseOutputPathPB.clicked.connect(self.browseOutputPath)
+
+    def fillInConfigEditor(self, inputFile):
+        self.ui.configPathLabel.setText(self.configfileToModify)
+        self.settings = PySilcamSettings(inputFile)
+        self.ui.datafileEdit.setText(self.settings.General.datafile)
+        idx = self.ui.loglevelEdit.findText(self.settings.General.loglevel, QtCore.Qt.MatchFixedString)
+        if (idx == -1):
+            idx = 0
+        self.ui.loglevelEdit.setCurrentIndex(idx)
+        self.ui.logfileEdit.setText(self.settings.General.logfile)
+        if (self.settings.Process.real_time_stats == True):
+            self.ui.real_time_statsEdit.setCurrentIndex(1)
+        else:
+            self.ui.real_time_statsEdit.setCurrentIndex(0)
+        self.ui.path_lengthEdit.setText(str(self.settings.PostProcess.path_length))
+        self.ui.window_sizeEdit.setText(str(self.settings.PostProcess.window_size))
+
+        if (self.settings.ExportParticles.export_images == True):
+            self.ui.export_imagesEdit.setCurrentIndex(1)
+        else:
+            self.ui.export_imagesEdit.setCurrentIndex(0)
+        self.ui.outputpathEdit.setText(self.settings.ExportParticles.outputpath)
+        self.ui.min_lengthEdit.setText(str(self.settings.ExportParticles.min_length))
+        self.ui.num_imagesEdit.setText(str(self.settings.Background.num_images))
+        self.ui.thresholdEdit.setText(str(self.settings.Process.threshold))
+        self.ui.max_particlesEdit.setText(str(self.settings.Process.max_particles))
+
+
+    def browseDataPath(self):
+        dataPath = QFileDialog.getExistingDirectory(self,'Select output data folder',
+                    DATADIR,QFileDialog.ShowDirsOnly)
+        if dataPath == '':
+            return
+
+        self.ui.datafileEdit.setText(dataPath)
+
+    def browseLogFile(self):
+        dialog = QFileDialog(self)
+        #logFile = dialog.getSaveFileName(self, "Select log file",
+        #                                        DATADIR, "log file (*.log)")
+        dialog.setLabelText(QFileDialog.Accept, "Select")
+        dialog.setWindowTitle("Select path and enter name for log file")
+
+        if dialog.exec():
+            logFile = dialog.selectedFiles()
+            logFileFinal = logFile[0]
+            if logFile == '':
+                return
+            if ("." not in logFile[0]):
+                logFileFinal = logFile[0] + ".log"
+        else:
+            return
+
+        self.ui.logfileEdit.setText(logFileFinal)
+
+    def browseOutputPath(self):
+        outputPath = QFileDialog.getExistingDirectory(self,'Select output folder for export',
+                    DATADIR,QFileDialog.ShowDirsOnly)
+        if outputPath == '':
+            return
+
+        self.ui.outputpathEdit.setText(outputPath)
+
+    def saveModif(self):
+        self.settings.config.set("General", "datafile", self.ui.datafileEdit.text())
+        self.settings.config.set("General", "loglevel", self.ui.loglevelEdit.currentText())
+        self.settings.config.set("General", "logfile", self.ui.logfileEdit.text())
+        self.settings.config.set("Process", "real_time_stats", self.ui.real_time_statsEdit.currentText())
+        self.settings.config.set("PostProcess", "path_length", self.ui.path_lengthEdit.text())
+        self.settings.config.set("PostProcess", "window_size", self.ui.window_sizeEdit.text())
+        self.settings.config.set("ExportParticles", "export_images", self.ui.export_imagesEdit.currentText())
+        self.settings.config.set("ExportParticles", "outputpath", self.ui.outputpathEdit.text())
+        self.settings.config.set("ExportParticles", "min_length", self.ui.min_lengthEdit.text())
+        self.settings.config.set("Background", "num_images", self.ui.num_imagesEdit.text())
+        self.settings.config.set("Process", "threshold", self.ui.thresholdEdit.text())
+        self.settings.config.set("Process", "max_particles", self.ui.max_particlesEdit.text())
+
+        with open(self.configfileToModify, 'w') as configfile:
+            self.settings.config.write(configfile)
 
 class ConfigEditor(QDialog):
 
@@ -203,14 +303,15 @@ def main():
 
             # --- some default states
             self.settings = ''
+            self.configfile = ''
+            self.datadir = DATADIR
             self.stats = []
             self.lv_raw_toggle = False
             self.monitor_toggle = False
             self.lvwaitseconds = 1
             self.disc_write = False
             self.run_type = process_mode.process
-            self.datadir = DATADIR
-            self.process = gc.ProcThread(self.datadir, self.disc_write, self.run_type)
+            self.process = None
 
             # ---- figure in middle
             self.fig_main = plt.figure()
@@ -226,15 +327,12 @@ def main():
             self.canvas.draw()
 
             # ---- define some callbacks
-            self.ui.actionExit.triggered.connect(self.exit)
-            self.ui.actionSilc_viewer.triggered.connect(self.process.silcview)
-            #self.ui.actionServer.triggered.connect(scog.ServerThread)
             self.ui.actionServer.triggered.connect(self.server)
-            self.ui.actionController.triggered.connect(self.acquire_controller)
             self.ui.actionConvert_silc_to_bmp.triggered.connect(self.convert_silc)
             self.ui.actionExport_summary_data.triggered.connect(self.export_summary_data)
             self.ui.actionExport_summary_figure.triggered.connect(self.export_summary_figure)
             self.ui.actionSilc_file_player.triggered.connect(self.silc_player)
+            self.ui.actionEditConfig.triggered.connect(self.editConfig)
 
             self.layout = layout
 
@@ -247,17 +345,18 @@ def main():
 
         def convert_silc(self):
             self.status_update('converting data to bmp....')
-            scpp.silc_to_bmp(self.datadir) 
+            scpp.silc_to_bmp(self.datadir)
             self.status_update('converting finished.')
 
 
         def export_summary_figure(self):
 
-            self.status_update('Asking user for config file')
-            self.load_sc_config()
-            if self.process.configfile == '':
-                self.status_update('Did not get config file')
-                return
+            if self.configfile == '':
+                self.status_update('Asking user for config file')
+                self.load_sc_config()
+                if (self.configfile == ''):
+                    self.status_update('Did not get config file')
+                    return
 
             self.stats_filename = ''
             self.status_update('Asking user for *-STATS.csv file')
@@ -270,7 +369,7 @@ def main():
 
             plt.figure(figsize=(20,12))
             scplt.summarise_fancy_stats(self.stats_filename,
-                    self.process.configfile, monitor=False)
+                    self.configfile, monitor=False)
             self.status_update('Saving summary figure (all)....')
             plt.savefig(self.stats_filename.strip('-STATS.csv') + '-Summary.png',
                     dpi=600, bbox_inches='tight')
@@ -278,7 +377,7 @@ def main():
             plt.figure(figsize=(20,12))
             self.status_update('Creating summary figure (oil)....')
             scplt.summarise_fancy_stats(self.stats_filename,
-                    self.process.configfile, monitor=False, oilgas=scpp.outputPartType.oil)
+                    self.configfile, monitor=False, oilgas=scpp.outputPartType.oil)
             self.status_update('Saving summary figure (oil)....')
             plt.savefig(self.stats_filename.strip('-STATS.csv') + '-Summary_oil.png',
                     dpi=600, bbox_inches='tight')
@@ -286,7 +385,7 @@ def main():
             plt.figure(figsize=(20,12))
             self.status_update('Creating summary figure (gas)....')
             scplt.summarise_fancy_stats(self.stats_filename,
-                    self.process.configfile, monitor=False, oilgas=scpp.outputPartType.gas)
+                    self.configfile, monitor=False, oilgas=scpp.outputPartType.gas)
             self.status_update('Saving summary figure (gas)....')
             plt.savefig(self.stats_filename.strip('-STATS.csv') + '-Summary_gas.png',
                     dpi=600, bbox_inches='tight')
@@ -298,11 +397,12 @@ def main():
 
         def export_summary_data(self):
 
-            self.status_update('Asking user for config file')
-            self.load_sc_config()
-            if self.process.configfile == '':
-                self.status_update('Did not get config file')
-                return
+            if self.configfile == '':
+                self.status_update('Asking user for config file')
+                self.load_sc_config()
+                if self.configfile == '':
+                    self.status_update('Did not get STATS file')
+                    return
 
             self.stats_filename = ''
             self.status_update('Asking user for *-STATS.csv file')
@@ -312,7 +412,7 @@ def main():
                 return
 
             self.status_update('Exporting all data....')
-            df = scpp.stats_to_xls_png(self.process.configfile,
+            df = scpp.stats_to_xls_png(self.configfile,
                     self.stats_filename)
             plt.figure(figsize=(20,12))
             plt.plot(df['Time'], df['D50'],'k.')
@@ -321,7 +421,7 @@ def main():
                     '-d50_TimeSeries.png', dpi=600, bbox_inches='tight')
 
             self.status_update('Exporting oil data....')
-            df = scpp.stats_to_xls_png(self.process.configfile,
+            df = scpp.stats_to_xls_png(self.configfile,
                     self.stats_filename, oilgas=scpp.outputPartType.oil)
             plt.figure(figsize=(20,12))
             plt.plot(df['Time'], df['D50'],'k.')
@@ -330,7 +430,7 @@ def main():
                     '-d50_TimeSeries_oil.png', dpi=600, bbox_inches='tight')
 
             self.status_update('Exporting gas data....')
-            df = scpp.stats_to_xls_png(self.process.configfile,
+            df = scpp.stats_to_xls_png(self.configfile,
                     self.stats_filename, oilgas=scpp.outputPartType.gas)
             plt.figure(figsize=(20,12))
             plt.plot(df['Time'], df['D50'],'k.')
@@ -351,6 +451,9 @@ def main():
 
         def acquire_controller(self):
             self.ctrl = controller(self)
+            self.ctrl.ui.pb_start.setEnabled(False)
+            self.ctrl.ui.pb_stop.setEnabled(False)
+            self.ctrl.ui.pb_live_raw.setEnabled(False)
             self.ctrl.ui.pb_live_raw.clicked.connect(self.lv_raw_switch)
             self.ctrl.ui.pb_start.clicked.connect(self.record)
             self.ctrl.ui.pb_stop.clicked.connect(self.stop_record)
@@ -376,7 +479,7 @@ def main():
             self.ctrl.ui.rb_real_time.toggled.connect(lambda: self.ctrl.toggle_write_to_disc(disable=False))
             self.ctrl.ui.rb_real_time.toggled.connect(lambda: self.setProcessMode(process_mode.real_time))
             self.ctrl.ui.cb_store_to_disc.toggled.connect(lambda checked: self.setStoreToDisc(checked))
-
+            self.ctrl.ui.pb_load_config.clicked.connect(self.load_sc_config)
             self.reset_acquire_dlg()
 
         def reset_acquire_dlg(self):
@@ -389,7 +492,7 @@ def main():
             elif(self.run_type == process_mode.real_time):
                 self.ctrl.ui.rb_real_time.setChecked(True)
                 self.ctrl.ui.cb_store_to_disc.setEnabled(True)
- 
+
             self.lv_raw_check()
             self.ctrl.show()
             self.ctrl.ui.pb_start.setStyleSheet(('QPushButton {' + 'background-color: rgb(150,150,255) }'))
@@ -431,6 +534,9 @@ def main():
             if not self.lv_raw_toggle:
                 return
 
+            if (not self.process):
+                return
+
             self.process.plot()
             self.status_update('', uselog=True)
             self.canvas.draw()
@@ -454,7 +560,7 @@ def main():
                         string = str(lines[-1])
                 except:
                     pass
-            string = string + '  |  Directory: ' + self.datadir
+            string = string + '  |  Directory: ' + self.datadir + '  |  Config file: ' + self.configfile
             self.ui.statusBar.setText(string)
             app.processEvents()
 
@@ -475,6 +581,7 @@ def main():
 
             self.count_data()
             self.ctrl.update_dir_path(self.datadir)
+<<<<<<< HEAD
 
             if (self.run_type == process_mode.process):
                 # try to find a config file in the chosen repository
@@ -488,21 +595,17 @@ def main():
                         self.ctrl.ui.pb_start.setEnabled(True)
                         self.status_update('Config file loaded.')
 
+=======
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
             app.processEvents()
 
 
         def silc_player(self):
-            self.process.silcview()
+            gc.silcview(self.datadir)
 
 
         def record(self):
-            self.process = gc.ProcThread(self.datadir, self.disc_write, self.run_type)
-            if self.process.settings == '':
-                self.status_update('config file not found. please load one.')
-                self.load_sc_config()
-                if self.process.configfile == '':
-                    return
-
+            self.process = gc.ProcThread(self.datadir, self.configfile, self.disc_write, self.run_type)
             self.status_update('STARTING SILCAM!')
             self.process.go()
             app.processEvents()
@@ -511,10 +614,15 @@ def main():
             self.ctrl.ui.pb_start.setEnabled(False)
             self.ctrl.ui.cb_store_to_disc.setEnabled(False)
             app.processEvents()
+            self.ctrl.ui.pb_stop.setEnabled(True)
+            self.ctrl.ui.pb_live_raw.setEnabled(True)
 
 
         def stop_record(self):
             self.status_update('Asking silcam to stop')
+            if (not self.process):
+                return
+
             self.process.stop_silcam()
             self.status_update('Asking silcam to stop.. OK')
             self.reset_acquire_dlg()
@@ -525,6 +633,8 @@ def main():
             self.ctrl.ui.pb_stop.setStyleSheet(('QPushButton {' +
                 'background-color: rgb(150,150,255) }'))
             self.ctrl.ui.pb_start.setEnabled(True)
+            self.ctrl.ui.pb_stop.setEnabled(False)
+            self.ctrl.ui.pb_live_raw.setEnabled(False)
             app.processEvents()
 
 
@@ -539,18 +649,35 @@ def main():
 
 
         def load_sc_config(self):
-            self.process.configfile = QFileDialog.getOpenFileName(self,
+            configfile = QFileDialog.getOpenFileName(self,
                     caption = 'Load config ini file',
                     directory = self.datadir,
                     filter = (('*.ini'))
                     )[0]
-            if self.process.configfile == '':
+            if configfile == '':
                 return
+
+            self.ctrl.ui.pb_start.setEnabled(True)
 
             # move current directory to the config file folder in order to
             # handle relative paths fened from the config file
-            os.chdir(os.path.split(self.process.configfile)[0])
+            os.chdir(os.path.split(configfile)[0])
+            self.configfile = configfile
+            self.status_update('Config file loaded.')
 
+
+        def editConfig(self):
+            configfile = QFileDialog.getOpenFileName(self,
+                    caption = 'Select config ini file',
+                    directory = self.datadir,
+                    filter = (('*.ini'))
+                    )[0]
+            if configfile == '':
+                return
+
+            configEditor = ConfigEditor(configfile)
+            if (configEditor.exec() == QDialog.Accepted):
+                configEditor.saveModif()
 
         def closeEvent(self, event):
             self.stop_record()

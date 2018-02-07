@@ -6,8 +6,13 @@
    <rect>
     <x>0</x>
     <y>0</y>
+<<<<<<< HEAD
     <width>767</width>
     <height>667</height>
+=======
+    <width>694</width>
+    <height>609</height>
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
    </rect>
   </property>
   <property name="sizePolicy">
@@ -16,35 +21,113 @@
     <verstretch>0</verstretch>
    </sizepolicy>
   </property>
+<<<<<<< HEAD
   <property name="minimumSize">
    <size>
     <width>695</width>
     <height>618</height>
    </size>
   </property>
+=======
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
   <property name="windowTitle">
    <string>Edit configuration file</string>
   </property>
   <property name="modal">
    <bool>true</bool>
   </property>
+<<<<<<< HEAD
+=======
+  <widget class="QDialogButtonBox" name="buttonBox">
+   <property name="geometry">
+    <rect>
+     <x>490</x>
+     <y>570</y>
+     <width>193</width>
+     <height>28</height>
+    </rect>
+   </property>
+   <property name="orientation">
+    <enum>Qt::Horizontal</enum>
+   </property>
+   <property name="standardButtons">
+    <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="defaultPushButton">
+   <property name="geometry">
+    <rect>
+     <x>560</x>
+     <y>530</y>
+     <width>121</width>
+     <height>28</height>
+    </rect>
+   </property>
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="text">
+    <string>Default configuration</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="configPathLabel">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>10</y>
+     <width>671</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="text">
+    <string>TextLabel</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+   </property>
+  </widget>
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
   <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>10</x>
+<<<<<<< HEAD
      <y>16</y>
      <width>741</width>
      <height>541</height>
+=======
+     <y>40</y>
+     <width>672</width>
+     <height>481</height>
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
     </rect>
    </property>
    <layout class="QGridLayout" name="gridLayout_5">
     <property name="sizeConstraint">
+<<<<<<< HEAD
      <enum>QLayout::SetNoConstraint</enum>
     </property>
     <item row="1" column="0">
      <widget class="QGroupBox" name="generalgroupBox">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+=======
+     <enum>QLayout::SetMinAndMaxSize</enum>
+    </property>
+    <item row="3" column="0">
+     <widget class="QGroupBox" name="groupBox_2">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
         <horstretch>0</horstretch>
         <verstretch>0</verstretch>
        </sizepolicy>
@@ -52,6 +135,7 @@
       <property name="maximumSize">
        <size>
         <width>1000</width>
+<<<<<<< HEAD
         <height>500</height>
        </size>
       </property>
@@ -93,6 +177,53 @@
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
+=======
+        <height>16777215</height>
+       </size>
+      </property>
+      <property name="title">
+       <string>Export</string>
+      </property>
+      <layout class="QGridLayout" name="gridLayout_4" columnminimumwidth="100,180,25,320">
+       <property name="sizeConstraint">
+        <enum>QLayout::SetMinAndMaxSize</enum>
+       </property>
+       <item row="0" column="2">
+        <spacer name="horizontalSpacer_4">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Expanding</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="0" column="3">
+        <widget class="QLabel" name="label_17">
+         <property name="text">
+          <string>Save particles images to disk.</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_9">
+         <property name="text">
+          <string>Output folder:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QLineEdit" name="outputpathEdit"/>
+       </item>
+       <item row="1" column="2">
+        <widget class="QPushButton" name="browseOutputPathPB">
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
          <property name="maximumSize">
           <size>
            <width>20</width>
@@ -104,6 +235,7 @@
          </property>
         </widget>
        </item>
+<<<<<<< HEAD
        <item row="0" column="3">
         <widget class="QLabel" name="label_10">
          <property name="sizePolicy">
@@ -128,12 +260,26 @@
         <widget class="QComboBox" name="loglevelEdit">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+=======
+       <item row="1" column="3">
+        <widget class="QLabel" name="label_18">
+         <property name="text">
+          <string>Folder to store the particles images.</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QComboBox" name="export_imagesEdit">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
          <item>
           <property name="text">
+<<<<<<< HEAD
            <string>INFO</string>
           </property>
          </item>
@@ -155,15 +301,23 @@
          <item>
           <property name="text">
            <string>CRITICAL</string>
+=======
+           <string>False</string>
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
           </property>
          </item>
          <item>
           <property name="text">
+<<<<<<< HEAD
            <string>NOTSET</string>
+=======
+           <string>True</string>
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
           </property>
          </item>
         </widget>
        </item>
+<<<<<<< HEAD
        <item row="1" column="3">
         <widget class="QLabel" name="label_19">
          <property name="sizePolicy">
@@ -174,27 +328,49 @@
          </property>
          <property name="text">
           <string>Level of detail to log.</string>
+=======
+       <item row="0" column="0">
+        <widget class="QLabel" name="label_7">
+         <property name="text">
+          <string>Export images:</string>
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
          </property>
         </widget>
        </item>
        <item row="2" column="0">
+<<<<<<< HEAD
         <widget class="QLabel" name="label_6">
          <property name="text">
           <string>Log file:</string>
+=======
+        <widget class="QLabel" name="label_11">
+         <property name="text">
+          <string>Minimum length:</string>
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
          </property>
         </widget>
        </item>
        <item row="2" column="1">
+<<<<<<< HEAD
         <widget class="QLineEdit" name="logfileEdit">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
+=======
+        <widget class="QLineEdit" name="min_lengthEdit"/>
+       </item>
+       <item row="2" column="3">
+        <widget class="QLabel" name="label_12">
+         <property name="text">
+          <string>[µm]Minimum length of particles to save to disk.</string>
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
          </property>
         </widget>
        </item>
        <item row="2" column="2">
+<<<<<<< HEAD
         <widget class="QPushButton" name="browseLogFilePB">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -203,11 +379,22 @@
           </sizepolicy>
          </property>
          <property name="maximumSize">
+=======
+        <spacer name="horizontalSpacer_5">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Expanding</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
           <size>
            <width>20</width>
            <height>20</height>
           </size>
          </property>
+<<<<<<< HEAD
          <property name="text">
           <string>...</string>
          </property>
@@ -225,12 +412,20 @@
           <string>Location of the log file.</string>
          </property>
         </widget>
+=======
+        </spacer>
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
        </item>
       </layout>
      </widget>
     </item>
+<<<<<<< HEAD
     <item row="4" column="0">
      <widget class="QGroupBox" name="groupBox_2">
+=======
+    <item row="0" column="0">
+     <widget class="QGroupBox" name="generalgroupBox">
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
         <horstretch>0</horstretch>
@@ -240,6 +435,7 @@
       <property name="maximumSize">
        <size>
         <width>1000</width>
+<<<<<<< HEAD
         <height>16777215</height>
        </size>
       </property>
@@ -290,14 +486,43 @@
         <widget class="QLineEdit" name="outputpathEdit">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+=======
+        <height>500</height>
+       </size>
+      </property>
+      <property name="title">
+       <string>General</string>
+      </property>
+      <layout class="QGridLayout" name="gridLayout" columnminimumwidth="100,180,25,320">
+       <property name="sizeConstraint">
+        <enum>QLayout::SetMinAndMaxSize</enum>
+       </property>
+       <item row="0" column="0">
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>Output data path:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QLineEdit" name="datafileEdit"/>
+       </item>
+       <item row="0" column="2">
+        <widget class="QPushButton" name="browseDataPathPB">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
+<<<<<<< HEAD
         </widget>
        </item>
        <item row="1" column="2">
         <widget class="QPushButton" name="browseOutputPathPB">
+=======
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
          <property name="maximumSize">
           <size>
            <width>20</width>
@@ -309,6 +534,7 @@
          </property>
         </widget>
        </item>
+<<<<<<< HEAD
        <item row="1" column="3">
         <widget class="QLabel" name="label_18">
          <property name="sizePolicy">
@@ -333,15 +559,61 @@
          <item>
           <property name="text">
            <string>False</string>
+=======
+       <item row="0" column="3">
+        <widget class="QLabel" name="label_10">
+         <property name="text">
+          <string>Location to store processed data.</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_8">
+         <property name="text">
+          <string>Log level:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QComboBox" name="loglevelEdit">
+         <item>
+          <property name="text">
+           <string>INFO</string>
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
           </property>
          </item>
          <item>
           <property name="text">
+<<<<<<< HEAD
            <string>True</string>
+=======
+           <string>DEBUG</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>WARNING</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>ERROR</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>CRITICAL</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>NOTSET</string>
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
           </property>
          </item>
         </widget>
        </item>
+<<<<<<< HEAD
        <item row="0" column="0">
         <widget class="QLabel" name="label_7">
          <property name="sizePolicy">
@@ -352,17 +624,30 @@
          </property>
          <property name="text">
           <string>Export images:</string>
+=======
+       <item row="1" column="3">
+        <widget class="QLabel" name="label_19">
+         <property name="text">
+          <string>Level of detail to log.</string>
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
          </property>
         </widget>
        </item>
        <item row="2" column="0">
+<<<<<<< HEAD
         <widget class="QLabel" name="label_11">
          <property name="text">
           <string>Minimum length:</string>
+=======
+        <widget class="QLabel" name="label_6">
+         <property name="text">
+          <string>Log file:</string>
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
          </property>
         </widget>
        </item>
        <item row="2" column="1">
+<<<<<<< HEAD
         <widget class="QLineEdit" name="min_lengthEdit">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -376,10 +661,19 @@
         <widget class="QLabel" name="label_12">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+=======
+        <widget class="QLineEdit" name="logfileEdit"/>
+       </item>
+       <item row="2" column="2">
+        <widget class="QPushButton" name="browseLogFilePB">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
+<<<<<<< HEAD
          <property name="text">
           <string>[µm] Minimum length of particles to save to disk.</string>
          </property>
@@ -394,17 +688,38 @@
           <enum>QSizePolicy::Fixed</enum>
          </property>
          <property name="sizeHint" stdset="0">
+=======
+         <property name="maximumSize">
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
           <size>
            <width>20</width>
            <height>20</height>
           </size>
          </property>
+<<<<<<< HEAD
         </spacer>
+=======
+         <property name="text">
+          <string>...</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="3">
+        <widget class="QLabel" name="label_16">
+         <property name="text">
+          <string>Location of the log file.</string>
+         </property>
+        </widget>
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
        </item>
       </layout>
      </widget>
     </item>
+<<<<<<< HEAD
     <item row="2" column="0">
+=======
+    <item row="1" column="0">
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
      <widget class="QGroupBox" name="processgroupBox">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -421,6 +736,7 @@
       <property name="title">
        <string>Process</string>
       </property>
+<<<<<<< HEAD
       <layout class="QGridLayout" name="gridLayout_2" columnminimumwidth="120,180,25,320">
        <property name="sizeConstraint">
         <enum>QLayout::SetNoConstraint</enum>
@@ -433,18 +749,45 @@
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
+=======
+      <layout class="QGridLayout" name="gridLayout_2" columnminimumwidth="100,180,25,320">
+       <property name="sizeConstraint">
+        <enum>QLayout::SetMinAndMaxSize</enum>
+       </property>
+       <item row="1" column="1">
+        <widget class="QLineEdit" name="path_lengthEdit"/>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_2">
+         <property name="text">
+          <string>Path length:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="3">
+        <widget class="QLabel" name="label_4">
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
          <property name="text">
           <string>[mm] Distance between camera and illumination.</string>
          </property>
         </widget>
        </item>
+<<<<<<< HEAD
        <item row="0" column="2">
         <spacer name="horizontalSpacer">
+=======
+       <item row="1" column="2">
+        <spacer name="horizontalSpacer_2">
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
          <property name="sizeType">
+<<<<<<< HEAD
           <enum>QSizePolicy::Fixed</enum>
+=======
+          <enum>QSizePolicy::Expanding</enum>
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -454,6 +797,7 @@
          </property>
         </spacer>
        </item>
+<<<<<<< HEAD
        <item row="3" column="0">
         <widget class="QLabel" name="label_5">
          <property name="text">
@@ -463,11 +807,26 @@
        </item>
        <item row="1" column="2">
         <spacer name="horizontalSpacer_2">
+=======
+       <item row="0" column="3">
+        <widget class="QLabel" name="label_13">
+         <property name="text">
+          <string>Enable statistics to be displayed in  real-time.</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="2">
+        <spacer name="horizontalSpacer">
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
          <property name="sizeType">
+<<<<<<< HEAD
           <enum>QSizePolicy::Fixed</enum>
+=======
+          <enum>QSizePolicy::Expanding</enum>
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -480,7 +839,11 @@
        <item row="0" column="1">
         <widget class="QComboBox" name="real_time_statsEdit">
          <property name="sizePolicy">
+<<<<<<< HEAD
           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+=======
+          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
@@ -504,6 +867,7 @@
          </property>
         </widget>
        </item>
+<<<<<<< HEAD
        <item row="3" column="1">
         <widget class="QLineEdit" name="window_sizeEdit">
          <property name="sizePolicy">
@@ -582,11 +946,29 @@
        </item>
        <item row="2" column="2">
         <spacer name="horizontalSpacer_10">
+=======
+       <item row="2" column="0">
+        <widget class="QLabel" name="label_5">
+         <property name="text">
+          <string>Time average:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QLineEdit" name="window_sizeEdit"/>
+       </item>
+       <item row="2" column="2">
+        <spacer name="horizontalSpacer_3">
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
          <property name="sizeType">
+<<<<<<< HEAD
           <enum>QSizePolicy::Fixed</enum>
+=======
+          <enum>QSizePolicy::Expanding</enum>
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -597,6 +979,7 @@
         </spacer>
        </item>
        <item row="2" column="3">
+<<<<<<< HEAD
         <widget class="QLabel" name="label_26">
          <property name="text">
           <string>COM port used to transfer the information about the path length.</string>
@@ -613,6 +996,21 @@
      <widget class="QGroupBox" name="groupBox">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+=======
+        <widget class="QLabel" name="label_15">
+         <property name="text">
+          <string>[seconds] Number of seconds to average for real-time statistics.</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item row="4" column="0">
+     <widget class="QGroupBox" name="groupBox">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
         <horstretch>0</horstretch>
         <verstretch>0</verstretch>
        </sizepolicy>
@@ -626,6 +1024,7 @@
       <property name="title">
        <string>Advanced</string>
       </property>
+<<<<<<< HEAD
       <layout class="QGridLayout" name="gridLayout_3" columnminimumwidth="120,180,25,320">
        <property name="sizeConstraint">
         <enum>QLayout::SetNoConstraint</enum>
@@ -638,12 +1037,21 @@
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
+=======
+      <layout class="QGridLayout" name="gridLayout_3" columnminimumwidth="100,180,25,320">
+       <property name="sizeConstraint">
+        <enum>QLayout::SetMinAndMaxSize</enum>
+       </property>
+       <item row="0" column="3">
+        <widget class="QLabel" name="label_22">
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
          <property name="text">
           <string>Number of images to use for background correction.</string>
          </property>
         </widget>
        </item>
        <item row="0" column="1">
+<<<<<<< HEAD
         <widget class="QLineEdit" name="num_imagesEdit">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -661,6 +1069,12 @@
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
+=======
+        <widget class="QLineEdit" name="num_imagesEdit"/>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="label_14">
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
          <property name="text">
           <string>Number of images:</string>
          </property>
@@ -668,12 +1082,15 @@
        </item>
        <item row="1" column="0">
         <widget class="QLabel" name="label_20">
+<<<<<<< HEAD
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
+=======
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
          <property name="text">
           <string>Threshold:</string>
          </property>
@@ -692,7 +1109,11 @@
           <enum>Qt::Horizontal</enum>
          </property>
          <property name="sizeType">
+<<<<<<< HEAD
           <enum>QSizePolicy::Fixed</enum>
+=======
+          <enum>QSizePolicy::Expanding</enum>
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -703,6 +1124,7 @@
         </spacer>
        </item>
        <item row="1" column="1">
+<<<<<<< HEAD
         <widget class="QLineEdit" name="thresholdEdit">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -711,6 +1133,9 @@
           </sizepolicy>
          </property>
         </widget>
+=======
+        <widget class="QLineEdit" name="thresholdEdit"/>
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
        </item>
        <item row="1" column="2">
         <spacer name="horizontalSpacer_7">
@@ -718,7 +1143,11 @@
           <enum>Qt::Horizontal</enum>
          </property>
          <property name="sizeType">
+<<<<<<< HEAD
           <enum>QSizePolicy::Fixed</enum>
+=======
+          <enum>QSizePolicy::Expanding</enum>
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -730,18 +1159,22 @@
        </item>
        <item row="1" column="3">
         <widget class="QLabel" name="label_23">
+<<<<<<< HEAD
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
+=======
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
          <property name="text">
           <string>Detection sensitivity, between 0 and 1.</string>
          </property>
         </widget>
        </item>
        <item row="2" column="1">
+<<<<<<< HEAD
         <widget class="QLineEdit" name="max_particlesEdit">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -750,6 +1183,9 @@
           </sizepolicy>
          </property>
         </widget>
+=======
+        <widget class="QLineEdit" name="max_particlesEdit"/>
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
        </item>
        <item row="2" column="2">
         <spacer name="horizontalSpacer_8">
@@ -757,7 +1193,11 @@
           <enum>Qt::Horizontal</enum>
          </property>
          <property name="sizeType">
+<<<<<<< HEAD
           <enum>QSizePolicy::Fixed</enum>
+=======
+          <enum>QSizePolicy::Expanding</enum>
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -769,12 +1209,15 @@
        </item>
        <item row="2" column="3">
         <widget class="QLabel" name="label_24">
+<<<<<<< HEAD
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
+=======
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
          <property name="text">
           <string>Skip analysis if more particles are detected.</string>
          </property>
@@ -783,6 +1226,7 @@
       </layout>
      </widget>
     </item>
+<<<<<<< HEAD
     <item row="0" column="0">
      <widget class="QLabel" name="configPathLabel">
       <property name="sizePolicy">
@@ -866,6 +1310,8 @@
       </property>
      </spacer>
     </item>
+=======
+>>>>>>> 210c1bfa04500faf017c1e0f040e0d8a92f1853d
    </layout>
   </widget>
  </widget>
