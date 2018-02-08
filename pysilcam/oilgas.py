@@ -216,6 +216,9 @@ class PathLength():
         converted_pos = int(converted_pos)
         return converted_pos
 
+    def convert2mm(self, pos_thousandsInches):
+        converted_pos = pos_thousandsInches / (0.0384 * 1000)
+        return converted_pos
 
     def mingap(self):
         self.move(self.ser, 108.5)
@@ -226,7 +229,6 @@ class PathLength():
     def gap_to_mm(self, mm):
         val = 108.5-mm
         self.move(self.ser, val)
-
 
     def finish(self):
         self.motoronoff(self.ser,0)

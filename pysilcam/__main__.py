@@ -207,7 +207,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
         updatePathLength(settings, logger)
 
     #Initialize the image acquisition generator
-    aq = Acquire(USE_PYMBA=realtime)
+    aq = Acquire(USE_PYMBA=False)
     aqgen = aq.get_generator(datapath, writeToDisk=discWrite,
             camera_config_file=config_filename)
 
@@ -598,5 +598,6 @@ def updatePathLength(settings, logger):
         pl = scog.PathLength(settings.PostProcess.com_port)
         pl.gap_to_mm(settings.PostProcess.path_length)
         pl.finish()
+        logger.info('Path length set to ', pl.convertedPos(pl.readpos()), 'mm')
     except:
         logger.warning('Could not open port. Path length will not be adjusted.')

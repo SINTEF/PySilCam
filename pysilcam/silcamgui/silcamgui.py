@@ -560,13 +560,17 @@ def main():
 
 
         def editConfig(self):
-            configfile = QFileDialog.getOpenFileName(self,
+            if self.configfile == '':
+                configfile = QFileDialog.getOpenFileName(self,
                     caption = 'Select config ini file',
                     directory = self.datadir,
                     filter = (('*.ini'))
                     )[0]
-            if configfile == '':
-                return
+
+                if configfile == '':
+                    return
+            else:
+                configfile = self.configfile
 
             configEditor = ConfigEditor(configfile)
             if (configEditor.exec() == QDialog.Accepted):
