@@ -81,98 +81,6 @@ class controller(QMainWindow):
         print('closing acquisition dlg is not allowed')
         event.ignore()
 
-class ConfigEditor(QDialog):
-
-    def __init__(self, configfile, parent=None):
-        QMainWindow.__init__(self, parent)
-        self.ui = Ui_Editconfig()
-        self.ui.setupUi(self)
-        self.configfileToModify = configfile
-        self.fillInConfigEditor(configfile)
-        print(DEFAULT_CONFIG)
-        self.ui.defaultPushButton.clicked.connect(lambda: self.fillInConfigEditor(DEFAULT_CONFIG))
-        self.ui.browseDataPathPB.clicked.connect(self.browseDataPath)
-        self.ui.browseLogFilePB.clicked.connect(self.browseLogFile)
-        self.ui.browseOutputPathPB.clicked.connect(self.browseOutputPath)
-
-    def fillInConfigEditor(self, inputFile):
-        self.ui.configPathLabel.setText(self.configfileToModify)
-        self.settings = PySilcamSettings(inputFile)
-        self.ui.datafileEdit.setText(self.settings.General.datafile)
-        idx = self.ui.loglevelEdit.findText(self.settings.General.loglevel, QtCore.Qt.MatchFixedString)
-        if (idx == -1):
-            idx = 0
-        self.ui.loglevelEdit.setCurrentIndex(idx)
-        self.ui.logfileEdit.setText(self.settings.General.logfile)
-        if (self.settings.Process.real_time_stats == True):
-            self.ui.real_time_statsEdit.setCurrentIndex(1)
-        else:
-            self.ui.real_time_statsEdit.setCurrentIndex(0)
-        self.ui.path_lengthEdit.setText(str(self.settings.PostProcess.path_length))
-        self.ui.window_sizeEdit.setText(str(self.settings.PostProcess.window_size))
-
-        if (self.settings.ExportParticles.export_images == True):
-            self.ui.export_imagesEdit.setCurrentIndex(1)
-        else:
-            self.ui.export_imagesEdit.setCurrentIndex(0)
-        self.ui.outputpathEdit.setText(self.settings.ExportParticles.outputpath)
-        self.ui.min_lengthEdit.setText(str(self.settings.ExportParticles.min_length))
-        self.ui.num_imagesEdit.setText(str(self.settings.Background.num_images))
-        self.ui.thresholdEdit.setText(str(self.settings.Process.threshold))
-        self.ui.max_particlesEdit.setText(str(self.settings.Process.max_particles))
-
-
-    def browseDataPath(self):
-        dataPath = QFileDialog.getExistingDirectory(self,'Select output data folder',
-                    DATADIR,QFileDialog.ShowDirsOnly)
-        if dataPath == '':
-            return
-
-        self.ui.datafileEdit.setText(dataPath)
-
-    def browseLogFile(self):
-        dialog = QFileDialog(self)
-        #logFile = dialog.getSaveFileName(self, "Select log file",
-        #                                        DATADIR, "log file (*.log)")
-        dialog.setLabelText(QFileDialog.Accept, "Select")
-        dialog.setWindowTitle("Select path and enter name for log file")
-
-        if dialog.exec():
-            logFile = dialog.selectedFiles()
-            logFileFinal = logFile[0]
-            if logFile == '':
-                return
-            if ("." not in logFile[0]):
-                logFileFinal = logFile[0] + ".log"
-        else:
-            return
-
-        self.ui.logfileEdit.setText(logFileFinal)
-
-    def browseOutputPath(self):
-        outputPath = QFileDialog.getExistingDirectory(self,'Select output folder for export',
-                    DATADIR,QFileDialog.ShowDirsOnly)
-        if outputPath == '':
-            return
-
-        self.ui.outputpathEdit.setText(outputPath)
-
-    def saveModif(self):
-        self.settings.config.set("General", "datafile", self.ui.datafileEdit.text())
-        self.settings.config.set("General", "loglevel", self.ui.loglevelEdit.currentText())
-        self.settings.config.set("General", "logfile", self.ui.logfileEdit.text())
-        self.settings.config.set("Process", "real_time_stats", self.ui.real_time_statsEdit.currentText())
-        self.settings.config.set("PostProcess", "path_length", self.ui.path_lengthEdit.text())
-        self.settings.config.set("PostProcess", "window_size", self.ui.window_sizeEdit.text())
-        self.settings.config.set("ExportParticles", "export_images", self.ui.export_imagesEdit.currentText())
-        self.settings.config.set("ExportParticles", "outputpath", self.ui.outputpathEdit.text())
-        self.settings.config.set("ExportParticles", "min_length", self.ui.min_lengthEdit.text())
-        self.settings.config.set("Background", "num_images", self.ui.num_imagesEdit.text())
-        self.settings.config.set("Process", "threshold", self.ui.thresholdEdit.text())
-        self.settings.config.set("Process", "max_particles", self.ui.max_particlesEdit.text())
-
-        with open(self.configfileToModify, 'w') as configfile:
-            self.settings.config.write(configfile)
 
 class ConfigEditor(QDialog):
 
@@ -570,7 +478,7 @@ def main():
             self.count_data()
             self.ctrl.update_dir_path(self.datadir)
 
-            if (self.run_type == process_mode.process):
+            if (self.run_type == process_mode.process and self.datadir != ''):
                 # try to find a config file in the chosen repository
                 iniFiles = list(filter(lambda x: x.endswith('.ini'), os.listdir(self.datadir)))
                 if len(iniFiles) == 1:
