@@ -598,6 +598,5 @@ def updatePathLength(settings, logger):
         pl = scog.PathLength(settings.PostProcess.com_port)
         pl.gap_to_mm(settings.PostProcess.path_length)
         pl.finish()
-        logger.info('Path length set to ', pl.convertedPos(pl.readpos()), 'mm')
     except:
         logger.warning('Could not open port. Path length will not be adjusted.')
