@@ -73,27 +73,27 @@ class Frame:
     def __init__(self):
         #If the environment variable PYSILCAM_TESTDATA is defined, read images
         #from that location.
-        #if 'PYSILCAM_TESTDATA' in os.environ.keys():
-        #    offset = int(os.environ.get('PYSILCAM_OFFSET', 0))
-        #    path = os.environ['PYSILCAM_TESTDATA']
-        #    path = path.replace('\ ',' ') # handle spaces (not sure on windows behaviour)
-        #    self.files = [os.path.join(path, f)
-        #                  for f in sorted(os.listdir(path))
-        #                  if f.startswith('D') and (f.endswith('.bmp') or
-        #                      f.endswith('.silc'))][offset:]
-        #    self.img_idx = 0
+        if 'PYSILCAM_TESTDATA' in os.environ.keys():
+            offset = int(os.environ.get('PYSILCAM_OFFSET', 0))
+            path = os.environ['PYSILCAM_TESTDATA']
+            path = path.replace('\ ',' ') # handle spaces (not sure on windows behaviour)
+            self.files = [os.path.join(path, f)
+                          for f in sorted(os.listdir(path))
+                          if f.startswith('D') and (f.endswith('.bmp') or
+                              f.endswith('.silc'))][offset:]
+            self.img_idx = 0
 
-        #    img0 = silcam_load(self.files[0])
+            img0 = silcam_load(self.files[0])
 
-        #    if len(img0.shape) == 2:
-        #        self.height, self.width = img0.shape
-        #    else:
-        #        self.height, self.width, _ = img0.shape
+            if len(img0.shape) == 2:
+                self.height, self.width = img0.shape
+            else:
+                self.height, self.width, _ = img0.shape
 
-        #else:
-        self.files = None
-        self.width = 800
-        self.height = 600
+        else:
+            self.files = None
+            self.width = 800
+            self.height = 600
 
         logger.debug('Frame acquired')
 

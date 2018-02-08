@@ -129,7 +129,7 @@ def silcam_acquire(datapath, config_filename, writeToDisk=False, gui=None):
     # update path_length
     updatePathLength(settings, logger)
 
-    acq = Acquire(USE_PYMBA=False) # ini class
+    acq = Acquire(USE_PYMBA=True) # ini class
     t1 = time.time()
 
     aqgen = acq.get_generator(datapath, camera_config_file=config_filename, writeToDisk=writeToDisk)
@@ -207,7 +207,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
         updatePathLength(settings, logger)
 
     #Initialize the image acquisition generator
-    aq = Acquire(USE_PYMBA=False)
+    aq = Acquire(USE_PYMBA=realtime)
     aqgen = aq.get_generator(datapath, writeToDisk=discWrite,
             camera_config_file=config_filename)
 
