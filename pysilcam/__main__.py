@@ -207,7 +207,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
         updatePathLength(settings, logger)
 
     #Initialize the image acquisition generator
-    aq = Acquire(USE_PYMBA=False)
+    aq = Acquire(USE_PYMBA=realtime)
     aqgen = aq.get_generator(datapath, writeToDisk=discWrite,
             camera_config_file=config_filename)
 
