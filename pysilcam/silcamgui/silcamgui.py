@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import os
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QPushButton, QWidget, QDialog,
-QAction, QTabWidget,QVBoxLayout, QFileDialog)
+QAction, QTabWidget,QVBoxLayout, QFileDialog, QMessageBox)
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import pyqtSlot
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -31,7 +31,6 @@ sns.set_context(font_scale=2)
 DATADIR = os.getcwd()
 IP = '192.168.1.2'
 DEFAULT_CONFIG = os.path.join(os.path.dirname(__file__), '../config_example.ini')
-
 
 def names_to_times(names):
     times = []
@@ -82,6 +81,7 @@ class controller(QMainWindow):
         print('closing acquisition dlg is not allowed')
         event.ignore()
 
+
 class ConfigEditor(QDialog):
 
     def __init__(self, configfile, parent=None):
@@ -90,7 +90,6 @@ class ConfigEditor(QDialog):
         self.ui.setupUi(self)
         self.configfileToModify = configfile
         self.fillInConfigEditor(configfile)
-        print(DEFAULT_CONFIG)
         self.ui.defaultPushButton.clicked.connect(lambda: self.fillInConfigEditor(DEFAULT_CONFIG))
         self.ui.browseDataPathPB.clicked.connect(self.browseDataPath)
         self.ui.browseLogFilePB.clicked.connect(self.browseLogFile)
@@ -110,6 +109,19 @@ class ConfigEditor(QDialog):
         else:
             self.ui.real_time_statsEdit.setCurrentIndex(0)
         self.ui.path_lengthEdit.setText(str(self.settings.PostProcess.path_length))
+
+        self.ui.com_portEdit.clear()
+
+        listPortCom = []
+        listPortCom = scog.getListPortCom()
+
+        self.ui.com_portEdit.addItem(self.settings.PostProcess.com_port)
+        self.ui.com_portEdit.setCurrentIndex(0)
+
+        for port in listPortCom:
+            if (port != self.settings.PostProcess.com_port):
+                self.ui.com_portEdit.addItem(port)
+
         self.ui.window_sizeEdit.setText(str(self.settings.PostProcess.window_size))
 
         if (self.settings.ExportParticles.export_images == True):
@@ -164,6 +176,7 @@ class ConfigEditor(QDialog):
         self.settings.config.set("General", "logfile", self.ui.logfileEdit.text())
         self.settings.config.set("Process", "real_time_stats", self.ui.real_time_statsEdit.currentText())
         self.settings.config.set("PostProcess", "path_length", self.ui.path_lengthEdit.text())
+        self.settings.config.set("PostProcess", "com_port", self.ui.com_portEdit.currentText())
         self.settings.config.set("PostProcess", "window_size", self.ui.window_sizeEdit.text())
         self.settings.config.set("ExportParticles", "export_images", self.ui.export_imagesEdit.currentText())
         self.settings.config.set("ExportParticles", "outputpath", self.ui.outputpathEdit.text())
@@ -464,6 +477,19 @@ def main():
 
             self.count_data()
             self.ctrl.update_dir_path(self.datadir)
+
+            if (self.run_type == process_mode.process and self.datadir != ''):
+                # try to find a config file in the chosen repository
+                iniFiles = list(filter(lambda x: x.endswith('.ini'), os.listdir(self.datadir)))
+                if len(iniFiles) == 1:
+                    reply = QMessageBox.question(self, "Config file found",
+                            "The config file " + iniFiles[0] + " is associated with the data. Do you want to load it?",
+                            QMessageBox.Yes | QMessageBox.No)
+                    if (reply == QMessageBox.Yes):
+                        self.configfile = iniFiles[0]
+                        self.ctrl.ui.pb_start.setEnabled(True)
+                        self.status_update('Config file loaded.')
+
             app.processEvents()
 
 
@@ -534,13 +560,17 @@ def main():
 
 
         def editConfig(self):
-            configfile = QFileDialog.getOpenFileName(self,
+            if self.configfile == '':
+                configfile = QFileDialog.getOpenFileName(self,
                     caption = 'Select config ini file',
                     directory = self.datadir,
                     filter = (('*.ini'))
                     )[0]
-            if configfile == '':
-                return
+
+                if configfile == '':
+                    return
+            else:
+                configfile = self.configfile
 
             configEditor = ConfigEditor(configfile)
             if (configEditor.exec() == QDialog.Accepted):

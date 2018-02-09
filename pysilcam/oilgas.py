@@ -13,8 +13,12 @@ from multiprocessing import Process, Queue
 import time
 import struct
 import serial
+import serial.tools.list_ports
 
 solidityThresh = 0.9
+
+def getListPortCom():
+    return [comport.device for comport in serial.tools.list_ports.comports()]
 
 def extract_gas(stats, THRESH=0.9):
     ma = stats['minor_axis_length'] / stats['major_axis_length']
@@ -134,8 +138,8 @@ def cat_data(timestamp, stats, settings):
 
 
 class PathLength():
-    def __init__(self):
-        self.ser = serial.Serial('/dev/ttyUSB0',115200, timeout=1)
+    def __init__(self, com_port):
+        self.ser = serial.Serial(com_port, 115200, timeout=1)
         print('actuator port open!')
         self.motoronoff(self.ser,1)
 
@@ -212,7 +216,6 @@ class PathLength():
         converted_pos = int(converted_pos)
         return converted_pos
 
-
     def mingap(self):
         self.move(self.ser, 108.5)
 
@@ -222,7 +225,6 @@ class PathLength():
     def gap_to_mm(self, mm):
         val = 108.5-mm
         self.move(self.ser, val)
-
 
     def finish(self):
         self.motoronoff(self.ser,0)
