@@ -188,6 +188,7 @@ class ConfigEditor(QDialog):
         with open(self.configfileToModify, 'w') as configfile:
             self.settings.config.write(configfile)
 
+
 def main():
     app = QApplication(sys.argv)
 
@@ -498,8 +499,14 @@ def main():
 
 
         def record(self):
-            self.process = gc.ProcThread(self.datadir, self.configfile, self.disc_write, self.run_type)
+            statsModif = self.checkStatsExists()
+            if (statsModif == -1):
+                return
+
+            self.process = gc.ProcThread(self.datadir, self.configfile, self.disc_write, self.run_type, statsModif)
+
             self.status_update('STARTING SILCAM!')
+
             self.process.go()
             app.processEvents()
             self.ctrl.ui.pb_start.setStyleSheet(('QPushButton {' + 'background-color: rgb(0,150,0) }'))
@@ -509,6 +516,31 @@ def main():
             app.processEvents()
             self.ctrl.ui.pb_stop.setEnabled(True)
             self.ctrl.ui.pb_live_raw.setEnabled(True)
+
+
+        def checkStatsExists(self):
+            if ((self.run_type == process_mode.process) or (self.run_type == process_mode.real_time)):
+                settings = PySilcamSettings(self.configfile)
+                procfoldername = os.path.split(self.datadir)[-1]
+                datafilename = os.path.join(settings.General.datafile, procfoldername)
+
+                if (os.path.isfile(datafilename + '-STATS.csv')):
+                    msgBox = QMessageBox()
+                    msgBox.setText(
+                        'The STATS file ' + procfoldername + '-STATS.csv' + ' already exists in the output repository.')
+                    msgBox.setIcon(QMessageBox.Question)
+                    msgBox.setWindowTitle('STATS file already exists')
+                    overwriteButton = msgBox.addButton('Overwrite', QMessageBox.ActionRole)
+                    appendButton = msgBox.addButton('Append', QMessageBox.ActionRole)
+                    msgBox.addButton(QMessageBox.Cancel)
+                    msgBox.exec_()
+
+                    if (msgBox.clickedButton() == overwriteButton):
+                        return True
+                    elif (msgBox.clickedButton() == appendButton):
+                        return False
+                    else:
+                        return -1
 
 
         def stop_record(self):

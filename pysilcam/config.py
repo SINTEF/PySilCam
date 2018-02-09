@@ -107,7 +107,7 @@ def load_camera_config(filename, config=None):
 
     try:
        if not config_parser.has_section('Camera'):
-          logger.debug('No Camera section in ini file:', filename)
+          logger.debug('No Camera section in ini file: {0}'.format(filename))
           return config
 
        # File is read, find the camera section
@@ -119,7 +119,7 @@ def load_camera_config(filename, config=None):
           config[k] = parsed_val
 
     except:
-       logger.debug('Could not read camera config file:', filename)
+       logger.debug('Could not read camera config file: {0}'.format(filename))
 
     # return the configuration as a dict
     return config

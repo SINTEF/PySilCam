@@ -162,7 +162,8 @@ def silcam_acquire(datapath, config_filename, writeToDisk=False, gui=None):
             gui.put_nowait((timestamp, imraw, imraw, rtdict))
 
 # the standard processing method under active development
-def silcam_process(config_filename, datapath, multiProcess=True, realtime=False, discWrite=False, nbImages=None, gui=None):
+def silcam_process(config_filename, datapath, multiProcess=True, realtime=False, discWrite=False, nbImages=None, gui=None,
+                   overwriteSTATS = True):
 
     '''Run processing of SilCam images
 
@@ -226,8 +227,9 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     datafilename = os.path.join(settings.General.datafile,procfoldername)
     logger.info('output stats to: ' + datafilename)
 
-    if os.path.isfile(datafilename + '-STATS.csv'):
+    if os.path.isfile(datafilename + '-STATS.csv') and overwriteSTATS:
         logger.info('removing: ' + datafilename + '-STATS.csv')
+        print('Overwriting ' + datafilename + '-STATS.csv')
         os.remove(datafilename + '-STATS.csv')
 
     # Create export directory if needed

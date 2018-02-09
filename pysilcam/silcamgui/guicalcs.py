@@ -165,7 +165,7 @@ class process_mode(Enum):
 class ProcThread(Process):
     run_type = process_mode.process
 
-    def __init__(self, datadir, configfile, disc_write, run_type):
+    def __init__(self, datadir, configfile, disc_write, run_type, overwriteSTATS):
         super(ProcThread, self).__init__()
         self.q = Queue(1)
         self.info = 'ini done'
@@ -175,18 +175,18 @@ class ProcThread(Process):
         self.rts = ''
         self.disc_write = disc_write
         self.run_type = run_type
+        self.overwriteSTATS = overwriteSTATS
 
 
     def run(self):
         if(self.run_type == process_mode.process):
             psc.silcam_process(self.configfile, self.datadir, multiProcess=True, realtime=False,
-            gui=self.q)
-
+            gui=self.q, overwriteSTATS=self.overwriteSTATS)
         elif(self.run_type == process_mode.aquire):
             psc.silcam_acquire(self.datadir, config_filename=self.configfile, writeToDisk=self.disc_write, gui=self.q)
         elif(self.run_type == process_mode.real_time):
             psc.silcam_process(self.configfile, self.datadir, multiProcess=True, realtime=True,
-                               discWrite=self.disc_write, gui=self.q)
+                               discWrite=self.disc_write, gui=self.q, overwriteSTATS=self.overwriteSTATS)
 
         #psc.silcam_sim(self.datadir, self.q)
 
