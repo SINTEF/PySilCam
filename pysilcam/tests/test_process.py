@@ -16,7 +16,7 @@ def test_csv_file():
 
     data_file = 'E:/test data/hello_silcam/unittest_entries/STN04'
     stats_file = 'E:/test data/hello_silcam/unittest_entries/STN04-STATS.csv'
-    
+
     # if csv file already exists, it has to be deleted
     if (os.path.isfile(stats_file)):
         os.remove(stats_file)
@@ -36,7 +36,7 @@ def test_csv_file():
     # check the columns
     assert lines[0] == 'particle index,major_axis_length,minor_axis_length,equivalent_diameter,solidity,minr,minc,maxr,maxc,'\
             'probability_oil,probability_other,probability_bubble,probability_faecal_pellets,probability_copepod,'\
-            'probability_diatom_chain,probability_oily_gas,export name,timestamp\n', 'columns not properly built' 
+            'probability_diatom_chain,probability_oily_gas,export name,timestamp\n', 'columns not properly built'
 
     nbimages = 0 # number of images in the csv file
     for line in lines:
@@ -44,3 +44,6 @@ def test_csv_file():
             nbimages += 1
     assert nbimages == 5, 'images missing from csv file' # 5 images are used for the background, the 5 images left are processed
 
+    args['<statsfile>'] = stats_file
+    args['<configfile>'] = conf_file
+    silcam_report(args, dpi=100):
