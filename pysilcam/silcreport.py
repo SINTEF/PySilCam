@@ -26,10 +26,7 @@ def silcreport():
     '''
 
     args = docopt(silcreport.__doc__)
-    silcam_report(args, monitor=False, dpi=600)
 
-def silcam_report(args, monitor=False, dpi=600):
-    '''does reporting'''
     particle_type = scpp.outputPartType.all
     particle_type_str = 'all'
     if args['--type']=='oil':
@@ -47,13 +44,22 @@ def silcam_report(args, monitor=False, dpi=600):
         print('    press ctrl+c to stop.')
         monitor=True
 
+    silcam_report(args['<statsfile>'], args['<configfile>'],
+            particle_type=particle_type,
+            particle_type_str=particle_type_str, monitor=False, dpi=dpi)
+
+
+def silcam_report(statsfile, configfile, particle_type=scpp.outputPartType.all,
+        particle_type_str='all', monitor=False, dpi=600):
+    '''does reporting'''
+
     plt.figure(figsize=(20,12))
 
-    scplt.summarise_fancy_stats(args['<statsfile>'], args['<configfile>'],
+    scplt.summarise_fancy_stats(statsfile, configfile,
             monitor=monitor, oilgas=particle_type)
 
     print('  Saving to disc....')
-    plt.savefig(args['<statsfile>'].strip('-STATS.csv') + '-Summary_' +
+    plt.savefig(statsfile.strip('-STATS.csv') + '-Summary_' +
             particle_type_str + '.png',
             dpi=dpi, bbox_inches='tight')
     print('Done.')

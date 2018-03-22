@@ -44,6 +44,4 @@ def test_csv_file():
             nbimages += 1
     assert nbimages == 5, 'images missing from csv file' # 5 images are used for the background, the 5 images left are processed
 
-    args['<statsfile>'] = stats_file
-    args['<configfile>'] = conf_file
-    silcam_report(args, dpi=100):
+    silcam_report(stats_file, conf_file, dpi=10)
