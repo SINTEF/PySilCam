@@ -227,6 +227,7 @@ class ProcThread(Process):
                 vd_gas = guidata[3]['vd_gas']
                 oil_d50 = guidata[3]['oil_d50']
                 gas_d50 = guidata[3]['gas_d50']
+                gor = np.float64(np.sum(vd_gas)/np.sum(vd_oil))
 
 
                 #infostr = data['infostr']
@@ -249,7 +250,8 @@ class ProcThread(Process):
                 plt.cla()
                 ttlstr = (
                         'Oil d50: {:0.0f} [um]'.format(oil_d50) + '\n' +
-                        'Gas d50: {:0.0f} [um]'.format(gas_d50) + '\n'
+                        'Gas d50: {:0.0f} [um]'.format(gas_d50) + '\n' +
+                        'GOR: {:0.2f}'.format(gor)
                         )
                 plt.title(ttlstr)
                 plt.imshow(imraw)

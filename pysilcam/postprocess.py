@@ -14,7 +14,6 @@ import h5py
 from pysilcam.config import PySilcamSettings
 from enum import Enum
 
-
 class outputPartType(Enum):
     all = 1
     oil = 2
@@ -674,12 +673,10 @@ def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
     dfa = pd.DataFrame(data=[vd], columns=dias)
     dfa['d50'] = d50
     
-    timestamp = np.min(pd.to_datetime(timestamp))
+    timestamp = np.min(pd.to_datetime(df['Time']))
     dfa['Time'] = timestamp
     
     dfa.to_excel(stats_filename.strip('-STATS.csv') +
             '-AVERAGE' + oilgasTxt + '.xlsx')
-   
-    print('----END----')
 
     return df
