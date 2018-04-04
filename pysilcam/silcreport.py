@@ -36,6 +36,9 @@ def silcreport():
         particle_type = scpp.outputPartType.gas
         particle_type_str = args['--type']
 
+    print(particle_type_str)
+
+    dpi=600
     if args['--dpi']:
         dpi=int(args['--dpi'])
 
