@@ -314,26 +314,16 @@ def main():
             plt.figure(figsize=(20,10))
             plt.plot(df['Time'], df['D50'],'k.', label='ALL')
             plt.ylabel('d50 [um]')
-            # plt.savefig(self.stats_filename.strip('-STATS.csv') +
-            #         '-d50_TimeSeries.png', dpi=600, bbox_inches='tight')
 
             self.status_update('Exporting oil data....')
             df = scpp.stats_to_xls_png(self.configfile,
                     self.stats_filename, oilgas=scpp.outputPartType.oil)
-            # plt.figure(figsize=(20,12))
             plt.plot(df['Time'], df['D50'],'r.', label='OIL')
-            # plt.ylabel('d50 [um]')
-            # plt.savefig(self.stats_filename.strip('-STATS.csv') +
-            #         '-d50_TimeSeries_oil.png', dpi=600, bbox_inches='tight')
 
             self.status_update('Exporting gas data....')
             df = scpp.stats_to_xls_png(self.configfile,
                     self.stats_filename, oilgas=scpp.outputPartType.gas)
-            # plt.figure(figsize=(20,12))
             plt.plot(df['Time'], df['D50'],'b.', label='GAS')
-            # plt.ylabel('d50 [um]')
-            # plt.savefig(self.stats_filename.strip('-STATS.csv') +
-            #         '-d50_TimeSeries_gas.png', dpi=600, bbox_inches='tight')
             plt.legend()
             plt.savefig(self.stats_filename.strip('-STATS.csv') +
                     '-d50_TimeSeries.png', dpi=600, bbox_inches='tight')

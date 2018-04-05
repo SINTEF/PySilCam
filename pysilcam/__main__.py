@@ -102,7 +102,7 @@ def silcam():
         silcam_process(args['<configfile>'], datapath, multiProcess=multiProcess, realtime=True, discWrite=discWrite)
 
 
-def silcam_acquire(datapath, config_filename, writeToDisk=False, gui=None):
+def silcam_acquire(datapath, config_filename, writeToDisk=True, gui=None):
     '''Aquire images from the SilCam
 
     Args:
