@@ -14,7 +14,6 @@ import h5py
 from pysilcam.config import PySilcamSettings
 from enum import Enum
 
-
 class outputPartType(Enum):
     all = 1
     oil = 2
@@ -258,7 +257,7 @@ class TimeIntegratedVolumeDist:
 
 
 def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
-        tightpack=False):
+        tightpack=False, eyecandy=True):
     '''
     makes nice looking matages from a directory of extracted particle images
 
@@ -285,13 +284,16 @@ def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
         if width >= msize:
             continue
 
-        # contrast exploding:
-        particle_image = explode_contrast(particle_image)
+        if eyecandy:
+            # contrast exploding:
+            particle_image = explode_contrast(particle_image)
 
-        # eye-candy normalization:
-        peak = np.median(particle_image.flatten())
-        bm = brightness - peak
-        particle_image = np.float64(particle_image) + bm
+            # eye-candy normalization:
+            peak = np.median(particle_image.flatten())
+            bm = brightness - peak
+            particle_image = np.float64(particle_image) + bm
+        else:
+            particle_image = np.float64(particle_image)
         particle_image[particle_image>255] = 255
 
         # tighpack checks fitting within the canvas based on an approximation
@@ -381,7 +383,11 @@ def make_montage(stats_csv_file, pixel_size, roidir,
 
     roifiles = gen_roifiles(stats, auto_scaler=auto_scaler)
 
-    montage = montage_maker(roifiles, roidir, pixel_size, msize)
+    eyecandy = True
+    if not (oilgas==outputPartType.all):
+        eyecandy = False
+
+    montage = montage_maker(roifiles, roidir, pixel_size, msize, eyecandy=eyecandy)
 
     return montage
 
@@ -667,12 +673,10 @@ def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
     dfa = pd.DataFrame(data=[vd], columns=dias)
     dfa['d50'] = d50
     
-    timestamp = np.min(pd.to_datetime(timestamp))
+    timestamp = np.min(pd.to_datetime(df['Time']))
     dfa['Time'] = timestamp
     
     dfa.to_excel(stats_filename.strip('-STATS.csv') +
             '-AVERAGE' + oilgasTxt + '.xlsx')
-   
-    print('----END----')
 
     return df

@@ -36,7 +36,7 @@ def extract_gas(stats, THRESH=0.9):
     return stats
 
 
-def extract_oil(stats, THRESH=0.9):
+def extract_oil(stats, THRESH=0.85):
     ma = stats['minor_axis_length'] / stats['major_axis_length']
     stats = stats[ma>0.3]
     stats = stats[stats['solidity']>solidityThresh]
