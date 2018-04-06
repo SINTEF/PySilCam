@@ -83,13 +83,11 @@ setup(
     #dependency_links=['git+https://github.com/mabl/pymba@python3'],
     # Use master branch for Pymba on Python 2
     #dependency_links=['git+https://github.com/morefigs/pymba@python3'],
-    license=read('LICENSE'),
     zip_safe=False,
     keywords='silcam',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.4',
