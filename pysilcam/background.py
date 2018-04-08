@@ -13,10 +13,15 @@ import logging
 logger = logging.getLogger(__name__)
 
 def ini_background(av_window, acquire):
-    '''av_window is the number of images to use in creating the background
-    function returns:
-      bgstack (list of all background iamges)
-      imbg (the actual background image)
+    '''
+    Create and initial background stack and average image
+    
+    Args:
+        av_window (int)             : number of images to use in creating the background
+        acquire (generator object)  : acquire generator object created by the Acquire class
+    Returns:
+        bgstack (list)              : list of all images in the background stack
+        imbg (uint8)                : background image
     '''
     bgstack = []
     bgstack.append(next(acquire)[1])  # get the first image
@@ -30,10 +35,21 @@ def ini_background(av_window, acquire):
 
 
 def shift_bgstack_accurate(bgstack, imbg, imnew, stacklength):
-    '''shifts the background by popping the oldest and added a new image
-    returns:
-    bgstack (updated list of all background images)
-    imbg (updated actual background image)
+    '''
+    Shifts the background by popping the oldest and added a new image
+    
+    The new background is calculated slowly by computing the mean of all images
+    in the background stack.
+    
+    Args:
+        bgstack (list)      : list of all images in the background stack
+        imbg (uint8)        : background image
+        imnew (unit8)       : new image to be added to stack
+        stacklength (int)   : unsed here - it is just there to maintain the same behaviour as shift_bgstack_fast()
+        
+    Returns:
+        bgstack (updated list of all background images)
+        imbg (updated actual background image)
     '''
     imold = bgstack.pop(0)  # pop the oldest image from the stack,
     bgstack.append(imnew)  # append the new image to the stack
@@ -42,10 +58,22 @@ def shift_bgstack_accurate(bgstack, imbg, imnew, stacklength):
 
 
 def shift_bgstack_fast(bgstack, imbg, imnew, stacklength):
-    '''shifts the background by popping the oldest and added a new image
-    returns:
-      bgstack (updated list of all background images)
-      imbg (updated actual background image)
+    '''
+    Shifts the background by popping the oldest and added a new image
+    
+    The new background is appoximated quickly by subtracting the old image and
+    adding the new image (both scaled by the stacklength).
+    This is close to a running mean, but not quite.
+    
+    Args:
+        bgstack (list)      : list of all images in the background stack
+        imbg (uint8)        : background image
+        imnew (unit8)       : new image to be added to stack
+        stacklength (int)   : unsed int here - just there to maintain the same behaviour as shift_bgstack_fast()
+        
+    Returns:
+        bgstack (updated list of all background images)
+        imbg (updated actual background image)
     '''
     imold = bgstack.pop(0)  # pop the oldest image from the stack,
     # subtract the old image from the average (scaled by the average window)
@@ -57,13 +85,18 @@ def shift_bgstack_fast(bgstack, imbg, imnew, stacklength):
 
 
 def correct_im_accurate(imbg, imraw):
-    '''corrects raw image by subtracting the background
-    inputs:
-      imbg (the actual background averaged image)
-      imraw (a raw image)
+    '''
+    Corrects raw image by subtracting the background and scaling the output
+    
+    There is a small chance of clipping of imc in both crushed blacks an blown
+    highlights if the background or raw images are very poorly obtained
+    
+    Args:
+      imbg (uint8)  : background averaged image
+      imraw (uint8) : raw image
 
-    returns:
-      imc (a corrected image)
+    Returns:
+      imc (uint8)   : corrected image
     '''
 
     imc = np.float64(imraw) - np.float64(imbg)
@@ -81,13 +114,19 @@ def correct_im_accurate(imbg, imraw):
 
 
 def correct_im_fast(imbg, imraw):
-    '''corrects raw image by subtracting the background
-    inputs:
-      imbg (the actual background averaged image)
-      imraw (a raw image)
+    '''
+    Corrects raw image by subtracting the background and clipping the ouput
+    without scaling
+    
+    There is high potential for clipping of imc in both crushed blacks an blown
+    highlights, especially if the background or raw images are not properly obtained
+    
+    Args:
+      imbg (uint8)  : background averaged image
+      imraw (uint8) : raw image
 
-    returns:
-      imc (a corrected image)
+    Returns:
+      imc (uint8)   : corrected image
     '''
     imc = imraw - imbg
 
@@ -100,20 +139,23 @@ def correct_im_fast(imbg, imraw):
 
 
 def shift_and_correct(bgstack, imbg, imraw, stacklength, real_time_stats=False):
-    '''shifts the background stack and averaged image and corrects the new
+    '''
+    Shifts the background stack and averaged image and corrects the new
     raw image.
 
-    This is a wrapper for shift_bgstack and correct_im
-
-    inputs:
-      bgstack (old background stack)
-      imbg (old averaged image)
-      imraw (a new raw image)
-
-    returns:
-      bgstack (updated stack)
-      imbg (updated averaged image)
-      imc (corrected image)
+    This is a wrapper for shift_bgstack and correct_im      
+      
+    Args:
+        bgstack (list)                  : list of all images in the background stack
+        imbg (uint8)                    : background image
+        imraw (uint8)                   : raw image
+        stacklength (int)               : unsed int here - just there to maintain the same behaviour as shift_bgstack_fast()
+        real_time_stats=False (Bool)    : if True use fast functions, if False use accurate functions
+        
+    Returns:
+        bgstack (list)                  : list of all images in the background stack
+        imbg (uint8)                    : background averaged image
+        imc (uint8)                     : corrected image
     '''
 
     if real_time_stats:
@@ -128,10 +170,21 @@ def shift_and_correct(bgstack, imbg, imraw, stacklength, real_time_stats=False):
 
 def backgrounder(av_window, acquire, bad_lighting_limit=None,
         real_time_stats=False):
-    '''generator which interacts with acquire to return a corrected image
+    '''
+    Generator which interacts with acquire to return a corrected image
     given av_window number of frame to use in creating a moving background
 
-    example useage:
+    Args:
+        av_window (int)               : number of images to use in creating the background
+        acquire (generator object)    : acquire generator object created by the Acquire class
+        bad_lighting_limit=None (int) : if a number is supplied it is used for throwing away raw images that have a standard deviation in colour which exceeds the given value
+
+    Yields:
+        timestamp (timestamp)         : timestamp of when raw image was acquired 
+        imc (uint8)                   : corrected image ready for analysis or plotting
+        imraw (uint8)                 : raw image
+
+    Useage:
       avwind = 10 # number of images used for background
       imgen = backgrounder(avwind,acquire,bad_lighting_limit) # setup generator
 

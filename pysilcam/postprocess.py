@@ -15,12 +15,23 @@ from pysilcam.config import PySilcamSettings
 from enum import Enum
 
 class outputPartType(Enum):
+    '''
+    Enum for all (1), oil (2) or gas (3)
+    '''
     all = 1
     oil = 2
     gas = 3
 
 def d50_from_stats(stats, settings):
-    '''calculate the d50 from the stats and settings
+    '''
+    Calculate the d50 from the stats and settings
+    
+    Args:
+        stats (DataFrame)           : particle statistics from silcam process
+        settings (PySilcamSettings) : settings associated with the data, loaded with PySilcamSettings
+        
+    Returns:
+        d50 (float)                 : the 50th percentile of the cumulative sum of the volume distributon, in microns
     '''
 
     # the volume distribution needs calculating first
@@ -31,8 +42,16 @@ def d50_from_stats(stats, settings):
     return d50
 
 def d50_from_vd(vd,dias):
-    ''' calculate d50 from a volume distribution
-    d50 = d50_from_vd(vd,dias)
+    '''
+    Calculate d50 from a volume distribution
+    
+    Args:
+        vd (array)           : particle volume distribution calculated from vd_from_stats()
+        dias (array)         : mid-points in the size classes corresponding the the volume distribution,
+                               returned from get_size_bins()
+        
+    Returns:
+        d50 (float)                 : the 50th percentile of the cumulative sum of the volume distributon, in microns
     '''
 
     # calcualte cumulative sum of the volume distribution
@@ -43,8 +62,12 @@ def d50_from_vd(vd,dias):
     return d50
 
 def get_size_bins():
-    '''retrieve size bins for PSD analysis
-    bin_mids_um, bin_limits_um = get_size_bins()
+    '''
+    Retrieve size bins for PSD analysis
+    
+    Returns:
+        bin_mids_um (array)     : mid-points of size bins
+        bin_limits_um (array)   : limits of size bins
     '''
     # pre-allocate
     bin_limits_um = np.zeros((53),dtype=np.float64)
@@ -71,13 +94,22 @@ def get_size_bins():
     return bin_mids_um, bin_limits_um
 
 def vd_from_nd(count,psize,sv=1):
-    ''' calculate volume concentration from particle count
+    '''
+    Calculate volume concentration from particle count
 
     sv = sample volume size (litres)
 
     e.g:
     sample_vol_size=25*1e-3*(1200*4.4e-6*1600*4.4e-6); %size of sample volume in m^3
     sv=sample_vol_size*1e3; %size of sample volume in litres
+    
+    Args:
+        count (array) : particle number distribution
+        psize (float) : pixel size of the SilCam contained in settings.PostProcess.pix_size from the config ini file
+        sv=1 (float)  : the volume of the sample which should be used for scaling concentrations
+        
+    Returns:
+        vd (array)    : the particle volume distribution
     '''
 
     psize = psize *1e-6  # convert to m
@@ -92,20 +124,33 @@ def vd_from_nd(count,psize,sv=1):
 
 
 def nc_from_nd(count,sv):
-    ''' calculate the number concentration from the count and sample volume
+    ''' 
+    Calculate the number concentration from the count and sample volume
+    
+    Args:
+        count (array) : particle number distribution
+        sv=1 (float)  : the volume of the sample which should be used for scaling concentrations
+        
+    Returns:
+        nc (float)    : the total number concentration in #/L
     '''
     nc = np.sum(count) / sv
     return nc
 
 def nc_vc_from_stats(stats, settings, oilgas=outputPartType.all):
-    ''' calculate:
-            number concentration
-            volume concentration
-            total sample volume
-            junge distribution slope
-
-    USEAGE: nc, vc, sample_volume, junge = nc_vc_from_stats(stats, settings)
-
+    '''
+    Calculates important summary statistics from a stats DataFrame
+    
+    Args:
+        stats (DataFrame)           : particle statistics from silcam process
+        settings (PySilcamSettings) : settings associated with the data, loaded with PySilcamSettings
+        oilgas=oc_pp.outputPartType.all : the oilgas enum if you want to just make the figure for oil, or just gas (defulats to all particles)
+    
+    Returns:
+        nc (float)            : the total number concentration in #/L
+        vc (float)            : the total volume concentration in uL/L
+        sample_volume (float) : the total volume of water sampled in L
+        junge (float)         : the slope of a fitted juge distribution between 150-300um
     '''
     # get the path length from the config file
     path_length = settings.path_length
@@ -634,8 +679,9 @@ def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
     PSD.
 
     Args:
-        config_file (string): Path of the config file for this data
-        stats_filename (string): Path of the stats csv file
+        config_file (string)            : Path of the config file for this data
+        stats_filename (string)         : Path of the stats csv file
+        oilgas=oc_pp.outputPartType.all : the oilgas enum if you want to just make the figure for oil, or just gas (defulats to all particles)
 
     Returns:
         dataframe: of time series

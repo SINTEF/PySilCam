@@ -17,32 +17,41 @@ SilCam TensorFlow analysis for classification of particle types
 
 
 def get_class_labels(model_path='/mnt/ARRAY/classifier/model/particle-classifier.tfl'):
-    ''' read the header file that defines the catagories
+    '''
+    Read the header file that defines the catagories of particles in the model
 
-    class_labels = get_class_labels(model_path='/mnt/ARRAY/classifier/model/particle-classifier.tfl')
+    Args:
+        model_path (str)        : path to particle-classifier e.g.
+                                  '/mnt/ARRAY/classifier/model/particle-classifier.tfl'
+
+    Returns:
+        class_labels (str)      : labelled catagories which can be predicted
      '''
-    headerfile = path, filename = os.path.split(model_path)
+    path, filename = os.path.split(model_path)
     header = pd.read_csv(os.path.join(path, 'header.tfl.txt'))
-    OUTPUTS = len(header.columns)
     class_labels = header.columns
     return class_labels
 
 
 def load_model(model_path='/mnt/ARRAY/classifier/model/particle-classifier.tfl'):
-    ''' load the trained tfl model
-
-    model, class_labels = load_model(model_path='/mnt/ARRAY/classifier/model/particle-classifier.tfl')
-
-    model is the trained tf model ready for use in prediction
     '''
-    headerfile = path, filename = os.path.split(model_path)
+    Load the trained tensorflow model
+
+    Args:
+        model_path (str)        : path to particle-classifier e.g.
+                                  '/mnt/ARRAY/classifier/model/particle-classifier.tfl'
+
+    Returns:
+        model (tf model object) : loaded tfl model from load_model()
+    '''
+    path, filename = os.path.split(model_path)
     header = pd.read_csv(os.path.join(path, 'header.tfl.txt'))
     OUTPUTS = len(header.columns)
     class_labels = header.columns
 
     tf.reset_default_graph()
 
-    # Same network definition as before
+    # Same network definition as in tfl_tools scripts
     img_prep = ImagePreprocessing()
     img_prep.add_featurewise_zero_center()
     img_prep.add_featurewise_stdnorm()
@@ -76,19 +85,17 @@ def load_model(model_path='/mnt/ARRAY/classifier/model/particle-classifier.tfl')
     return model, class_labels
 
 def predict(img, model):
-    ''' use tfl model to classify particles
-
-    prediction = predict(img, model)
-
-    img is a particle ROI, corrected and treated with the silcam
-    explode_contrast function
-
-    model is the loaded tfl model
-
-    prediction is the probability of the roi belonging to each class
     '''
-    # Load the image file
-    #img = scipy.ndimage.imread(args.image, mode="RGB")
+    Use tensorflow model to classify particles
+    
+    Args:
+        img (uint8)             : a particle ROI, corrected and treated with the silcam
+                                  explode_contrast function
+        model (tf model object) : loaded tfl model from load_model()
+
+    Returns:
+        prediction (array)      : the probability of the roi belonging to each class
+    '''
 
     # Scale it to 32x32
     img = scipy.misc.imresize(img, (32, 32), interp="bicubic").astype(np.float32, casting='unsafe')
@@ -96,7 +103,5 @@ def predict(img, model):
     # Predict
     prediction = model.predict([img])
 
-    #print('other,  copepod,  diatom chain')
-    #print(prediction)
     return prediction
 

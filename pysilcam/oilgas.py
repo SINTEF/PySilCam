@@ -52,7 +52,9 @@ def extract_oil(stats, THRESH=0.85):
 
 
 class rt_stats():
-
+    '''
+    Class for maintining realtime statistics
+    '''
     def __init__(self, settings):
         self.stats = pd.DataFrame
         self.settings = settings
@@ -63,8 +65,10 @@ class rt_stats():
         self.gas_d50 = np.nan
 
     def update(self):
-        # remove data from before the specified window of seconds
-        # (settings.PostProcess.window_size)
+        '''
+        Updates the rt_stats to remove data from before the specified window of seconds
+        given in the config ini file, here: settings.PostProcess.window_size
+        '''
         self.stats = sc_pp.extract_latest_stats(self.stats,
                 self.settings.PostProcess.window_size)
 
@@ -84,20 +88,38 @@ class rt_stats():
                     self.settings.PostProcess)
 
     def to_csv(self, filename):
+        '''
+        Writes the rt_stats data to a csv file
+        
+        Args:
+            filename (str) : filename of the csv file to write to
+        '''
         df = pd.DataFrame()
         df['Oil d50[um]'] = [self.oil_d50]
         df['Gas d50[um]'] = [self.gas_d50]
+        # @todo include saturation here too
         df.to_csv(filename, index=False, mode='w') # do not append to this file
 
 
 class ServerThread(Process):
-
+    '''
+    Class for managing http server for sharing realtime data
+    '''
     def __init__(self, ip):
+        '''
+        Setup the server
+        
+        Args:
+            ip (str) : string defining the local ip address of the machine that will run this function
+        '''
         super(ServerThread, self).__init__()
         self.ip = ip
         self.go()
 
     def run(self):
+        '''
+        Start the server on port 8000
+        '''
         PORT = 8000
         #address = '192.168.1.2'
         Handler = http.server.SimpleHTTPRequestHandler
@@ -110,7 +132,9 @@ class ServerThread(Process):
 
 
 def ogdataheader():
-
+    '''
+    Possibly a redundant function....
+    '''
     ogheader = 'Y, M, D, h, m, s, '
 
     bin_mids_um, bin_limits_um = sc_pp.get_size_bins()
@@ -125,6 +149,9 @@ def ogdataheader():
 
 
 def cat_data(timestamp, stats, settings):
+    '''
+    Possibly a redundant function....
+    '''
     dias, vd = sc_pp.vd_from_stats(stats, settings.PostProcess)
     d50 = sc_pp.d50_from_vd(vd, dias)
 
@@ -138,6 +165,11 @@ def cat_data(timestamp, stats, settings):
 
 
 class PathLength():
+    '''
+    Class for interacting with the path length actuator unit via RS232
+    
+    See the technical manual for the actuator for details
+    '''
     def __init__(self, com_port):
         self.ser = serial.Serial(com_port, 115200, timeout=1)
         print('actuator port open!')
