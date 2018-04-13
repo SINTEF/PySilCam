@@ -480,6 +480,7 @@ def main():
                             "The config file " + iniFiles[0] + " is associated with the data. Do you want to load it?",
                             QMessageBox.Yes | QMessageBox.No)
                     if (reply == QMessageBox.Yes):
+                        os.chdir(self.datadir)
                         self.configfile = iniFiles[0]
                         self.ctrl.ui.pb_start.setEnabled(True)
                         self.status_update('Config file loaded.')
