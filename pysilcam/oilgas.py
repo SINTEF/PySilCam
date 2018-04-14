@@ -14,11 +14,21 @@ import time
 import struct
 import serial
 import serial.tools.list_ports
+import glob
+import sys
 
 solidityThresh = 0.9
 
 def getListPortCom():
-    return [comport.device for comport in serial.tools.list_ports.comports()]
+    try:
+        if sys.platform.startswith('win'):
+            com_list = [comport.device for comport in serial.tools.list_ports.comports()]
+        elif sys.platform.startswith('linux'):
+            com_list = glob.glob('/dev/tty[A-Za-z]*')
+    except AttributeError:
+        com_list = []
+
+    return com_list
 
 def extract_gas(stats, THRESH=0.9):
     ma = stats['minor_axis_length'] / stats['major_axis_length']
