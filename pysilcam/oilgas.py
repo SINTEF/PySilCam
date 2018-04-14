@@ -62,6 +62,38 @@ def extract_oil(stats, THRESH=0.85):
     return stats
 
 
+def gor_timeseries(stats, settings):
+    u = stats['timestamp'].unique()
+    td = pd.to_timedelta('00:00:' + str(settings.window_size / 2.))
+
+    sample_volume = sc_pp.get_sample_volume(settings.pix_size, path_length=settings.path_length)
+
+    gor = []
+    time = []
+
+    for t in u:
+        dt = pd.to_datetime(t)
+        stats_ = stats[(pd.to_datetime(stats['timestamp']) < (dt + td)) & (pd.to_datetime(stats['timestamp']) > (dt - td))]
+
+        oilstats = extract_oil(stats_)
+        dias, vd_oil = sc_pp.vd_from_stats(oilstats, settings)
+        nims = sc_pp.count_images_in_stats(oilstats)
+        sv = sample_volume * nims
+        vd_oil /= sv
+
+        gasstats = extract_gas(stats_)
+        dias, vd_gas = sc_pp.vd_from_stats(gasstats, settings)
+        nims = sc_pp.count_images_in_stats(gasstats)
+        sv = sample_volume * nims
+        vd_gas /= sv
+
+        gor_ = sum(vd_gas)/sum(vd_oil)
+
+        time.append(pd.to_datetime(t))
+        gor.append(gor_)
+
+    return gor, time
+
 class rt_stats():
     '''
     Class for maintining realtime statistics

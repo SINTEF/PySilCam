@@ -500,12 +500,12 @@ def extract_nth_longest(stats,settings,n=0):
     return stats
 
 
-def d50_timeseries(stats, settings, window_size=10):
+def d50_timeseries(stats, settings):
     ''' Calculates time series of d50 from stats
     '''
     stats = stats.sort_values(by='timestamp')
 
-    td = pd.to_timedelta('00:00:' + str(window_size))
+    td = pd.to_timedelta('00:00:' + str(settings.window_size/2.))
     d50 = []
     time = []
 
@@ -513,7 +513,7 @@ def d50_timeseries(stats, settings, window_size=10):
 
     for t in u:
         dt = pd.to_datetime(t)
-        stats_ = stats[(pd.to_datetime(stats['timestamp'])<(dt)) & (pd.to_datetime(stats['timestamp'])>(dt-td))]
+        stats_ = stats[(pd.to_datetime(stats['timestamp'])<(dt+td)) & (pd.to_datetime(stats['timestamp'])>(dt-td))]
         d50.append(d50_from_stats(stats_, settings))
         time.append(t)
 

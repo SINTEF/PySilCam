@@ -372,30 +372,45 @@ def main():
                     self.status_update('Did not get STATS file')
                     return
 
+            settings = PySilcamSettings(self.configfile)
+
             self.stats_filename = ''
             self.status_update('Asking user for *-STATS.csv file')
             self.load_stats_filename()
             if self.stats_filename == '':
                 self.status_update('Did not get STATS file')
                 return
+            stats = pd.read_csv(self.stats_filename)
 
             self.status_update('Exporting all data....')
             df = scpp.stats_to_xls_png(self.configfile,
                     self.stats_filename)
             plt.figure(figsize=(20,10))
-            plt.plot(df['Time'], df['D50'],'k.', label='ALL')
-            plt.ylabel('d50 [um]')
 
             self.status_update('Exporting oil data....')
             df = scpp.stats_to_xls_png(self.configfile,
                     self.stats_filename, oilgas=scpp.outputPartType.oil)
-            plt.plot(df['Time'], df['D50'],'r.', label='OIL')
+            plt.plot(df['Time'], df['D50'],'r.')
+            d50, time = scpp.d50_timeseries(scog.extract_oil(stats), settings.PostProcess)
+            lns1 = plt.plot(time, d50, 'r-', label='OIL')
 
             self.status_update('Exporting gas data....')
             df = scpp.stats_to_xls_png(self.configfile,
                     self.stats_filename, oilgas=scpp.outputPartType.gas)
-            plt.plot(df['Time'], df['D50'],'b.', label='GAS')
-            plt.legend()
+            plt.plot(df['Time'], df['D50'],'b.')
+            d50, time = scpp.d50_timeseries(scog.extract_gas(stats), settings.PostProcess)
+            lns2 = plt.plot(time, d50, 'b-', label='GAS')
+            plt.ylabel('d50 [um]')
+
+            gor, time = scog.gor_timeseries(stats, settings.PostProcess)
+            ax = plt.gca().twinx()
+            plt.ylabel('GOR')
+            lns3 = ax.plot(time, gor, 'k', label='GOR')
+
+            lns = lns1 + lns2 + lns3
+            labs = [l.get_label() for l in lns]
+            plt.legend(lns, labs)
+
             plt.savefig(self.stats_filename.strip('-STATS.csv') +
                     '-d50_TimeSeries.png', dpi=600, bbox_inches='tight')
 
