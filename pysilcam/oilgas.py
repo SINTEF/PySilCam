@@ -30,6 +30,7 @@ def getListPortCom():
 
     return com_list
 
+
 def extract_gas(stats, THRESH=0.9):
     ma = stats['minor_axis_length'] / stats['major_axis_length']
     stats = stats[ma>0.3]
@@ -73,6 +74,7 @@ class rt_stats():
         self.vd_gas = []
         self.oil_d50 = np.nan
         self.gas_d50 = np.nan
+        self.saturation = np.nan
 
     def update(self):
         '''
@@ -97,6 +99,9 @@ class rt_stats():
         self.dias, self.vd_gas = sc_pp.vd_from_stats(self.gas_stats,
                     self.settings.PostProcess)
 
+        self.saturation = np.mean(self.stats.saturation)
+
+
     def to_csv(self, filename):
         '''
         Writes the rt_stats data to a csv file
@@ -108,6 +113,7 @@ class rt_stats():
         df['Oil d50[um]'] = [self.oil_d50]
         df['Gas d50[um]'] = [self.gas_d50]
         # @todo include saturation here too
+        df['saturation [%]'] = [self.saturation]
         df.to_csv(filename, index=False, mode='w') # do not append to this file
 
 

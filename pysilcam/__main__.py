@@ -151,7 +151,8 @@ def silcam_acquire(datapath, config_filename, writeToDisk=True, gui=None):
                     'vd_oil': 0,
                     'vd_gas': 0,
                     'oil_d50': 0,
-                    'gas_d50': 0}
+                    'gas_d50': 0,
+                    'saturation': 0}
             gui.put_nowait((timestamp, imraw, imraw, rtdict))
 
 # the standard processing method under active development
@@ -292,7 +293,8 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
                         'vd_oil': rts.vd_oil,
                         'vd_gas': rts.vd_gas,
                         'oil_d50': rts.oil_d50,
-                        'gas_d50': rts.gas_d50}
+                        'gas_d50': rts.gas_d50,
+                        'saturation': rts.saturation}
                 gui.put_nowait((timestamp, imc, imraw, rtdict))
                 logger.debug('GUI queue updated')
 
@@ -459,6 +461,9 @@ def processImage(nnmodel, class_labels, image, settings, logger, gui):
 
         # add timestamp to each row of particle statistics
         stats_all['timestamp'] = timestamp
+
+        # add saturation to each row of particle statistics
+        stats_all['saturation'] = saturation
 
         #Time the particle statistics processing step
         proc_time = time.clock() - start_time

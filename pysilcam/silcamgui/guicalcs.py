@@ -227,8 +227,8 @@ class ProcThread(Process):
                 vd_gas = guidata[3]['vd_gas']
                 oil_d50 = guidata[3]['oil_d50']
                 gas_d50 = guidata[3]['gas_d50']
+                saturation = guidata[3]['saturation']
                 gor = np.float64(np.sum(vd_gas)/np.sum(vd_oil))
-
 
                 #infostr = data['infostr']
                 infostr = 'got data'
@@ -242,7 +242,7 @@ class ProcThread(Process):
                 plt.plot(dias, vd_oil ,'r')
                 plt.plot(dias, vd_gas ,'b')
                 plt.xscale('log')
-                plt.xlim((50, 10000))
+                plt.xlim((50, 12000))
                 plt.ylabel('Volume Concentration [uL/L]')
                 plt.xlabel('Diameter [um]')
 
@@ -251,7 +251,7 @@ class ProcThread(Process):
                 ttlstr = (
                         'Oil d50: {:0.0f} [um]'.format(oil_d50) + '\n' +
                         'Gas d50: {:0.0f} [um]'.format(gas_d50) + '\n' +
-                        'GOR: {:0.2f}'.format(gor)
+                        'GOR: {:0.2f}'.format(gor) + ' ' + ' Saturation: {:0.0f} [%]'.format(saturation)
                         )
                 plt.title(ttlstr)
                 plt.imshow(imraw)

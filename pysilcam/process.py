@@ -203,7 +203,7 @@ def measure_particles(imbw, imc, settings, timestamp, nnmodel, class_labels):
     # check the converage of the image of particles is acceptable
     sat_check, saturation = concentration_check(imbw, settings)
     if sat_check == False:
-        logger.warn('....breached concentration limit! Skipping image.')
+        logger.warning('....breached concentration limit! Skipping image.')
         imbw *= 0 # this is not a good way to handle this condition
         # @todo handle situation when too many particles are found
 
@@ -213,7 +213,7 @@ def measure_particles(imbw, imc, settings, timestamp, nnmodel, class_labels):
 
     # if there are too many particles then do no proceed with analysis
     if (iml.max() > settings.Process.max_particles):
-        logger.warn('....that''s way too many particles! Skipping image.')
+        logger.warning('....that''s way too many particles! Skipping image.')
         imbw *= 0 # this is not a good way to handle this condition
         # @todo handle situation when too many particles are found
 
