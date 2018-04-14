@@ -275,8 +275,12 @@ def main():
             reply = QMessageBox.warning(self, "WARNING!",
                                         'Adjusting the path length using this tool will ' +
                                         'invalidate any concentration measurement associated ' +
-                                        'with the data collected!\n\nDo you want to continue?',
-                                        QMessageBox.Yes | QMessageBox.No)
+                                        'with the data collected!\n\n' +
+                                        'Particle size measurement will not be affect\n' +
+                                        'provided that the path length is long enough to allow\n' +
+                                        'the largest particles to enter the sample volume undisturbed.\n\n'+
+                                        'Do you want to continue?',
+                                        QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             if not reply == QMessageBox.Yes:
                return
 
@@ -294,9 +298,24 @@ def main():
 
 
         def convert_silc(self):
-            self.status_update('converting data to bmp....')
+            reply = QMessageBox.warning(self, "WARNING!",
+                                        'You are about to export silc files to bmp files.\n\n' +
+                                        'This will double the required storage size of the raw data.\n' +
+                                        'For large datasets this can take some time.\n\n' +
+                                        'This conversion is only necessary if you would like to scroll ' +
+                                        'through raw image thumbnails.\n\n' +
+                                        'Processing can be performed on either silc files or bmp files.\n\n' +
+                                        'Consider copying a subset of silc files to another directory for conversion ' +
+                                        'to reduce the data volume.\n\n' +
+                                        'If you just want to check images, consider using the silc file player ' +
+                                        'in the Tools menu instead.\n\n' +
+                                        'Do you want to continue and convert silc files to bmp?',
+                                        QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if not reply == QMessageBox.Yes:
+               return
+            self.status_update('exporting silc data to bmp....')
             scpp.silc_to_bmp(self.datadir)
-            self.status_update('converting finished.')
+            self.status_update('silc to bmp export finished.')
 
 
         def export_summary_figure(self):
