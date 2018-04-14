@@ -54,7 +54,7 @@ class pathlength_dlg(QMainWindow):
         try:
             self.pl = PathLength(com_port)
         except:
-            QMessageBox.question(self, "Can't find actuator!",
+            QMessageBox.critical(self, "Can't find actuator!",
                                         'The com port was not found.\n\n' +
                                         'Try editing the config file and checking the RS232 connector',
                                         QMessageBox.Ok)
