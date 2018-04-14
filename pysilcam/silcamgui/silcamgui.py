@@ -14,17 +14,15 @@ from pysilcam.silcamgui.SilCam import Ui_SilCam
 from pysilcam.silcamgui.SilCamController import Ui_SilCamController
 from pysilcam.silcamgui.ServerDLG import Ui_Server
 from pysilcam.silcamgui.configEditor import Ui_Editconfig
+from pysilcam.silcamgui.PathLengthCTRL import Ui_PLAdjust
 import seaborn as sns
 import pysilcam.postprocess as scpp
 import pysilcam.plotting as scplt
-import pysilcam.datalogger as scdl
 import pysilcam.oilgas as scog
-import cmocean
-import subprocess
-import datetime
 import pysilcam.silcamgui.guicalcs as gc
 from pysilcam.silcamgui.guicalcs import process_mode
 from pysilcam.config import PySilcamSettings
+from pysilcam.oilgas import PathLength
 
 sns.set_style('ticks')
 sns.set_context(font_scale=2)
@@ -47,6 +45,37 @@ def times_to_hz(times):
         dt = dt / np.timedelta64(1, 's')
         hz.append(1/dt)
     return hz
+
+class pathlength_dlg(QMainWindow):
+    def __init__(self, com_port, parent=None):
+        QMainWindow.__init__(self, parent)
+        self.ui = Ui_PLAdjust()
+
+        try:
+            self.pl = PathLength(com_port)
+        except:
+            QMessageBox.question(self, "Can't find actuator!",
+                                        'The com port was not found.\n\n' +
+                                        'Try editing the config file and checking the RS232 connector',
+                                        QMessageBox.Ok)
+            return
+        self.ui.setupUi(self)
+
+        self.ui.SET_button.clicked.connect(self.setpl)
+        self.ui.label.setText('')
+        self.show()
+
+    def setpl(self):
+        newpl = self.ui.horizontalSlider.value()
+        self.ui.label.setText('Moving to ' + str(newpl) + 'mm')
+        self.pl.gap_to_mm(newpl)
+        self.ui.label.setText('Set to ' + str(newpl) + 'mm')
+
+    def closeEvent(self, event):
+        try:
+            self.pl.finish()
+        except:
+            pass
 
 
 class server_dlg(QMainWindow):
@@ -231,6 +260,8 @@ def main():
             self.ui.actionSilc_file_player.triggered.connect(self.silc_player)
             self.ui.actionEditConfig.triggered.connect(self.editConfig)
 
+            self.ui.actionPath_length_adjuster.triggered.connect(self.path_length_adjuster)
+
             self.layout = layout
 
             self.status_update('')
@@ -240,6 +271,28 @@ def main():
             self.acquire_controller()
 
 
+        def path_length_adjuster(self):
+            reply = QMessageBox.warning(self, "WARNING!",
+                                        'Adjusting the path length using this tool will ' +
+                                        'invalidate any concentration measurement associated ' +
+                                        'with the data collected!\n\nDo you want to continue?',
+                                        QMessageBox.Yes | QMessageBox.No)
+            if not reply == QMessageBox.Yes:
+               return
+
+            if self.configfile == '':
+                self.status_update('Asking user for config file')
+                self.load_sc_config()
+                if (self.configfile == ''):
+                    self.status_update('Did not get config file')
+                    return
+
+            settings = PySilcamSettings(self.configfile)
+            com_port = settings.PostProcess.com_port
+
+            self.pathlength_adjuster = pathlength_dlg(com_port)
+
+
         def convert_silc(self):
             self.status_update('converting data to bmp....')
             scpp.silc_to_bmp(self.datadir)
@@ -247,7 +300,6 @@ def main():
 
 
         def export_summary_figure(self):
-
             if self.configfile == '':
                 self.status_update('Asking user for config file')
                 self.load_sc_config()
@@ -606,6 +658,11 @@ def main():
             self.stop_record()
             try:
                 self.serverdlg.server.terminate()
+            except:
+                pass
+
+            try:
+                self.pathlength_adjuster.close()
             except:
                 pass
 

@@ -49,7 +49,7 @@
      <x>0</x>
      <y>0</y>
      <width>814</width>
-     <height>26</height>
+     <height>27</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuProcessing">
@@ -59,12 +59,19 @@
     <property name="title">
      <string>Tools</string>
     </property>
-    <addaction name="actionExport_summary_data"/>
-    <addaction name="actionExport_summary_figure"/>
-    <addaction name="actionConvert_silc_to_bmp"/>
+    <widget class="QMenu" name="menuExport">
+     <property name="title">
+      <string>Export</string>
+     </property>
+     <addaction name="actionExport_summary_data"/>
+     <addaction name="actionExport_summary_figure"/>
+     <addaction name="actionConvert_silc_to_bmp"/>
+    </widget>
+    <addaction name="actionEditConfig"/>
+    <addaction name="menuExport"/>
     <addaction name="actionSilc_file_player"/>
     <addaction name="actionServer"/>
-    <addaction name="actionEditConfig"/>
+    <addaction name="actionPath_length_adjuster"/>
    </widget>
    <addaction name="menuProcessing"/>
   </widget>
@@ -75,27 +82,32 @@
   </action>
   <action name="actionConvert_silc_to_bmp">
    <property name="text">
-    <string>Convert silc to bmp</string>
-   </property>
-  </action>
-  <action name="actionExport_summary_data">
-   <property name="text">
-    <string>Export summary data (to xls)</string>
+    <string>Raw data convert silc to bmp</string>
    </property>
   </action>
   <action name="actionExport_summary_figure">
    <property name="text">
-    <string>Export summary figure (to png)</string>
+    <string>Summary figure (to png)</string>
    </property>
   </action>
   <action name="actionSilc_file_player">
    <property name="text">
-    <string>silc file player</string>
+    <string>Silc file player</string>
    </property>
   </action>
   <action name="actionEditConfig">
    <property name="text">
     <string>Edit config file</string>
+   </property>
+  </action>
+  <action name="actionPath_length_adjuster">
+   <property name="text">
+    <string>Path length adjuster</string>
+   </property>
+  </action>
+  <action name="actionExport_summary_data">
+   <property name="text">
+    <string>Summary time series (to xls, png)</string>
    </property>
   </action>
  </widget>

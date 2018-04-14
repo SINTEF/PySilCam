@@ -206,11 +206,11 @@ class PathLength():
     def motoronoff(self, ser,state):
         sendstring = self.makepacket('X',2,state)
         self.ser.write(bytes(sendstring,'latin-1'))
-        time.sleep(1)
+        time.sleep(0.1)
         readout1 = self.ser.read(1000)
         sendstring = self.makepacket('p',1,0)
         self.ser.write(bytes(sendstring,'latin-1'))
-        time.sleep(1)
+        time.sleep(0.1)
         readout2 = self.ser.read(1000)
         motorvalue = bin(readout2[3])[2]
         print('readout3: %s' %motorvalue)
