@@ -276,8 +276,8 @@ def main():
                                         'Adjusting the path length using this tool will ' +
                                         'invalidate any concentration measurement associated ' +
                                         'with the data collected!\n\n' +
-                                        'Particle size measurement will not be affect\n' +
-                                        'provided that the path length is long enough to allow\n' +
+                                        'Particle size measurement will not be affect ' +
+                                        'provided that the path length is long enough to allow ' +
                                         'the largest particles to enter the sample volume undisturbed.\n\n'+
                                         'Do you want to continue?',
                                         QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
