@@ -517,6 +517,10 @@ def d50_timeseries(stats, settings):
         d50.append(d50_from_stats(stats_, settings))
         time.append(t)
 
+    if len(time) == 0:
+        d50 = np.nan
+        time = np.nan
+
     return d50, time
 
 
@@ -665,10 +669,21 @@ def make_timeseries_vd(stats, settings):
         d50.append(d50_)
         timestamp.append(pd.to_datetime(s))
         vdts.append(vd)
-    
+
+    if len(vdts) == 0:
+        dias, limits = get_size_bins()
+        vdts = np.zeros_like(dias) * np.nan
+
+        time_series = pd.DataFrame(data=[np.squeeze(vdts)], columns=dias)
+
+        time_series['D50'] = np.nan
+        time_series['Time'] = np.nan
+
+        return time_series
+
     time_series = pd.DataFrame(data=np.squeeze(vdts), columns=dias)
 
-    time_series['D50'] = d50
+    time_series['D50'] = np.nan
     time_series['Time'] = timestamp
 
     return time_series
@@ -700,7 +715,7 @@ def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
         from pysilcam.oilgas import extract_gas
         stats = extract_gas(stats)
         oilgasTxt = 'gas'
-   
+
     df = make_timeseries_vd(stats, settings)
 
     df.to_excel(stats_filename.strip('-STATS.csv') +

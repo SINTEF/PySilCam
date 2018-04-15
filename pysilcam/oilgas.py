@@ -92,7 +92,12 @@ def gor_timeseries(stats, settings):
         time.append(pd.to_datetime(t))
         gor.append(gor_)
 
+    if (len(gor) == 0) or (np.isnan(max(gor))):
+        gor = np.nan
+        time = np.nan
+
     return gor, time
+
 
 class rt_stats():
     '''

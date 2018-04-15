@@ -401,12 +401,13 @@ def main():
             d50, time = scpp.d50_timeseries(scog.extract_gas(stats), settings.PostProcess)
             lns2 = plt.plot(time, d50, 'b-', label='GAS')
             plt.ylabel('d50 [um]')
-            plt.ylim(0,max(plt.gca().get_ylim()))
+            plt.ylim(0, max(plt.gca().get_ylim()))
 
             gor, time = scog.gor_timeseries(stats, settings.PostProcess)
             ax = plt.gca().twinx()
+            plt.sca(ax)
             plt.ylabel('GOR')
-            plt.ylim(0, max(gor))
+            plt.ylim(0, max(plt.gca().get_ylim()))
             lns3 = ax.plot(time, gor, 'k', label='GOR')
 
             lns = lns1 + lns2 + lns3
