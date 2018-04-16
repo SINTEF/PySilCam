@@ -364,6 +364,26 @@ def main():
 
 
         def export_summary_data(self):
+            if self.configfile == '':
+                self.status_update('Asking user for config file')
+                self.load_sc_config()
+                if self.configfile == '':
+                    self.status_update('Did not get STATS file')
+                    return
+
+            self.stats_filename = ''
+            self.status_update('Asking user for *-STATS.csv file')
+            self.load_stats_filename()
+            if self.stats_filename == '':
+                self.status_update('Did not get STATS file')
+                return
+
+            self.status_update('Exporting data. This may take some time. Please wait.')
+            gc.export_timeseries(self.configfile, self.stats_filename)
+            self.status_update('Export done!')
+
+
+        def export_summary_data_slow(self):
 
             if self.configfile == '':
                 self.status_update('Asking user for config file')
@@ -385,29 +405,31 @@ def main():
             self.status_update('Exporting all data....')
             df = scpp.stats_to_xls_png(self.configfile,
                     self.stats_filename)
+
             plt.figure(figsize=(20,10))
 
             self.status_update('Exporting oil data....')
             df = scpp.stats_to_xls_png(self.configfile,
                     self.stats_filename, oilgas=scpp.outputPartType.oil)
-            plt.plot(df['Time'], df['D50'],'r.')
+            plt.plot(df['Time'], df['D50'],'ro')
             d50, time = scpp.d50_timeseries(scog.extract_oil(stats), settings.PostProcess)
             lns1 = plt.plot(time, d50, 'r-', label='OIL')
 
             self.status_update('Exporting gas data....')
             df = scpp.stats_to_xls_png(self.configfile,
                     self.stats_filename, oilgas=scpp.outputPartType.gas)
-            plt.plot(df['Time'], df['D50'],'b.')
+            plt.plot(df['Time'], df['D50'],'bo')
             d50, time = scpp.d50_timeseries(scog.extract_gas(stats), settings.PostProcess)
             lns2 = plt.plot(time, d50, 'b-', label='GAS')
             plt.ylabel('d50 [um]')
             plt.ylim(0, max(plt.gca().get_ylim()))
 
+            self.status_update('Calculating GOR time series....')
             gor, time = scog.gor_timeseries(stats, settings.PostProcess)
             ax = plt.gca().twinx()
             plt.sca(ax)
             plt.ylabel('GOR')
-            plt.ylim(0, max(plt.gca().get_ylim()))
+            plt.ylim(0, max([max(gor), max(plt.gca().get_ylim())]))
             lns3 = ax.plot(time, gor, 'k', label='GOR')
 
             lns = lns1 + lns2 + lns3

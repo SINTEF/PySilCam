@@ -63,6 +63,8 @@ def extract_oil(stats, THRESH=0.85):
 
 
 def gor_timeseries(stats, settings):
+    from tqdm import tqdm
+
     u = stats['timestamp'].unique()
     td = pd.to_timedelta('00:00:' + str(settings.window_size / 2.))
 
@@ -71,7 +73,7 @@ def gor_timeseries(stats, settings):
     gor = []
     time = []
 
-    for t in u:
+    for t in tqdm(u):
         dt = pd.to_datetime(t)
         stats_ = stats[(pd.to_datetime(stats['timestamp']) < (dt + td)) & (pd.to_datetime(stats['timestamp']) > (dt - td))]
 

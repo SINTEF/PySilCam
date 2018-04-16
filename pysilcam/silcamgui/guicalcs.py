@@ -13,6 +13,7 @@ from enum import Enum
 import pygame
 import time
 import psutil
+from tqdm import tqdm
 
 
 def get_data(self):
@@ -38,6 +39,112 @@ def extract_stats_im(guidata):
     del guidata['imc']
     stats = pd.DataFrame.from_dict(guidata)
     return stats, imc
+
+
+def export_timeseries(configfile, statsfile):
+
+    settings = PySilcamSettings(configfile)
+
+    print('Loading STATS data')
+    stats = pd.read_csv(statsfile)
+
+    print('Extracting oil and gas')
+    stats_oil = scog.extract_oil(stats)
+    stats_gas = scog.extract_gas(stats)
+
+    print('Calculating timeseries')
+    u = stats['timestamp'].unique()
+
+    sample_volume = sc_pp.get_sample_volume(settings.PostProcess.pix_size, path_length=settings.PostProcess.path_length)
+
+    td = pd.to_timedelta('00:00:' + str(settings.PostProcess.window_size / 2.))
+
+    vdts_all = []
+    vdts_oil = []
+    vdts_gas = []
+    d50_all = []
+    d50_oil = []
+    d50_gas = []
+    timestamp = []
+    d50_av_all = []
+    d50_av_oil = []
+    d50_av_gas = []
+    gor = []
+    for s in tqdm(u):
+        timestamp.append(pd.to_datetime(s))
+        dt = pd.to_datetime(s)
+
+        dias, vd_all = sc_pp.vd_from_stats(stats[stats['timestamp'] == s],
+                                 settings.PostProcess)
+        dias, vd_oil = sc_pp.vd_from_stats(stats_oil[stats_oil['timestamp'] == s],
+                                 settings.PostProcess)
+        dias, vd_gas = sc_pp.vd_from_stats(stats_gas[stats_gas['timestamp'] == s],
+                                 settings.PostProcess)
+
+        nims = sc_pp.count_images_in_stats(stats[stats['timestamp'] == s])
+        sv = sample_volume * nims
+        vd_all /= sv
+        vd_oil /= sv
+        vd_gas /= sv
+        d50_all.append(sc_pp.d50_from_vd(vd_all, dias))
+        d50_oil.append(sc_pp.d50_from_vd(vd_oil, dias))
+        d50_gas.append(sc_pp.d50_from_vd(vd_gas, dias))
+
+        vdts_all.append(vd_all)
+        vdts_oil.append(vd_oil)
+        vdts_gas.append(vd_gas)
+
+        stats_av = stats[(pd.to_datetime(stats['timestamp'])<(dt+td)) & (pd.to_datetime(stats['timestamp'])>(dt-td))]
+        stats_av_oil = scog.extract_oil(stats_av)
+        stats_av_gas = scog.extract_gas(stats_av)
+        d50_av_all.append(sc_pp.d50_from_stats(stats_av, settings.PostProcess))
+        d50_av_oil.append(sc_pp.d50_from_stats(stats_av_oil, settings.PostProcess))
+        d50_av_gas.append(sc_pp.d50_from_stats(stats_av_gas, settings.PostProcess))
+
+        dias, vdts_av = sc_pp.vd_from_stats(stats_av, settings.PostProcess)
+        dias, vdts_av_oil = sc_pp.vd_from_stats(stats_av_oil, settings.PostProcess)
+        dias, vdts_av_gas = sc_pp.vd_from_stats(stats_av_gas, settings.PostProcess)
+        nims = sc_pp.count_images_in_stats(stats_av)
+        sv = sample_volume * nims
+        vdts_av /= sv
+        vdts_av_oil /= sv
+        vdts_av_gas /= sv
+
+        gor.append(np.sum(vdts_av_gas)/np.sum(vdts_av_oil))
+
+    plt.figure(figsize=(20, 10))
+
+    if not np.min(np.isnan(d50_oil)):
+        plt.plot(timestamp, d50_oil, 'ro')
+    if not np.min(np.isnan(d50_av_oil)):
+        plt.plot(timestamp, d50_av_oil, 'r-')
+    lns1 = plt.plot(np.nan, np.nan, 'r-', label='OIL')
+
+    if not np.min(np.isnan(d50_gas)):
+        plt.plot(timestamp, d50_gas, 'bo')
+    if not np.min(np.isnan(d50_av_gas)):
+        plt.plot(timestamp, d50_av_gas, 'b-')
+    lns2 = plt.plot(np.nan, np.nan, 'b-', label='GAS')
+
+    plt.ylabel('d50 [um]')
+    plt.ylim(0, max(plt.gca().get_ylim()))
+
+    ax = plt.gca().twinx()
+    plt.sca(ax)
+    plt.ylabel('GOR')
+    if not np.min(np.isnan(gor)):
+        plt.plot(timestamp, gor, 'k')
+    lns3 = plt.plot(np.nan, np.nan, 'k', label='GOR')
+    plt.ylim(0, max(plt.gca().get_ylim()))
+
+    lns = lns1 + lns2 + lns3
+    labs = [l.get_label() for l in lns]
+    plt.legend(lns, labs)
+
+    plt.savefig(statsfile.strip('-STATS.csv') +
+                '-d50_TimeSeries.png', dpi=600, bbox_inches='tight')
+
+    plt.close()
 
 
 def load_image(filename, size):

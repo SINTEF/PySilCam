@@ -503,6 +503,9 @@ def extract_nth_longest(stats,settings,n=0):
 def d50_timeseries(stats, settings):
     ''' Calculates time series of d50 from stats
     '''
+
+    from tqdm import tqdm
+
     stats = stats.sort_values(by='timestamp')
 
     td = pd.to_timedelta('00:00:' + str(settings.window_size/2.))
@@ -511,7 +514,7 @@ def d50_timeseries(stats, settings):
 
     u = pd.to_datetime(stats['timestamp'].unique())
 
-    for t in u:
+    for t in tqdm(u):
         dt = pd.to_datetime(t)
         stats_ = stats[(pd.to_datetime(stats['timestamp'])<(dt+td)) & (pd.to_datetime(stats['timestamp'])>(dt-td))]
         d50.append(d50_from_stats(stats_, settings))
@@ -651,6 +654,8 @@ def make_timeseries_vd(stats, settings):
         dataframe: of time series
     '''
 
+    from tqdm import tqdm
+
     u = stats['timestamp'].unique()
     
     sample_volume = get_sample_volume(settings.PostProcess.pix_size, path_length=settings.PostProcess.path_length)
@@ -659,7 +664,7 @@ def make_timeseries_vd(stats, settings):
     d50 = []
     timestamp = []
     dias = []
-    for s in u:
+    for s in tqdm(u):
         dias, vd = vd_from_stats(stats[stats['timestamp']==s],
                 settings.PostProcess)
         nims = count_images_in_stats(stats[stats['timestamp']==s])

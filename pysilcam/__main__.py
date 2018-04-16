@@ -18,6 +18,10 @@ from multiprocessing.managers import BaseManager
 from queue import LifoQueue
 import psutil
 from shutil import copyfile
+import warnings
+
+if not sys.warnoptions:
+    warnings.simplefilter("ignore")
 
 title = '''
  ____        ____  _ _  ____
