@@ -145,6 +145,7 @@ def export_timeseries(configfile, statsfile):
                 '-d50_TimeSeries.png', dpi=600, bbox_inches='tight')
 
     plt.close()
+    print('Export done.')
 
 
 def load_image(filename, size):
@@ -159,6 +160,7 @@ def load_image(filename, size):
         im = pygame.image.load(filename).convert()
 
     return im
+
 
 def silcview(datadir):
     files = [os.path.join(datadir, f) for f in
@@ -231,7 +233,6 @@ def silcview(datadir):
         elif counter == len(files)-1:
             label = font.render('LAST IMAGE', 1, (255,255,0))
             screen.blit(label, (0, size[1]-60))
-
 
         timestamp = pd.to_datetime(
                 os.path.splitext(os.path.split(f)[-1])[0][1:])

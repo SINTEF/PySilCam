@@ -607,6 +607,9 @@ def main():
             statsModif = self.checkStatsExists()
             if (statsModif == -1):
                 return
+            TFcheck = self.checkTFModel()
+            if (TFcheck == False):
+                return
 
             self.process = gc.ProcThread(self.datadir, self.configfile, self.disc_write, self.run_type, statsModif)
 
@@ -621,6 +624,21 @@ def main():
             app.processEvents()
             self.ctrl.ui.pb_stop.setEnabled(True)
             self.ctrl.ui.pb_live_raw.setEnabled(True)
+
+        def checkTFModel(self):
+            if not ((self.run_type == process_mode.process) or (self.run_type == process_mode.real_time)):
+                return -1
+
+            settings = PySilcamSettings(self.configfile)
+            path, filename = os.path.split(settings.NNClassify.model_path)
+            headerfile = os.path.join(path, 'header.tfl.txt')
+            if not (os.path.isfile(headerfile)):
+                QMessageBox.critical(self, "Config error!",
+                                    'The path to the classification model cannot be found.\n\n' +
+                                    'Please edit the config file in a text editor and make settings.NNClassify.model_path point to the silcam model',
+                                    QMessageBox.Ok)
+                return False
+            return True
 
 
         def checkStatsExists(self):
