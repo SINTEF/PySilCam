@@ -112,6 +112,24 @@ def export_timeseries(configfile, statsfile):
 
         gor.append(np.sum(vdts_av_gas)/np.sum(vdts_av_oil))
 
+    time_series = pd.DataFrame(data=np.squeeze(vdts_all), columns=dias)
+    time_series['D50'] = d50_all
+    time_series['Time'] = timestamp
+    time_series.to_excel(statsfile.strip('-STATS.csv') +
+            '-TIMESERIES' + '' + '.xlsx')
+
+    time_series = pd.DataFrame(data=np.squeeze(vdts_oil), columns=dias)
+    time_series['D50'] = d50_all
+    time_series['Time'] = timestamp
+    time_series.to_excel(statsfile.strip('-STATS.csv') +
+            '-TIMESERIES' + 'oil' + '.xlsx')
+
+    time_series = pd.DataFrame(data=np.squeeze(vdts_gas), columns=dias)
+    time_series['D50'] = d50_all
+    time_series['Time'] = timestamp
+    time_series.to_excel(statsfile.strip('-STATS.csv') +
+            '-TIMESERIES' + 'gas' + '.xlsx')
+
     plt.figure(figsize=(20, 10))
 
     if not np.min(np.isnan(d50_oil)):

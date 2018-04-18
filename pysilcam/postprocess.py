@@ -688,7 +688,7 @@ def make_timeseries_vd(stats, settings):
 
     time_series = pd.DataFrame(data=np.squeeze(vdts), columns=dias)
 
-    time_series['D50'] = np.nan
+    time_series['D50'] = d50
     time_series['Time'] = timestamp
 
     return time_series
