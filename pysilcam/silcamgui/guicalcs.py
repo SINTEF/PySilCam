@@ -288,6 +288,7 @@ class process_mode(Enum):
     aquire = 2
     real_time = 3
 
+
 class ProcThread(Process):
     run_type = process_mode.process
 

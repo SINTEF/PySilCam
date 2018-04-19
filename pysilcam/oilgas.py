@@ -17,7 +17,7 @@ import serial.tools.list_ports
 import glob
 import sys
 
-solidityThresh = 0.9
+solidityThresh = 0.95
 
 def getListPortCom():
     try:

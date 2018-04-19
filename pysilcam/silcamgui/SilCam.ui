@@ -66,6 +66,7 @@
      <addaction name="actionExport_summary_data"/>
      <addaction name="actionExport_summary_figure"/>
      <addaction name="actionConvert_silc_to_bmp"/>
+     <addaction name="actionTrim_STATS_file"/>
     </widget>
     <addaction name="actionEditConfig"/>
     <addaction name="menuExport"/>
@@ -108,6 +109,11 @@
   <action name="actionExport_summary_data">
    <property name="text">
     <string>Summary time series (to xls, png)</string>
+   </property>
+  </action>
+  <action name="actionTrim_STATS_file">
+   <property name="text">
+    <string>Trim STATS file</string>
    </property>
   </action>
  </widget>

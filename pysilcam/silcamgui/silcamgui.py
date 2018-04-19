@@ -15,6 +15,7 @@ from pysilcam.silcamgui.SilCamController import Ui_SilCamController
 from pysilcam.silcamgui.ServerDLG import Ui_Server
 from pysilcam.silcamgui.configEditor import Ui_Editconfig
 from pysilcam.silcamgui.PathLengthCTRL import Ui_PLAdjust
+from pysilcam.silcamgui.STATSTrimmer import Ui_STATSTimeEDT
 import seaborn as sns
 import pysilcam.postprocess as scpp
 import pysilcam.plotting as scplt
@@ -45,6 +46,103 @@ def times_to_hz(times):
         dt = dt / np.timedelta64(1, 's')
         hz.append(1/dt)
     return hz
+
+
+class stats_trim_dlg(QMainWindow):
+    def __init__(self, stats_filename, config_file, parent=None):
+        QMainWindow.__init__(self, parent)
+        self.ui = Ui_STATSTimeEDT()
+        self.ui.setupUi(self)
+        self.config_file = config_file
+        self.ui.PBSave.clicked.connect(self.save_trimmed_stats)
+        self.ui.PBPlot.clicked.connect(self.plot_trimmed_stats)
+
+        self.PLTwidget = plt.figure()
+        self.canvas = FigureCanvas(self.PLTwidget)
+        layout = QVBoxLayout()
+        layout.addWidget(self.canvas)
+        self.ui.PLTwidget.setLayout(layout)
+        self.canvas.draw()
+
+        print('loading stats...')
+        self.stats_filename = stats_filename
+        self.stats = pd.read_csv(stats_filename)
+        self.trimmed_stats = pd.DataFrame()
+        print('  stats loaded.')
+
+        self.start_time = pd.to_datetime(self.stats['timestamp'].min())
+        self.end_time = pd.to_datetime(self.stats['timestamp'].max())
+
+        self.ui.dateTimeStart.setDateTime(self.start_time)
+        self.ui.dateTimeEnd.setDateTime(self.end_time)
+
+        self.show()
+
+    def save_trimmed_stats(self):
+        start_time = pd.to_datetime(self.ui.dateTimeStart.dateTime().toPyDateTime())
+        end_time = pd.to_datetime(self.ui.dateTimeEnd.dateTime().toPyDateTime())
+        self.trimmed_stats, self.output_filename = scpp.trim_stats(self.stats_filename, start_time, end_time,
+                                                              write_new=False, stats=self.stats)
+
+        if np.isnan(self.trimmed_stats.equivalent_diameter.max()) or len(self.trimmed_stats)==0:
+            QMessageBox.warning(self, "No data in this segment!",
+                                'No data was found within the specified time range.',
+                                QMessageBox.Ok)
+            return
+
+        reply = QMessageBox.question(self, "Save Trimmed STATS file?",
+                                    'Would you like to save this file?\n\n' +
+                                    self.output_filename,
+                                    QMessageBox.Save | QMessageBox.Cancel)
+        if reply == QMessageBox.Save:
+            self.trimmed_stats, self.output_filename = scpp.trim_stats(self.stats_filename, start_time, end_time,
+                                                                  write_new=True, stats=self.stats)
+            print('New STATS.csv file written as:', self.output_filename)
+
+    def plot_trimmed_stats(self):
+        start_time = pd.to_datetime(self.ui.dateTimeStart.dateTime().toPyDateTime())
+        end_time = pd.to_datetime(self.ui.dateTimeEnd.dateTime().toPyDateTime())
+        self.trimmed_stats, self.output_filename = scpp.trim_stats(self.stats_filename, start_time, end_time,
+                                                              write_new=False, stats=self.stats)
+
+        if np.isnan(self.trimmed_stats.equivalent_diameter.max()) or len(self.trimmed_stats)==0:
+            QMessageBox.warning(self, "No data in this segment!",
+                                'No data was found within the specified time range.',
+                                QMessageBox.Ok)
+            return
+
+        settings = PySilcamSettings(self.config_file)
+        plt.clf()
+        stats_oil = scog.extract_oil(self.trimmed_stats)
+        stats_gas = scog.extract_gas(self.trimmed_stats)
+
+        sample_volume = scpp.get_sample_volume(settings.PostProcess.pix_size,
+                                                path_length=settings.PostProcess.path_length)
+
+        nims = scpp.count_images_in_stats(self.trimmed_stats)
+        dias, vd = scpp.vd_from_stats(self.stats, settings.PostProcess)
+        dias, vd_oil = scpp.vd_from_stats(stats_oil, settings.PostProcess)
+        dias, vd_gas = scpp.vd_from_stats(stats_gas, settings.PostProcess)
+
+        sv = sample_volume * nims
+        vd /= sv
+        vd_oil /= sv
+        vd_gas /= sv
+
+        plt.plot(dias, vd ,'k')
+        plt.plot(dias, vd_oil, 'r')
+        plt.plot(dias, vd_gas, 'b')
+        plt.xscale('log')
+        plt.xlabel('Equiv. diam (um)')
+        plt.ylabel('Volume concentration (uL/L)')
+        plt.xlim(10, 12000)
+
+        self.canvas.draw()
+
+
+    def closeEvent(self, event):
+        pass
+
 
 class pathlength_dlg(QMainWindow):
     def __init__(self, com_port, parent=None):
@@ -261,6 +359,7 @@ def main():
             self.ui.actionEditConfig.triggered.connect(self.editConfig)
 
             self.ui.actionPath_length_adjuster.triggered.connect(self.path_length_adjuster)
+            self.ui.actionTrim_STATS_file.triggered.connect(self.stats_trim)
 
             self.layout = layout
 
@@ -696,6 +795,25 @@ def main():
                 return
 
 
+        def stats_trim(self):
+            if self.configfile == '':
+                self.status_update('Asking user for config file')
+                self.load_sc_config()
+                if self.configfile == '':
+                    self.status_update('Did not get STATS file')
+                    return
+
+            self.stats_filename = ''
+            self.status_update('Asking user for *-STATS.csv file')
+            self.load_stats_filename()
+            if self.stats_filename == '':
+                self.status_update('Did not get STATS file')
+                return
+
+            self.status_update('STATS trimmer')
+            self.trimmer = stats_trim_dlg(self.stats_filename, self.configfile)
+
+
         def load_sc_config(self):
             configfile = QFileDialog.getOpenFileName(self,
                     caption = 'Load config ini file',
@@ -740,6 +858,11 @@ def main():
 
             try:
                 self.pathlength_adjuster.close()
+            except:
+                pass
+
+            try:
+                self.trimmer.close()
             except:
                 pass
 

@@ -54,9 +54,12 @@ class Ui_SilCam(object):
         self.actionPath_length_adjuster.setObjectName("actionPath_length_adjuster")
         self.actionExport_summary_data = QtWidgets.QAction(SilCam)
         self.actionExport_summary_data.setObjectName("actionExport_summary_data")
+        self.actionTrim_STATS_file = QtWidgets.QAction(SilCam)
+        self.actionTrim_STATS_file.setObjectName("actionTrim_STATS_file")
         self.menuExport.addAction(self.actionExport_summary_data)
         self.menuExport.addAction(self.actionExport_summary_figure)
         self.menuExport.addAction(self.actionConvert_silc_to_bmp)
+        self.menuExport.addAction(self.actionTrim_STATS_file)
         self.menuProcessing.addAction(self.actionEditConfig)
         self.menuProcessing.addAction(self.menuExport.menuAction())
         self.menuProcessing.addAction(self.actionSilc_file_player)
@@ -79,4 +82,5 @@ class Ui_SilCam(object):
         self.actionEditConfig.setText(_translate("SilCam", "Edit config file"))
         self.actionPath_length_adjuster.setText(_translate("SilCam", "Path length adjuster"))
         self.actionExport_summary_data.setText(_translate("SilCam", "Summary time series (to xls, png)"))
+        self.actionTrim_STATS_file.setText(_translate("SilCam", "Trim STATS file"))
 

@@ -746,3 +746,33 @@ def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
             '-AVERAGE' + oilgasTxt + '.xlsx')
 
     return df
+
+
+def trim_stats(stats_csv_file, start_time, end_time, write_new=False, stats=[]):
+    '''Chops a STATS.csv file given a start and end time'''
+    if len(stats)==0:
+        stats = pd.read_csv(stats_csv_file)
+
+    start_time = pd.to_datetime(start_time)
+    end_time = pd.to_datetime(end_time)
+
+    trimmed_stats = stats[
+        (pd.to_datetime(stats['timestamp']) > start_time) & (pd.to_datetime(stats['timestamp']) < end_time)]
+
+    if np.isnan(trimmed_stats.equivalent_diameter.max()) or len(trimmed_stats) == 0:
+        print('No data in specified time range!')
+        outname = ''
+        return trimmed_stats, outname
+
+    actual_start = pd.to_datetime(trimmed_stats['timestamp'].min()).strftime('D%Y%m%dT%H%M%S.%f')
+    actual_end = pd.to_datetime(trimmed_stats['timestamp'].max()).strftime('D%Y%m%dT%H%M%S.%f')
+
+    path, name = os.path.split(stats_csv_file)
+
+    outname = os.path.join(path, name.strip('-STATS.csv')) + '-Start' + str(actual_start) + '-End' + str(
+        actual_end) + '-STATS.csv'
+
+    if write_new:
+        trimmed_stats.to_csv(outname)
+
+    return trimmed_stats, outname
