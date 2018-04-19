@@ -138,7 +138,7 @@ class rt_stats():
         self.dias, self.vd_gas = sc_pp.vd_from_stats(self.gas_stats,
                     self.settings.PostProcess)
 
-        self.saturation = np.mean(self.stats.saturation)
+        self.saturation = np.max(self.stats.saturation)
 
 
     def to_csv(self, filename):
