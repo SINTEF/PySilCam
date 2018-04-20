@@ -174,7 +174,10 @@ class pathlength_dlg(QMainWindow):
     def setpl(self):
         newpl = self.ui.horizontalSlider.value()
         self.ui.label.setText('Moving to ' + str(newpl) + 'mm')
-        self.pl.gap_to_mm(newpl)
+        try:
+            self.pl.gap_to_mm(newpl)
+        except:
+            pass
         self.ui.label.setText('Set to ' + str(newpl) + 'mm')
 
     def closeEvent(self, event):
