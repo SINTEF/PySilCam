@@ -17,6 +17,8 @@ class Ui_PLAdjust(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(PLAdjust.sizePolicy().hasHeightForWidth())
         PLAdjust.setSizePolicy(sizePolicy)
+        PLAdjust.setMinimumSize(QtCore.QSize(491, 145))
+        PLAdjust.setMaximumSize(QtCore.QSize(491, 145))
         self.SET_button = QtWidgets.QPushButton(PLAdjust)
         self.SET_button.setGeometry(QtCore.QRect(200, 110, 85, 27))
         self.SET_button.setObjectName("SET_button")

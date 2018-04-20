@@ -55,7 +55,6 @@ class stats_trim_dlg(QMainWindow):
         self.ui.setupUi(self)
         self.config_file = config_file
         self.ui.PBSave.clicked.connect(self.save_trimmed_stats)
-        self.ui.PBPlot.clicked.connect(self.plot_trimmed_stats)
 
         self.PLTwidget = plt.figure()
         self.canvas = FigureCanvas(self.PLTwidget)
@@ -77,6 +76,12 @@ class stats_trim_dlg(QMainWindow):
         self.ui.dateTimeEnd.setDateTime(self.end_time)
 
         self.show()
+
+        self.ui.dateTimeStart.dateTimeChanged.connect(self.plot_trimmed_stats)
+        self.ui.dateTimeEnd.dateTimeChanged.connect(self.plot_trimmed_stats)
+
+        self.plot_trimmed_stats()
+
 
     def save_trimmed_stats(self):
         start_time = pd.to_datetime(self.ui.dateTimeStart.dateTime().toPyDateTime())
@@ -120,7 +125,7 @@ class stats_trim_dlg(QMainWindow):
                                                 path_length=settings.PostProcess.path_length)
 
         nims = scpp.count_images_in_stats(self.trimmed_stats)
-        dias, vd = scpp.vd_from_stats(self.stats, settings.PostProcess)
+        dias, vd = scpp.vd_from_stats(self.trimmed_stats, settings.PostProcess)
         dias, vd_oil = scpp.vd_from_stats(stats_oil, settings.PostProcess)
         dias, vd_gas = scpp.vd_from_stats(stats_gas, settings.PostProcess)
 
@@ -129,13 +134,14 @@ class stats_trim_dlg(QMainWindow):
         vd_oil /= sv
         vd_gas /= sv
 
-        plt.plot(dias, vd ,'k')
-        plt.plot(dias, vd_oil, 'r')
-        plt.plot(dias, vd_gas, 'b')
+        plt.plot(dias, vd_oil+vd_gas ,'k', label='TOTAL')
+        plt.plot(dias, vd_oil, 'r', label='OIL')
+        plt.plot(dias, vd_gas, 'b', label='GAS')
         plt.xscale('log')
         plt.xlabel('Equiv. diam (um)')
         plt.ylabel('Volume concentration (uL/L)')
         plt.xlim(10, 12000)
+        plt.legend()
 
         self.canvas.draw()
 
