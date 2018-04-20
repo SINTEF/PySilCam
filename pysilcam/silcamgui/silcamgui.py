@@ -62,6 +62,7 @@ class stats_trim_dlg(QMainWindow):
         layout.addWidget(self.canvas)
         self.ui.PLTwidget.setLayout(layout)
         self.canvas.draw()
+        self.figure = plt.gcf()
 
         print('loading stats...')
         self.stats_filename = stats_filename
@@ -117,6 +118,7 @@ class stats_trim_dlg(QMainWindow):
             return
 
         settings = PySilcamSettings(self.config_file)
+        plt.figure(self.figure.number)
         plt.clf()
         stats_oil = scog.extract_oil(self.trimmed_stats)
         stats_gas = scog.extract_gas(self.trimmed_stats)
@@ -817,6 +819,10 @@ def main():
                 return
 
             self.status_update('STATS trimmer')
+            try:
+                self.trimmer.close()
+            except:
+                pass
             self.trimmer = stats_trim_dlg(self.stats_filename, self.configfile)
 
 
