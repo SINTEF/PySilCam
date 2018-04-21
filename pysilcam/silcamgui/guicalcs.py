@@ -292,7 +292,7 @@ class process_mode(Enum):
 class ProcThread(Process):
     run_type = process_mode.process
 
-    def __init__(self, datadir, configfile, disc_write, run_type, overwriteSTATS):
+    def __init__(self, datadir, configfile, disc_write, run_type, overwriteSTATS, fighandle):
         super(ProcThread, self).__init__()
         self.q = Queue(1)
         self.info = 'ini done'
@@ -303,6 +303,7 @@ class ProcThread(Process):
         self.disc_write = disc_write
         self.run_type = run_type
         self.overwriteSTATS = overwriteSTATS
+        self.fighandle = fighandle
 
 
     def run(self):
@@ -360,6 +361,7 @@ class ProcThread(Process):
                 #infostr = data['infostr']
                 infostr = 'got data'
 
+                plt.figure(self.fighandle)
                 plt.clf()
                 plt.cla()
 

@@ -721,7 +721,7 @@ def main():
             if (TFcheck == False):
                 return
 
-            self.process = gc.ProcThread(self.datadir, self.configfile, self.disc_write, self.run_type, statsModif)
+            self.process = gc.ProcThread(self.datadir, self.configfile, self.disc_write, self.run_type, statsModif, self.fig_main.number)
 
             self.status_update('STARTING SILCAM!')
 
