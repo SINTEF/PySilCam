@@ -293,6 +293,10 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
         data[i, :] = [getattr(el, p) for p in propnames]
         bboxes[i, :] = el.bbox
 
+        # if operating in realtime mode, assume we only care about oil and gas and skip export of overly-derformed particles
+        if settings.Process.real_time_stats & ((data[i, 1]/data[i, 0])<0.3):
+            continue
+
         # Find particles that match export criteria
         if ((data[i, 0] > settings.ExportParticles.min_length) & #major_axis_length in pixels
             (data[i, 1] > 2)): # minor length in pixels
