@@ -70,8 +70,8 @@ class stats_trim_dlg(QMainWindow):
         self.trimmed_stats = pd.DataFrame()
         print('  stats loaded.')
 
-        self.start_time = pd.to_datetime(self.stats['timestamp'].min())
-        self.end_time = pd.to_datetime(self.stats['timestamp'].max())
+        self.start_time = pd.to_datetime(self.stats['timestamp']).min()
+        self.end_time = pd.to_datetime(self.stats['timestamp']).max()
 
         self.ui.dateTimeStart.setDateTime(self.start_time)
         self.ui.dateTimeEnd.setDateTime(self.end_time)

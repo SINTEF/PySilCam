@@ -53,7 +53,7 @@ def export_timeseries(configfile, statsfile):
     stats_gas = scog.extract_gas(stats)
 
     print('Calculating timeseries')
-    u = stats['timestamp'].unique()
+    u = pd.to_datetime(stats['timestamp']).unique()
 
     sample_volume = sc_pp.get_sample_volume(settings.PostProcess.pix_size, path_length=settings.PostProcess.path_length)
 
@@ -74,14 +74,14 @@ def export_timeseries(configfile, statsfile):
         timestamp.append(pd.to_datetime(s))
         dt = pd.to_datetime(s)
 
-        dias, vd_all = sc_pp.vd_from_stats(stats[stats['timestamp'] == s],
+        dias, vd_all = sc_pp.vd_from_stats(stats[pd.to_datetime(stats['timestamp']) == s],
                                  settings.PostProcess)
-        dias, vd_oil = sc_pp.vd_from_stats(stats_oil[stats_oil['timestamp'] == s],
+        dias, vd_oil = sc_pp.vd_from_stats(stats_oil[pd.to_datetime(stats_oil['timestamp']) == s],
                                  settings.PostProcess)
-        dias, vd_gas = sc_pp.vd_from_stats(stats_gas[stats_gas['timestamp'] == s],
+        dias, vd_gas = sc_pp.vd_from_stats(stats_gas[pd.to_datetime(stats_gas['timestamp']) == s],
                                  settings.PostProcess)
 
-        nims = sc_pp.count_images_in_stats(stats[stats['timestamp'] == s])
+        nims = sc_pp.count_images_in_stats(stats[pd.to_datetime(stats['timestamp']) == s])
         sv = sample_volume * nims
         vd_all /= sv
         vd_oil /= sv

@@ -478,7 +478,7 @@ def get_j(dias, nd):
 def count_images_in_stats(stats):
     ''' count the number of raw images used to generate stats
     '''
-    u = stats['timestamp'].unique()
+    u = pd.to_datetime(stats['timestamp']).unique()
     n_images = len(u)
 
     return n_images
@@ -512,7 +512,7 @@ def d50_timeseries(stats, settings):
     d50 = []
     time = []
 
-    u = pd.to_datetime(stats['timestamp'].unique())
+    u = pd.to_datetime(stats['timestamp']).unique()
 
     for t in tqdm(u):
         dt = pd.to_datetime(t)
@@ -620,7 +620,7 @@ def extract_latest_stats(stats, window_size):
 
     returns stats dataframe (from the last window_size seconds)
     '''
-    end = pd.to_datetime(np.max(stats['timestamp']))
+    end = np.max(pd.to_datetime(stats['timestamp']))
     start = end - pd.to_timedelta('00:00:' + str(window_size))
     stats = stats[pd.to_datetime(stats['timestamp'])>start]
     return stats
@@ -656,7 +656,7 @@ def make_timeseries_vd(stats, settings):
 
     from tqdm import tqdm
 
-    u = stats['timestamp'].unique()
+    u = pd.to_datetime(stats['timestamp']).unique()
     
     sample_volume = get_sample_volume(settings.PostProcess.pix_size, path_length=settings.PostProcess.path_length)
 
@@ -665,9 +665,9 @@ def make_timeseries_vd(stats, settings):
     timestamp = []
     dias = []
     for s in tqdm(u):
-        dias, vd = vd_from_stats(stats[stats['timestamp']==s],
+        dias, vd = vd_from_stats(stats[pd.to_datetime(stats['timestamp'])==s],
                 settings.PostProcess)
-        nims = count_images_in_stats(stats[stats['timestamp']==s])
+        nims = count_images_in_stats(stats[pd.to_datetime(stats['timestamp'])==s])
         sv = sample_volume * nims
         vd /= sv
         d50_ = d50_from_vd(vd, dias)
