@@ -338,6 +338,8 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
                 # write the image into the csv file
                 writeCSV( datafilename, stats_all)
 
+    print('PROCESSING COMPLETE.')
+
     #---- END ----
 
 def addToQueue(realtime, inputQueue, i, timestamp, imc):
