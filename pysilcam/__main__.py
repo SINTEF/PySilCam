@@ -361,11 +361,9 @@ def addToQueue(realtime, inputQueue, i, timestamp, imc):
         while True:
             try:
                 inputQueue.put((i, timestamp, imc), True, 1)
-                print('added', timestamp, 'to queue')
                 break
             except:
-                print('no space in inputQ for', timestamp)
-
+                pass
 
 def defineQueues(realtime, size):
     '''
