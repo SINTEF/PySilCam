@@ -251,9 +251,10 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
         proc_list = []
         mem = psutil.virtual_memory()
         memAvailableMb = mem.available >> 20
+        distributor_q_size = np.min([int(memAvailableMb / 2 * 1/15), np.copy(multiprocessing.cpu_count() * 4)])
 
         logger.debug('setting up processing queues')
-        inputQueue, outputQueue = defineQueues(realtime, int(memAvailableMb / 2 * 1/15))
+        inputQueue, outputQueue = defineQueues(realtime, distributor_q_size)
 
         logger.debug('setting up processing distributor')
         distributor(inputQueue, outputQueue, config_filename, proc_list, gui)
@@ -362,7 +363,7 @@ def addToQueue(realtime, inputQueue, i, timestamp, imc):
     else:
         while True:
             try:
-                inputQueue.put((i, timestamp, imc), True, 1)
+                inputQueue.put((i, timestamp, imc), True, 0.5)
                 break
             except:
                 pass
