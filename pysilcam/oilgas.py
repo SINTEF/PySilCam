@@ -31,7 +31,7 @@ def getListPortCom():
     return com_list
 
 
-def extract_gas(stats, THRESH=0.8):
+def extract_gas(stats, THRESH=0.95):
     ma = stats['minor_axis_length'] / stats['major_axis_length']
     stats = stats[ma>0.3]
     stats = stats[stats['solidity']>solidityThresh]
