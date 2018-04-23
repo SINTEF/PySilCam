@@ -45,7 +45,7 @@ def export_timeseries(configfile, statsfile):
 
     settings = PySilcamSettings(configfile)
 
-    print('Loading STATS data')
+    print('Loading STATS data: ', statsfile)
     stats = pd.read_csv(statsfile)
 
     print('Extracting oil and gas')
@@ -167,7 +167,7 @@ def export_timeseries(configfile, statsfile):
                 '-d50_TimeSeries.png', dpi=600, bbox_inches='tight')
 
     plt.close()
-    print('Export done.')
+    print('Export done: ', outfile)
 
 
 def load_image(filename, size):
