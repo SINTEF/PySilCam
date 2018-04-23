@@ -112,22 +112,26 @@ def export_timeseries(configfile, statsfile):
 
         gor.append(np.sum(vdts_av_gas)/np.sum(vdts_av_oil))
 
+    outpath, outfile = os.path.split(statsfile)
+    outfile = outfile.strip(('-STATS.csv'))
+    outfile = os.path.join(outpath, outfile)
+
     time_series = pd.DataFrame(data=np.squeeze(vdts_all), columns=dias)
     time_series['D50'] = d50_all
     time_series['Time'] = timestamp
-    time_series.to_excel(statsfile.strip('-STATS.csv') +
+    time_series.to_excel(outfile +
             '-TIMESERIES' + '' + '.xlsx')
 
     time_series = pd.DataFrame(data=np.squeeze(vdts_oil), columns=dias)
     time_series['D50'] = d50_all
     time_series['Time'] = timestamp
-    time_series.to_excel(statsfile.strip('-STATS.csv') +
+    time_series.to_excel(outfile +
             '-TIMESERIES' + 'oil' + '.xlsx')
 
     time_series = pd.DataFrame(data=np.squeeze(vdts_gas), columns=dias)
     time_series['D50'] = d50_all
     time_series['Time'] = timestamp
-    time_series.to_excel(statsfile.strip('-STATS.csv') +
+    time_series.to_excel(outfile +
             '-TIMESERIES' + 'gas' + '.xlsx')
 
     plt.figure(figsize=(20, 10))
@@ -159,7 +163,7 @@ def export_timeseries(configfile, statsfile):
     labs = [l.get_label() for l in lns]
     plt.legend(lns, labs)
 
-    plt.savefig(statsfile.strip('-STATS.csv') +
+    plt.savefig(outfile +
                 '-d50_TimeSeries.png', dpi=600, bbox_inches='tight')
 
     plt.close()
