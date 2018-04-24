@@ -260,12 +260,17 @@ def summarise_fancy_stats(stats_csv_file, config_file, monitor=False,
     ax3 = plt.subplot2grid((2,2), (0, 1), rowspan=2)
 
     while True:
-        montage = sc_pp.make_montage(stats_csv_file,
-                settings.PostProcess.pix_size,
-                roidir=settings.ExportParticles.outputpath,
-                auto_scaler=msize*2, msize=msize,
-                maxlength=maxlength,
-                oilgas=oilgas)
+        try:
+            montage = sc_pp.make_montage(stats_csv_file,
+                    settings.PostProcess.pix_size,
+                    roidir=settings.ExportParticles.outputpath,
+                    auto_scaler=msize*2, msize=msize,
+                    maxlength=maxlength,
+                    oilgas=oilgas)
+        except:
+            montage = np.zeros((msize, msize, 3), dtype=np.uint8) + 255
+            print('Unable to make montage. Check:', settings.ExportParticles.outputpath, ' folder for h5 files')
+            print('  in config file ExportParticles.export_images is ', settings.ExportParticles.export_images)
 
         stats = pd.read_csv(stats_csv_file)
         stats = stats[(stats['major_axis_length'] *
