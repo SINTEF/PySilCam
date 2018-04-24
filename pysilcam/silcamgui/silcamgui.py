@@ -449,7 +449,7 @@ def main():
             scplt.summarise_fancy_stats(self.stats_filename,
                     self.configfile, monitor=False)
             self.status_update('Saving summary figure (all)....')
-            plt.savefig(self.stats_filename.strip('-STATS.csv') + '-Summary.png',
+            plt.savefig(self.stats_filename.replace('-STATS.csv','') + '-Summary.png',
                     dpi=600, bbox_inches='tight')
 
             plt.figure(figsize=(20,12))
@@ -457,7 +457,7 @@ def main():
             scplt.summarise_fancy_stats(self.stats_filename,
                     self.configfile, monitor=False, oilgas=scpp.outputPartType.oil)
             self.status_update('Saving summary figure (oil)....')
-            plt.savefig(self.stats_filename.strip('-STATS.csv') + '-Summary_oil.png',
+            plt.savefig(self.stats_filename.replace('-STATS.csv','') + '-Summary_oil.png',
                     dpi=600, bbox_inches='tight')
 
             plt.figure(figsize=(20,12))
@@ -465,7 +465,7 @@ def main():
             scplt.summarise_fancy_stats(self.stats_filename,
                     self.configfile, monitor=False, oilgas=scpp.outputPartType.gas)
             self.status_update('Saving summary figure (gas)....')
-            plt.savefig(self.stats_filename.strip('-STATS.csv') + '-Summary_gas.png',
+            plt.savefig(self.stats_filename.replace('-STATS.csv','') + '-Summary_gas.png',
                     dpi=600, bbox_inches='tight')
 
             self.status_update('Summary figure done.')
@@ -511,6 +511,7 @@ def main():
                 self.status_update('Did not get STATS file')
                 return
             stats = pd.read_csv(self.stats_filename)
+            stats.sort_values(by=['timestamp'], inplace=True)
 
             self.status_update('Exporting all data....')
             df = scpp.stats_to_xls_png(self.configfile,
@@ -546,7 +547,7 @@ def main():
             labs = [l.get_label() for l in lns]
             plt.legend(lns, labs)
 
-            plt.savefig(self.stats_filename.strip('-STATS.csv') +
+            plt.savefig(self.stats_filename.replace('-STATS.csv','') +
                     '-d50_TimeSeries.png', dpi=600, bbox_inches='tight')
 
             self.status_update('Export finished.')

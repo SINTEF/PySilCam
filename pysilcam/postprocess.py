@@ -506,7 +506,7 @@ def d50_timeseries(stats, settings):
 
     from tqdm import tqdm
 
-    stats = stats.sort_values(by='timestamp')
+    stats.sort_values(by=['timestamp'], inplace=True)
 
     td = pd.to_timedelta('00:00:' + str(settings.window_size/2.))
     d50 = []
@@ -689,7 +689,9 @@ def make_timeseries_vd(stats, settings):
     time_series = pd.DataFrame(data=np.squeeze(vdts), columns=dias)
 
     time_series['D50'] = d50
-    time_series['Time'] = timestamp
+    time_series['Time'] = pd.to_datetime(timestamp)
+
+    time_series.sort_values(by='Time', inplace=True, ascending=False)
 
     return time_series
 
@@ -710,6 +712,7 @@ def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
     settings = PySilcamSettings(config_file)
     
     stats = pd.read_csv(stats_filename)
+    stats.sort_values(by='timestamp', inplace=True)
     oilgasTxt = ''
 
     if oilgas==outputPartType.oil:
@@ -723,7 +726,7 @@ def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
 
     df = make_timeseries_vd(stats, settings)
 
-    df.to_excel(stats_filename.strip('-STATS.csv') +
+    df.to_excel(stats_filename.replace('-STATS.csv','') +
             '-TIMESERIES' + oilgasTxt + '.xlsx')
     
     sample_volume = get_sample_volume(settings.PostProcess.pix_size, path_length=settings.PostProcess.path_length)
@@ -742,7 +745,7 @@ def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
     timestamp = np.min(pd.to_datetime(df['Time']))
     dfa['Time'] = timestamp
     
-    dfa.to_excel(stats_filename.strip('-STATS.csv') +
+    dfa.to_excel(stats_filename.replace('-STATS.csv','') +
             '-AVERAGE' + oilgasTxt + '.xlsx')
 
     return df
@@ -769,7 +772,7 @@ def trim_stats(stats_csv_file, start_time, end_time, write_new=False, stats=[]):
 
     path, name = os.path.split(stats_csv_file)
 
-    outname = os.path.join(path, name.strip('-STATS.csv')) + '-Start' + str(actual_start) + '-End' + str(
+    outname = os.path.join(path, name.replace('-STATS.csv','')) + '-Start' + str(actual_start) + '-End' + str(
         actual_end) + '-STATS.csv'
 
     if write_new:

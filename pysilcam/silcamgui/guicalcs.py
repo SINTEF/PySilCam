@@ -47,6 +47,7 @@ def export_timeseries(configfile, statsfile):
 
     print('Loading STATS data: ', statsfile)
     stats = pd.read_csv(statsfile)
+    stats.sort_values(by='timestamp', inplace=True)
 
     print('Extracting oil and gas')
     stats_oil = scog.extract_oil(stats)
@@ -113,7 +114,7 @@ def export_timeseries(configfile, statsfile):
         gor.append(np.sum(vdts_av_gas)/np.sum(vdts_av_oil))
 
     outpath, outfile = os.path.split(statsfile)
-    outfile = outfile.strip(('-STATS.csv'))
+    outfile = outfile.replace('-STATS.csv','')
     outfile = os.path.join(outpath, outfile)
 
     time_series = pd.DataFrame(data=np.squeeze(vdts_all), columns=dias)
@@ -167,6 +168,47 @@ def export_timeseries(configfile, statsfile):
                 '-d50_TimeSeries.png', dpi=600, bbox_inches='tight')
 
     plt.close()
+    print('Export figure made. ')
+    print('Exporting averages... ')
+
+    # average all
+    dias, vd = sc_pp.vd_from_stats(stats,
+                             settings.PostProcess)
+    nims = sc_pp.count_images_in_stats(stats)
+    sv = sample_volume * nims
+    vd /= sv
+    d50 = sc_pp.d50_from_vd(vd, dias)
+    dfa = pd.DataFrame(data=[vd], columns=dias)
+    dfa['d50'] = d50
+    timestamp = np.min(pd.to_datetime(stats['timestamp']))
+    dfa['Time'] = timestamp
+    dfa.to_excel(statsfile.replace('-STATS.csv', '') +
+                 '-AVERAGE' + '' + '.xlsx')
+
+    #average oil
+    dias, vd = sc_pp.vd_from_stats(stats_oil,
+                             settings.PostProcess)
+    vd /= sv # sample volume remains the same as 'all'
+    d50 = sc_pp.d50_from_vd(vd, dias)
+    dfa = pd.DataFrame(data=[vd], columns=dias)
+    dfa['d50'] = d50
+    timestamp = np.min(pd.to_datetime(stats['timestamp'])) # still use total stats for this time
+    dfa['Time'] = timestamp
+    dfa.to_excel(statsfile.replace('-STATS.csv', '') +
+                 '-AVERAGE' + 'oil' + '.xlsx')
+
+    #average gas
+    dias, vd = sc_pp.vd_from_stats(stats_gas,
+                             settings.PostProcess)
+    vd /= sv # sample volume remains the same as 'all'
+    d50 = sc_pp.d50_from_vd(vd, dias)
+    dfa = pd.DataFrame(data=[vd], columns=dias)
+    dfa['d50'] = d50
+    timestamp = np.min(pd.to_datetime(stats['timestamp'])) # still use total stats for this time
+    dfa['Time'] = timestamp
+    dfa.to_excel(statsfile.replace('-STATS.csv', '') +
+                 '-AVERAGE' + 'gas' + '.xlsx')
+
     print('Export done: ', outfile)
 
 
