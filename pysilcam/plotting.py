@@ -173,6 +173,9 @@ def nd(stats, settings, ax, line=None, c='k', sample_volume=1.):
     ind = np.argwhere(nd>0)
     nd[ind[0]] = np.nan
 
+    # don't plot zeros
+    ind = np.argwhere(nd == 0)
+    nd[ind] = np.nan
 
     if line:
         line.set_data(dias, nd)

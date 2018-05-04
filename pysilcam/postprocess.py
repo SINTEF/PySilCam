@@ -13,6 +13,7 @@ from skimage.exposure import rescale_intensity
 import h5py
 from pysilcam.config import PySilcamSettings
 from enum import Enum
+from tqdm import tqdm
 
 class outputPartType(Enum):
     '''
@@ -316,7 +317,7 @@ def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
     print('making a montage - this might take some time....')
 
     # loop through each extracted particle and attempt to add it to the canvas
-    for files in roifiles:
+    for files in tqdm(roifiles):
         # get the particle image from the HDF5 file
         particle_image = export_name2im(files, roidir)
 
