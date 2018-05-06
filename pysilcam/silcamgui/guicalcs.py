@@ -47,6 +47,9 @@ def export_timeseries(configfile, statsfile):
 
     print('Loading STATS data: ', statsfile)
     stats = pd.read_csv(statsfile)
+
+    stats['timestamp'] = pd.to_datetime(stats['timestamp'])
+
     stats.sort_values(by='timestamp', inplace=True)
 
     print('Extracting oil and gas')
@@ -75,14 +78,14 @@ def export_timeseries(configfile, statsfile):
         timestamp.append(pd.to_datetime(s))
         dt = pd.to_datetime(s)
 
-        dias, vd_all = sc_pp.vd_from_stats(stats[pd.to_datetime(stats['timestamp']) == s],
+        dias, vd_all = sc_pp.vd_from_stats(stats[stats['timestamp'] == s],
                                  settings.PostProcess)
-        dias, vd_oil = sc_pp.vd_from_stats(stats_oil[pd.to_datetime(stats_oil['timestamp']) == s],
+        dias, vd_oil = sc_pp.vd_from_stats(stats_oil[stats_oil['timestamp'] == s],
                                  settings.PostProcess)
-        dias, vd_gas = sc_pp.vd_from_stats(stats_gas[pd.to_datetime(stats_gas['timestamp']) == s],
+        dias, vd_gas = sc_pp.vd_from_stats(stats_gas[stats_gas['timestamp'] == s],
                                  settings.PostProcess)
 
-        nims = sc_pp.count_images_in_stats(stats[pd.to_datetime(stats['timestamp']) == s])
+        nims = sc_pp.count_images_in_stats(stats[stats['timestamp'] == s])
         sv = sample_volume * nims
         vd_all /= sv
         vd_oil /= sv
@@ -95,7 +98,7 @@ def export_timeseries(configfile, statsfile):
         vdts_oil.append(vd_oil)
         vdts_gas.append(vd_gas)
 
-        stats_av = stats[(pd.to_datetime(stats['timestamp'])<(dt+td)) & (pd.to_datetime(stats['timestamp'])>(dt-td))]
+        stats_av = stats[(stats['timestamp']<(dt+td)) & (stats['timestamp']>(dt-td))]
         stats_av_oil = scog.extract_oil(stats_av)
         stats_av_gas = scog.extract_gas(stats_av)
         d50_av_all.append(sc_pp.d50_from_stats(stats_av, settings.PostProcess))
