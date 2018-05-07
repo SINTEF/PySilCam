@@ -782,3 +782,34 @@ def trim_stats(stats_csv_file, start_time, end_time, write_new=False, stats=[]):
         trimmed_stats.to_csv(outname)
 
     return trimmed_stats, outname
+
+
+def add_best_guesses_to_stats(stats):
+    '''
+    Calculates the most likely tensorflow classification and adds best guesses
+    to stats dataframe.
+    
+    Args:
+        stats (DataFrame)           : particle statistics from silcam process
+        
+    Returns:
+        stats (DataFrame)           : particle statistics from silcam process
+                                      with new columns for best guess and best guess value
+    '''
+
+    cols = stats.columns
+
+    p = np.zeros_like(cols) != 0
+    for i, c in enumerate(cols):
+            p[i] = str(c).startswith('probability')
+                
+    pinds = np.squeeze(np.argwhere(p))
+
+    parray = np.array(stats.iloc[:,pinds[:]])
+
+    stats['best guess'] = cols[pinds.min() + np.argmax(parray,
+        axis=1)]
+    stats['best guess value'] = np.max(parray, axis=1)
+
+    return stats
+

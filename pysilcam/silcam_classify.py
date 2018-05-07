@@ -104,4 +104,3 @@ def predict(img, model):
     prediction = model.predict([img])
 
     return prediction
-
