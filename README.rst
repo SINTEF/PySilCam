@@ -52,4 +52,4 @@ Requirements
 License
 -------
 
-MIT licensed. See the bundled `LICENSE` file for more details.
+contact atle.kleven@sintef.no
