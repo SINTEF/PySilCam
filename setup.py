@@ -75,7 +75,7 @@ setup(
     name='PySilCam',
     version='0.1.0',
     description='A Python interface to the SilCam.',
-    long_description=read('README.rst'),
+    long_description=read('README.md'),
     author='Emlyn Davies',
     author_email='emlyn.davies@sintef.no',
     install_requires=REQUIRES,
