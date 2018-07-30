@@ -145,7 +145,7 @@ def nc_vc_from_stats(stats, settings, oilgas=outputPartType.all):
     Args:
         stats (DataFrame)           : particle statistics from silcam process
         settings (PySilcamSettings) : settings associated with the data, loaded with PySilcamSettings
-        oilgas=oc_pp.outputPartType.all : the oilgas enum if you want to just make the figure for oil, or just gas (defulats to all particles)
+        oilgas=oc_pp.outputPartType.all : the oilgas enum if you want to just make the figure for oil, or just gas (defaults to all particles)
     
     Returns:
         nc (float)            : the total number concentration in #/L
@@ -706,7 +706,7 @@ def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
     Args:
         config_file (string)            : Path of the config file for this data
         stats_filename (string)         : Path of the stats csv file
-        oilgas=oc_pp.outputPartType.all : the oilgas enum if you want to just make the figure for oil, or just gas (defulats to all particles)
+        oilgas=oc_pp.outputPartType.all : the oilgas enum if you want to just make the figure for oil, or just gas (defaults to all particles)
 
     Returns:
         dataframe: of time series
