@@ -90,7 +90,7 @@ def silcam():
         silcam_process(args['<configfile>'] ,datapath, multiProcess=multiProcess, realtime=False, nbImages=nbImages)
 
     elif args['acquire']: # this is the standard acquisition method under development now
-        silcam_acquire(datapath, args['<configfile>'], writeToDisk=True)
+        silcam_acquire(datapath, args['<configfile>'])
 
     elif args['realtime']:
         discWrite = False
