@@ -90,7 +90,7 @@ def silcam():
         silcam_process(args['<configfile>'] ,datapath, multiProcess=multiProcess, realtime=False, nbImages=nbImages)
 
     elif args['acquire']: # this is the standard acquisition method under development now
-        silcam_acquire(datapath, args['<configfile>'])
+        silcam_acquire(datapath, args['<configfile>'], writeToDisk=True)
 
     elif args['realtime']:
         discWrite = False
@@ -137,7 +137,7 @@ def silcam_acquire(datapath, config_filename, writeToDisk=False, gui=None):
     for i, (timestamp, imraw) in enumerate(aqgen):
         t2 = time.time()
         aq_freq = np.round(1.0/(t2 - t1), 1)
-        requested_freq = 16.0
+        requested_freq = settings.Camera.acquisitionframerateabs
         rest_time = (1 / requested_freq) - (1 / aq_freq)
         rest_time = np.max([rest_time, 0.])
         time.sleep(rest_time)
