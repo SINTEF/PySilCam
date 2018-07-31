@@ -20,10 +20,10 @@ def load_config(filename):
       filename (str) : filename including path
 
     Raises:
-      RuntimeError when file could not be read
+      RuntimeError : when file could not be read
 
     Returns:
-      ConfigParser with the file parsed
+      ConfigParser  : with the file parsed
 
     '''
     #Check that the file exists
@@ -47,6 +47,9 @@ def load_config(filename):
 
 
 class PySilcamSettings:
+    '''
+    Class for SilCam settings
+    '''
     def __init__(self, config):
         if isinstance(config, configparser.ConfigParser):
             self.config = config
@@ -73,11 +76,11 @@ def load_camera_config(filename, config=None):
     '''Load camera config file and validate content
     
     Args:
-      filename (str) : filename including path to camera config file
-      config   (dict) : a dictionnary to store key-values. If config does not exist, an empty dict is created
+      filename (str)      : filename including path to camera config file
+      config=None  (dict) : a dictionnary to store key-values. If config does not exist, an empty dict is created
 
     Returns:
-      dict() with key value pairs of camera settings  
+      dict()              : with key value pairs of camera settings  
     
     '''
 

@@ -203,7 +203,7 @@ def measure_particles(imbw, imc, settings, timestamp, nnmodel, class_labels):
     # check the converage of the image of particles is acceptable
     sat_check, saturation = concentration_check(imbw, settings)
     if sat_check == False:
-        logger.warn('....breached concentration limit! Skipping image.')
+        logger.warning('....breached concentration limit! Skipping image.')
         imbw *= 0 # this is not a good way to handle this condition
         # @todo handle situation when too many particles are found
 
@@ -213,7 +213,7 @@ def measure_particles(imbw, imc, settings, timestamp, nnmodel, class_labels):
 
     # if there are too many particles then do no proceed with analysis
     if (iml.max() > settings.Process.max_particles):
-        logger.warn('....that''s way too many particles! Skipping image.')
+        logger.warning('....that''s way too many particles! Skipping image.')
         imbw *= 0 # this is not a good way to handle this condition
         # @todo handle situation when too many particles are found
 
@@ -292,6 +292,10 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
     for i, el in enumerate(region_properties):
         data[i, :] = [getattr(el, p) for p in propnames]
         bboxes[i, :] = el.bbox
+
+        # if operating in realtime mode, assume we only care about oil and gas and skip export of overly-derformed particles
+        if settings.Process.real_time_stats & (((data[i, 1]/data[i, 0])<0.3) | (data[i, 3]<0.95)):
+            continue
 
         # Find particles that match export criteria
         if ((data[i, 0] > settings.ExportParticles.min_length) & #major_axis_length in pixels

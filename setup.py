@@ -19,7 +19,8 @@ REQUIRES = [
     'scikit-image',
     'pygame',
     'tflearn',
-    'sphinx'
+    'sphinx',
+    'tqdm'
 #    'tensorflow',
 #    'pymba',
 ]

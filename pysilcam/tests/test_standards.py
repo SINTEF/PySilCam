@@ -45,7 +45,7 @@ def test_big_standards():
     # check the columns
     assert lines[0] == 'particle index,major_axis_length,minor_axis_length,equivalent_diameter,solidity,minr,minc,maxr,maxc,'\
             'probability_oil,probability_other,probability_bubble,probability_faecal_pellets,probability_copepod,'\
-            'probability_diatom_chain,probability_oily_gas,export name,timestamp\n', 'columns not properly built'
+            'probability_diatom_chain,probability_oily_gas,export name,timestamp,saturation\n', 'columns not properly built'
 
     settings = PySilcamSettings(conf_file)
     stats = pd.read_csv(stats_file)
@@ -86,7 +86,7 @@ def test_small_standards():
     # check the columns
     assert lines[0] == 'particle index,major_axis_length,minor_axis_length,equivalent_diameter,solidity,minr,minc,maxr,maxc,'\
             'probability_oil,probability_other,probability_bubble,probability_faecal_pellets,probability_copepod,'\
-            'probability_diatom_chain,probability_oily_gas,export name,timestamp\n', 'columns not properly built'
+            'probability_diatom_chain,probability_oily_gas,export name,timestamp,saturation\n', 'columns not properly built'
 
     settings = PySilcamSettings(conf_file)
     stats = pd.read_csv(stats_file)
