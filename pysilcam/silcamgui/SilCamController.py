@@ -19,6 +19,7 @@ class Ui_SilCamController(object):
         sizePolicy.setHeightForWidth(SilCamController.sizePolicy().hasHeightForWidth())
         SilCamController.setSizePolicy(sizePolicy)
         SilCamController.setMinimumSize(QtCore.QSize(560, 200))
+        SilCamController.setMaximumSize(QtCore.QSize(560, 200))
         SilCamController.setWindowOpacity(1.0)
         self.pb_start = QtWidgets.QPushButton(SilCamController)
         self.pb_start.setGeometry(QtCore.QRect(390, 10, 168, 41))

@@ -14,13 +14,24 @@ import time
 import struct
 import serial
 import serial.tools.list_ports
+import glob
+import sys
 
-solidityThresh = 0.9
+solidityThresh = 0.95
 
 def getListPortCom():
-    return [comport.device for comport in serial.tools.list_ports.comports()]
+    try:
+        if sys.platform.startswith('win'):
+            com_list = [comport.device for comport in serial.tools.list_ports.comports()]
+        elif sys.platform.startswith('linux'):
+            com_list = glob.glob('/dev/tty[A-Za-z]*')
+    except AttributeError:
+        com_list = []
 
-def extract_gas(stats, THRESH=0.9):
+    return com_list
+
+
+def extract_gas(stats, THRESH=0.85):
     ma = stats['minor_axis_length'] / stats['major_axis_length']
     stats = stats[ma>0.3]
     stats = stats[stats['solidity']>solidityThresh]
@@ -36,7 +47,7 @@ def extract_gas(stats, THRESH=0.9):
     return stats
 
 
-def extract_oil(stats, THRESH=0.9):
+def extract_oil(stats, THRESH=0.1):
     ma = stats['minor_axis_length'] / stats['major_axis_length']
     stats = stats[ma>0.3]
     stats = stats[stats['solidity']>solidityThresh]
@@ -51,8 +62,49 @@ def extract_oil(stats, THRESH=0.9):
     return stats
 
 
-class rt_stats():
+def gor_timeseries(stats, settings):
+    from tqdm import tqdm
 
+    u = stats['timestamp'].unique()
+    td = pd.to_timedelta('00:00:' + str(settings.window_size / 2.))
+
+    sample_volume = sc_pp.get_sample_volume(settings.pix_size, path_length=settings.path_length)
+
+    gor = []
+    time = []
+
+    for t in tqdm(u):
+        dt = pd.to_datetime(t)
+        stats_ = stats[(pd.to_datetime(stats['timestamp']) < (dt + td)) & (pd.to_datetime(stats['timestamp']) > (dt - td))]
+
+        oilstats = extract_oil(stats_)
+        dias, vd_oil = sc_pp.vd_from_stats(oilstats, settings)
+        nims = sc_pp.count_images_in_stats(oilstats)
+        sv = sample_volume * nims
+        vd_oil /= sv
+
+        gasstats = extract_gas(stats_)
+        dias, vd_gas = sc_pp.vd_from_stats(gasstats, settings)
+        nims = sc_pp.count_images_in_stats(gasstats)
+        sv = sample_volume * nims
+        vd_gas /= sv
+
+        gor_ = sum(vd_gas)/sum(vd_oil)
+
+        time.append(pd.to_datetime(t))
+        gor.append(gor_)
+
+    if (len(gor) == 0) or (np.isnan(max(gor))):
+        gor = np.nan
+        time = np.nan
+
+    return gor, time
+
+
+class rt_stats():
+    '''
+    Class for maintining realtime statistics
+    '''
     def __init__(self, settings):
         self.stats = pd.DataFrame
         self.settings = settings
@@ -61,10 +113,13 @@ class rt_stats():
         self.vd_gas = []
         self.oil_d50 = np.nan
         self.gas_d50 = np.nan
+        self.saturation = np.nan
 
     def update(self):
-        # remove data from before the specified window of seconds
-        # (settings.PostProcess.window_size)
+        '''
+        Updates the rt_stats to remove data from before the specified window of seconds
+        given in the config ini file, here: settings.PostProcess.window_size
+        '''
         self.stats = sc_pp.extract_latest_stats(self.stats,
                 self.settings.PostProcess.window_size)
 
@@ -83,21 +138,43 @@ class rt_stats():
         self.dias, self.vd_gas = sc_pp.vd_from_stats(self.gas_stats,
                     self.settings.PostProcess)
 
+        self.saturation = np.max(self.stats.saturation)
+
+
     def to_csv(self, filename):
+        '''
+        Writes the rt_stats data to a csv file
+        
+        Args:
+            filename (str) : filename of the csv file to write to
+        '''
         df = pd.DataFrame()
         df['Oil d50[um]'] = [self.oil_d50]
         df['Gas d50[um]'] = [self.gas_d50]
+        # @todo include saturation here too
+        df['saturation [%]'] = [self.saturation]
         df.to_csv(filename, index=False, mode='w') # do not append to this file
 
 
 class ServerThread(Process):
-
+    '''
+    Class for managing http server for sharing realtime data
+    '''
     def __init__(self, ip):
+        '''
+        Setup the server
+        
+        Args:
+            ip (str) : string defining the local ip address of the machine that will run this function
+        '''
         super(ServerThread, self).__init__()
         self.ip = ip
         self.go()
 
     def run(self):
+        '''
+        Start the server on port 8000
+        '''
         PORT = 8000
         #address = '192.168.1.2'
         Handler = http.server.SimpleHTTPRequestHandler
@@ -110,7 +187,9 @@ class ServerThread(Process):
 
 
 def ogdataheader():
-
+    '''
+    Possibly a redundant function....
+    '''
     ogheader = 'Y, M, D, h, m, s, '
 
     bin_mids_um, bin_limits_um = sc_pp.get_size_bins()
@@ -125,6 +204,9 @@ def ogdataheader():
 
 
 def cat_data(timestamp, stats, settings):
+    '''
+    Possibly a redundant function....
+    '''
     dias, vd = sc_pp.vd_from_stats(stats, settings.PostProcess)
     d50 = sc_pp.d50_from_vd(vd, dias)
 
@@ -138,6 +220,11 @@ def cat_data(timestamp, stats, settings):
 
 
 class PathLength():
+    '''
+    Class for interacting with the path length actuator unit via RS232
+    
+    See the technical manual for the actuator for details
+    '''
     def __init__(self, com_port):
         self.ser = serial.Serial(com_port, 115200, timeout=1)
         print('actuator port open!')
@@ -174,11 +261,11 @@ class PathLength():
     def motoronoff(self, ser,state):
         sendstring = self.makepacket('X',2,state)
         self.ser.write(bytes(sendstring,'latin-1'))
-        time.sleep(1)
+        time.sleep(0.1)
         readout1 = self.ser.read(1000)
         sendstring = self.makepacket('p',1,0)
         self.ser.write(bytes(sendstring,'latin-1'))
-        time.sleep(1)
+        time.sleep(0.1)
         readout2 = self.ser.read(1000)
         motorvalue = bin(readout2[3])[2]
         print('readout3: %s' %motorvalue)

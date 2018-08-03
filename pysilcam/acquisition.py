@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import os
-import warnings
 import time
 import numpy as np
 import pandas as pd
@@ -18,7 +17,13 @@ except:
 
 
 def _init_camera(vimba):
-    '''Initialize the camera system from vimba object'''
+    '''Initialize the camera system from vimba object
+    Args:
+        vimba (vimba object)  :  for example pymba.Vimba()
+        
+    Returns:
+        camera       (Camera) : The camera without settings from the config
+    '''
 
     # get system object
     system = vimba.getSystem()
@@ -48,10 +53,11 @@ def _configure_camera(camera, config_file=None):
     '''Configure the camera.
 
     Args:
-       config_file (str)    : Configuration file
+        camera       (Camera) : The camera with settings from the config
+        config_file (str)     : Configuration file
 
     Returns:
-      camera       (Camera) : The camera with settings from the congig
+        camera       (Camera) : The camera with settings from the config
 
     '''
 
@@ -96,6 +102,9 @@ def print_camera_config(camera):
 
 
 class Acquire():
+    '''
+    Class used to acquire images from camera or disc
+    '''
     def __init__(self, USE_PYMBA=False):
         if USE_PYMBA:
             self.pymba = pymba
@@ -198,7 +207,16 @@ class Acquire():
            
 
     def _acquire_frame(self, camera, frame0):
-        '''Aquire a single frame'''
+        '''Aquire a single frame
+        Args:
+            camera (Camera)         : The camera with settings from the config
+                                      obtained from _configure_camera()
+            frame0  (frame)         : camera frame obtained from camera.getFrame()
+        
+        Returns:
+            timestamp (timestamp)   : timestamp of image acquisition
+            output (uint8)          : raw image acquired
+        '''
 
         #Aquire single fram from camera
         camera.startCapture()
@@ -224,6 +242,9 @@ class Acquire():
         return timestamp, output
 
     def wait_for_camera(self):
+        '''
+        Waiting function that will continue forever until a camera becomes connected
+        '''
         camera = None
         while not camera:
             with self.pymba.Vimba() as vimba:
