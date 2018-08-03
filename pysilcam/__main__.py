@@ -36,7 +36,7 @@ def silcam():
     '''Aquire/process images from the SilCam
 
     Usage:
-      silcam acquire <configfile> <datapath>
+      silcam acquire <configfile> <datapath> [--discwrite]
       silcam process <configfile> <datapath> [--nbimages=<number of images>] [--nomultiproc]
       silcam realtime <configfile> <datapath> [--discwrite] [--nomultiproc]
       silcam -h | --help
