@@ -13,15 +13,26 @@ from skimage.exposure import rescale_intensity
 import h5py
 from pysilcam.config import PySilcamSettings
 from enum import Enum
-
+from tqdm import tqdm
 
 class outputPartType(Enum):
+    '''
+    Enum for all (1), oil (2) or gas (3)
+    '''
     all = 1
     oil = 2
     gas = 3
 
 def d50_from_stats(stats, settings):
-    '''calculate the d50 from the stats and settings
+    '''
+    Calculate the d50 from the stats and settings
+    
+    Args:
+        stats (DataFrame)           : particle statistics from silcam process
+        settings (PySilcamSettings) : settings associated with the data, loaded with PySilcamSettings
+        
+    Returns:
+        d50 (float)                 : the 50th percentile of the cumulative sum of the volume distributon, in microns
     '''
 
     # the volume distribution needs calculating first
@@ -32,8 +43,16 @@ def d50_from_stats(stats, settings):
     return d50
 
 def d50_from_vd(vd,dias):
-    ''' calculate d50 from a volume distribution
-    d50 = d50_from_vd(vd,dias)
+    '''
+    Calculate d50 from a volume distribution
+    
+    Args:
+        vd (array)           : particle volume distribution calculated from vd_from_stats()
+        dias (array)         : mid-points in the size classes corresponding the the volume distribution,
+                               returned from get_size_bins()
+        
+    Returns:
+        d50 (float)                 : the 50th percentile of the cumulative sum of the volume distributon, in microns
     '''
 
     # calcualte cumulative sum of the volume distribution
@@ -44,8 +63,12 @@ def d50_from_vd(vd,dias):
     return d50
 
 def get_size_bins():
-    '''retrieve size bins for PSD analysis
-    bin_mids_um, bin_limits_um = get_size_bins()
+    '''
+    Retrieve size bins for PSD analysis
+    
+    Returns:
+        bin_mids_um (array)     : mid-points of size bins
+        bin_limits_um (array)   : limits of size bins
     '''
     # pre-allocate
     bin_limits_um = np.zeros((53),dtype=np.float64)
@@ -72,13 +95,22 @@ def get_size_bins():
     return bin_mids_um, bin_limits_um
 
 def vd_from_nd(count,psize,sv=1):
-    ''' calculate volume concentration from particle count
+    '''
+    Calculate volume concentration from particle count
 
     sv = sample volume size (litres)
 
     e.g:
     sample_vol_size=25*1e-3*(1200*4.4e-6*1600*4.4e-6); %size of sample volume in m^3
     sv=sample_vol_size*1e3; %size of sample volume in litres
+    
+    Args:
+        count (array) : particle number distribution
+        psize (float) : pixel size of the SilCam contained in settings.PostProcess.pix_size from the config ini file
+        sv=1 (float)  : the volume of the sample which should be used for scaling concentrations
+        
+    Returns:
+        vd (array)    : the particle volume distribution
     '''
 
     psize = psize *1e-6  # convert to m
@@ -93,20 +125,33 @@ def vd_from_nd(count,psize,sv=1):
 
 
 def nc_from_nd(count,sv):
-    ''' calculate the number concentration from the count and sample volume
+    ''' 
+    Calculate the number concentration from the count and sample volume
+    
+    Args:
+        count (array) : particle number distribution
+        sv=1 (float)  : the volume of the sample which should be used for scaling concentrations
+        
+    Returns:
+        nc (float)    : the total number concentration in #/L
     '''
     nc = np.sum(count) / sv
     return nc
 
 def nc_vc_from_stats(stats, settings, oilgas=outputPartType.all):
-    ''' calculate:
-            number concentration
-            volume concentration
-            total sample volume
-            junge distribution slope
-
-    USEAGE: nc, vc, sample_volume, junge = nc_vc_from_stats(stats, settings)
-
+    '''
+    Calculates important summary statistics from a stats DataFrame
+    
+    Args:
+        stats (DataFrame)           : particle statistics from silcam process
+        settings (PySilcamSettings) : settings associated with the data, loaded with PySilcamSettings
+        oilgas=oc_pp.outputPartType.all : the oilgas enum if you want to just make the figure for oil, or just gas (defaults to all particles)
+    
+    Returns:
+        nc (float)            : the total number concentration in #/L
+        vc (float)            : the total volume concentration in uL/L
+        sample_volume (float) : the total volume of water sampled in L
+        junge (float)         : the slope of a fitted juge distribution between 150-300um
     '''
     # get the path length from the config file
     path_length = settings.path_length
@@ -258,7 +303,7 @@ class TimeIntegratedVolumeDist:
 
 
 def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
-        tightpack=False):
+        tightpack=False, eyecandy=True):
     '''
     makes nice looking matages from a directory of extracted particle images
 
@@ -272,7 +317,7 @@ def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
     print('making a montage - this might take some time....')
 
     # loop through each extracted particle and attempt to add it to the canvas
-    for files in roifiles:
+    for files in tqdm(roifiles):
         # get the particle image from the HDF5 file
         particle_image = export_name2im(files, roidir)
 
@@ -285,13 +330,16 @@ def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
         if width >= msize:
             continue
 
-        # contrast exploding:
-        particle_image = explode_contrast(particle_image)
+        if eyecandy:
+            # contrast exploding:
+            particle_image = explode_contrast(particle_image)
 
-        # eye-candy normalization:
-        peak = np.median(particle_image.flatten())
-        bm = brightness - peak
-        particle_image = np.float64(particle_image) + bm
+            # eye-candy normalization:
+            peak = np.median(particle_image.flatten())
+            bm = brightness - peak
+            particle_image = np.float64(particle_image) + bm
+        else:
+            particle_image = np.float64(particle_image)
         particle_image[particle_image>255] = 255
 
         # tighpack checks fitting within the canvas based on an approximation
@@ -381,7 +429,11 @@ def make_montage(stats_csv_file, pixel_size, roidir,
 
     roifiles = gen_roifiles(stats, auto_scaler=auto_scaler)
 
-    montage = montage_maker(roifiles, roidir, pixel_size, msize)
+    eyecandy = True
+    if not (oilgas==outputPartType.all):
+        eyecandy = False
+
+    montage = montage_maker(roifiles, roidir, pixel_size, msize, eyecandy=eyecandy)
 
     return montage
 
@@ -427,7 +479,7 @@ def get_j(dias, nd):
 def count_images_in_stats(stats):
     ''' count the number of raw images used to generate stats
     '''
-    u = stats['timestamp'].unique()
+    u = pd.to_datetime(stats['timestamp']).unique()
     n_images = len(u)
 
     return n_images
@@ -449,22 +501,29 @@ def extract_nth_longest(stats,settings,n=0):
     return stats
 
 
-def d50_timeseries(stats, settings, window_size=10):
+def d50_timeseries(stats, settings):
     ''' Calculates time series of d50 from stats
     '''
-    stats = stats.sort_values(by='timestamp')
 
-    td = pd.to_timedelta('00:00:' + str(window_size))
+    from tqdm import tqdm
+
+    stats.sort_values(by=['timestamp'], inplace=True)
+
+    td = pd.to_timedelta('00:00:' + str(settings.window_size/2.))
     d50 = []
     time = []
 
-    u = pd.to_datetime(stats['timestamp'].unique())
+    u = pd.to_datetime(stats['timestamp']).unique()
 
-    for t in u:
+    for t in tqdm(u):
         dt = pd.to_datetime(t)
-        stats_ = stats[(pd.to_datetime(stats['timestamp'])<(dt)) & (pd.to_datetime(stats['timestamp'])>(dt-td))]
+        stats_ = stats[(pd.to_datetime(stats['timestamp'])<(dt+td)) & (pd.to_datetime(stats['timestamp'])>(dt-td))]
         d50.append(d50_from_stats(stats_, settings))
         time.append(t)
+
+    if len(time) == 0:
+        d50 = np.nan
+        time = np.nan
 
     return d50, time
 
@@ -562,7 +621,7 @@ def extract_latest_stats(stats, window_size):
 
     returns stats dataframe (from the last window_size seconds)
     '''
-    end = pd.to_datetime(np.max(stats['timestamp']))
+    end = np.max(pd.to_datetime(stats['timestamp']))
     start = end - pd.to_timedelta('00:00:' + str(window_size))
     stats = stats[pd.to_datetime(stats['timestamp'])>start]
     return stats
@@ -596,6 +655,10 @@ def make_timeseries_vd(stats, settings):
         dataframe: of time series
     '''
 
+    from tqdm import tqdm
+
+    stats['timestamp'] = pd.to_datetime(stats['timestamp'])
+
     u = stats['timestamp'].unique()
     
     sample_volume = get_sample_volume(settings.PostProcess.pix_size, path_length=settings.PostProcess.path_length)
@@ -604,7 +667,7 @@ def make_timeseries_vd(stats, settings):
     d50 = []
     timestamp = []
     dias = []
-    for s in u:
+    for s in tqdm(u):
         dias, vd = vd_from_stats(stats[stats['timestamp']==s],
                 settings.PostProcess)
         nims = count_images_in_stats(stats[stats['timestamp']==s])
@@ -614,11 +677,24 @@ def make_timeseries_vd(stats, settings):
         d50.append(d50_)
         timestamp.append(pd.to_datetime(s))
         vdts.append(vd)
-    
+
+    if len(vdts) == 0:
+        dias, limits = get_size_bins()
+        vdts = np.zeros_like(dias) * np.nan
+
+        time_series = pd.DataFrame(data=[np.squeeze(vdts)], columns=dias)
+
+        time_series['D50'] = np.nan
+        time_series['Time'] = np.nan
+
+        return time_series
+
     time_series = pd.DataFrame(data=np.squeeze(vdts), columns=dias)
 
     time_series['D50'] = d50
-    time_series['Time'] = timestamp
+    time_series['Time'] = pd.to_datetime(timestamp)
+
+    time_series.sort_values(by='Time', inplace=True, ascending=False)
 
     return time_series
 
@@ -628,8 +704,9 @@ def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
     PSD.
 
     Args:
-        config_file (string): Path of the config file for this data
-        stats_filename (string): Path of the stats csv file
+        config_file (string)            : Path of the config file for this data
+        stats_filename (string)         : Path of the stats csv file
+        oilgas=oc_pp.outputPartType.all : the oilgas enum if you want to just make the figure for oil, or just gas (defaults to all particles)
 
     Returns:
         dataframe: of time series
@@ -638,6 +715,7 @@ def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
     settings = PySilcamSettings(config_file)
     
     stats = pd.read_csv(stats_filename)
+    stats.sort_values(by='timestamp', inplace=True)
     oilgasTxt = ''
 
     if oilgas==outputPartType.oil:
@@ -648,10 +726,10 @@ def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
         from pysilcam.oilgas import extract_gas
         stats = extract_gas(stats)
         oilgasTxt = 'gas'
-   
+
     df = make_timeseries_vd(stats, settings)
 
-    df.to_excel(stats_filename.strip('-STATS.csv') +
+    df.to_excel(stats_filename.replace('-STATS.csv','') +
             '-TIMESERIES' + oilgasTxt + '.xlsx')
     
     sample_volume = get_sample_volume(settings.PostProcess.pix_size, path_length=settings.PostProcess.path_length)
@@ -667,12 +745,71 @@ def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
     dfa = pd.DataFrame(data=[vd], columns=dias)
     dfa['d50'] = d50
     
-    timestamp = np.min(pd.to_datetime(timestamp))
+    timestamp = np.min(pd.to_datetime(df['Time']))
     dfa['Time'] = timestamp
     
-    dfa.to_excel(stats_filename.strip('-STATS.csv') +
+    dfa.to_excel(stats_filename.replace('-STATS.csv','') +
             '-AVERAGE' + oilgasTxt + '.xlsx')
-   
-    print('----END----')
 
     return df
+
+
+def trim_stats(stats_csv_file, start_time, end_time, write_new=False, stats=[]):
+    '''Chops a STATS.csv file given a start and end time'''
+    if len(stats)==0:
+        stats = pd.read_csv(stats_csv_file)
+
+    start_time = pd.to_datetime(start_time)
+    end_time = pd.to_datetime(end_time)
+
+    trimmed_stats = stats[
+        (pd.to_datetime(stats['timestamp']) > start_time) & (pd.to_datetime(stats['timestamp']) < end_time)]
+
+    if np.isnan(trimmed_stats.equivalent_diameter.max()) or len(trimmed_stats) == 0:
+        print('No data in specified time range!')
+        outname = ''
+        return trimmed_stats, outname
+
+    actual_start = pd.to_datetime(trimmed_stats['timestamp'].min()).strftime('D%Y%m%dT%H%M%S.%f')
+    actual_end = pd.to_datetime(trimmed_stats['timestamp'].max()).strftime('D%Y%m%dT%H%M%S.%f')
+
+    path, name = os.path.split(stats_csv_file)
+
+    outname = os.path.join(path, name.replace('-STATS.csv','')) + '-Start' + str(actual_start) + '-End' + str(
+        actual_end) + '-STATS.csv'
+
+    if write_new:
+        trimmed_stats.to_csv(outname)
+
+    return trimmed_stats, outname
+
+
+def add_best_guesses_to_stats(stats):
+    '''
+    Calculates the most likely tensorflow classification and adds best guesses
+    to stats dataframe.
+    
+    Args:
+        stats (DataFrame)           : particle statistics from silcam process
+        
+    Returns:
+        stats (DataFrame)           : particle statistics from silcam process
+                                      with new columns for best guess and best guess value
+    '''
+
+    cols = stats.columns
+
+    p = np.zeros_like(cols) != 0
+    for i, c in enumerate(cols):
+            p[i] = str(c).startswith('probability')
+                
+    pinds = np.squeeze(np.argwhere(p))
+
+    parray = np.array(stats.iloc[:,pinds[:]])
+
+    stats['best guess'] = cols[pinds.min() + np.argmax(parray,
+        axis=1)]
+    stats['best guess value'] = np.max(parray, axis=1)
+
+    return stats
+

@@ -12,7 +12,11 @@ import pandas as pd
 
 
 class ParticleSizeDistPlot:
-    '''Plot particle size distribution information on 2x2 layout'''
+    '''Plot particle size distribution information on 2x2 layout
+    
+    This is mostly old and redundant.
+    
+    '''
 
     def __init__(self):
         sns.set_style('white')
@@ -91,6 +95,20 @@ class ParticleSizeDistPlot:
 
 
 def psd(stats, settings, ax, line=None, c='k'):
+    '''
+    Plot a normalised particle volume distribution
+    
+    Args:
+        stats (DataFrame)           : particle statistics from silcam process
+        settings (PySilcamSettings) : settings associated with the data, loaded with PySilcamSettings
+        ax ()                       : axis to plot data on
+        line=None ()                : ?? possibly an option to rapidly replace a proviously plotted line??
+        c='k' (str)                 : color of the line to be plotted
+        
+    Returns:
+        line ()                     : ?? the plotted line, possible returned incase of future adjustment??
+    
+    '''
 
     dias, vd = sc_pp.vd_from_stats(stats, settings)
 
@@ -110,6 +128,16 @@ def psd(stats, settings, ax, line=None, c='k'):
 
 
 def nd_scaled(stats, settings, ax, c='k'):
+    '''
+    Plot the particle number distribution, scaled to the total volume of water sampled
+    
+    Args:
+        stats (DataFrame)           : particle statistics from silcam process
+        settings (PySilcamSettings) : settings associated with the data, loaded with PySilcamSettings
+        ax ()                       : axis to plot data on
+        c='k' (str)                 : color of the line to be plotted
+        
+    '''
     sv = sc_pp.get_sample_volume(settings.pix_size,
             path_length=settings.path_length,
             imx=2048, imy=2448) # sample volume per image
@@ -121,7 +149,21 @@ def nd_scaled(stats, settings, ax, c='k'):
 
 
 def nd(stats, settings, ax, line=None, c='k', sample_volume=1.):
+    '''
+    Plot the particle number distribution, scaled to the given sample volume
+    
+    Args:
+        stats (DataFrame)           : particle statistics from silcam process
+        settings (PySilcamSettings) : settings associated with the data, loaded with PySilcamSettings
+        ax ()                       : axis to plot data on
+        line=None ()                : ?? possibly an option to rapidly replace a proviously plotted line??
+        c='k' (str)                 : color of the line to be plotted
+        sample_volume=1. (float)    : the volume of water sampled in creating the stats DataFrame
 
+    Returns:
+        line ()                     : ?? the plotted line, possible returned incase of future adjustment??
+        
+    '''
     # nc per size bin per sample volume
     dias, nd = sc_pp.nd_from_stats(stats, settings)
 
@@ -131,6 +173,9 @@ def nd(stats, settings, ax, line=None, c='k', sample_volume=1.):
     ind = np.argwhere(nd>0)
     nd[ind[0]] = np.nan
 
+    # don't plot zeros
+    ind = np.argwhere(nd == 0)
+    nd[ind] = np.nan
 
     if line:
         line.set_data(dias, nd)
@@ -150,6 +195,13 @@ def nd(stats, settings, ax, line=None, c='k', sample_volume=1.):
 
 
 def show_imc(imc, mag=2):
+    '''
+    Plots a scaled figure of for s SilCam image for medium or low magnification systems
+    
+    Args:
+        imc (uint8) : SilCam image (usually a corrected image, such as imc)
+        mag=2 (int) : mag=1 scales to the low mag SilCams; mag=2 (default) scales to the medium max SilCams
+    '''
     PIX_SIZE = 35.2 / 2448 * 1000
     r, c = np.shape(imc[:,:,0])
 
@@ -166,7 +218,13 @@ def show_imc(imc, mag=2):
 
 
 def montage_plot(montage, pixel_size):
-
+    '''
+    Plots a SilCam particle montage with a 1mm scale reference
+    
+    Args:
+        montage (uint8) : a SilCam montage created with scpp.make_montage
+        pixel_size (float) : the pixel size of the SilCam used, obtained from settings.PostProcess.pix_size in the config ini file
+    '''
     msize = np.shape(montage[:,0,0])
     ex = pixel_size * np.float64(msize)/1000.
 
@@ -180,6 +238,19 @@ def montage_plot(montage, pixel_size):
 
 def summarise_fancy_stats(stats_csv_file, config_file, monitor=False,
         maxlength=100000, msize=2048, oilgas=sc_pp.outputPartType.all):
+    '''
+    Plots a summary figure of a dataset which shows
+    the volume distribution, number distribution and a montage of randomly selected particles
+    
+    Args:
+        stats_csv_file (str)            : path of the *-STATS.csv file created by silcam process
+        config_file (str)               : path of the config ini file associated with the data
+        monitor=False (Bool)            : if True then this function will run forever, continuously reading the stats_csv_file and plotting the data
+                                          might be useful in monitoring the progress of processing, for example
+        maxlength=100000 (int)          : particles longer than this number will not be put in the montage
+        msize=2048 (int)                : the montage created will have a canvas size of msize x msize pixels
+        oilgas=oc_pp.outputPartType.all : the oilgas enum if you want to just make the figure for oil, or just gas (defulats to all particles)
+    '''
     sns.set_style('ticks')
 
     settings = PySilcamSettings(config_file)
@@ -192,12 +263,17 @@ def summarise_fancy_stats(stats_csv_file, config_file, monitor=False,
     ax3 = plt.subplot2grid((2,2), (0, 1), rowspan=2)
 
     while True:
-        montage = sc_pp.make_montage(stats_csv_file,
-                settings.PostProcess.pix_size,
-                roidir=settings.ExportParticles.outputpath,
-                auto_scaler=msize*2, msize=msize,
-                maxlength=maxlength,
-                oilgas=oilgas)
+        try:
+            montage = sc_pp.make_montage(stats_csv_file,
+                    settings.PostProcess.pix_size,
+                    roidir=settings.ExportParticles.outputpath,
+                    auto_scaler=msize*2, msize=msize,
+                    maxlength=maxlength,
+                    oilgas=oilgas)
+        except:
+            montage = np.zeros((msize, msize, 3), dtype=np.uint8) + 255
+            print('Unable to make montage. Check:', settings.ExportParticles.outputpath, ' folder for h5 files')
+            print('  in config file ExportParticles.export_images is ', settings.ExportParticles.export_images)
 
         stats = pd.read_csv(stats_csv_file)
         stats = stats[(stats['major_axis_length'] *

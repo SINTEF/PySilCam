@@ -79,8 +79,13 @@ class Frame:
             path = path.replace('\ ',' ') # handle spaces (not sure on windows behaviour)
             self.files = [os.path.join(path, f)
                           for f in sorted(os.listdir(path))
-                          if f.startswith('D') and (f.endswith('.bmp') or
-                              f.endswith('.silc'))][offset:]
+                          if f.endswith('.silc')][offset:]
+
+            if len(self.files)==0:
+                self.files = [os.path.join(path, f)
+                              for f in sorted(os.listdir(path))
+                              if f.startswith('D') and (f.endswith('.bmp'))][offset:]
+
             self.img_idx = 0
 
             img0 = silcam_load(self.files[0])

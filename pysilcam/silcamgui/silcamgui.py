@@ -14,17 +14,16 @@ from pysilcam.silcamgui.SilCam import Ui_SilCam
 from pysilcam.silcamgui.SilCamController import Ui_SilCamController
 from pysilcam.silcamgui.ServerDLG import Ui_Server
 from pysilcam.silcamgui.configEditor import Ui_Editconfig
+from pysilcam.silcamgui.PathLengthCTRL import Ui_PLAdjust
+from pysilcam.silcamgui.STATSTrimmer import Ui_STATSTimeEDT
 import seaborn as sns
 import pysilcam.postprocess as scpp
 import pysilcam.plotting as scplt
-import pysilcam.datalogger as scdl
 import pysilcam.oilgas as scog
-import cmocean
-import subprocess
-import datetime
 import pysilcam.silcamgui.guicalcs as gc
 from pysilcam.silcamgui.guicalcs import process_mode
 from pysilcam.config import PySilcamSettings
+from pysilcam.oilgas import PathLength
 
 sns.set_style('ticks')
 sns.set_context(font_scale=2)
@@ -47,6 +46,145 @@ def times_to_hz(times):
         dt = dt / np.timedelta64(1, 's')
         hz.append(1/dt)
     return hz
+
+
+class stats_trim_dlg(QMainWindow):
+    def __init__(self, stats_filename, config_file, parent=None):
+        QMainWindow.__init__(self, parent)
+        self.ui = Ui_STATSTimeEDT()
+        self.ui.setupUi(self)
+        self.config_file = config_file
+        self.ui.PBSave.clicked.connect(self.save_trimmed_stats)
+
+        self.PLTwidget = plt.figure()
+        self.canvas = FigureCanvas(self.PLTwidget)
+        layout = QVBoxLayout()
+        layout.addWidget(self.canvas)
+        self.ui.PLTwidget.setLayout(layout)
+        self.canvas.draw()
+        self.figure = plt.gcf()
+
+        print('loading stats...')
+        self.stats_filename = stats_filename
+        self.stats = pd.read_csv(stats_filename)
+        self.trimmed_stats = pd.DataFrame()
+        print('  stats loaded.')
+
+        self.start_time = pd.to_datetime(self.stats['timestamp']).min()
+        self.end_time = pd.to_datetime(self.stats['timestamp']).max()
+
+        self.ui.dateTimeStart.setDateTime(self.start_time)
+        self.ui.dateTimeEnd.setDateTime(self.end_time)
+
+        self.show()
+
+        self.ui.dateTimeStart.dateTimeChanged.connect(self.plot_trimmed_stats)
+        self.ui.dateTimeEnd.dateTimeChanged.connect(self.plot_trimmed_stats)
+
+        self.plot_trimmed_stats()
+
+
+    def save_trimmed_stats(self):
+        start_time = pd.to_datetime(self.ui.dateTimeStart.dateTime().toPyDateTime())
+        end_time = pd.to_datetime(self.ui.dateTimeEnd.dateTime().toPyDateTime())
+        self.trimmed_stats, self.output_filename = scpp.trim_stats(self.stats_filename, start_time, end_time,
+                                                              write_new=False, stats=self.stats)
+
+        if np.isnan(self.trimmed_stats.equivalent_diameter.max()) or len(self.trimmed_stats)==0:
+            QMessageBox.warning(self, "No data in this segment!",
+                                'No data was found within the specified time range.',
+                                QMessageBox.Ok)
+            return
+
+        reply = QMessageBox.question(self, "Save Trimmed STATS file?",
+                                    'Would you like to save this file?\n\n' +
+                                    self.output_filename,
+                                    QMessageBox.Save | QMessageBox.Cancel)
+        if reply == QMessageBox.Save:
+            self.trimmed_stats, self.output_filename = scpp.trim_stats(self.stats_filename, start_time, end_time,
+                                                                  write_new=True, stats=self.stats)
+            print('New STATS.csv file written as:', self.output_filename)
+
+    def plot_trimmed_stats(self):
+        start_time = pd.to_datetime(self.ui.dateTimeStart.dateTime().toPyDateTime())
+        end_time = pd.to_datetime(self.ui.dateTimeEnd.dateTime().toPyDateTime())
+        self.trimmed_stats, self.output_filename = scpp.trim_stats(self.stats_filename, start_time, end_time,
+                                                              write_new=False, stats=self.stats)
+
+        if np.isnan(self.trimmed_stats.equivalent_diameter.max()) or len(self.trimmed_stats)==0:
+            QMessageBox.warning(self, "No data in this segment!",
+                                'No data was found within the specified time range.',
+                                QMessageBox.Ok)
+            return
+
+        settings = PySilcamSettings(self.config_file)
+        plt.figure(self.figure.number)
+        plt.clf()
+        stats_oil = scog.extract_oil(self.trimmed_stats)
+        stats_gas = scog.extract_gas(self.trimmed_stats)
+
+        sample_volume = scpp.get_sample_volume(settings.PostProcess.pix_size,
+                                                path_length=settings.PostProcess.path_length)
+
+        nims = scpp.count_images_in_stats(self.trimmed_stats)
+        dias, vd = scpp.vd_from_stats(self.trimmed_stats, settings.PostProcess)
+        dias, vd_oil = scpp.vd_from_stats(stats_oil, settings.PostProcess)
+        dias, vd_gas = scpp.vd_from_stats(stats_gas, settings.PostProcess)
+
+        sv = sample_volume * nims
+        vd /= sv
+        vd_oil /= sv
+        vd_gas /= sv
+
+        plt.plot(dias, vd_oil+vd_gas ,'k', label='TOTAL')
+        plt.plot(dias, vd_oil, 'r', label='OIL')
+        plt.plot(dias, vd_gas, 'b', label='GAS')
+        plt.xscale('log')
+        plt.xlabel('Equiv. diam (um)')
+        plt.ylabel('Volume concentration (uL/L)')
+        plt.xlim(10, 12000)
+        plt.legend()
+
+        self.canvas.draw()
+
+
+    def closeEvent(self, event):
+        pass
+
+
+class pathlength_dlg(QMainWindow):
+    def __init__(self, com_port, parent=None):
+        QMainWindow.__init__(self, parent)
+        self.ui = Ui_PLAdjust()
+
+        try:
+            self.pl = PathLength(com_port)
+        except:
+            QMessageBox.critical(self, "Can't find actuator!",
+                                        'The com port was not found.\n\n' +
+                                        'Try editing the config file and checking the RS232 connector',
+                                        QMessageBox.Ok)
+            return
+        self.ui.setupUi(self)
+
+        self.ui.SET_button.clicked.connect(self.setpl)
+        self.ui.label.setText('')
+        self.show()
+
+    def setpl(self):
+        newpl = self.ui.horizontalSlider.value()
+        self.ui.label.setText('Moving to ' + str(newpl) + 'mm')
+        try:
+            self.pl.gap_to_mm(newpl)
+        except:
+            pass
+        self.ui.label.setText('Set to ' + str(newpl) + 'mm')
+
+    def closeEvent(self, event):
+        try:
+            self.pl.finish()
+        except:
+            pass
 
 
 class server_dlg(QMainWindow):
@@ -231,6 +369,9 @@ def main():
             self.ui.actionSilc_file_player.triggered.connect(self.silc_player)
             self.ui.actionEditConfig.triggered.connect(self.editConfig)
 
+            self.ui.actionPath_length_adjuster.triggered.connect(self.path_length_adjuster)
+            self.ui.actionTrim_STATS_file.triggered.connect(self.stats_trim)
+
             self.layout = layout
 
             self.status_update('')
@@ -240,14 +381,54 @@ def main():
             self.acquire_controller()
 
 
+        def path_length_adjuster(self):
+            reply = QMessageBox.warning(self, "WARNING!",
+                                        'Adjusting the path length using this tool will ' +
+                                        'invalidate any concentration measurement associated ' +
+                                        'with the data collected!\n\n' +
+                                        'Particle size measurement will not be affect ' +
+                                        'provided that the path length is long enough to allow ' +
+                                        'the largest particles to enter the sample volume undisturbed.\n\n'+
+                                        'Do you want to continue?',
+                                        QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if not reply == QMessageBox.Yes:
+               return
+
+            if self.configfile == '':
+                self.status_update('Asking user for config file')
+                self.load_sc_config()
+                if (self.configfile == ''):
+                    self.status_update('Did not get config file')
+                    return
+
+            settings = PySilcamSettings(self.configfile)
+            com_port = settings.PostProcess.com_port
+
+            self.pathlength_adjuster = pathlength_dlg(com_port)
+
+
         def convert_silc(self):
-            self.status_update('converting data to bmp....')
+            reply = QMessageBox.warning(self, "WARNING!",
+                                        'You are about to export silc files to bmp files.\n\n' +
+                                        'This will double the required storage size of the raw data.\n' +
+                                        'For large datasets this can take some time.\n\n' +
+                                        'This conversion is only necessary if you would like to scroll ' +
+                                        'through raw image thumbnails.\n\n' +
+                                        'Processing can be performed on either silc files or bmp files.\n\n' +
+                                        'Consider copying a subset of silc files to another directory for conversion ' +
+                                        'to reduce the data volume.\n\n' +
+                                        'If you just want to check images, consider using the silc file player ' +
+                                        'in the Tools menu instead.\n\n' +
+                                        'Do you want to continue and convert silc files to bmp?',
+                                        QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if not reply == QMessageBox.Yes:
+               return
+            self.status_update('exporting silc data to bmp....')
             scpp.silc_to_bmp(self.datadir)
-            self.status_update('converting finished.')
+            self.status_update('silc to bmp export finished.')
 
 
         def export_summary_figure(self):
-
             if self.configfile == '':
                 self.status_update('Asking user for config file')
                 self.load_sc_config()
@@ -268,7 +449,7 @@ def main():
             scplt.summarise_fancy_stats(self.stats_filename,
                     self.configfile, monitor=False)
             self.status_update('Saving summary figure (all)....')
-            plt.savefig(self.stats_filename.strip('-STATS.csv') + '-Summary.png',
+            plt.savefig(self.stats_filename.replace('-STATS.csv','') + '-Summary.png',
                     dpi=600, bbox_inches='tight')
 
             plt.figure(figsize=(20,12))
@@ -276,7 +457,7 @@ def main():
             scplt.summarise_fancy_stats(self.stats_filename,
                     self.configfile, monitor=False, oilgas=scpp.outputPartType.oil)
             self.status_update('Saving summary figure (oil)....')
-            plt.savefig(self.stats_filename.strip('-STATS.csv') + '-Summary_oil.png',
+            plt.savefig(self.stats_filename.replace('-STATS.csv','') + '-Summary_oil.png',
                     dpi=600, bbox_inches='tight')
 
             plt.figure(figsize=(20,12))
@@ -284,7 +465,7 @@ def main():
             scplt.summarise_fancy_stats(self.stats_filename,
                     self.configfile, monitor=False, oilgas=scpp.outputPartType.gas)
             self.status_update('Saving summary figure (gas)....')
-            plt.savefig(self.stats_filename.strip('-STATS.csv') + '-Summary_gas.png',
+            plt.savefig(self.stats_filename.replace('-STATS.csv','') + '-Summary_gas.png',
                     dpi=600, bbox_inches='tight')
 
             self.status_update('Summary figure done.')
@@ -293,7 +474,6 @@ def main():
 
 
         def export_summary_data(self):
-
             if self.configfile == '':
                 self.status_update('Asking user for config file')
                 self.load_sc_config()
@@ -308,32 +488,67 @@ def main():
                 self.status_update('Did not get STATS file')
                 return
 
+            self.status_update('Exporting data. This may take some time. Please wait.')
+            gc.export_timeseries(self.configfile, self.stats_filename)
+            self.status_update('Export done!')
+
+
+        def export_summary_data_slow(self):
+
+            if self.configfile == '':
+                self.status_update('Asking user for config file')
+                self.load_sc_config()
+                if self.configfile == '':
+                    self.status_update('Did not get STATS file')
+                    return
+
+            settings = PySilcamSettings(self.configfile)
+
+            self.stats_filename = ''
+            self.status_update('Asking user for *-STATS.csv file')
+            self.load_stats_filename()
+            if self.stats_filename == '':
+                self.status_update('Did not get STATS file')
+                return
+            stats = pd.read_csv(self.stats_filename)
+            stats.sort_values(by=['timestamp'], inplace=True)
+
             self.status_update('Exporting all data....')
             df = scpp.stats_to_xls_png(self.configfile,
                     self.stats_filename)
-            plt.figure(figsize=(20,12))
-            plt.plot(df['Time'], df['D50'],'k.')
-            plt.ylabel('d50 [um]')
-            plt.savefig(self.stats_filename.strip('-STATS.csv') +
-                    '-d50_TimeSeries.png', dpi=600, bbox_inches='tight')
+
+            plt.figure(figsize=(20,10))
 
             self.status_update('Exporting oil data....')
             df = scpp.stats_to_xls_png(self.configfile,
                     self.stats_filename, oilgas=scpp.outputPartType.oil)
-            plt.figure(figsize=(20,12))
-            plt.plot(df['Time'], df['D50'],'k.')
-            plt.ylabel('d50 [um]')
-            plt.savefig(self.stats_filename.strip('-STATS.csv') +
-                    '-d50_TimeSeries_oil.png', dpi=600, bbox_inches='tight')
+            plt.plot(df['Time'], df['D50'],'ro')
+            d50, time = scpp.d50_timeseries(scog.extract_oil(stats), settings.PostProcess)
+            lns1 = plt.plot(time, d50, 'r-', label='OIL')
 
             self.status_update('Exporting gas data....')
             df = scpp.stats_to_xls_png(self.configfile,
                     self.stats_filename, oilgas=scpp.outputPartType.gas)
-            plt.figure(figsize=(20,12))
-            plt.plot(df['Time'], df['D50'],'k.')
+            plt.plot(df['Time'], df['D50'],'bo')
+            d50, time = scpp.d50_timeseries(scog.extract_gas(stats), settings.PostProcess)
+            lns2 = plt.plot(time, d50, 'b-', label='GAS')
             plt.ylabel('d50 [um]')
-            plt.savefig(self.stats_filename.strip('-STATS.csv') +
-                    '-d50_TimeSeries_gas.png', dpi=600, bbox_inches='tight')
+            plt.ylim(0, max(plt.gca().get_ylim()))
+
+            self.status_update('Calculating GOR time series....')
+            gor, time = scog.gor_timeseries(stats, settings.PostProcess)
+            ax = plt.gca().twinx()
+            plt.sca(ax)
+            plt.ylabel('GOR')
+            plt.ylim(0, max([max(gor), max(plt.gca().get_ylim())]))
+            lns3 = ax.plot(time, gor, 'k', label='GOR')
+
+            lns = lns1 + lns2 + lns3
+            labs = [l.get_label() for l in lns]
+            plt.legend(lns, labs)
+
+            plt.savefig(self.stats_filename.replace('-STATS.csv','') +
+                    '-d50_TimeSeries.png', dpi=600, bbox_inches='tight')
 
             self.status_update('Export finished.')
 
@@ -487,6 +702,7 @@ def main():
                             "The config file " + iniFiles[0] + " is associated with the data. Do you want to load it?",
                             QMessageBox.Yes | QMessageBox.No)
                     if (reply == QMessageBox.Yes):
+                        os.chdir(self.datadir)
                         self.configfile = iniFiles[0]
                         self.ctrl.ui.pb_start.setEnabled(True)
                         self.status_update('Config file loaded.')
@@ -502,8 +718,11 @@ def main():
             statsModif = self.checkStatsExists()
             if (statsModif == -1):
                 return
+            TFcheck = self.checkTFModel()
+            if (TFcheck == False):
+                return
 
-            self.process = gc.ProcThread(self.datadir, self.configfile, self.disc_write, self.run_type, statsModif)
+            self.process = gc.ProcThread(self.datadir, self.configfile, self.disc_write, self.run_type, statsModif, self.fig_main.number)
 
             self.status_update('STARTING SILCAM!')
 
@@ -516,6 +735,21 @@ def main():
             app.processEvents()
             self.ctrl.ui.pb_stop.setEnabled(True)
             self.ctrl.ui.pb_live_raw.setEnabled(True)
+
+        def checkTFModel(self):
+            if not ((self.run_type == process_mode.process) or (self.run_type == process_mode.real_time)):
+                return -1
+
+            settings = PySilcamSettings(self.configfile)
+            path, filename = os.path.split(settings.NNClassify.model_path)
+            headerfile = os.path.join(path, 'header.tfl.txt')
+            if not (os.path.isfile(headerfile)):
+                QMessageBox.critical(self, "Config error!",
+                                    'The path to the classification model cannot be found.\n\n' +
+                                    'Please edit the config file in a text editor and make settings.NNClassify.model_path point to the silcam model',
+                                    QMessageBox.Ok)
+                return False
+            return True
 
 
         def checkStatsExists(self):
@@ -573,6 +807,29 @@ def main():
                 return
 
 
+        def stats_trim(self):
+            if self.configfile == '':
+                self.status_update('Asking user for config file')
+                self.load_sc_config()
+                if self.configfile == '':
+                    self.status_update('Did not get STATS file')
+                    return
+
+            self.stats_filename = ''
+            self.status_update('Asking user for *-STATS.csv file')
+            self.load_stats_filename()
+            if self.stats_filename == '':
+                self.status_update('Did not get STATS file')
+                return
+
+            self.status_update('STATS trimmer')
+            try:
+                self.trimmer.close()
+            except:
+                pass
+            self.trimmer = stats_trim_dlg(self.stats_filename, self.configfile)
+
+
         def load_sc_config(self):
             configfile = QFileDialog.getOpenFileName(self,
                     caption = 'Load config ini file',
@@ -612,6 +869,16 @@ def main():
             self.stop_record()
             try:
                 self.serverdlg.server.terminate()
+            except:
+                pass
+
+            try:
+                self.pathlength_adjuster.close()
+            except:
+                pass
+
+            try:
+                self.trimmer.close()
             except:
                 pass
 

@@ -19,7 +19,8 @@ REQUIRES = [
     'scikit-image',
     'pygame',
     'tflearn',
-    'sphinx'
+    'sphinx',
+    'tqdm'
 #    'tensorflow',
 #    'pymba',
 ]
@@ -75,7 +76,7 @@ setup(
     name='PySilCam',
     version='0.1.0',
     description='A Python interface to the SilCam.',
-    long_description=read('README.rst'),
+    long_description=read('README.md'),
     author='Emlyn Davies',
     author_email='emlyn.davies@sintef.no',
     install_requires=REQUIRES,
@@ -83,13 +84,11 @@ setup(
     #dependency_links=['git+https://github.com/mabl/pymba@python3'],
     # Use master branch for Pymba on Python 2
     #dependency_links=['git+https://github.com/morefigs/pymba@python3'],
-    license=read('LICENSE'),
     zip_safe=False,
     keywords='silcam',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.4',
@@ -100,6 +99,7 @@ setup(
     entry_points={
         'console_scripts': [
             'silcam = pysilcam.__main__:silcam',
+            'silcam-report = pysilcam.silcreport:silcreport',
         ],
         'gui_scripts': [
             'silcam-gui = pysilcam.silcamgui.silcamgui:main',
