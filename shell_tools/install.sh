@@ -18,7 +18,9 @@ sudo apt-get install -y git wget
 # pysilcam requirements
 conda install --yes -c cogsci pygame psutil sphinx sphinxcontrib pyserial seaborn pyserial setuptools
 #conda install --yes tensorflow==1.1.0 -c conda-forge
-yes | pip install tensorflow==1.1.0 tflearn h5py cmocean psutil openpyxl Sphinx sphinxcontrib-napoleon
+yes | pip install tensorflow==1.6.0 tflearn h5py cmocean psutil openpyxl Sphinx sphinxcontrib-napoleon
+
+#pip install tensorflow-gpu==1.6.0
 
 python setup.py develop
 python setup.py test

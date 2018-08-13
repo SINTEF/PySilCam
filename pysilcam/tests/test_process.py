@@ -6,6 +6,7 @@ from pysilcam.__main__ import silcam_process
 import unittest
 from pysilcam.silcreport import silcam_report
 
+
 @unittest.skipIf(not os.path.isdir(
     'E:/test data/hello_silcam/unittest_entries/STN04'),
     "test path not accessible")

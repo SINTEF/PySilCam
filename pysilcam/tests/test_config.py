@@ -2,6 +2,9 @@
 import os
 from pysilcam.config import load_config, PySilcamSettings, load_camera_config
 
+def test_tfl():
+    import tensorflow as tf; print(tf.__version__)
+    import pysilcam.silcam_classify as sccl
    
 def test_config_parser():
     path = os.path.dirname(__file__)
