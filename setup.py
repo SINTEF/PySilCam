@@ -20,8 +20,9 @@ REQUIRES = [
     'pygame',
     'tflearn',
     'sphinx',
-    'tqdm'
-#    'tensorflow',
+    'tqdm',
+    'tensorflow'
+#    'pyserial',
 #    'pymba',
 ]
 
