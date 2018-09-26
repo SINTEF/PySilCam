@@ -84,7 +84,7 @@ def silcam():
                 print('Expected type int for --nbimages.')
                 sys.exit(0)
         if args['--appendstats']:
-            overwriteSTATS = False
+            overwriteSTATS = False # if you want to append to the stats file, then overwriting should be False
         silcam_process(args['<configfile>'] ,datapath, multiProcess=multiProcess, realtime=False,
                        nbImages=nbImages, overwriteSTATS=overwriteSTATS)
 
@@ -99,7 +99,7 @@ def silcam():
         if args['--nomultiproc']:
             multiProcess = False
         if args['--appendstats']:
-            overwriteSTATS = False
+            overwriteSTATS = False # if you want to append to the stats file, then overwriting should be False
         silcam_process(args['<configfile>'], datapath, multiProcess=multiProcess, realtime=True,
                        discWrite=discWrite, overwriteSTATS=overwriteSTATS)
 
