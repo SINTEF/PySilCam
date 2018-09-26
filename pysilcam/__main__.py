@@ -38,8 +38,8 @@ def silcam():
 
     Usage:
       silcam acquire <configfile> <datapath> [--discwrite]
-      silcam process <configfile> <datapath> [--nbimages=<number of images>] [--nomultiproc]
-      silcam realtime <configfile> <datapath> [--discwrite] [--nomultiproc]
+      silcam process <configfile> <datapath> [--nbimages=<number of images>] [--nomultiproc] [--appendstats]
+      silcam realtime <configfile> <datapath> [--discwrite] [--nomultiproc] [--appendstats]
       silcam -h | --help
       silcam --version
 
@@ -52,6 +52,7 @@ def silcam():
       --nbimages=<number of images>     Number of images to process.
       --discwrite                       Write images to disc.
       --nomultiproc                     Deactivate multiprocessing.
+      --appendstats                     Processing will append to existing stats file instead of overwriting
       -h --help                         Show this screen.
       --version                         Show version.
 
@@ -60,6 +61,7 @@ def silcam():
     print('')
     args = docopt(silcam.__doc__, version='PySilCam {0}'.format(__version__))
 
+    overwriteSTATS = True
 
     if args['<datapath>']:
         # The following is solving problems in transfering arguments from shell on windows
@@ -81,7 +83,10 @@ def silcam():
             except ValueError:
                 print('Expected type int for --nbimages.')
                 sys.exit(0)
-        silcam_process(args['<configfile>'] ,datapath, multiProcess=multiProcess, realtime=False, nbImages=nbImages)
+        if args['--appendstats']:
+            overwriteSTATS = False
+        silcam_process(args['<configfile>'] ,datapath, multiProcess=multiProcess, realtime=False,
+                       nbImages=nbImages, overwriteSTATS=overwriteSTATS)
 
     elif args['acquire']: # this is the standard acquisition method under development now
         silcam_acquire(datapath, args['<configfile>'], writeToDisk=True)
@@ -93,7 +98,10 @@ def silcam():
         multiProcess = True
         if args['--nomultiproc']:
             multiProcess = False
-        silcam_process(args['<configfile>'], datapath, multiProcess=multiProcess, realtime=True, discWrite=discWrite)
+        if args['--appendstats']:
+            overwriteSTATS = False
+        silcam_process(args['<configfile>'], datapath, multiProcess=multiProcess, realtime=True,
+                       discWrite=discWrite, overwriteSTATS=overwriteSTATS)
 
 
 def silcam_acquire(datapath, config_filename, writeToDisk=True, gui=None):
