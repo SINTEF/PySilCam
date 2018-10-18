@@ -62,11 +62,16 @@ def silcam_report(statsfile, configfile, particle_type=scpp.outputPartType.all,
 
     plt.figure(figsize=(20, 12))
 
-    scplt.summarise_fancy_stats(statsfile, configfile,
-                                monitor=monitor, oilgas=particle_type)
+    while True:
+        plt.clf()
 
-    print('  Saving to disc....')
-    plt.savefig(statsfile.strip('-STATS.csv') + '-Summary_' +
-                particle_type_str + '.png',
-                dpi=dpi, bbox_inches='tight')
-    print('Done.')
+        scplt.summarise_fancy_stats(statsfile, configfile,
+                                    monitor=False, oilgas=particle_type) #, maxlength=5000, msize=1024)
+
+        print('  Saving to disc....')
+        plt.savefig(statsfile.strip('-STATS.csv') + '-Summary_' +
+                    particle_type_str + '.png',
+                    dpi=dpi, bbox_inches='tight')
+        print('Done.')
+        if not monitor:
+            break
