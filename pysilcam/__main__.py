@@ -600,7 +600,7 @@ def distributor(inputQueue, outputQueue, config_filename, proc_list, bgstack, gu
                                       initialised in ProcThread within guicals.py
     '''
 
-    numCores = max(1, multiprocessing.cpu_count() - 2)
+    numCores = max(1, multiprocessing.cpu_count() - 1)
 
     for nbCore in range(numCores):
         proc = multiprocessing.Process(target=loop, args=(config_filename, inputQueue, outputQueue, bgstack, gui))
