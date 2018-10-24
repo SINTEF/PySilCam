@@ -10,7 +10,7 @@ A Python interface to the SilCam.
 Features
 --------
 
-* Acqusition of images from SilCam.
+* Acqusition of images from SilCam. HIHI
 * Real-time processing of SilCam images, particle statistics.
 * Processing images from disk (batch or real-time).
 
