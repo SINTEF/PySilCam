@@ -7,6 +7,7 @@ import configparser
 import ast
 from collections import namedtuple
 import logging
+import h5py
 
 logger = logging.getLogger(__name__)
 
@@ -135,7 +136,7 @@ def settings_from_h5(h5file):
     :param h5file: created by pysilcam export functionality
     :return: Settings
     '''
-    f = h5py.File(filename, 'r')
+    f = h5py.File(h5file, 'r')
     settings_dict = f['Meta'].attrs['Settings']
     cf = configparser.ConfigParser()
     cf.read_dict(ast.literal_eval(str(settings_dict)))
