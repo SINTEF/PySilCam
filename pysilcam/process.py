@@ -286,6 +286,7 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
         meta.attrs['Settings'] = str(settings_dict)
         meta.attrs['Timestamp'] = str(timestamp)
         meta.attrs['Raw image name'] = filename
+        #@todo include more useful information in this meta data, e.g. raw image location and background stack file list.
 
     # define the geometrical properties to be calculated from regionprops
     propnames = ['major_axis_length', 'minor_axis_length',
@@ -316,6 +317,7 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
             filenames[int(i)] = filename + '-PN' + str(i)
             if settings.ExportParticles.export_images:
                 dset = HDF5File.create_dataset('PN' + str(i), data = roi)
+                #@todo also include particle stats here too.
 
             # run a prediction on what type of particle this might be
             prediction = sccl.predict(roi, nnmodel)
