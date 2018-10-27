@@ -279,6 +279,13 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
     if settings.ExportParticles.export_images:
         # Make the HDF5 file
         HDF5File = h5py.File(os.path.join(settings.ExportParticles.outputpath, filename + ".h5"), "w")
+        # metadata
+        meta = HDF5File.create_group('Meta')
+        meta.attrs['Modified'] = str(pd.datetime.now())
+        settings_dict = {s: dict(settings.config.items(s)) for s in settings.config.sections()}
+        meta.attrs['Settings'] = str(settings_dict)
+        meta.attrs['Timestamp'] = str(timestamp)
+        meta.attrs['Raw image name'] = filename
 
     # define the geometrical properties to be calculated from regionprops
     propnames = ['major_axis_length', 'minor_axis_length',

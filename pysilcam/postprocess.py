@@ -813,3 +813,16 @@ def add_best_guesses_to_stats(stats):
 
     return stats
 
+def show_h5_meta(h5file):
+    '''
+    prints metadata from an exported hdf5 file created from silcam process
+    :param h5file:
+    :return:
+    '''
+
+    with h5py.File(h5file, 'r') as f:
+        keys = list(f['Meta'].attrs.keys())
+
+        for k in keys:
+            print(k + ':')
+            print('    ' + f['Meta'].attrs[k])
