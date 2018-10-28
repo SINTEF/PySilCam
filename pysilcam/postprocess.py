@@ -826,3 +826,16 @@ def show_h5_meta(h5file):
         for k in keys:
             print(k + ':')
             print('    ' + f['Meta'].attrs[k])
+
+        keys = list(f['Proc'].attrs.keys())
+
+        for k in keys:
+            print('Proc/' + k + ':')
+            try:
+                print('    ' + f['Proc'].attrs[k])
+            except:
+                continue
+
+        print('Proc/STATS:')
+        stats = pd.read_hdf(h5file, 'Proc/STATS')
+        print('  Columns:  ' + str(stats.columns))
