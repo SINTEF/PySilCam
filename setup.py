@@ -21,7 +21,7 @@ REQUIRES = [
     'tflearn',
     'sphinx',
     'tqdm',
-    'pytables'
+    'tables'
 #    'tensorflow',
 #    'pymba',
 ]
