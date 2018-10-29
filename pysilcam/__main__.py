@@ -134,7 +134,7 @@ def silcam_acquire(datapath, config_filename, writeToDisk=True, gui=None):
     for i, (timestamp, imraw) in enumerate(aqgen):
         t2 = time.time()
         aq_freq = np.round(1.0/(t2 - t1), 1)
-        requested_freq = 16.0
+        requested_freq = settings.Camera.acquisitionframerateabs
         rest_time = (1 / requested_freq) - (1 / aq_freq)
         rest_time = np.max([rest_time, 0.])
         time.sleep(rest_time)
