@@ -62,6 +62,9 @@ class Documentation(distutils.cmd.Command):
                         "    :undoc-members: \n"
                         "    :show-inheritance: \n")
 
+        command = 'cd docs; make html'
+        os.system(command)
+
         command = 'sphinx-build -b html ./docs/source ./docs/build'
         os.system(command)
         sys.exit()
