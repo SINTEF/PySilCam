@@ -16,7 +16,7 @@ sudo apt-get install -y git wget
 #RUN pip install git+https://github.com/mabl/pymba@python3
 
 # pysilcam requirements
-conda install --yes -c cogsci pygame psutil sphinx sphinxcontrib pyserial seaborn pyserial setuptools
+conda install --yes -c cogsci pygame psutil sphinx sphinxcontrib pyserial seaborn pyserial setuptools pytables
 #conda install --yes tensorflow==1.1.0 -c conda-forge
 yes | pip install tensorflow==1.1.0 tflearn h5py cmocean psutil openpyxl Sphinx sphinxcontrib-napoleon
 
