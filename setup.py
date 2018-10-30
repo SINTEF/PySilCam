@@ -66,6 +66,9 @@ class Documentation(distutils.cmd.Command):
         command = 'cd docs; make html'
         os.system(command)
 
+        command = 'cd docs; make html'
+        os.system(command)
+
         command = 'sphinx-build -b html ./docs/source ./docs/build'
         os.system(command)
         sys.exit()
