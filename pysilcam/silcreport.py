@@ -9,7 +9,9 @@ import matplotlib.pyplot as plt
 
 
 def silcreport():
-    """Generate a report figure for a processed dataset from the SilCam
+    """Generate a report figure for a processed dataset from the SilCam.
+
+    You can access this function from the command line using the below documentation.
 
     Usage:
         silcam-report <configfile> <statsfile> [--type=<particle_type>]
@@ -20,11 +22,10 @@ def silcreport():
         statsfile:   The -STATS.csv filename associated with the data
 
     Options:
-        --type=<particle_type>  The particle type to summarise. Can be: 'all',
-                                'oil', or 'gas'
-        --dpi=<dpi>             DPI resolution of figure (default is 600)
-        --monitor               Enables continuous monitoring (requires display)
-        -h --help               Show this screen.
+        [--type=<particle_type>] : The particle type to summarise. Can be: 'all', 'oil', or 'gas'
+        [--dpi=<dpi>]            : DPI resolution of figure (default is 600)
+        [--monitor]              : Enables continuous monitoring (requires display)
+        [-h --help]              : Show this screen.
 
     """
 

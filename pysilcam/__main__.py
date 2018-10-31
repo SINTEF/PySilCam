@@ -19,6 +19,7 @@ from queue import LifoQueue
 import psutil
 from shutil import copyfile
 import warnings
+import pandas as pd
 
 if not sys.warnoptions:
     warnings.simplefilter("ignore")
@@ -33,32 +34,47 @@ title = '''
 '''
 
 def silcam():
-    '''Aquire/process images from the SilCam
+    '''Main entry point function to acquire/process images from the SilCam.
+
+    Use this function in command line arguments accoring to the below documentation.
 
     Usage:
-      silcam acquire <configfile> <datapath>
-      silcam process <configfile> <datapath> [--nbimages=<number of images>] [--nomultiproc]
-      silcam realtime <configfile> <datapath> [--discwrite] [--nomultiproc]
-      silcam -h | --help
-      silcam --version
+        silcam acquire <configfile> <datapath>
 
-    Arguments:
-        acquire     Acquire images
-        process     Process images
-        realtime    Acquire images from the camera and process them in real time
+        silcam process <configfile> <datapath> [--nbimages=<number of images>] [--nomultiproc] [--appendstats]
+
+        silcam realtime <configfile> <datapath> [--discwrite] [--nomultiproc] [--appendstats]
+
+        silcam -h | --help
+
+        silcam --version
+
+    Args:
+        acquire     : Acquire images
+
+        process     : Process images
+
+        realtime    : Acquire images from the camera and process them in real time
 
     Options:
-      --nbimages=<number of images>     Number of images to process.
-      --discwrite                       Write images to disc.
-      --nomultiproc                     Deactivate multiprocessing.
-      -h --help                         Show this screen.
-      --version                         Show version.
+        [--nbimages=<number of images>]         : Number of images to process.
+
+        [--discwrite]                           : Write images to disc.
+
+        [--nomultiproc]                         : Deactivate multiprocessing.
+
+        [--appendstats]                         : Processing will append to existing stats file instead of overwriting
+
+        [-h --help]                             : Show this screen.
+
+        [--version]                             : Show version.
 
     '''
     print(title)
     print('')
     args = docopt(silcam.__doc__, version='PySilCam {0}'.format(__version__))
 
+    overwriteSTATS = True
 
     if args['<datapath>']:
         # The following is solving problems in transfering arguments from shell on windows
@@ -80,7 +96,10 @@ def silcam():
             except ValueError:
                 print('Expected type int for --nbimages.')
                 sys.exit(0)
-        silcam_process(args['<configfile>'] ,datapath, multiProcess=multiProcess, realtime=False, nbImages=nbImages)
+        if args['--appendstats']:
+            overwriteSTATS = False # if you want to append to the stats file, then overwriting should be False
+        silcam_process(args['<configfile>'] ,datapath, multiProcess=multiProcess, realtime=False,
+                       nbImages=nbImages, overwriteSTATS=overwriteSTATS)
 
     elif args['acquire']: # this is the standard acquisition method under development now
         silcam_acquire(datapath, args['<configfile>'], writeToDisk=True)
@@ -92,7 +111,10 @@ def silcam():
         multiProcess = True
         if args['--nomultiproc']:
             multiProcess = False
-        silcam_process(args['<configfile>'], datapath, multiProcess=multiProcess, realtime=True, discWrite=discWrite)
+        if args['--appendstats']:
+            overwriteSTATS = False # if you want to append to the stats file, then overwriting should be False
+        silcam_process(args['<configfile>'], datapath, multiProcess=multiProcess, realtime=True,
+                       discWrite=discWrite, overwriteSTATS=overwriteSTATS)
 
 
 def silcam_acquire(datapath, config_filename, writeToDisk=True, gui=None):
@@ -228,6 +250,37 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
         logger.info('removing: ' + datafilename + '-STATS.csv')
         print('Overwriting ' + datafilename + '-STATS.csv')
         os.remove(datafilename + '-STATS.csv')
+    elif os.path.isfile(datafilename + '-STATS.csv'):
+        logger.info('Loading old data from: ' + datafilename + '-STATS.csv')
+        print('Loading old data from: ' + datafilename + '-STATS.csv')
+        oldstats = pd.read_csv(datafilename + '-STATS.csv')
+        logger.info('  OK.')
+        print('  OK.')
+        last_time = pd.to_datetime(oldstats['timestamp'].max())
+
+        logger.info('Calcaulting spooling offset')
+        print('Calculating spooling offset')
+        from pysilcam.fakepymba import silcam_name2time
+        files = [f for f in sorted(os.listdir(datapath))
+                 if (f.endswith('.silc') or f.endswith('.bmp'))]
+        offsetcalc = pd.DataFrame(columns=['files', 'times'])
+        offsetcalc['files'] = files
+        for i, f in enumerate(files):
+            offsetcalc['times'].iloc[i] = silcam_name2time(f)
+        offset = int(min(np.argwhere(offsetcalc['times'] > last_time)))
+        offset -= settings.Background.num_images # subtract the number of background images, so we get data from the correct start point
+        # and check offset is still positive
+        if offset < 0:
+            offset = 0
+        offset = str(offset)
+        os.environ['PYSILCAM_OFFSET'] = offset
+        logger.info('PYSILCAM_OFFSET set to: ' + offset)
+        print('PYSILCAM_OFFSET set to: ' + offset)
+
+    #Initialize the image acquisition generator
+    aq = Acquire(USE_PYMBA=realtime)
+    aqgen = aq.get_generator(datapath, writeToDisk=discWrite,
+            camera_config_file=config_filename)
 
     # Create export directory if needed
     if settings.ExportParticles.export_images:
