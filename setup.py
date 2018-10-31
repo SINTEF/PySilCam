@@ -24,6 +24,7 @@ REQUIRES = [
     'tqdm',
     'tables'
 #    'tensorflow',
+#    'pyserial',
 #    'pymba',
 ]
 
@@ -62,9 +63,6 @@ class Documentation(distutils.cmd.Command):
         #                 "    :members: \n"
         #                 "    :undoc-members: \n"
         #                 "    :show-inheritance: \n")
-
-        command = 'cd docs; make html'
-        os.system(command)
 
         command = 'cd docs; make html'
         os.system(command)
