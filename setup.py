@@ -56,17 +56,6 @@ class Documentation(distutils.cmd.Command):
     def run(self):
         command = 'sphinx-apidoc -f -o docs/source pysilcam/'
         os.system(command)
-        # with open("docs/source/index.rst", "a") as file:
-        #     file.write("\npysilcam\.silcam\__main__ module \n"
-        #                 "--------------------------------- \n\n"
-        #                 ".. automodule:: pysilcam.__main__ \n"
-        #                 "    :members: \n"
-        #                 "    :undoc-members: \n"
-        #                 "    :show-inheritance: \n")
-
-        command = 'cd docs; make html'
-        os.system(command)
-
         command = 'sphinx-build -b html ./docs/source ./docs/build'
         os.system(command)
         sys.exit()
