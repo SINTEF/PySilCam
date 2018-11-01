@@ -39,35 +39,23 @@ def silcam():
     Use this function in command line arguments accoring to the below documentation.
 
     Usage:
-        silcam acquire <configfile> <datapath>
+      silcam acquire <configfile> <datapath>
+      silcam process <configfile> <datapath> [--nbimages=<number of images>] [--nomultiproc] [--appendstats]
+      silcam realtime <configfile> <datapath> [--discwrite] [--nomultiproc] [--appendstats]
+      silcam -h | --help
+      silcam --version
 
-        silcam process <configfile> <datapath> [--nbimages=<number of images>] [--nomultiproc] [--appendstats]
-
-        silcam realtime <configfile> <datapath> [--discwrite] [--nomultiproc] [--appendstats]
-
-        silcam -h | --help
-
-        silcam --version
-
-    Args:
-        acquire     : Acquire images
-
-        process     : Process images
-
-        realtime    : Acquire images from the camera and process them in real time
+    Arguments:
+        acquire     Acquire images
+        process     Process images
+        realtime    Acquire images from the camera and process them in real time
 
     Options:
-        [--nbimages=<number of images>]         : Number of images to process.
-
-        [--discwrite]                           : Write images to disc.
-
-        [--nomultiproc]                         : Deactivate multiprocessing.
-
-        [--appendstats]                         : Processing will append to existing stats file instead of overwriting
-
-        [-h --help]                             : Show this screen.
-
-        [--version]                             : Show version.
+      --nbimages=<number of images>     Number of images to process.
+      --discwrite                       Write images to disc.
+      --nomultiproc                     Deactivate multiprocessing.
+      -h --help                         Show this screen.
+      --version                         Show version.
 
     '''
     print(title)

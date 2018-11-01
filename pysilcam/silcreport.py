@@ -22,10 +22,11 @@ def silcreport():
         statsfile:   The -STATS.csv filename associated with the data
 
     Options:
-        [--type=<particle_type>] : The particle type to summarise. Can be: 'all', 'oil', or 'gas'
-        [--dpi=<dpi>]            : DPI resolution of figure (default is 600)
-        [--monitor]              : Enables continuous monitoring (requires display)
-        [-h --help]              : Show this screen.
+        --type=<particle_type>  The particle type to summarise. Can be: 'all',
+                                'oil', or 'gas'
+        --dpi=<dpi>             DPI resolution of figure (default is 600)
+        --monitor               Enables continuous monitoring (requires display)
+        -h --help               Show this screen.
 
     """
 
