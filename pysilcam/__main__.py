@@ -214,11 +214,6 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
         # update path_length
         updatePathLength(settings, logger)
 
-    #Initialize the image acquisition generator
-    aq = Acquire(USE_PYMBA=realtime)
-    aqgen = aq.get_generator(datapath, writeToDisk=discWrite,
-            camera_config_file=config_filename)
-
     #Get number of images to use for background correction from config
     print('* Initializing background image handler')
     bggen = backgrounder(settings.Background.num_images, aqgen,
