@@ -24,7 +24,7 @@ import pandas as pd
 if not sys.warnoptions:
     warnings.simplefilter("ignore")
 
-title = '''
+title = r'''
  ____        ____  _ _  ____
 |  _ \ _   _/ ___|(_) |/ ___|__ _ _ __ ___
 | |_) | | | \___ \| | | |   / _` | '_ ` _ \
