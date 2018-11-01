@@ -246,7 +246,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
         print('  OK.')
         last_time = pd.to_datetime(oldstats['timestamp'].max())
 
-        logger.info('Calcaulting spooling offset')
+        logger.info('Calculting spooling offset')
         print('Calculating spooling offset')
         from pysilcam.fakepymba import silcam_name2time
         files = [f for f in sorted(os.listdir(datapath))
