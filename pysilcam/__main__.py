@@ -229,6 +229,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     datafilename = os.path.join(settings.General.datafile,procfoldername)
     logger.info('output stats to: ' + datafilename)
 
+    #@todo make a function for this admin of the STATS file and appending etc
     if os.path.isfile(datafilename + '-STATS.csv') and overwriteSTATS:
         logger.info('removing: ' + datafilename + '-STATS.csv')
         print('Overwriting ' + datafilename + '-STATS.csv')
