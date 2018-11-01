@@ -54,7 +54,7 @@ class Documentation(distutils.cmd.Command):
         pass
 
     def run(self):
-        command = 'sphinx-apidoc -f -o docs/source pysilcam/'
+        command = 'sphinx-apidoc -f -o docs/source pysilcam/ --separate'
         os.system(command)
         command = 'sphinx-build -b html ./docs/source ./docs/build'
         os.system(command)
