@@ -652,7 +652,7 @@ def make_timeseries_vd(stats, settings):
         settings (silcam settings): loaded from PySilCamSettings
 
     Returns:
-        dataframe: of time series
+        dataframe: of time series volume concentrations are in uL/L columns with number headings are diameter min-points
     '''
 
     from tqdm import tqdm
