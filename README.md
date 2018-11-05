@@ -10,9 +10,9 @@ A Python interface to the SilCam.
 Features
 --------
 
-* Acqusition of images from SilCam
-* Real-time processing of SilCam images, particle statistics
-* Processing images from disk (batch or real-time)
+* Acqusition of images from SilCam. HIHI
+* Real-time processing of SilCam images, particle statistics.
+* Processing images from disk (batch or real-time).
 
 Pymba Requirements
 ------------
