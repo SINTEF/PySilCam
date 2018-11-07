@@ -20,8 +20,11 @@ REQUIRES = [
     'pygame',
     'tflearn',
     'sphinx',
-    'tqdm'
+    'sphinx_rtd_theme',
+    'tqdm',
+    'tables'
 #    'tensorflow',
+#    'pyserial',
 #    'pymba',
 ]
 
@@ -51,16 +54,8 @@ class Documentation(distutils.cmd.Command):
         pass
 
     def run(self):
-        command = 'sphinx-apidoc -f -o docs/source pysilcam/'
+        command = 'sphinx-apidoc -f -o docs/source pysilcam/ --separate'
         os.system(command)
-        with open("docs/source/pysilcam.rst", "a") as file:
-            file.write("\npysilcam\.silcam\__main__ module \n"
-                        "--------------------------------- \n\n"
-                        ".. automodule:: pysilcam.__main__ \n"
-                        "    :members: \n"
-                        "    :undoc-members: \n"
-                        "    :show-inheritance: \n")
-
         command = 'sphinx-build -b html ./docs/source ./docs/build'
         os.system(command)
         sys.exit()

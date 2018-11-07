@@ -9,7 +9,7 @@ from pysilcam.silcreport import silcam_report
 @unittest.skipIf(not os.path.isdir(
     'E:/test data/hello_silcam/unittest_entries/STN04'),
     "test path not accessible")
-def test_csv_file():
+def test_output_files():
     '''Testing that the appropriate STATS.csv file is created'''
 
     path = os.path.dirname(__file__)
@@ -17,16 +17,22 @@ def test_csv_file():
 
     data_file = 'E:/test data/hello_silcam/unittest_entries/STN04'
     stats_file = 'E:/test data/hello_silcam/unittest_entries/STN04-STATS.csv'
+    hdf_file = 'E:/test data/hello_silcam/unittest_entries/export/D20170509T172705.387171.h5'
+    report_figure = 'E:/test data/hello_silcam/unittest_entries/STN04-Summary_all.png'
 
     # if csv file already exists, it has to be deleted
     if (os.path.isfile(stats_file)):
         os.remove(stats_file)
 
+    # if hdf file file already exists, it has to be deleted
+    if (os.path.isfile(hdf_file)):
+        os.remove(hdf_file)
+
     # call process function
     silcam_process(conf_file, data_file, multiProcess=False)
 
     # check that csv file has been created
-    assert os.path.isfile(stats_file), 'stats_file not created'
+    assert os.path.isfile(stats_file), 'STATS csv file not created'
 
     # check that csv file has been properly built
     csvfile = open(stats_file)
@@ -45,4 +51,19 @@ def test_csv_file():
             nbimages += 1
     assert nbimages == 5, 'images missing from csv file' # 5 images are used for the background, the 5 images left are processed
 
+    # check that hdf file has been created
+    assert os.path.isfile(hdf_file), 'hdf file not created'
+
+    from pysilcam.postprocess import show_h5_meta
+    show_h5_meta(hdf_file)
+    from pysilcam.config import settings_from_h5
+    Settings = settings_from_h5(hdf_file)
+    # test a an appropriate settting after reading it back from the hdf5 file
+    assert (Settings.ExportParticles.export_images == True), 'unexpected setting read from metadata in hdf5 file'
+
+    # if report figure already exists, it has to be deleted
+    if (os.path.isfile(report_figure)):
+        os.remove(report_figure)
+
     silcam_report(stats_file, conf_file, dpi=10)
+    assert os.path.isfile(report_figure), 'report figure file not created'
