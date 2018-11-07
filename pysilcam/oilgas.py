@@ -38,8 +38,10 @@ def extract_gas(stats, THRESH=0.85):
     ind = np.logical_or((stats['probability_bubble']>stats['probability_oil']),
             (stats['probability_oily_gas']>stats['probability_oil']))
 
-    ind2 = np.logical_or((stats['probability_bubble'] > THRESH),
-            (stats['probability_oily_gas'] > THRESH))
+    # ind2 = np.logical_or((stats['probability_bubble'] > THRESH),
+            # (stats['probability_oily_gas'] > THRESH))
+
+    ind2 = stats['probability_bubble'] > THRESH
 
     ind = np.logical_and(ind, ind2)
 
@@ -47,7 +49,7 @@ def extract_gas(stats, THRESH=0.85):
     return stats
 
 
-def extract_oil(stats, THRESH=0.1):
+def extract_oil(stats, THRESH=0.85):
     ma = stats['minor_axis_length'] / stats['major_axis_length']
     stats = stats[ma>0.3]
     stats = stats[stats['solidity']>solidityThresh]
