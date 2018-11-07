@@ -9,7 +9,9 @@ import matplotlib.pyplot as plt
 
 
 def silcreport():
-    """Generate a report figure for a processed dataset from the SilCam
+    """Generate a report figure for a processed dataset from the SilCam.
+
+    You can access this function from the command line using the below documentation.
 
     Usage:
         silcam-report <configfile> <statsfile> [--type=<particle_type>]
