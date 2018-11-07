@@ -456,7 +456,7 @@ def make_montage(stats_csv_file, pixel_size, roidir,
         oilgas=outputPartType.all   : enum defining which type of particle to be selected for use in the montage
 
     Returns:
-        montage                     : a nicely-made montage in the form of an image, which can be plotted using plotting.montage_plot(montage, settings.PostProcess.pix_size)
+        montage (uint8)             : a nicely-made montage in the form of an image, which can be plotted using plotting.montage_plot(montage, settings.PostProcess.pix_size)
     '''
 
     # obtain particle statistics from the csv file
@@ -627,10 +627,10 @@ def explode_contrast(im):
     ''' eye-candy function for exploding the contrast of a particle iamge (roi)
 
     Args:
-        im              : image (normally a particle ROI)
+        im   (uint8)       : image (normally a particle ROI)
 
     Returns:
-        im_mod          : image following exploded contrast
+        im_mod (uint8)     : image following exploded contrast
 
     '''
     # make sure iamge is float
@@ -658,11 +658,11 @@ def bright_norm(im,brightness=255):
     ''' eye-candy function for normalising the image brightness
 
     Args:
-        im              : image
+        im   (uint8)    : image
         brightness=255  : median of histogram will be shifted to align with this value
 
     Return:
-        im              : image with modified brightness
+        im   (uint8)    : image with modified brightness
 
     '''
     peak = np.median(im.flatten())
@@ -687,7 +687,7 @@ def nd_rescale(dias, nd, sample_volume):
         sample_volume       : sample volume of each image
 
     Returns:
-        nd                  : scaled number distribution (number per micton per litre)
+        nd                  : scaled number distribution (number per micron per litre)
     '''
     nd = np.float64(nd) / sample_volume # nc per size bin per litre
 

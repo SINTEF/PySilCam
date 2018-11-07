@@ -36,7 +36,7 @@ title = r'''
 def silcam():
     '''Main entry point function to acquire/process images from the SilCam.
 
-    Use this function in command line arguments accoring to the below documentation.
+    Use this function in command line arguments according to the below documentation.
 
     Usage:
       silcam acquire <configfile> <datapath>
@@ -54,6 +54,7 @@ def silcam():
       --nbimages=<number of images>     Number of images to process.
       --discwrite                       Write images to disc.
       --nomultiproc                     Deactivate multiprocessing.
+      --appendstats                     Appends data to output STATS.csv file. If not specified, the STATS.csv file will be overwritten!
       -h --help                         Show this screen.
       --version                         Show version.
 
