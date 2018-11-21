@@ -371,6 +371,7 @@ def main():
 
             self.ui.actionPath_length_adjuster.triggered.connect(self.path_length_adjuster)
             self.ui.actionTrim_STATS_file.triggered.connect(self.stats_trim)
+            self.ui.actionSTATS_to_PJ_csv_converter.triggered.connect(self.STATS_to_PJ_csv_converter)
 
             self.layout = layout
 
@@ -379,6 +380,27 @@ def main():
             app.processEvents()
 
             self.acquire_controller()
+
+
+        def STATS_to_PJ_csv_converter(self):
+            if self.configfile == '':
+                self.status_update('Asking user for config file')
+                self.load_sc_config()
+                if (self.configfile == ''):
+                    self.status_update('Did not get config file')
+                    return
+
+            self.stats_filename = ''
+            self.status_update('Asking user for *-STATS.csv file')
+            self.load_stats_filename()
+            if self.stats_filename == '':
+                self.status_update('Did not get STATS file')
+                return
+
+            scog.convert_to_pj_format(self.stats_filename, self.configfile)
+            print('STATS-PJ conversion done.')
+
+
 
 
         def path_length_adjuster(self):

@@ -3,6 +3,8 @@
 module for processing Oil and Gas SilCam data
 '''
 import pysilcam.postprocess as sc_pp
+from pysilcam.config import PySilcamSettings
+from pysilcam.datalogger import DataLogger
 import itertools
 import pandas as pd
 import numpy as np
@@ -16,6 +18,7 @@ import serial
 import serial.tools.list_ports
 import glob
 import sys
+from tqdm import tqdm
 
 solidityThresh = 0.95
 
@@ -319,3 +322,75 @@ class PathLength():
         self.motoronoff(self.ser,0)
         self.ser.close()
         print('actuator port closed!')
+
+
+def cat_data_pj(timestamp, vd, d50, nparts):
+    '''
+    cat data into PJ-readable format (readable by the old matlab SummaryPlot exe)
+    '''
+    timestamp = pd.to_datetime(timestamp)
+
+    data = [[timestamp.year, timestamp.month, timestamp.day,
+            timestamp.hour, timestamp.minute, timestamp.second + timestamp.microsecond /
+            1e6],
+            vd, [d50, nparts]]
+    data = list(itertools.chain.from_iterable(data))
+
+    return data
+
+
+def convert_to_pj_format(stats_csv_file, config_file):
+    '''converts stats files into a total, and gas-only time-series csvfile which can be read by the old matlab
+    SummaryPlot exe'''
+
+    settings = PySilcamSettings(config_file)
+    print('Loading stats....')
+    stats = pd.read_csv(stats_csv_file)
+
+    base_name = stats_csv_file.replace('-STATS.csv', '-PJ.csv')
+    gas_name = base_name.replace('-PJ.csv', '-PJ-GAS.csv')
+
+    ogdatafile = DataLogger(base_name, ogdataheader())
+    ogdatafile_gas = DataLogger(gas_name, ogdataheader())
+
+    stats['timestamp'] = pd.to_datetime(stats['timestamp'])
+    u = stats['timestamp'].unique()
+    sample_volume = sc_pp.get_sample_volume(settings.PostProcess.pix_size, path_length=settings.PostProcess.path_length)
+
+    print('Analysing time-series')
+    for s in tqdm(u):
+        substats = stats[stats['timestamp'] == s]
+        nims = sc_pp.count_images_in_stats(substats)
+        sv = sample_volume * nims
+
+        oil = extract_oil(substats)
+        dias, vd_oil = sc_pp.vd_from_stats(oil, settings.PostProcess)
+        vd_oil /= sv
+        d50_oil = sc_pp.d50_from_vd(vd_oil, dias)
+
+        gas = extract_gas(substats)
+        dias, vd_gas = sc_pp.vd_from_stats(gas, settings.PostProcess)
+        vd_oil /= sv
+        d50_gas = sc_pp.d50_from_vd(vd_gas, dias)
+
+        vd_total = vd_oil + vd_gas
+        d50_total = sc_pp.d50_from_vd(vd_total, dias)
+
+        data_total = cat_data_pj(s, vd_total, d50_total, len(oil) + len(gas))
+        ogdatafile.append_data(data_total)
+
+        data_gas = cat_data_pj(s, vd_gas, d50_gas, len(gas))
+        ogdatafile_gas.append_data(data_gas)
+
+    print('  OK.')
+
+    print('Deleting header!')
+    with open(base_name, 'r') as fin:
+        data = fin.read().splitlines(True)
+    with open(base_name, 'w') as fout:
+        fout.writelines(data[1:])
+    with open(gas_name, 'r') as fin:
+        data = fin.read().splitlines(True)
+    with open(gas_name, 'w') as fout:
+        fout.writelines(data[1:])
+    print('Conversion complete.')

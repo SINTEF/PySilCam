@@ -67,6 +67,8 @@
      <addaction name="actionExport_summary_figure"/>
      <addaction name="actionConvert_silc_to_bmp"/>
      <addaction name="actionTrim_STATS_file"/>
+     <addaction name="separator"/>
+     <addaction name="actionSTATS_to_PJ_csv_converter"/>
     </widget>
     <addaction name="actionEditConfig"/>
     <addaction name="menuExport"/>
@@ -88,7 +90,7 @@
   </action>
   <action name="actionExport_summary_figure">
    <property name="text">
-    <string>Summary figure (to png)</string>
+    <string>Summary figure + montage (to png)</string>
    </property>
   </action>
   <action name="actionSilc_file_player">
@@ -114,6 +116,11 @@
   <action name="actionTrim_STATS_file">
    <property name="text">
     <string>Trim STATS file</string>
+   </property>
+  </action>
+  <action name="actionSTATS_to_PJ_csv_converter">
+   <property name="text">
+    <string>STATS to PJ converter</string>
    </property>
   </action>
  </widget>
