@@ -366,11 +366,10 @@ def convert_to_pj_format(stats_csv_file, config_file):
         oil = extract_oil(substats)
         dias, vd_oil = sc_pp.vd_from_stats(oil, settings.PostProcess)
         vd_oil /= sv
-        d50_oil = sc_pp.d50_from_vd(vd_oil, dias)
 
         gas = extract_gas(substats)
         dias, vd_gas = sc_pp.vd_from_stats(gas, settings.PostProcess)
-        vd_oil /= sv
+        vd_gas /= sv
         d50_gas = sc_pp.d50_from_vd(vd_gas, dias)
 
         vd_total = vd_oil + vd_gas
