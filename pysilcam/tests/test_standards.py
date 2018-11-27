@@ -50,6 +50,7 @@ def test_big_standards():
     settings = PySilcamSettings(conf_file)
     stats = pd.read_csv(stats_file)
     d50 = scpp.d50_from_stats(stats, settings.PostProcess)
+    print('Large d50:', d50)
     assert (d50 > 310 and d50 < 330), 'incorrect d50'
 
 
@@ -91,4 +92,5 @@ def test_small_standards():
     settings = PySilcamSettings(conf_file)
     stats = pd.read_csv(stats_file)
     d50 = scpp.d50_from_stats(stats, settings.PostProcess)
+    print('Small d50:', d50)
     assert (d50 > 70 and d50 < 90), 'incorrect d50'
