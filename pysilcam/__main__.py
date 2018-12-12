@@ -701,6 +701,10 @@ def configure_logger(settings):
                             level=getattr(logging, settings.loglevel))
     else:
         logging.basicConfig(level=getattr(logging, settings.loglevel))
+    # Adding a handler to print info messages to stdout
+    streamHandler = logging.StreamHandler(sys.stdout)
+    streamHandler.setLevel(logging.INFO)
+    logging.addHandler(streamHandler)
 
 def updatePathLength(settings, logger):
     '''Adjusts the path length of systems with the actuator installed and RS232
