@@ -47,6 +47,16 @@ def load_config(filename):
     return conf
 
 
+def default_config_path():
+    '''return the path to the default config file
+
+    Returns:
+        path_to_config (str)  : path to the default config file
+    '''
+    path = os.path.dirname(__file__)
+    path_to_config = os.path.join(path, 'config_example.ini')
+    return path_to_config
+
 class PySilcamSettings:
     '''
     Class for SilCam settings
