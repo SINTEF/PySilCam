@@ -1,24 +1,38 @@
 # -*- coding: utf-8 -*-
 import os
-import sys
-import logging
 from pysilcam.__main__ import silcam_process
 import unittest
 from pysilcam.silcreport import silcam_report
+from pysilcam.config import load_config
+
+if "UNITTEST_DATA_PATH" in os.environ:
+    ROOTPATH = os.environ['UNITTEST_DATA_PATH'] # 'E:/test data/hello_silcam/unittest_bamboo'
+else:
+    ROOTPATH = 'E:/test data/hello_silcam/unittest_entries'
+
+print('ROOTPATH',ROOTPATH)
 
 @unittest.skipIf(not os.path.isdir(
-    'E:/test data/hello_silcam/unittest_entries/STN04'),
+    os.path.join(ROOTPATH,'STN04')),
     "test path not accessible")
 def test_output_files():
     '''Testing that the appropriate STATS.csv file is created'''
 
     path = os.path.dirname(__file__)
     conf_file = os.path.join(path, 'config.ini')
+    conf = load_config(conf_file)
 
-    data_file = 'E:/test data/hello_silcam/unittest_entries/STN04'
-    stats_file = 'E:/test data/hello_silcam/unittest_entries/STN04-STATS.csv'
-    hdf_file = 'E:/test data/hello_silcam/unittest_entries/export/D20170509T172705.387171.h5'
-    report_figure = 'E:/test data/hello_silcam/unittest_entries/STN04-Summary_all.png'
+    data_file = os.path.join(ROOTPATH, 'STN04')
+    conf.set('General', 'datafile', os.path.join(data_file, 'proc'))
+    conf.set('General', 'logfile', os.path.join(ROOTPATH,'log.log'))
+    conf.set('ExportParticles', 'outputpath', os.path.join(data_file, 'export'))
+    conf_file_hand = open(conf_file,'w')
+    conf.write(conf_file_hand)
+    conf_file_hand.close()
+
+    stats_file = os.path.join(data_file, 'proc', 'STN04-STATS.csv')
+    hdf_file = os.path.join(data_file, 'export/D20170509T172705.387171.h5')
+    report_figure = os.path.join(data_file,'proc', 'STN04-Summary_all.png')
 
     # if csv file already exists, it has to be deleted
     if (os.path.isfile(stats_file)):
