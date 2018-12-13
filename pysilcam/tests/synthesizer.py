@@ -16,6 +16,7 @@ import pysilcam.plotting as scplt
 def generate_report(report_name, PIX_SIZE = 28.758169934640524,
                     PATH_LENGTH=40, d50 = 400, TotalVolumeConcentration = 800,
                     MinD = 108):
+    plt.close('all')
     pp = PdfPages(report_name)
     # d50 = 100 # d50(ish) (RR size)
      # TotalVolumeConcentration uL/L
