@@ -10,22 +10,22 @@ import sphinx.apidoc
 import distutils.cmd
 
 REQUIRES = [
-    'docopt',
-    'configparser',
-    'numpy',
-    'pandas',
-    'matplotlib',
-    'imageio',
-    'scikit-image',
-    'pygame',
-    'tflearn',
-    'sphinx',
-    'sphinx_rtd_theme',
-    'tqdm',
-    'tables'
-#    'tensorflow',
-#    'pyserial',
-#    'pymba',
+    'docopt==0.6.2',
+    'configparser==3.5.0',
+    'numpy==1.15.2',
+    'pandas==0.23.4',
+    'matplotlib==3.0.0',
+    'imageio==2.4.1',
+    'scikit-image==0.14.0',
+    'pygame==1.9.2a0',
+    'tflearn==0.3.2',
+    'tqdm==4.28.1',
+    'tensorflow==1.1.0',
+    'h5py==2.8.0',
+    'psutil==5.4.7',
+    'Sphinx==1.7.9',
+    'sphinx_rtd_theme==0.4.2',
+    'sphinxcontrib-napoleon==0.7'
 ]
 
 class PyTest(TestCommand):
