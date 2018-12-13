@@ -153,3 +153,23 @@ def settings_from_h5(h5file):
     Settings = PySilcamSettings(cf)
 
     return Settings
+
+
+def updatePathLength(settings, logger):
+    '''Adjusts the path length of systems with the actuator installed and RS232
+    connected.
+
+    Args:
+        settings (PySilcamSettings): Settings read from a .ini file
+                                     settings.logfile is optional
+                                     settings.loglevel mest exist
+        logger (logger object)     : logger object created using
+                                     configure_logger()
+    '''
+    try:
+        logger.info('Updating path length')
+        pl = scog.PathLength(settings.PostProcess.com_port)
+        pl.gap_to_mm(settings.PostProcess.path_length)
+        pl.finish()
+    except:
+        logger.warning('Could not open port. Path length will not be adjusted.')
