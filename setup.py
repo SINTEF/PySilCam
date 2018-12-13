@@ -1,12 +1,8 @@
 # -*- coding: utf-8 -*-
-import re
 import os
 import sys
 from setuptools import setup
 from setuptools.command.test import test as TestCommand
-from pysilcam import __version__
-from sphinx.setup_command import BuildDoc
-import sphinx.apidoc
 import distutils.cmd
 
 REQUIRES = [
@@ -17,7 +13,7 @@ REQUIRES = [
     'matplotlib==3.0.0',
     'imageio==2.4.1',
     'scikit-image==0.14.0',
-    'pygame==1.9.2a0',
+    'pygame==1.9.2',
     'tflearn==0.3.2',
     'tqdm==4.28.1',
     'tensorflow==1.1.0',
@@ -25,7 +21,10 @@ REQUIRES = [
     'psutil==5.4.7',
     'Sphinx==1.7.9',
     'sphinx_rtd_theme==0.4.2',
-    'sphinxcontrib-napoleon==0.7'
+    'sphinxcontrib-napoleon==0.7',
+    'pyserial==3.4',
+    'seaborn==0.9.0',
+    'setuptools==40.2.0'
 ]
 
 class PyTest(TestCommand):
