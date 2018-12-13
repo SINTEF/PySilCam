@@ -14,6 +14,9 @@ import h5py
 from pysilcam.config import PySilcamSettings
 from enum import Enum
 from tqdm import tqdm
+import logging
+
+logger = logging.getLogger(__name__)
 
 class outputPartType(Enum):
     '''
@@ -353,7 +356,7 @@ def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
     montage = np.zeros((msize,msize,3),dtype=np.uint8())
     # pre-allocate an empty test canvas
     immap_test = np.zeros_like(montage[:,:,0])
-    print('making a montage - this might take some time....')
+    logger.info('making a montage - this might take some time....')
 
     # loop through each extracted particle and attempt to add it to the canvas
     for files in tqdm(roifiles):
@@ -436,7 +439,7 @@ def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
     montageplot = np.copy(montage)
     montageplot[montage>255] = 255
     montageplot[montage==0] = 255
-    print('montage complete')
+    logger.info('montage complete')
 
     return montageplot
 
@@ -504,11 +507,11 @@ def gen_roifiles(stats, auto_scaler=500):
             'not_exported'].values
 
     # subsample the particles if necessary
-    print('rofiles:',len(roifiles))
+    logger.info('rofiles:',len(roifiles))
     IMSTEP = np.max([np.int(np.round(len(roifiles)/auto_scaler)),1])
-    print('reducing particles by factor of {0}'.format(IMSTEP))
+    logger.info('reducing particles by factor of {0}'.format(IMSTEP))
     roifiles = roifiles[np.arange(0,len(roifiles),IMSTEP)]
-    print('rofiles:',len(roifiles))
+    logger.info('rofiles:',len(roifiles))
 
     return roifiles
 
@@ -783,10 +786,10 @@ def silc_to_bmp(directory):
             outname = os.path.join(directory, fout)
             imo.imwrite(outname, im)
         except:
-            print(f, ' failed!')
+            logger.warning(f, ' failed!')
             continue
 
-    print('Done.')
+    logger.info('Done.')
 
 
 def make_timeseries_vd(stats, settings):
@@ -924,7 +927,7 @@ def trim_stats(stats_csv_file, start_time, end_time, write_new=False, stats=[]):
         (pd.to_datetime(stats['timestamp']) > start_time) & (pd.to_datetime(stats['timestamp']) < end_time)]
 
     if np.isnan(trimmed_stats.equivalent_diameter.max()) or len(trimmed_stats) == 0:
-        print('No data in specified time range!')
+        logger.info('No data in specified time range!')
         outname = ''
         return trimmed_stats, outname
 
@@ -984,18 +987,18 @@ def show_h5_meta(h5file):
         keys = list(f['Meta'].attrs.keys())
 
         for k in keys:
-            print(k + ':')
-            print('    ' + f['Meta'].attrs[k])
+            logger.info(k + ':')
+            logger.info('    ' + f['Meta'].attrs[k])
 
         keys = list(f['Proc'].attrs.keys())
 
         for k in keys:
-            print('Proc/' + k + ':')
+            logger.info('Proc/' + k + ':')
             try:
-                print('    ' + f['Proc'].attrs[k])
+                logger.info('    ' + f['Proc'].attrs[k])
             except:
                 continue
 
-        print('Proc/STATS:')
+        logger.info('Proc/STATS:')
         stats = pd.read_hdf(h5file, 'Proc/STATS')
-        print('  Columns:  ' + str(stats.columns))
+        logger.info('  Columns:  ' + str(stats.columns))

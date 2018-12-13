@@ -150,7 +150,7 @@ def silcam_acquire(datapath, config_filename, writeToDisk=True, gui=None):
         rest_time = np.max([rest_time, 0.])
         time.sleep(rest_time)
         actual_aq_freq = 1/(1/aq_freq + rest_time)
-        print('Image {0} acquired at frequency {1:.1f} Hz'.format(i, actual_aq_freq))
+        logger.info('Image {0} acquired at frequency {1:.1f} Hz'.format(i, actual_aq_freq))
         t1 = time.time()
 
         if not gui==None:
@@ -189,7 +189,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     '''
     print(config_filename)
 
-    print('')
+    print('TESTING!!!!!!!!!--------!!!!!!!!!!')
     #---- SETUP ----
 
     #Load the configuration, create settings object
@@ -227,18 +227,18 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     #@todo make a function for this admin of the STATS file and appending etc
     if os.path.isfile(datafilename + '-STATS.csv') and overwriteSTATS:
         logger.info('removing: ' + datafilename + '-STATS.csv')
-        print('Overwriting ' + datafilename + '-STATS.csv')
+        #print('Overwriting ' + datafilename + '-STATS.csv')
         os.remove(datafilename + '-STATS.csv')
     elif os.path.isfile(datafilename + '-STATS.csv'):
         logger.info('Loading old data from: ' + datafilename + '-STATS.csv')
-        print('Loading old data from: ' + datafilename + '-STATS.csv')
+        #print('Loading old data from: ' + datafilename + '-STATS.csv')
         oldstats = pd.read_csv(datafilename + '-STATS.csv')
         logger.info('  OK.')
-        print('  OK.')
+        #print('  OK.')
         last_time = pd.to_datetime(oldstats['timestamp'].max())
 
         logger.info('Calculting spooling offset')
-        print('Calculating spooling offset')
+        #print('Calculating spooling offset')
         from pysilcam.fakepymba import silcam_name2time
         files = [f for f in sorted(os.listdir(datapath))
                  if (f.endswith('.silc') or f.endswith('.bmp'))]
@@ -254,7 +254,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
         offset = str(offset)
         os.environ['PYSILCAM_OFFSET'] = offset
         logger.info('PYSILCAM_OFFSET set to: ' + offset)
-        print('PYSILCAM_OFFSET set to: ' + offset)
+        #print('PYSILCAM_OFFSET set to: ' + offset)
 
     #Initialize the image acquisition generator
     aq = Acquire(USE_PYMBA=realtime)
@@ -262,7 +262,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
             camera_config_file=config_filename)
 
     #Get number of images to use for background correction from config
-    print('* Initializing background image handler')
+    logger.info('* Initializing background image handler')
     bggen = backgrounder(settings.Background.num_images, aqgen,
             bad_lighting_limit = settings.Process.bad_lighting_limit,
             real_time_stats=settings.Process.real_time_stats)
@@ -280,7 +280,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     # If only one core is available, no multiprocessing will be done
     multiProcess = multiProcess and (multiprocessing.cpu_count() > 1)
 
-    print('* Commencing image acquisition and processing')
+    logger.info('* Commencing image acquisition and processing')
 
     # initialise realtime stats class regardless of whether it is used later
     rts = scog.rt_stats(settings)
@@ -303,7 +303,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
         for i, (timestamp, imc, imraw) in enumerate(bggen):
             t1 = np.copy(t2)
             t2 = time.time()
-            print(t2-t1, 'Acquisition loop time')
+            logger.info(t2-t1, 'Acquisition loop time')
             logger.debug('Corrected image ' + str(timestamp) +
                         ' acquired from backgrounder')
 
@@ -377,7 +377,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
                 # write the image into the csv file
                 writeCSV( datafilename, stats_all)
 
-    print('PROCESSING COMPLETE.')
+    logger.info('PROCESSING COMPLETE.')
 
     #---- END ----
 
@@ -501,7 +501,7 @@ def processImage(nnmodel, class_labels, image, settings, logger, gui):
         # obtained, without any particles. Therefore fill all values with nans
         # and add the image timestamp
         if len(stats_all) == 0:
-            print('ZERO particles identified')
+            logger.info('ZERO particles identified')
             z = np.zeros(len(stats_all.columns)) * np.nan
             stats_all.loc[0] = z
             # 'export name' should not be nan because then this column of the
@@ -521,7 +521,7 @@ def processImage(nnmodel, class_labels, image, settings, logger, gui):
         #Print timing information for this iteration
         infostr = '  Image {0} processed in {1:.2f} sec ({2:.1f} Hz). '
         infostr = infostr.format(i, proc_time, 1.0/proc_time)
-        print(infostr)
+        logger.info(infostr)
 
         #---- END MAIN PROCESSING LOOP ----
         #---- DO SOME ADMIN ----
@@ -529,7 +529,7 @@ def processImage(nnmodel, class_labels, image, settings, logger, gui):
     except:
         infostr = 'Failed to process frame {0}, skipping.'.format(i)
         logger.warning(infostr, exc_info=True)
-        print(infostr)
+        logger.info(infostr)
         return None
 
     return stats_all
@@ -685,7 +685,7 @@ def check_path(filename):
          try:
             os.makedirs(path)
          except:
-            print('Could not create catalog:',path)
+            logger.warning('Could not create catalog:',path)
 
 def configure_logger(settings):
     '''Configure a logger according to the settings.
@@ -704,7 +704,8 @@ def configure_logger(settings):
     # Adding a handler to print info messages to stdout
     streamHandler = logging.StreamHandler(sys.stdout)
     streamHandler.setLevel(logging.INFO)
-    logging.addHandler(streamHandler)
+    logger = logging.getLogger()
+    logger.addHandler(streamHandler)
 
 def updatePathLength(settings, logger):
     '''Adjusts the path length of systems with the actuator installed and RS232
