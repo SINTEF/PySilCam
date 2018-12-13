@@ -16,36 +16,45 @@ import pysilcam.plotting as scplt
 def generate_report(report_name, PIX_SIZE = 28.758169934640524,
                     PATH_LENGTH=40, d50 = 400, TotalVolumeConcentration = 800,
                     MinD = 108):
+    '''Create a report of the expected response of the silcam to the provided experimental setup
+
+    Args:
+      report_name   (str)                   :  The path and filename of a pdf to be created
+      PIX_SIZE          (float)             :  pixel size of the setup [um]
+      PATH_LENGTH (float)                   :  the path length of the setup [mm] Path length is the gap between housings
+      d50   (float)                         :  the expected of the oil d50 (50th percentile of the cumulative sum of the volume distribution)
+      TotalVolumeConcentration (float)      :  the expected concentration of oil in the sample volume [uL/L]
+      MinD (float)                          :  minimum resolvable diameter of the setup [um]. this would usually scale with the pixel size.
+                                               synthesized particles smaller than this are also removed for speed purposes
+    '''
     plt.close('all')
     pp = PdfPages(report_name)
-    # d50 = 100 # d50(ish) (RR size)
-     # TotalVolumeConcentration uL/L
-    # MinD = 108
-    # PIX_SIZE = 28.758169934640524 # microns
-    # MinD = 108
 
+    # image dimensions (fixed always for GC2450 camera)
     imx = 2448
     imy = 2048
 
-    diams, limits = scpp.get_size_bins()
+    # get diameters and limits of size bins
+    diams, bin_limits_um = scpp.get_size_bins()
 
-    # initial volume distribution
+    # initial volume distribution, close to Oystein's MPB paper in 2013
     vd = weibull(diams, n=d50)
-    vd = vd/np.sum(vd)*TotalVolumeConcentration
+    vd = vd/np.sum(vd)*TotalVolumeConcentration # scale the distribution according to concentration
 
-    DropletVolume=((4/3)*np.pi*((diams*1e-6)/2)**3)
-    nd=vd/(DropletVolume*1e9)
-    nd[diams<MinD] = 0
+    DropletVolume=((4/3)*np.pi*((diams*1e-6)/2)**3) # the volume of each droplet in m3
+    nd=vd/(DropletVolume*1e9) # the number distribution in each bin
+    nd[diams<MinD] = 0 # remove small particles for speed purposes
 
+    # calculate the sample volume of the SilCam specified
     sv = scpp.get_sample_volume(PIX_SIZE, path_length=PATH_LENGTH, imx=imx, imy=imy)
 
-    nd = nd*sv
-    nc = int(sum(nd))
+    nd = nd*sv # scale the number distribution by the sample volume so resulting units are #/L/bin
+    nc = int(sum(nd)) # calculate the total number concentration
 
-    vd2 = scpp.vd_from_nd(nd,diams,sv)
-    vc_initial = sum(vd2)
+    vd2 = scpp.vd_from_nd(nd,diams,sv) # convert the number distribution to volume distribution in uL/L/bin
+    vc_initial = sum(vd2) # obtain the resulting concentration, now having remove small particles
 
-    d50_theory = scpp.d50_from_vd(vd2, diams)
+    d50_theory = scpp.d50_from_vd(vd2, diams) # calculate the d50 in um
 
     plt.plot(diams, vd2, 'k', label='Initial')
     plt.plot(diams, vd, 'r:', label='Theoretical')
@@ -61,32 +70,30 @@ def generate_report(report_name, PIX_SIZE = 28.758169934640524,
              horizontalalignment='left', loc='left')
     pp.savefig(bbox_inches='tight')
 
-
-    nims = 40
-    dias, bin_limits_um = scpp.get_size_bins()
-    log_vd = np.zeros((nims,len(dias)))
+    nims = 40 # the number of images to simulate
+    # preallocate variables
+    log_vd = np.zeros((nims,len(diams)))
     cvd = np.zeros(nims)
     cd50 = np.zeros(nims)
 
     for I in range(nims):
-        nc = int(sum(nd))
-        log_ecd = np.zeros(nc)
-        rad = np.random.choice(diams/2, size=nc, p=nd/sum(nd)) / PIX_SIZE
-        log_ecd = rad*2*PIX_SIZE
+        # randomly select a droplet radius from the input distribution
+        rad = np.random.choice(diams/2, size=nc, p=nd/sum(nd)) / PIX_SIZE # radius is in pixels
+        log_ecd = rad*2*PIX_SIZE # log this size as a diameter in um
 
-        necd, edges = np.histogram(log_ecd,bin_limits_um)
-        log_vd[I,:] = scpp.vd_from_nd(necd,dias)
-        cvd[I] = np.sum(np.mean(log_vd[0:I,:],axis=0))
-        cd50[I] = scpp.d50_from_vd(np.mean(log_vd,axis=0), dias)
+        necd, edges = np.histogram(log_ecd,bin_limits_um) # count particles into number distribution
+        log_vd[I,:] = scpp.vd_from_nd(necd,diams) # convert to volume distribution
+        cvd[I] = np.sum(np.mean(log_vd[0:I,:],axis=0)) # calculated the cumulate volume distribution over image number
+        cd50[I] = scpp.d50_from_vd(np.mean(log_vd,axis=0), diams) # calcualte the cumulate d50 over image number
 
 
     f, a = plt.subplots(1,3,figsize=(16,4))
 
     plt.sca(a[0])
     plt.plot(diams, vd2, 'k')
-    plt.plot(dias, log_vd[0,:]/sv, alpha=0.5, label='1 image')
-    plt.plot(dias, np.mean(log_vd[0:4,:], axis=0)/sv, alpha=0.5, label='4 images')
-    plt.plot(dias, np.mean(log_vd, axis=0)/sv, alpha=0.5, label=(str(nims) + ' images'))
+    plt.plot(diams, log_vd[0,:]/sv, alpha=0.5, label='1 image')
+    plt.plot(diams, np.mean(log_vd[0:4,:], axis=0)/sv, alpha=0.5, label='4 images')
+    plt.plot(diams, np.mean(log_vd, axis=0)/sv, alpha=0.5, label=(str(nims) + ' images'))
     plt.xscale('log')
     plt.vlines(d50_theory, 0, max(vd2), linestyle='--')
     plt.xlabel('ECD [um]')
@@ -108,7 +115,8 @@ def generate_report(report_name, PIX_SIZE = 28.758169934640524,
 
     pp.savefig(bbox_inches='tight')
 
-    img, log_vd = synthesize(diams, nd, imx, imy, PIX_SIZE)
+    # synthesize an image, returning the segmented image and the inputted volume distribution
+    img, log_vd = synthesize(diams, bin_limits_um, nd, imx, imy, PIX_SIZE)
 
     plt.figure(figsize=(10,10))
     plt.imshow(img, vmin=0, vmax=255, extent=[0,imx*PIX_SIZE/1000,0,imy*PIX_SIZE/1000])
@@ -117,15 +125,15 @@ def generate_report(report_name, PIX_SIZE = 28.758169934640524,
     plt.title('Synthetic image')
     pp.savefig(bbox_inches='tight')
 
-    dias, vd, imbw, stat_extract_time = test_analysis(img, PIX_SIZE, PATH_LENGTH)
+    diams, vd, imbw, stat_extract_time = test_analysis(img, PIX_SIZE, PATH_LENGTH)
 
 
     f, a = plt.subplots(1,2,figsize=(10,4))
 
     plt.sca(a[0])
     plt.plot(diams, vd2, 'r:', label='Initial')
-    plt.plot(dias, log_vd/sv ,'k', label='Statistical Best')
-    plt.plot(dias, vd, 'g', alpha=0.5, label='PySilCam')
+    plt.plot(diams, log_vd/sv ,'k', label='Statistical Best')
+    plt.plot(diams, vd, 'g', alpha=0.5, label='PySilCam')
     plt.xscale('log')
     plt.xlabel('ECD [um]')
     plt.ylabel('Volume distribution [uL/L]')
@@ -145,34 +153,69 @@ def generate_report(report_name, PIX_SIZE = 28.758169934640524,
     pp.close()
 
 def weibull(x,n=250,a=2.8):
+    '''weibull distribution similar to Oystein's MPB 2013 paper'''
     n *= 1.566
     return (a / n) * (x / n)**(a - 1) * np.exp(-(x / n)**a)
 
 
-def synthesize(diams, nd, imx, imy, PIX_SIZE):
-    nc = int(sum(nd))
-    img = np.zeros((imy, imx, 3), dtype=np.uint8()) + 230
+def synthesize(diams, bin_limits_um, nd, imx, imy, PIX_SIZE):
+    '''synthesize an image and measure droplets
 
+    Args:
+      diams   (array)                       :  size bins of the number distribution
+      bin_limits_um (array)                 :  limits of the size bins where dias are the mid-points
+      nd      (array)                       :  number of particles per size bin
+      imx     (float)                       :  image width in pixels
+      imy     (float)                       :  image height in pixels
+      PIX_SIZE          (float)             :  pixel size of the setup [um]
+
+    Returns:
+      img (unit8)                         : segmented image from pysilcam
+      log_vd (array)                      : a volume distribution of the randomly selected particles put into the synthetic image
+
+    '''
+    nc = int(sum(nd)) # number concentration
+
+    # preallocate the image and logged volume distribution variables
+    img = np.zeros((imy, imx, 3), dtype=np.uint8()) + 230 # scale the initial brightness down a bit
     log_ecd = np.zeros(nc)
+    # randomly select a droplet radii from the input distribution
+    rad = np.random.choice(diams / 2, size=nc, p=nd / sum(nd)) / PIX_SIZE  # radius is in pixels
+    log_ecd = rad * 2 * PIX_SIZE  # log these sizes as a diameter in um
+    for rad_ in rad:
+        # randomly decide where to put particles within the image
+        col = np.random.randint(1, high=imx - rad_)
+        row = np.random.randint(1, high=imy - rad_)
+        rr, cc = circle(row, col, rad_) # make a cirle of the radius selected from the distribution
+        img[rr, cc, :] = 0 # make the circle completely non-transmitting (i.e. black)
 
-    for i in range(nc):
-        rad = np.int(np.random.choice(diams / 2, p=nd / sum(nd)) / PIX_SIZE)
-        log_ecd[i] = rad * 2 * PIX_SIZE
-        col = np.random.randint(1, high=imx - rad)
-        row = np.random.randint(1, high=imy - rad)
-        rr, cc = circle(row, col, rad)
-        img[rr, cc, :] = 0
+    necd, edges = np.histogram(log_ecd, bin_limits_um) # count the input diameters into a number distribution
+    log_vd = scpp.vd_from_nd(necd, diams) # convert to a volume distribution
 
-    dias, bin_limits_um = scpp.get_size_bins()
-    necd, edges = np.histogram(log_ecd, bin_limits_um)
-    log_vd = scpp.vd_from_nd(necd, dias)
+    # add some noise to the synthesized image
     img = np.uint8(255 * util.random_noise(np.float64(img) / 255), var=0.01 ** 2)
 
-    img = np.uint8(img)
+    img = np.uint8(img) # convert to uint8
     return img, log_vd
 
 
 def test_analysis(img, PIX_SIZE, PATH_LENGTH):
+    '''wrapper for pysilcam processing
+
+    Args:
+      img (unit8)           : image to be processed (equivalent to the background-corrected image obtained from the SilCam)
+      PIX_SIZE (float)      : pixel size of the setup [um]
+      PATH_LENGTH (float)   : path length of the setup [mm]
+
+    Returns:
+      dias (array)                      : mid points of the size distribution bins [um]
+      vd (array)                        : volume concentration in each size bin [uL/L/bin]
+      imbw (uint8)                      : segmented image
+      stat_extract_time (timestamp)     : time taken to run statextract
+
+    '''
+
+    # administer configuration settings according to specified setup
     testconfig = os.path.split(sccf.default_config_path())[0]
     testconfig = os.path.join(testconfig, 'tests/config.ini')
     conf = sccf.load_config(testconfig)
@@ -182,17 +225,20 @@ def test_analysis(img, PIX_SIZE, PATH_LENGTH):
     conf.set('Process', 'real_time_stats', 'True')
     conf.set('Process', 'threshold', '0.85')
 
-    settings = sccf.PySilcamSettings(conf)
+    settings = sccf.PySilcamSettings(conf) # pass these settings without saving a config file to disc
 
+    # load tensorflow model
     nnmodel, class_labels = sccl.load_model(model_path=settings.NNClassify.model_path)
 
-    start_time = pd.Timestamp.now()
+    start_time = pd.Timestamp.now() # time statextract
+    # process the image
     stats, imbw, saturation = scpr.statextract(img, settings, pd.Timestamp.now(),
                                                nnmodel, class_labels)
-    end_time = pd.Timestamp.now()
+    end_time = pd.Timestamp.now() # time statextract
     stat_extract_time = end_time - start_time
 
-    dias, vd = scpp.vd_from_stats(stats, settings.PostProcess)
+    dias, vd = scpp.vd_from_stats(stats, settings.PostProcess) # calculate the volume distribution from the processed stats
+    # scale the volume distribution according to the SilCam setup specified
     sv = scpp.get_sample_volume(settings.PostProcess.pix_size,
                                 path_length=settings.PostProcess.path_length)
     vd /= sv
