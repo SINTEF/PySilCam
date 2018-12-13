@@ -76,8 +76,6 @@ setup(
     install_requires=REQUIRES,
     # Use Python 3 branch on alternate repo for Pymba
     #dependency_links=['git+https://github.com/mabl/pymba@python3'],
-    # Use master branch for Pymba on Python 2
-    #dependency_links=['git+https://github.com/morefigs/pymba@python3'],
     zip_safe=False,
     keywords='silcam',
     classifiers=[
