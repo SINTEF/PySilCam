@@ -158,7 +158,7 @@ def fancy_props(iml, imc, timestamp, settings, nnmodel, class_labels):
 
     '''
 
-    region_properties = measure.regionprops(iml, cache=False)
+    region_properties = measure.regionprops(iml, cache=False, coordinates='xy')
     # build the stats and export to HDF5
     stats = extract_particles(imc,timestamp,settings,nnmodel,class_labels, region_properties)
 
