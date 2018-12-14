@@ -82,8 +82,10 @@ def test_output_files():
     silcam_report(stats_file, conf_file, dpi=10)
     assert os.path.isfile(report_figure), 'report figure file not created'
 
-    # test synthesizer
+    # # test synthesizer
     import pysilcam.tests.synthesizer as synth
-    synth.generate_report(os.path.join(path, '../../test-report', 'imagesynth_report.pdf'), PIX_SIZE=28.758169934640524,
+    reportdir = os.path.join(path, '../../test-report')
+    os.makedirs(reportdir, exist_ok=True)
+    synth.generate_report(os.path.join(reportdir, 'imagesynth_report.pdf'), PIX_SIZE=28.758169934640524,
                           PATH_LENGTH=10, d50=800, TotalVolumeConcentration=800,
                           MinD=108)
