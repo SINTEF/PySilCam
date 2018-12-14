@@ -24,7 +24,8 @@ REQUIRES = [
     'sphinxcontrib-napoleon==0.7',
     'pyserial==3.4',
     'seaborn==0.9.0',
-    'setuptools==40.2.0'
+    'setuptools==40.2.0',
+    'PyQt5==5.10',
 ]
 
 class PyTest(TestCommand):
