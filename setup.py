@@ -26,6 +26,7 @@ REQUIRES = [
     'seaborn==0.9.0',
     'setuptools==40.2.0',
     'PyQt5==5.10',
+    'cmocean==1.2'
 ]
 
 class PyTest(TestCommand):
