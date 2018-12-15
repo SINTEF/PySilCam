@@ -15,21 +15,34 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as Canvas
 
 
-
 class Plotter(QMainWindow):
     def __init__(self, config_file, stats_csv_file, parent=None):
         QMainWindow.__init__(self, parent)
         self.ui = Ui_SummaryExplorer()
         self.ui.setupUi(self)
 
-        self.PLTwidget = plt.figure()
-        self.canvas = FigureCanvas(self.PLTwidget)
-        layout = QVBoxLayout()
-        layout.addWidget(self.canvas)
-        self.ui.PLTwidget.setLayout(layout)
+        # self.PLTwidget = plt.figure()
+        # self.PLTwidget, self.a = plt.subplots(1, 2)
+        # self.canvas = FigureCanvas(self.PLTwidget)
+        # layout = QVBoxLayout()
+        # layout.addWidget(self.canvas)
+        # self.ui.PLTwidget.setLayout(layout)
         # self.canvas.updateGeometry()
-        self.canvas.draw()
-        self.figure = plt.gcf()
+        # self.canvas.draw()
+        # self.figure = plt.gcf()
+
+        fig = plt.figure()
+        self.axes = fig.add_subplot(111)
+
+        FigureCanvas(fig)
+        self.setParent(self.ui.PLTwidget)
+
+        FigureCanvas.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
+                        QtWidgets.QSizePolicy.Expanding)
+        FigureCanvas.updateGeometry()
+        plt.plot()
+        FigureCanvas.draw()
+        # f.plot()
 
         print('showing')
         self.showMaximized()
@@ -181,5 +194,119 @@ class Plotter(QMainWindow):
         pass
 
 
-if __name__ == '__main__':
-    pass
+from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+import sys
+
+
+class MainWindow(QMainWindow):
+    def __init__(self, parent=None):
+        super(MainWindow, self).__init__(parent)
+        self.fft_frame = FftFrame(self)
+
+        self.layout = QtWidgets.QVBoxLayout()
+        self.layout.addWidget(self.fft_frame)
+        self.setLayout(self.layout)
+        self.setCentralWidget(self.fft_frame)
+
+
+class FftFrame(QtWidgets.QFrame):
+    def __init__(self, parent=None):
+        super(FftFrame, self).__init__(parent)
+        self.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.parent = parent
+        self.graph_view = GraphView('fftFrame', 'FFT Transform:', 'FFT Transform of Signal', self)
+
+    def resizeEvent(self, event):
+        self.graph_view.setGeometry(self.rect())
+
+
+def setup_figure(config_file, stats_csv_file):
+    settings = PySilcamSettings(config_file)
+    print('Loading stats')
+    stats = pd.read_csv(stats_csv_file, nrows=10000, parse_dates=['timestamp'])
+    print('  OK.')
+
+    u = stats['timestamp'].unique()
+    u = pd.to_datetime(u)
+    sample_volume = scpp.get_sample_volume(settings.PostProcess.pix_size, path_length=settings.PostProcess.path_length)
+
+    dias, bin_lims = scpp.get_size_bins()
+    vd_oil = np.zeros((len(u), len(dias)))
+    vd_gas = np.zeros_like(vd_oil)
+    vd_total = np.zeros_like(vd_oil)
+    d50_gas = np.zeros(len(u))
+    d50_oil = np.zeros_like(d50_gas)
+    d50_total = np.zeros_like(d50_gas)
+    # @todo make this number of particle per image, and sum according to index later
+    nparticles_all = 0
+    nparticles_total = 0
+    nparticles_oil = 0
+    nparticles_gas = 0
+
+    print('Analysing time-series')
+    for i, s in enumerate(tqdm(u)):
+        substats = stats[stats['timestamp'] == s]
+        nparticles_all += len(substats)
+
+        nims = scpp.count_images_in_stats(substats)
+        sv = sample_volume * nims
+
+        oil = scog.extract_oil(substats)
+        nparticles_oil += len(oil)
+        dias, vd_oil_ = scpp.vd_from_stats(oil, settings.PostProcess)
+        vd_oil_ /= sv
+        vd_oil[i, :] = vd_oil_
+
+        gas = scog.extract_gas(substats)
+        nparticles_gas += len(gas)
+        dias, vd_gas_ = scpp.vd_from_stats(gas, settings.PostProcess)
+        vd_gas_ /= sv
+        vd_gas[i, :] = vd_gas_
+        d50_gas[i] = scpp.d50_from_vd(vd_gas_, dias)
+
+        nparticles_total += len(oil) + len(gas)
+        vd_total_ = vd_oil_ + vd_gas_
+        d50_total[i] = scpp.d50_from_vd(vd_total_, dias)
+        vd_total[i, :] = vd_total_
+
+    # f, self.a = plt.subplots(1, 2, figsize=(15, 6))
+
+    # plt.pcolormesh(u, dias, np.log(vd_total.T))#, cmap=cmocean.cm.amp)
+    plt.pcolor(u, dias, vd_total.T)
+    # plt.plot(u, d50_total, 'kx', markersize=5, alpha=0.25)
+    # plt.plot(u, d50_gas, 'bx', markersize=5, alpha=0.25)
+    plt.yscale('log')
+
+    start_time = min(u)
+    end_time = max(u)
+
+
+class GraphView(QtWidgets.QWidget):
+    def __init__(self, name, title, graph_title, parent = None):
+        super(GraphView, self).__init__(parent)
+
+        self.name = name
+        self.graph_title = graph_title
+
+        self.fig, self.axes = plt.subplots(1,2)
+        self.canvas = FigureCanvas(self.fig)
+        self.canvas.setParent(self)
+
+        self.layout = QtWidgets.QVBoxLayout()
+        self.layout.addWidget(self.canvas)
+        self.layout.setStretchFactor(self.canvas, 1)
+        self.setLayout(self.layout)
+
+        plt.sca(self.axes[0])
+        self.configfile = "/Users/emlynd/Desktop/PJ/MiniTowerSilCamConfig.ini"
+        self.stats_filename = "/Users/emlynd/Desktop/PJ/Oseberg2017OilOnly0.25mmNozzle2-STATS.csv"
+        setup_figure(self.configfile, self.stats_filename)
+
+        self.canvas.show()
+
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    app.exec_()

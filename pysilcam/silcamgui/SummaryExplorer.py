@@ -11,6 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_SummaryExplorer(object):
     def setupUi(self, SummaryExplorer):
         SummaryExplorer.setObjectName("SummaryExplorer")
+        SummaryExplorer.resize(567, 453)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Ignored)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -25,6 +26,7 @@ class Ui_SummaryExplorer(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.PLTwidget.sizePolicy().hasHeightForWidth())
         self.PLTwidget.setSizePolicy(sizePolicy)
+        self.PLTwidget.setMinimumSize(QtCore.QSize(411, 231))
         self.PLTwidget.setObjectName("PLTwidget")
         self.gridLayout.addWidget(self.PLTwidget, 0, 0, 1, 1)
 

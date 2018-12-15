@@ -2,6 +2,14 @@
 <ui version="4.0">
  <class>SummaryExplorer</class>
  <widget class="QWidget" name="SummaryExplorer">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>567</width>
+    <height>453</height>
+   </rect>
+  </property>
   <property name="sizePolicy">
    <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
     <horstretch>0</horstretch>
@@ -25,6 +33,12 @@
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>411</width>
+       <height>231</height>
+      </size>
      </property>
     </widget>
    </item>
