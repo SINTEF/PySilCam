@@ -7,11 +7,43 @@ import numpy as np
 import cmocean
 import matplotlib.pyplot as plt
 import matplotlib
+from PyQt5.QtWidgets import (QMainWindow, QApplication, QPushButton, QWidget, QDialog,
+QAction, QTabWidget,QVBoxLayout, QFileDialog, QMessageBox)
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from pysilcam.silcamgui.SummaryExplorer import Ui_SummaryExplorer
+from PyQt5 import QtCore, QtGui, QtWidgets
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as Canvas
 
-class Plotter():
-    def __init__(self):
-        config_file = "/mnt/PDrive/PJ/MiniTowerSilCamConfig.ini"
-        stats_csv_file = "/mnt/PDrive/PJ/Oseberg2017OilOnly0.25mmNozzle2-STATS.csv"
+
+
+class Plotter(QMainWindow):
+    def __init__(self, config_file, stats_csv_file, parent=None):
+        QMainWindow.__init__(self, parent)
+        self.ui = Ui_SummaryExplorer()
+        self.ui.setupUi(self)
+
+        self.PLTwidget = plt.figure()
+        self.canvas = FigureCanvas(self.PLTwidget)
+        layout = QVBoxLayout()
+        layout.addWidget(self.canvas)
+        self.ui.PLTwidget.setLayout(layout)
+        # self.canvas.updateGeometry()
+        self.canvas.draw()
+        self.figure = plt.gcf()
+
+        print('showing')
+        self.showMaximized()
+
+        # self.figure, self.a = plt.subplots(1, 2, figsize=(15, 6))
+        # self.canvas = FigureCanvas(self.figure)
+        # layout = QVBoxLayout()
+        # layout.addWidget(self.canvas)
+        # self.ui.PLTwidget.setLayout(layout)
+        # self.canvas.draw()
+        return
+        # self.figure = self.ui.PLTwidget
+        # config_file = "/mnt/PDrive/PJ/MiniTowerSilCamConfig.ini"
+        # stats_csv_file = "/mnt/PDrive/PJ/Oseberg2017OilOnly0.25mmNozzle2-STATS.csv"
 
         settings = PySilcamSettings(config_file)
         print('Loading stats')
@@ -60,7 +92,7 @@ class Plotter():
             d50_total[i] = scpp.d50_from_vd(vd_total_, dias)
             vd_total[i, :] = vd_total_
 
-        f, self.a = plt.subplots(1, 2, figsize=(15, 6))
+        # f, self.a = plt.subplots(1, 2, figsize=(15, 6))
         plt.sca(self.a[0])
 
         plt.pcolormesh(u, dias, np.log(vd_total.T), cmap=cmocean.cm.amp)
@@ -78,7 +110,7 @@ class Plotter():
         self.vd_oil = vd_oil
         self.vd_gas = vd_gas
         self.dias = dias
-        f.canvas.callbacks.connect('button_press_event', self.on_click)
+        self.figure.canvas.callbacks.connect('button_press_event', self.on_click)
 
     def on_click(self, event):
         if event.inaxes is not None:
@@ -141,9 +173,13 @@ class Plotter():
             self.line2.remove()
             self.line1 = plt.vlines(start_time, 1, 12000, 'r')
             self.line2 = plt.vlines(end_time, 1, 12000, 'r')
-            plt.draw()
+            self.canvas.draw()
         else:
             print('Clicked ouside axes bounds but inside plot window')
 
-p=Plotter()
-plt.show()
+    def closeEvent(self, event):
+        pass
+
+
+if __name__ == '__main__':
+    pass
