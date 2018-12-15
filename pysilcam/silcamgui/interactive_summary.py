@@ -14,12 +14,12 @@ from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 import sys
 
 
-class InterativePlotter(QMainWindow):
+class InteractivePlotter(QMainWindow):
     def __init__(self, parent=None):
-        super(InterativePlotter, self).__init__(parent)
+        super(InteractivePlotter, self).__init__(parent)
         self.showMaximized()
         self.setWindowTitle("SummaryExplorer")
-        app.processEvents()
+        QApplication.processEvents()
         self.fft_frame = FftFrame(self)
 
         self.layout = QtWidgets.QVBoxLayout()
@@ -30,13 +30,13 @@ class InterativePlotter(QMainWindow):
 
 
         self.setWindowTitle('Loading: ' + self.fft_frame.graph_view.stats_filename)
-        app.processEvents()
+        QApplication.processEvents()
 
         self.fft_frame.graph_view.setup_figure(self.fft_frame.graph_view.configfile,
                                                self.fft_frame.graph_view.stats_filename)
 
         self.setWindowTitle(self.fft_frame.graph_view.stats_filename)
-        app.processEvents()
+        QApplication.processEvents()
 
 
 class FftFrame(QtWidgets.QFrame):
@@ -207,6 +207,6 @@ class GraphView(QtWidgets.QWidget):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = InterativePlotter()
+    window = InteractivePlotter()
     window.show()
     app.exec_()
