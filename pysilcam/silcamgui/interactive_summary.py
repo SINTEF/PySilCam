@@ -7,12 +7,23 @@ import numpy as np
 import cmocean
 import matplotlib.pyplot as plt
 import matplotlib
-from PyQt5.QtWidgets import (QMainWindow, QApplication)
+from PyQt5.QtWidgets import QMainWindow, QApplication, QAction
+from PyQt5.QtGui import QIcon
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from PyQt5 import QtWidgets
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 import sys
 
+
+class FigFrame(QtWidgets.QFrame):
+    def __init__(self, parent=None):
+        super(FigFrame, self).__init__(parent)
+        self.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.parent = parent
+        self.graph_view = PlotView(self)
+
+    def resizeEvent(self, event):
+        self.graph_view.setGeometry(self.rect())
 
 class InteractivePlotter(QMainWindow):
     def __init__(self, parent=None):
@@ -20,42 +31,47 @@ class InteractivePlotter(QMainWindow):
         self.showMaximized()
         self.setWindowTitle("SummaryExplorer")
         QApplication.processEvents()
-        self.fft_frame = FftFrame(self)
+        self.plot_fame = FigFrame(self)
 
         self.layout = QtWidgets.QVBoxLayout()
-        self.layout.addWidget(self.fft_frame)
+        self.layout.addWidget(self.plot_fame)
         self.setLayout(self.layout)
-        self.setCentralWidget(self.fft_frame)
+        self.setCentralWidget(self.plot_fame)
         self.showMaximized()
 
+        mainMenu = self.menuBar()
+        fileMenu = mainMenu.addMenu('File')
 
-        self.setWindowTitle('Loading: ' + self.fft_frame.graph_view.stats_filename)
+        exitButton = QAction('Exit', self)
+        exitButton.setStatusTip('Close')
+        exitButton.triggered.connect(self.close)
+        fileMenu.addAction(exitButton)
+
+        loadButton = QAction('Load', self)
+        loadButton.setStatusTip('Load')
+        loadButton.triggered.connect(self.load)
+        fileMenu.addAction(loadButton)
+
+
+        self.setWindowTitle('Loading: ' + self.plot_fame.graph_view.stats_filename)
         QApplication.processEvents()
 
-        self.fft_frame.graph_view.setup_figure(self.fft_frame.graph_view.configfile,
-                                               self.fft_frame.graph_view.stats_filename)
+        self.plot_fame.graph_view.setup_figure(self.plot_fame.graph_view.configfile,
+                                               self.plot_fame.graph_view.stats_filename)
 
-        self.setWindowTitle(self.fft_frame.graph_view.stats_filename)
+        self.setWindowTitle(self.plot_fame.graph_view.stats_filename)
         QApplication.processEvents()
 
-        self.fft_frame.graph_view.update_plot(self.fft_frame.graph_view.mid_time)
+        self.plot_fame.graph_view.update_plot(self.plot_fame.graph_view.mid_time)
         QApplication.processEvents()
 
-
-class FftFrame(QtWidgets.QFrame):
-    def __init__(self, parent=None):
-        super(FftFrame, self).__init__(parent)
-        self.setFrameShape(QtWidgets.QFrame.StyledPanel)
-        self.parent = parent
-        self.graph_view = GraphView(self)
-
-    def resizeEvent(self, event):
-        self.graph_view.setGeometry(self.rect())
+    def load(self):
+        print('load pushed')
 
 
-class GraphView(QtWidgets.QWidget):
+class PlotView(QtWidgets.QWidget):
     def __init__(self, parent = None):
-        super(GraphView, self).__init__(parent)
+        super(PlotView, self).__init__(parent)
 
         # self.fig, self.axes = plt.subplots(2,2)
         self.fig = plt.figure()
@@ -150,9 +166,12 @@ class GraphView(QtWidgets.QWidget):
 
     def on_click(self, event):
         if event.inaxes is not None:
-            mid_time = pd.to_datetime(matplotlib.dates.num2date(event.xdata))
-            # mid_time.tz_convert(None)
-            self.update_plot(mid_time)
+            try:
+                mid_time = pd.to_datetime(matplotlib.dates.num2date(event.xdata))
+                # mid_time.tz_convert(None)
+                self.update_plot(mid_time)
+            except ValueError:
+                pass
         else:
             print('Clicked ouside axes bounds but inside plot window')
 
