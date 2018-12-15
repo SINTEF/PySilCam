@@ -24,7 +24,7 @@ import pysilcam.silcamgui.guicalcs as gc
 from pysilcam.silcamgui.guicalcs import process_mode
 from pysilcam.config import PySilcamSettings
 from pysilcam.oilgas import PathLength
-from pysilcam.silcamgui.interactive_summary import Plotter
+from pysilcam.silcamgui.interactive_summary import InterativePlotter
 
 sns.set_style('ticks')
 sns.set_context(font_scale=2)
@@ -387,7 +387,8 @@ def main():
         def STATS_to_PJ_csv_converter(self):
             self.configfile = "/mnt/PDrive/PJ/MiniTowerSilCamConfig.ini"
             self.stats_filename = "/mnt/PDrive/PJ/Oseberg2017OilOnly0.25mmNozzle2-STATS.csv"
-            self.SummaryExplorer = Plotter(self.configfile, self.stats_filename)
+            self.SummaryExplorer = InterativePlotter()
+            self.SummaryExplorer
             # plt.show()
             # if self.configfile == '':
             #     self.status_update('Asking user for config file')
