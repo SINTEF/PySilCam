@@ -8,7 +8,7 @@ import cmocean
 import matplotlib.pyplot as plt
 import matplotlib
 from PyQt5.QtWidgets import QMainWindow, QApplication, QAction
-from PyQt5.QtGui import QIcon
+from PyQt5 import QtCore
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from PyQt5 import QtWidgets
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
@@ -62,8 +62,28 @@ class InteractivePlotter(QMainWindow):
         self.setWindowTitle(self.plot_fame.graph_view.stats_filename)
         QApplication.processEvents()
 
-        self.plot_fame.graph_view.update_plot(self.plot_fame.graph_view.mid_time)
+        self.plot_fame.graph_view.update_plot()
         QApplication.processEvents()
+
+
+    def keyPressEvent(self, event):
+        pressedkey = event.key()
+        if (pressedkey == QtCore.Qt.Key_Up) or (pressedkey == QtCore.Qt.Key_W):
+            print('up')
+            event.accept()
+        elif (pressedkey == QtCore.Qt.Key_Right) or (pressedkey == QtCore.Qt.Key_D):
+            self.plot_fame.graph_view.mid_time += pd.to_timedelta('00:00:01')
+            self.plot_fame.graph_view.update_plot()
+            event.accept()
+        elif (pressedkey == QtCore.Qt.Key_Down) or (pressedkey == QtCore.Qt.Key_S):
+            print('down')
+            event.accept()
+        elif (pressedkey == QtCore.Qt.Key_Left) or (pressedkey == QtCore.Qt.Key_A):
+            self.plot_fame.graph_view.mid_time -= pd.to_timedelta('00:00:01')
+            self.plot_fame.graph_view.update_plot()
+            event.accept()
+        else:
+            event.ignore()
 
     def load(self):
         print('load pushed')
@@ -94,9 +114,7 @@ class PlotView(QtWidgets.QWidget):
 
     def setup_figure(self, config_file, stats_csv_file):
         settings = PySilcamSettings(config_file)
-        print('Loading stats')
         stats = pd.read_csv(stats_csv_file, nrows=10000, parse_dates=['timestamp'])
-        print('  OK.')
 
         u = stats['timestamp'].unique()
         u = pd.to_datetime(u)
@@ -167,28 +185,50 @@ class PlotView(QtWidgets.QWidget):
     def on_click(self, event):
         if event.inaxes is not None:
             try:
-                mid_time = pd.to_datetime(matplotlib.dates.num2date(event.xdata))
+                self.mid_time = pd.to_datetime(matplotlib.dates.num2date(event.xdata))
                 # mid_time.tz_convert(None)
-                self.update_plot(mid_time)
+                self.update_plot()
             except ValueError:
                 pass
         else:
             print('Clicked ouside axes bounds but inside plot window')
 
-    def update_plot(self, mid_time):
-
-
-        print(mid_time)
+    def update_plot(self):
 
         # mid_time = pd.to_datetime('2018-11-21 11:10:00')
 
         av_window = pd.to_timedelta('00:00:05')
 
-        start_time = mid_time - av_window / 2
-        end_time = mid_time + av_window / 2
+        start_time = self.mid_time - av_window / 2
+        end_time = self.mid_time + av_window / 2
         u = pd.to_datetime(self.u)
-        print(u[0], start_time, end_time)
         timeind = np.argwhere((u > start_time) & (u < end_time))
+
+        psd_nims = len(timeind)
+        if psd_nims < 1:
+            plt.sca(self.axispsd)
+            plt.cla()
+
+            plt.sca(self.axistext)
+
+            string = ''
+            string += '\n Num images: {:0.0f}'.format(psd_nims)
+            string += '\n Start: ' + str(start_time)
+            string += '\n End: ' + str(end_time)
+            string += '\n Window [sec.] {:0.0f}:'.format((end_time - start_time).seconds)
+
+            plt.title(string, verticalalignment='top', horizontalalignment='right', loc='right')
+
+            plt.sca(self.axisconstant)
+            self.line1.remove()
+            self.line2.remove()
+            self.line1 = plt.vlines(start_time, 1, 12000, 'r', linestyle='--')
+            self.line2 = plt.vlines(end_time, 1, 12000, 'r', linestyle='--')
+            self.canvas.draw()
+            return
+
+        psd_start = min(u[timeind])
+        psd_end = max(u[timeind])
 
         psd_total = np.mean(self.vd_total[timeind, :], axis=0)[0]
         psd_oil = np.mean(self.vd_oil[timeind, :], axis=0)[0]
@@ -203,12 +243,6 @@ class PlotView(QtWidgets.QWidget):
         psd_d50_gas = scpp.d50_from_vd(psd_gas, self.dias)
 
         psd_gor = sum(psd_gas) / (sum(psd_oil) + sum(psd_gas)) * 100
-
-        psd_nims = len(timeind)
-        psd_start = min(u[timeind])
-        psd_end = max(u[timeind])
-        psd_mid = psd_start + (psd_end - psd_start) / 2
-
 
         plt.sca(self.axispsd)
         plt.cla()
@@ -231,7 +265,6 @@ class PlotView(QtWidgets.QWidget):
         string += '\n VC gas [uL/L]: {:0.0f}'.format(psd_vc_gas)
         string += '\n Num images: {:0.0f}'.format(psd_nims)
         string += '\n Start: ' + str(pd.to_datetime(psd_start[0]))
-        string += '\n Start: ' + str(pd.to_datetime(psd_start[0]))
         string += '\n End: ' + str(pd.to_datetime(psd_end[0]))
         string += '\n Window [sec.] {:0.0f}:'.format(pd.to_timedelta(psd_end[0]-psd_start[0]).seconds)
 
@@ -240,8 +273,8 @@ class PlotView(QtWidgets.QWidget):
         plt.sca(self.axisconstant)
         self.line1.remove()
         self.line2.remove()
-        self.line1 = plt.vlines(start_time, 1, 12000, 'r')
-        self.line2 = plt.vlines(end_time, 1, 12000, 'r')
+        self.line1 = plt.vlines(pd.to_datetime(psd_start[0]), 1, 12000, 'r')
+        self.line2 = plt.vlines(pd.to_datetime(psd_end[0]), 1, 12000, 'r')
         self.canvas.draw()
 
 
