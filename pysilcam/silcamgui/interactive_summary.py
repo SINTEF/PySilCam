@@ -69,17 +69,19 @@ class InteractivePlotter(QMainWindow):
     def keyPressEvent(self, event):
         pressedkey = event.key()
         if (pressedkey == QtCore.Qt.Key_Up) or (pressedkey == QtCore.Qt.Key_W):
-            print('up')
+            self.plot_fame.graph_view.av_window += pd.Timedelta(seconds=1)
+            self.plot_fame.graph_view.update_plot()
             event.accept()
         elif (pressedkey == QtCore.Qt.Key_Right) or (pressedkey == QtCore.Qt.Key_D):
-            self.plot_fame.graph_view.mid_time += pd.to_timedelta('00:00:01')
+            self.plot_fame.graph_view.mid_time += pd.Timedelta(seconds=1)
             self.plot_fame.graph_view.update_plot()
             event.accept()
         elif (pressedkey == QtCore.Qt.Key_Down) or (pressedkey == QtCore.Qt.Key_S):
-            print('down')
+            self.plot_fame.graph_view.av_window -= pd.Timedelta(seconds=1)
+            self.plot_fame.graph_view.update_plot()
             event.accept()
         elif (pressedkey == QtCore.Qt.Key_Left) or (pressedkey == QtCore.Qt.Key_A):
-            self.plot_fame.graph_view.mid_time -= pd.to_timedelta('00:00:01')
+            self.plot_fame.graph_view.mid_time -= pd.Timedelta(seconds=1)
             self.plot_fame.graph_view.update_plot()
             event.accept()
         else:
@@ -108,12 +110,15 @@ class PlotView(QtWidgets.QWidget):
         self.layout.setStretchFactor(self.canvas, 1)
         self.setLayout(self.layout)
 
-        self.configfile = "E:/PJ/MiniTowerSilCamConfig.ini"
-        self.stats_filename = "E:/PJ/Oseberg2017OilOnly0.25mmNozzle2-STATS.csv"
+        self.configfile = "/mnt/PDrive/PJ/MiniTowerSilCamConfig.ini"
+        self.stats_filename = "/mnt/PDrive/PJ/Oseberg2017OilOnly0.25mmNozzle2-STATS.csv"
         self.canvas.draw()
 
     def setup_figure(self, config_file, stats_csv_file):
         settings = PySilcamSettings(config_file)
+        self.av_window = pd.Timedelta(seconds=settings.PostProcess.window_size)
+
+        # @todo nrows is for testing only!
         stats = pd.read_csv(stats_csv_file, nrows=10000, parse_dates=['timestamp'])
 
         u = stats['timestamp'].unique()
@@ -128,7 +133,7 @@ class PlotView(QtWidgets.QWidget):
         d50_gas = np.zeros(len(u))
         d50_oil = np.zeros_like(d50_gas)
         d50_total = np.zeros_like(d50_gas)
-        # @todo make this number of particle per image, and sum according to index later
+        # @todo make this number of particles per image, and sum according to index later
         nparticles_all = 0
         nparticles_total = 0
         nparticles_oil = 0
@@ -182,6 +187,8 @@ class PlotView(QtWidgets.QWidget):
         self.dias = dias
         self.fig.canvas.callbacks.connect('button_press_event', self.on_click)
 
+        self.update_plot()
+
     def on_click(self, event):
         if event.inaxes is not None:
             try:
@@ -197,10 +204,10 @@ class PlotView(QtWidgets.QWidget):
 
         # mid_time = pd.to_datetime('2018-11-21 11:10:00')
 
-        av_window = pd.to_timedelta('00:00:05')
+        # self.av_window = pd.to_timedelta('00:00:05')
 
-        start_time = self.mid_time - av_window / 2
-        end_time = self.mid_time + av_window / 2
+        start_time = self.mid_time - self.av_window / 2
+        end_time = self.mid_time + self.av_window / 2
         u = pd.to_datetime(self.u)
         timeind = np.argwhere((u > start_time) & (u < end_time))
 
