@@ -7,12 +7,14 @@ import numpy as np
 import cmocean
 import matplotlib.pyplot as plt
 import matplotlib
-from PyQt5.QtWidgets import QMainWindow, QApplication, QAction, QInputDialog
+from PyQt5.QtWidgets import QMainWindow, QApplication, QAction, QInputDialog, QMessageBox, QFileDialog
 from PyQt5 import QtCore
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from PyQt5 import QtWidgets
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 import sys
+import os
+from pysilcam.silcamgui.guicalcs import export_timeseries
 
 
 class FigFrame(QtWidgets.QFrame):
@@ -43,28 +45,33 @@ class InteractivePlotter(QMainWindow):
         mainMenu = self.menuBar()
         fileMenu = mainMenu.addMenu('File')
 
+        loadButton = QAction('Load', self)
+        loadButton.setStatusTip('Load data')
+        loadButton.triggered.connect(self.plot_fame.graph_view.load_data)
+        fileMenu.addAction(loadButton)
+
+        avwinButton = QAction('Average window', self)
+        avwinButton.setStatusTip('Change the average window')
+        avwinButton.triggered.connect(self.modify_av_wind)
+        fileMenu.addAction(avwinButton)
+
         exitButton = QAction('Exit', self)
         exitButton.setStatusTip('Close')
         exitButton.triggered.connect(self.close)
         fileMenu.addAction(exitButton)
 
-        loadButton = QAction('Average window', self)
-        loadButton.setStatusTip('Change the average window')
-        loadButton.triggered.connect(self.modify_av_wind)
-        fileMenu.addAction(loadButton)
 
+        # self.setWindowTitle('Loading: ' + self.plot_fame.graph_view.stats_filename)
+        # QApplication.processEvents()
 
-        self.setWindowTitle('Loading: ' + self.plot_fame.graph_view.stats_filename)
-        QApplication.processEvents()
+        # self.plot_fame.graph_view.setup_figure(self.plot_fame.graph_view.configfile,
+        #                                        self.plot_fame.graph_view.stats_filename)
 
-        self.plot_fame.graph_view.setup_figure(self.plot_fame.graph_view.configfile,
-                                               self.plot_fame.graph_view.stats_filename)
-
-        self.setWindowTitle(self.plot_fame.graph_view.stats_filename)
-        QApplication.processEvents()
-
-        self.plot_fame.graph_view.update_plot()
-        QApplication.processEvents()
+        # self.setWindowTitle(self.plot_fame.graph_view.stats_filename)
+        # QApplication.processEvents()
+        #
+        # self.plot_fame.graph_view.update_plot()
+        # QApplication.processEvents()
 
 
     def keyPressEvent(self, event):
@@ -118,21 +125,84 @@ class PlotView(QtWidgets.QWidget):
         self.layout.setStretchFactor(self.canvas, 1)
         self.setLayout(self.layout)
 
-        self.configfile = "E:/PJ/MiniTowerSilCamConfig.ini"
-        self.stats_filename = "E:/PJ/Oseberg2017OilOnly0.25mmNozzle2-STATS.csv"
+        self.configfile = ''
+        self.stats_filename = ''
+        self.datadir = os.getcwd()
+        # self.configfile = "E:/PJ/MiniTowerSilCamConfig.ini"
+        # self.stats_filename = "E:/PJ/Oseberg2017OilOnly0.25mmNozzle2-STATS.csv"
+        # self.stats_filename = "E:/PJ/Oseberg2017OilOnly0.25mmNozzle2sdghjsk-STATS.csv"
 
-        self.settings = PySilcamSettings(self.configfile)
-        self.av_window = pd.Timedelta(seconds=self.settings.PostProcess.window_size)
+        # self.load_data()
 
         # self.load_from_stats()
 
-        self.load_from_timeseries()
+        # self.load_from_timeseries()
 
         self.canvas.draw()
+
+
+    def load_data(self):
+        if self.configfile == '':
+            self.configfile = QFileDialog.getOpenFileName(self,
+                                                          caption='Load config ini file',
+                                                          directory=self.datadir,
+                                                          filter=(('*.ini'))
+                                                          )[0]
+        if self.configfile == '':
+            return
+
+        self.datadir = os.path.split(self.configfile)[0]
+
+        self.stats_filename = ''
+        self.stats_filename = QFileDialog.getOpenFileName(self,
+                                                          caption='Load a *-STATS.csv file',
+                                                          directory=self.datadir,
+                                                          filter=(('*-STATS.csv'))
+                                                          )[0]
+        if self.stats_filename == '':
+            return
+
+        timeseriesgas_file = self.stats_filename.replace('-STATS.csv', '-TIMESERIESgas.xlsx')
+
+        if os.path.isfile(timeseriesgas_file):
+            self.load_from_timeseries()
+        else:
+
+            msgBox = QMessageBox()
+            msgBox.setText('The STATS data appear not to have been exported to TIMSERIES.xlsx' +
+                           '\n We can use the STATS file anyway (which might take a while)' +
+                           '\n or we can convert the data to TIMSERIES.xls now,'
+                           '\n which can be used quickly if you want to load these data another time.')
+            msgBox.setIcon(QMessageBox.Question)
+            msgBox.setWindowTitle('What to do?')
+            load_stats_button = msgBox.addButton('Load stats anyway',
+                                                 QMessageBox.ActionRole)
+            convert_stats_button = msgBox.addButton('Convert and save timeseries',
+                                                    QMessageBox.ActionRole)
+            msgBox.addButton(QMessageBox.Cancel)
+            msgBox.exec_()
+
+            if (msgBox.clickedButton() == load_stats_button):
+                self.load_from_stats()
+            elif (msgBox.clickedButton() == convert_stats_button):
+                export_timeseries(self.configfile, self.stats_filename)
+                self.load_from_timeseries()
+            else:
+                print('cancel')
+                return
+
+        self.settings = PySilcamSettings(self.configfile)
+        self.av_window = pd.Timedelta(seconds=self.settings.PostProcess.window_size)
+        self.setup_figure()
+
+
+
 
     def load_from_timeseries(self):
         timeseriesgas_file = self.stats_filename.replace('-STATS.csv', '-TIMESERIESgas.xlsx')
         timeseriesoil_file = self.stats_filename.replace('-STATS.csv', '-TIMESERIESoil.xlsx')
+
+        print(timeseriesgas_file)
 
         gas = pd.read_excel(timeseriesgas_file, parse_dates=['Time'])
         oil = pd.read_excel(timeseriesoil_file, parse_dates=['Time'])
@@ -154,7 +224,7 @@ class PlotView(QtWidgets.QWidget):
 
     def load_from_stats(self):
         # @todo nrows is for testing only!
-        stats = pd.read_csv(self.stats_filename, nrows=10000, parse_dates=['timestamp'])
+        stats = pd.read_csv(self.stats_filename, nrows=20000, parse_dates=['timestamp'])
 
         u = stats['timestamp'].unique()
         u = pd.to_datetime(u)
@@ -210,7 +280,7 @@ class PlotView(QtWidgets.QWidget):
         self.dias = dias
 
 
-    def setup_figure(self, config_file, stats_csv_file):
+    def setup_figure(self):
 
 
         # f, self.a = plt.subplots(1, 2, figsize=(15, 6))
