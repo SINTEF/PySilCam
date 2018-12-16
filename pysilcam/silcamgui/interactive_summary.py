@@ -25,6 +25,7 @@ class FigFrame(QtWidgets.QFrame):
     def resizeEvent(self, event):
         self.graph_view.setGeometry(self.rect())
 
+
 class InteractivePlotter(QMainWindow):
     def __init__(self, parent=None):
         super(InteractivePlotter, self).__init__(parent)
@@ -119,19 +120,46 @@ class PlotView(QtWidgets.QWidget):
 
         self.configfile = "E:/PJ/MiniTowerSilCamConfig.ini"
         self.stats_filename = "E:/PJ/Oseberg2017OilOnly0.25mmNozzle2-STATS.csv"
+
+        self.settings = PySilcamSettings(self.configfile)
+        self.av_window = pd.Timedelta(seconds=self.settings.PostProcess.window_size)
+
+        # self.load_from_stats()
+
+        self.load_from_timeseries()
+
         self.canvas.draw()
 
-    def setup_figure(self, config_file, stats_csv_file):
-        settings = PySilcamSettings(config_file)
-        self.av_window = pd.Timedelta(seconds=settings.PostProcess.window_size)
+    def load_from_timeseries(self):
+        timeseriesgas_file = self.stats_filename.replace('-STATS.csv', '-TIMESERIESgas.xlsx')
+        timeseriesoil_file = self.stats_filename.replace('-STATS.csv', '-TIMESERIESoil.xlsx')
 
+        gas = pd.read_excel(timeseriesgas_file, parse_dates=['Time'])
+        oil = pd.read_excel(timeseriesoil_file, parse_dates=['Time'])
+
+        self.dias = np.array(oil.columns[0:52], dtype=float)
+        self.vd_oil = oil.as_matrix(columns=oil.columns[0:52])
+        self.vd_gas = gas.as_matrix(columns=gas.columns[0:52])
+        self.vd_total = self.vd_oil + self.vd_gas
+        self.u = pd.to_datetime(oil['Time'].values)
+        self.d50_gas = gas['D50']
+        self.d50_oil = oil['D50']
+
+        # nc = scpp.vd_to_nc(vd_oil, dias)
+
+        self.d50_total = np.zeros_like(self.d50_oil)
+        for i, vd in enumerate(self.vd_total):
+            self.d50_total[i] = scpp.d50_from_vd(vd, self.dias)
+
+
+    def load_from_stats(self):
         # @todo nrows is for testing only!
-        stats = pd.read_csv(stats_csv_file, nrows=10000, parse_dates=['timestamp'])
+        stats = pd.read_csv(self.stats_filename, nrows=10000, parse_dates=['timestamp'])
 
         u = stats['timestamp'].unique()
         u = pd.to_datetime(u)
-        sample_volume = scpp.get_sample_volume(settings.PostProcess.pix_size,
-                                               path_length=settings.PostProcess.path_length)
+        sample_volume = scpp.get_sample_volume(self.settings.PostProcess.pix_size,
+                                               path_length=self.settings.PostProcess.path_length)
 
         dias, bin_lims = scpp.get_size_bins()
         vd_oil = np.zeros((len(u), len(dias)))
@@ -156,13 +184,13 @@ class PlotView(QtWidgets.QWidget):
 
             oil = scog.extract_oil(substats)
             nparticles_oil += len(oil)
-            dias, vd_oil_ = scpp.vd_from_stats(oil, settings.PostProcess)
+            dias, vd_oil_ = scpp.vd_from_stats(oil, self.settings.PostProcess)
             vd_oil_ /= sv
             vd_oil[i, :] = vd_oil_
 
             gas = scog.extract_gas(substats)
             nparticles_gas += len(gas)
-            dias, vd_gas_ = scpp.vd_from_stats(gas, settings.PostProcess)
+            dias, vd_gas_ = scpp.vd_from_stats(gas, self.settings.PostProcess)
             vd_gas_ /= sv
             vd_gas[i, :] = vd_gas_
             d50_gas[i] = scpp.d50_from_vd(vd_gas_, dias)
@@ -172,26 +200,34 @@ class PlotView(QtWidgets.QWidget):
             d50_total[i] = scpp.d50_from_vd(vd_total_, dias)
             vd_total[i, :] = vd_total_
 
+        self.vd_total = vd_total
+        self.vd_gas = vd_gas
+        self.vd_oil = vd_oil
+        self.d50_total = d50_total
+        self.d50_oil = d50_oil
+        self.d50_gas = d50_gas
+        self.u = u
+        self.dias = dias
+
+
+    def setup_figure(self, config_file, stats_csv_file):
+
+
         # f, self.a = plt.subplots(1, 2, figsize=(15, 6))
 
         plt.sca(self.axisconstant)
-        plt.pcolormesh(u, dias, np.log(vd_total.T), cmap=cmocean.cm.amp)
-        plt.plot(u, d50_total, 'kx', markersize=5, alpha=0.25)
-        plt.plot(u, d50_gas, 'bx', markersize=5, alpha=0.25)
+        plt.pcolormesh(self.u, self.dias, np.log(self.vd_total.T), cmap=cmocean.cm.matter)
+        plt.plot(self.u, self.d50_total, 'kx', markersize=5, alpha=0.25)
+        plt.plot(self.u, self.d50_gas, 'bx', markersize=5, alpha=0.25)
         plt.yscale('log')
         plt.ylabel('ECD [um]')
 
-        self.start_time = min(u)
-        self.end_time = max(u)
-        self.mid_time = min(u) + (max(u) - min(u)) / 2
+        self.start_time = min(self.u)
+        self.end_time = max(self.u)
+        self.mid_time = min(self.u) + (max(self.u) - min(self.u)) / 2
         self.line1 = plt.vlines(self.start_time, 1, 12000, 'r')
         self.line2 = plt.vlines(self.end_time, 1, 12000, 'r')
 
-        self.u = u
-        self.vd_total = vd_total
-        self.vd_oil = vd_oil
-        self.vd_gas = vd_gas
-        self.dias = dias
         self.fig.canvas.callbacks.connect('button_press_event', self.on_click)
 
         self.update_plot()
