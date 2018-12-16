@@ -7,7 +7,7 @@ import numpy as np
 import cmocean
 import matplotlib.pyplot as plt
 import matplotlib
-from PyQt5.QtWidgets import QMainWindow, QApplication, QAction
+from PyQt5.QtWidgets import QMainWindow, QApplication, QAction, QInputDialog
 from PyQt5 import QtCore
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from PyQt5 import QtWidgets
@@ -47,9 +47,9 @@ class InteractivePlotter(QMainWindow):
         exitButton.triggered.connect(self.close)
         fileMenu.addAction(exitButton)
 
-        loadButton = QAction('Load', self)
-        loadButton.setStatusTip('Load')
-        loadButton.triggered.connect(self.load)
+        loadButton = QAction('Average window', self)
+        loadButton.setStatusTip('Change the average window')
+        loadButton.triggered.connect(self.modify_av_wind)
         fileMenu.addAction(loadButton)
 
 
@@ -78,21 +78,28 @@ class InteractivePlotter(QMainWindow):
             event.accept()
         elif (pressedkey == QtCore.Qt.Key_Down) or (pressedkey == QtCore.Qt.Key_S):
             self.plot_fame.graph_view.av_window -= pd.Timedelta(seconds=1)
+            self.plot_fame.graph_view.av_window = max(pd.Timedelta(seconds=1), self.plot_fame.graph_view.av_window)
             self.plot_fame.graph_view.update_plot()
             event.accept()
         elif (pressedkey == QtCore.Qt.Key_Left) or (pressedkey == QtCore.Qt.Key_A):
             self.plot_fame.graph_view.mid_time -= pd.Timedelta(seconds=1)
+            self.plot_fame.graph_view.av_window = max(pd.Timedelta(seconds=1), self.plot_fame.graph_view.av_window)
             self.plot_fame.graph_view.update_plot()
             event.accept()
         else:
             event.ignore()
 
-    def load(self):
-        print('load pushed')
+
+    def modify_av_wind(self):
+        window_seconds = self.plot_fame.graph_view.av_window.seconds
+        input_value, okPressed = QInputDialog.getInt(self, "Get integer", "Average window:", window_seconds, 0, 100, 1)
+
+        if okPressed:
+            self.plot_fame.graph_view.av_window = pd.Timedelta(seconds=input_value)
 
 
 class PlotView(QtWidgets.QWidget):
-    def __init__(self, parent = None):
+    def __init__(self, parent=None):
         super(PlotView, self).__init__(parent)
 
         # self.fig, self.axes = plt.subplots(2,2)
@@ -110,8 +117,8 @@ class PlotView(QtWidgets.QWidget):
         self.layout.setStretchFactor(self.canvas, 1)
         self.setLayout(self.layout)
 
-        self.configfile = "/mnt/PDrive/PJ/MiniTowerSilCamConfig.ini"
-        self.stats_filename = "/mnt/PDrive/PJ/Oseberg2017OilOnly0.25mmNozzle2-STATS.csv"
+        self.configfile = "E:/PJ/MiniTowerSilCamConfig.ini"
+        self.stats_filename = "E:/PJ/Oseberg2017OilOnly0.25mmNozzle2-STATS.csv"
         self.canvas.draw()
 
     def setup_figure(self, config_file, stats_csv_file):
