@@ -73,7 +73,7 @@ def _configure_camera(camera, config_file=None):
 
     #If a config is specified, override those values
     for k, v in config.items():
-        logger.info(k,'=',v)
+        logger.info('{0} = {1}'.format(k,v))
         setattr(camera, k, v)
 
     return camera
@@ -197,7 +197,7 @@ class Acquire():
                                 np.save(fh, img, allow_pickle=False)
                                 fh.flush()
                                 os.fsync(fh.fileno())
-                                logger.info('Written', filename)
+                                logger.info('Written ' + filename)
                         yield timestamp, img
             except pymba.vimbaexception.VimbaException:
                 logger.info('Camera error. Restarting')
