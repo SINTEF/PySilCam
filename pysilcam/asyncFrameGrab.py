@@ -3,22 +3,7 @@ import time
 import queue
 import numpy as np
 from pysilcam.config import load_camera_config
-import skimage
-import os
-from cv2 import cvtColor, COLOR_BAYER_BG2RGB, imwrite
-import cv2
-import threading
-import colour
-from colour.plotting import *
-
-from colour_demosaicing import (
-    EXAMPLES_RESOURCES_DIRECTORY,
-    demosaicing_CFA_Bayer_bilinear,
-    demosaicing_CFA_Bayer_Malvar2004,
-    demosaicing_CFA_Bayer_Menon2007,
-    mosaicing_CFA_Bayer)
-
-OETF = colour.RGB_COLOURSPACES['sRGB'].encoding_cctf
+from cv2 import cvtColor, COLOR_BAYER_BG2RGB
 
 def saveImg(img, i):
     path = '/home/bjarne/data/silcam_files/temp/'
@@ -31,7 +16,7 @@ saveImg.t = time.time()
 
 def frameDone_callback(frame):
     frame.queueFrameCapture(frameCallback=frameDone_callback)
-    img = np.ndarray(buffer=frame0.getBufferByteData(), dtype=np.uint8, shape=(frame0.height, frame0.width))
+    img = np.ndarray(buffer=frame.getBufferByteData(), dtype=np.uint8, shape=(frame.height, frame.width))
     imQueue.put(img)
 
 imQueue = queue.LifoQueue(10)

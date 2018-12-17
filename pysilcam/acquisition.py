@@ -7,8 +7,12 @@ import logging
 from pysilcam.config import load_camera_config
 import pysilcam.fakepymba as fakepymba
 import sys
+import queue
+from cv2 import cvtColor, COLOR_BAYER_BG2RGB
+
 
 logger = logging.getLogger(__name__)
+imQueue = queue.LifoQueue(10)
 
 try:
     import pymba
@@ -78,6 +82,27 @@ def _configure_camera(camera, config_file=None):
 
     return camera
 
+def _frameDone_callback(frame):
+    frame.queueFrameCapture(frameCallback=_frameDone_callback)
+    img = np.ndarray(buffer=frame.getBufferByteData(), dtype=np.uint8, shape=(frame.height, frame.width))
+    timestamp = pymba.get_time_stamp(frame)
+    try:
+        imQueue.put_nowait([timestamp, img])
+    except queue.Full:
+        print("Buffer full, dropping frames")
+
+def _startAqusition(camera):
+    camera.startCapture()
+
+    frame = camera.getFrame()
+    frame.announceFrame()
+    frame.queueFrameCapture(frameCallback=_frameDone_callback)
+
+    camera.runFeatureCommand('AcquisitionStart')
+
+#def _stopAqusition(camera):
+    # TODO implement this!
+    # We should do a more gracefull shutdown of the camera when terminating pySilcam.
 
 def print_camera_config(camera):
     '''Print the camera configuration'''
@@ -99,7 +124,6 @@ def print_camera_config(camera):
 
     print(config_info)
     logger.debug(config_info)
-
 
 class Acquire():
     '''
@@ -184,62 +208,23 @@ class Acquire():
                     #Configure camera
                     camera = _configure_camera(camera, camera_config_file)
 
-                    #Prepare for image acquisition and create a frame
-                    frame0 = camera.getFrame()
-                    frame0.announceFrame()
+                    #Start stream
+                    _startAqusition(camera)
 
                     #Aquire raw images and yield to calling context
                     while True:
-                        timestamp, img = self._acquire_frame(camera, frame0)
+                        timestamp, img = imQueue.get()
+                        print(timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc'), ' acquired')
+                        img = cvtColor(img, COLOR_BAYER_BG2RGB)
                         if writeToDisk:
                             filename = os.path.join(datapath, timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc'))
-                            with open(filename, 'wb') as fh:
-                                np.save(fh, img, allow_pickle=False)
-                                fh.flush()
-                                os.fsync(fh.fileno())
-                                print('Written', filename)
+                            np.save(filename, img, allow_pickle=False)
                         yield timestamp, img
-            except pymba.vimbaexception.VimbaException:
-                print('Camera error. Restarting')
+            except pymba.vimbaexception.VimbaException as e:
+                print('Camera error: ', e.message, 'Restarting...')
             except KeyboardInterrupt:
                 print('User interrupt with ctrl+c, terminating PySilCam.')
                 sys.exit(0)
-           
-
-    def _acquire_frame(self, camera, frame0):
-        '''Aquire a single frame
-        Args:
-            camera (Camera)         : The camera with settings from the config
-                                      obtained from _configure_camera()
-            frame0  (frame)         : camera frame obtained from camera.getFrame()
-        
-        Returns:
-            timestamp (timestamp)   : timestamp of image acquisition
-            output (uint8)          : raw image acquired
-        '''
-
-        #Aquire single fram from camera
-        camera.startCapture()
-        frame0.queueFrameCapture()
-        camera.runFeatureCommand('AcquisitionStart')
-        camera.runFeatureCommand('AcquisitionStop')
-        frame0.waitFrameCapture()
-
-        #Copy frame data to numpy array (Bayer format)
-        #bayer_img = np.ndarray(buffer = frame0.getBufferByteData(),
-        #                       dtype = np.uint8,
-        #                       shape = (frame0.height, frame0.width, 3))
-        img = np.ndarray(buffer = frame0.getBufferByteData(),
-                        dtype = np.uint8,
-                        shape = (frame0.height, frame0.width, 3))
-
-        timestamp = self.pymba.get_time_stamp(frame0)
-
-        camera.endCapture()
-
-        output = img.copy()
-        
-        return timestamp, output
 
     def wait_for_camera(self):
         '''
