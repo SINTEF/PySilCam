@@ -17,6 +17,7 @@ sudo apt-get install -y git wget
 
 # pysilcam requirements
 conda install --yes pytables=3.4.4
+conda install --yes opencv=3.4.2
 
 python setup.py develop
 python setup.py test
