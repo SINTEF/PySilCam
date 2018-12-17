@@ -46,8 +46,7 @@ def export_timeseries(configfile, statsfile):
     settings = PySilcamSettings(configfile)
 
     print('Loading STATS data: ', statsfile)
-    # @todo nrows is temp!!
-    stats = pd.read_csv(statsfile, nrows=20000)
+    stats = pd.read_csv(statsfile)
 
     stats['timestamp'] = pd.to_datetime(stats['timestamp'])
 

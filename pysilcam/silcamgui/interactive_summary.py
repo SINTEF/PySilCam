@@ -47,8 +47,15 @@ class InteractivePlotter(QMainWindow):
 
         loadButton = QAction('Load', self)
         loadButton.setStatusTip('Load data')
+        loadButton.setShortcut("Ctrl+o")
         loadButton.triggered.connect(self.plot_fame.graph_view.load_data)
         fileMenu.addAction(loadButton)
+
+        saveButton = QAction('Save', self)
+        saveButton.setStatusTip('Save PSD data to xls')
+        saveButton.setShortcut("Ctrl+s")
+        saveButton.triggered.connect(self.plot_fame.graph_view.save_data)
+        fileMenu.addAction(saveButton)
 
         avwinButton = QAction('Average window', self)
         avwinButton.setStatusTip('Change the average window')
@@ -127,6 +134,7 @@ class PlotView(QtWidgets.QWidget):
 
         self.configfile = ''
         self.stats_filename = ''
+        self.av_window = pd.Timedelta(seconds=30)
         self.datadir = os.getcwd()
         # self.configfile = "E:/PJ/MiniTowerSilCamConfig.ini"
         # self.stats_filename = "E:/PJ/Oseberg2017OilOnly0.25mmNozzle2-STATS.csv"
@@ -142,15 +150,6 @@ class PlotView(QtWidgets.QWidget):
 
 
     def load_data(self):
-        if self.configfile == '':
-            self.configfile = QFileDialog.getOpenFileName(self,
-                                                          caption='Load config ini file',
-                                                          directory=self.datadir,
-                                                          filter=(('*.ini'))
-                                                          )[0]
-        if self.configfile == '':
-            return
-
         self.datadir = os.path.split(self.configfile)[0]
 
         self.stats_filename = ''
@@ -183,6 +182,17 @@ class PlotView(QtWidgets.QWidget):
             msgBox.exec_()
 
             if (msgBox.clickedButton() == load_stats_button):
+                if self.configfile == '':
+                    self.configfile = QFileDialog.getOpenFileName(self,
+                                                                  caption='Load config ini file',
+                                                                  directory=self.datadir,
+                                                                  filter=(('*.ini'))
+                                                                  )[0]
+                if self.configfile == '':
+                    return
+
+                self.settings = PySilcamSettings(self.configfile)
+                self.av_window = pd.Timedelta(seconds=self.settings.PostProcess.window_size)
                 self.load_from_stats()
             elif (msgBox.clickedButton() == convert_stats_button):
                 export_timeseries(self.configfile, self.stats_filename)
@@ -191,8 +201,6 @@ class PlotView(QtWidgets.QWidget):
                 print('cancel')
                 return
 
-        self.settings = PySilcamSettings(self.configfile)
-        self.av_window = pd.Timedelta(seconds=self.settings.PostProcess.window_size)
         self.setup_figure()
 
 
@@ -223,8 +231,7 @@ class PlotView(QtWidgets.QWidget):
 
 
     def load_from_stats(self):
-        # @todo nrows is for testing only!
-        stats = pd.read_csv(self.stats_filename, nrows=20000, parse_dates=['timestamp'])
+        stats = pd.read_csv(self.stats_filename, parse_dates=['timestamp'])
 
         u = stats['timestamp'].unique()
         u = pd.to_datetime(u)
@@ -286,11 +293,13 @@ class PlotView(QtWidgets.QWidget):
         # f, self.a = plt.subplots(1, 2, figsize=(15, 6))
 
         plt.sca(self.axisconstant)
+        plt.cla()
         plt.pcolormesh(self.u, self.dias, np.log(self.vd_total.T), cmap=cmocean.cm.matter)
         plt.plot(self.u, self.d50_total, 'kx', markersize=5, alpha=0.25)
         plt.plot(self.u, self.d50_gas, 'bx', markersize=5, alpha=0.25)
         plt.yscale('log')
         plt.ylabel('ECD [um]')
+        plt.ylim(10, 12000)
 
         self.start_time = min(self.u)
         self.end_time = max(self.u)
@@ -308,12 +317,12 @@ class PlotView(QtWidgets.QWidget):
                 self.mid_time = pd.to_datetime(matplotlib.dates.num2date(event.xdata))
                 # mid_time.tz_convert(None)
                 self.update_plot()
-            except ValueError:
+            except:
                 pass
         else:
             print('Clicked ouside axes bounds but inside plot window')
 
-    def update_plot(self):
+    def update_plot(self, save=False):
 
         # mid_time = pd.to_datetime('2018-11-21 11:10:00')
 
@@ -372,6 +381,7 @@ class PlotView(QtWidgets.QWidget):
         plt.xlabel('ECD [um]')
         plt.ylabel('VD [uL/L]')
         plt.xscale('log')
+        plt.xlim(10, 12000)
 
         plt.sca(self.axistext)
 
@@ -396,6 +406,69 @@ class PlotView(QtWidgets.QWidget):
         self.line1 = plt.vlines(pd.to_datetime(psd_start[0]), 1, 12000, 'r')
         self.line2 = plt.vlines(pd.to_datetime(psd_end[0]), 1, 12000, 'r')
         self.canvas.draw()
+
+        if save:
+            timestring = pd.to_datetime(psd_start[0]).strftime('D%Y%m%dT%H%M%S')
+            outputname = self.stats_filename.replace('-STATS.csv','-PSD-' + timestring)
+            outputname = QFileDialog.getSaveFileName(self,
+                                                   "Select file to Save", outputname,
+                                                   ".xlsx")
+            if outputname[1]=='':
+                print('Did not recieve filename')
+                return
+            outputname = outputname[0] + outputname[1]
+            print(outputname)
+
+            from openpyxl import Workbook
+            wb = Workbook()
+            ws = wb.active
+            ws['A1'] = 'Start:'
+            ws['B1'] = min(u)
+            ws['A2'] = 'Weighted average:'
+            ws['B2'] = 'NOT IMPLEMENTED'
+            ws['A3'] = 'End:'
+            ws['B3'] = max(u)
+
+            ws['A5'] = 'Number of images:'
+            ws['B5'] = psd_nims
+
+            ws['D5'] = 'd50(microns):'
+            ws['E5'] = psd_d50_total
+            ws['A6'] = 'Number of particles:'
+            ws['B6'] = 'NOT IMPLEMENTED'
+            ws['D6'] = 'peak || modal size class (microns):'
+            ws['E6'] = 'NOT IMPLEMENTED'
+
+            ws['D13'] = 'd50(microns):'
+            ws['E13'] = psd_d50_oil
+            ws['D14'] = 'peak || modal size class (microns):'
+            ws['E14'] = 'NOT IMPLEMENTED'
+
+            ws['D21'] = 'd50(microns):'
+            ws['E21'] = psd_d50_gas
+            ws['D22'] = 'peak || modal size class (microns):'
+            ws['E22'] = 'NOT IMPLEMENTED'
+
+
+            ws['A8'] = 'Bin mid-sizes (microns):'
+            ws['A9'] = 'Vol. Conc. / bin (uL/L):'
+            ws['A16'] = 'Vol. Conc. / bin (uL/L):'
+            ws['A24'] = 'Vol. Conc. / bin (uL/L):'
+            ws['A12'] = 'OIL Info'
+            ws['A20'] = 'GAS Info'
+            # d = ws.cells(row='8')
+            for c in range(len(self.dias)):
+                ws.cell(row=8, column=c + 2, value=self.dias[c])
+                ws.cell(row=9, column=c + 2, value=psd_total[c])
+                ws.cell(row=16, column=c + 2, value=psd_oil[c])
+                ws.cell(row=24, column=c + 2, value=psd_gas[c])
+
+
+            wb.save(outputname)
+            print('Saved:', outputname)
+
+    def save_data(self):
+        self.update_plot(save=True)
 
 
 

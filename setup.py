@@ -11,6 +11,7 @@ REQUIRES = [
     'numpy==1.15.2',
     'pandas==0.20.3',
     'xlrd',
+    'openpyxl==2.4.8',
     'matplotlib==3.0.0',
     'imageio==2.4.1',
     'scikit-image==0.14.0',
