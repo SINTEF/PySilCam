@@ -226,6 +226,41 @@ class Acquire():
                 print('User interrupt with ctrl+c, terminating PySilCam.')
                 sys.exit(0)
 
+    def _acquire_frame(self, camera, frame0):
+        '''Aquire a single frame
+        Args:
+            camera (Camera)         : The camera with settings from the config
+                                      obtained from _configure_camera()
+            frame0  (frame)         : camera frame obtained from camera.getFrame()
+
+        Returns:
+            timestamp (timestamp)   : timestamp of image acquisition
+            output (uint8)          : raw image acquired
+        '''
+
+        # Aquire single fram from camera
+        camera.startCapture()
+        frame0.queueFrameCapture()
+        camera.runFeatureCommand('AcquisitionStart')
+        camera.runFeatureCommand('AcquisitionStop')
+        frame0.waitFrameCapture()
+
+        # Copy frame data to numpy array (Bayer format)
+        # bayer_img = np.ndarray(buffer = frame0.getBufferByteData(),
+        #                       dtype = np.uint8,
+        #                       shape = (frame0.height, frame0.width, 3))
+        img = np.ndarray(buffer=frame0.getBufferByteData(),
+                         dtype=np.uint8,
+                         shape=(frame0.height, frame0.width, 3))
+
+        timestamp = self.pymba.get_time_stamp(frame0)
+
+        camera.endCapture()
+
+        output = img.copy()
+
+        return timestamp, output
+
     def wait_for_camera(self):
         '''
         Waiting function that will continue forever until a camera becomes connected
