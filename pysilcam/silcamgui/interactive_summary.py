@@ -107,7 +107,7 @@ class InteractivePlotter(QMainWindow):
 
     def modify_av_wind(self):
         window_seconds = self.plot_fame.graph_view.av_window.seconds
-        input_value, okPressed = QInputDialog.getInt(self, "Get integer", "Average window:", window_seconds, 0, 100, 1)
+        input_value, okPressed = QInputDialog.getInt(self, "Get integer", "Average window:", window_seconds, 0, 60*60, 1)
 
         if okPressed:
             self.plot_fame.graph_view.av_window = pd.Timedelta(seconds=input_value)
