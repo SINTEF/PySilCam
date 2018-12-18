@@ -187,22 +187,17 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
       gui=None          (Class object)      :  Queue used to pass information between process thread and GUI
                                                initialised in ProcThread within guicals.py
     '''
-    print(config_filename)
-
-    print('TESTING!!!!!!!!!--------!!!!!!!!!!')
-    #---- SETUP ----
 
     #Load the configuration, create settings object
     settings = PySilcamSettings(config_filename)
-
+    #Configure logging
+    configure_logger(settings.General)
+    logger = logging.getLogger(__name__ + '.silcam_process')
+    logger.info(config_filename)
     #Print configuration to screen
     print('---- CONFIGURATION ----\n')
     settings.config.write(sys.stdout)
     print('-----------------------\n')
-
-    #Configure logging
-    configure_logger(settings.General)
-    logger = logging.getLogger(__name__ + '.silcam_process')
 
     logger.info('Processing path: ' + datapath)
 
