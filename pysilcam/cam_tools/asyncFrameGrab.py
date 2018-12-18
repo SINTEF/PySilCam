@@ -6,10 +6,9 @@ from pysilcam.config import load_camera_config
 from cv2 import cvtColor, COLOR_BAYER_BG2RGB
 
 def saveImg(img, i):
-    path = '/home/bjarne/data/silcam_files/temp/'
+    path = 'temp/'
     img = cvtColor(img, COLOR_BAYER_BG2RGB)
-    np.save(path + str(1), img, allow_pickle=False)
-
+    np.save(path + str(i), img, allow_pickle=False)
     print('Frequency: ', 1/(time.time() - saveImg.t))
     saveImg.t = time.time()
 saveImg.t = time.time()
@@ -45,7 +44,7 @@ with Vimba() as vimba:
     #config
 
     # Read the configiration values from default config file
-    configPath = 'camera_config_defaults.ini'
+    configPath = '../camera_config_defaults.ini'
     config = load_camera_config(configPath)
     config = load_camera_config('', config)
 
@@ -62,8 +61,8 @@ with Vimba() as vimba:
     frame0.queueFrameCapture(frameCallback=frameDone_callback)
     camera.runFeatureCommand('AcquisitionStart')
 
-
+    i = 0
     while(1):
         img = imQueue.get()
-        print(imQueue.qsize())
-        saveImg(img, 1)
+        saveImg(img, i)
+        i = i + 1

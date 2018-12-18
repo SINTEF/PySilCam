@@ -77,7 +77,6 @@ def _configure_camera(camera, config_file=None):
 
     #If a config is specified, override those values
     for k, v in config.items():
-        print(k,'=',v)
         setattr(camera, k, v)
 
     return camera
@@ -89,7 +88,7 @@ def _frameDone_callback(frame):
     try:
         imQueue.put_nowait([timestamp, img])
     except queue.Full:
-        print("Buffer full, dropping frames")
+        logger.warning("Buffer full, dropping frames")
 
 def _startAqusition(camera):
     camera.startCapture()
@@ -122,8 +121,7 @@ def print_camera_config(camera):
     config_info = '\n'.join(['{0}: {1}'.format(a, camera.getattr(a))
                              for a, b in config_info_map])
 
-    print(config_info)
-    logger.debug(config_info)
+    logger.debug('%s', config_info)
 
 class Acquire():
     '''
@@ -133,11 +131,11 @@ class Acquire():
         if USE_PYMBA:
             self.pymba = pymba
             self.pymba.get_time_stamp = lambda x: pd.Timestamp.now()
-            print('Pymba imported')
+            logger.info('Pymba imported')
             self.get_generator = self.get_generator_camera
         else:
             self.pymba = fakepymba
-            print('using fakepymba')
+            logger.info('Using fakepymba')
             self.get_generator = self.get_generator_disc
 
     def get_generator_disc(self, datapath=None, writeToDisk=False, camera_config_file=None):
@@ -176,7 +174,6 @@ class Acquire():
                 except Exception:
                     frame0.img_idx += 1
                     if frame0.img_idx > len(frame0.files):
-                        print('  END OF FILE LIST.')
                         logger.info('  END OF FILE LIST.')
                         break
 
@@ -214,16 +211,19 @@ class Acquire():
                     #Aquire raw images and yield to calling context
                     while True:
                         timestamp, img = imQueue.get()
-                        print(timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc'), ' acquired')
+                        logger.info('%s acquired', timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc'))
                         img = cvtColor(img, COLOR_BAYER_BG2RGB)
                         if writeToDisk:
                             filename = os.path.join(datapath, timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc'))
                             np.save(filename, img, allow_pickle=False)
                         yield timestamp, img
             except pymba.vimbaexception.VimbaException as e:
-                print('Camera error: ', e.message, 'Restarting...')
+                logger.warning('Camera error: %s, restarting...', e.message)
+            except IOError as e:
+                logger.error('I/O Error: %s', e.message)
+                sys.exit(0)
             except KeyboardInterrupt:
-                print('User interrupt with ctrl+c, terminating PySilCam.')
+                logger.info('User interrupt with ctrl+c, terminating PySilCam.')
                 sys.exit(0)
 
     def _acquire_frame(self, camera, frame0):
@@ -238,17 +238,13 @@ class Acquire():
             output (uint8)          : raw image acquired
         '''
 
-        # Aquire single fram from camera
+        # Aquire single frame from camera
         camera.startCapture()
         frame0.queueFrameCapture()
         camera.runFeatureCommand('AcquisitionStart')
         camera.runFeatureCommand('AcquisitionStop')
         frame0.waitFrameCapture()
 
-        # Copy frame data to numpy array (Bayer format)
-        # bayer_img = np.ndarray(buffer = frame0.getBufferByteData(),
-        #                       dtype = np.uint8,
-        #                       shape = (frame0.height, frame0.width, 3))
         img = np.ndarray(buffer=frame0.getBufferByteData(),
                          dtype=np.uint8,
                          shape=(frame0.height, frame0.width, 3))
@@ -271,8 +267,7 @@ class Acquire():
                 try:
                     camera = _init_camera(vimba)
                 except RuntimeError:
-                    msg = 'Could not connect to camera, sleeping five seconds and then retrying'
-                    print(msg)
-                    logger.warning(msg, exc_info=True)
+                    logger.warning('Could not connect to camera, sleeping five seconds and then retrying',
+                                   exc_info=True)
                     time.sleep(5)
 
