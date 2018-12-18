@@ -227,9 +227,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     adminSTATS(logger, settings, overwriteSTATS, datafilename, datapath)
 	
     #Initialize the image acquisition generator
-    
-    #TODO : use realtime var
-    aq = Acquire(USE_PYMBA=False)
+    aq = Acquire(USE_PYMBA=realtime)
     aqgen = aq.get_generator(datapath, writeToDisk=discWrite,
             camera_config_file=config_filename)
 
@@ -317,7 +315,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
                 inputQueue.put(None)
 
         # some images might still be waiting to be written to the csv file
-        logger.debug('Running writeToStats on left over data')
+        logger.debug('Running the results collector on left over data')
         collectResults(inputQueue, outputQueue, config_filename, datafilename, proc_list, True)
         logger.debug('All data collected')
 
