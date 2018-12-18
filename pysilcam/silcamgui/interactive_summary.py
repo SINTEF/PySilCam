@@ -180,17 +180,15 @@ class PlotView(QtWidgets.QWidget):
                                                     QMessageBox.ActionRole)
             msgBox.addButton(QMessageBox.Cancel)
             msgBox.exec_()
-
-            if (msgBox.clickedButton() == load_stats_button):
-                if self.configfile == '':
-                    self.configfile = QFileDialog.getOpenFileName(self,
+            if self.configfile == '':
+                self.configfile = QFileDialog.getOpenFileName(self,
                                                                   caption='Load config ini file',
                                                                   directory=self.datadir,
                                                                   filter=(('*.ini'))
                                                                   )[0]
                 if self.configfile == '':
                     return
-
+            if (msgBox.clickedButton() == load_stats_button):
                 self.settings = PySilcamSettings(self.configfile)
                 self.av_window = pd.Timedelta(seconds=self.settings.PostProcess.window_size)
                 self.load_from_stats()

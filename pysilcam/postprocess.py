@@ -682,18 +682,8 @@ def nd_rescale(dias, nd, sample_volume):
             number per micron per litre
 
     Args:
-def vd_to_nd(dias, vd):
-    DropletVolume=((4/3)*np.pi*((dias*1e-6)/2)**3) # the volume of each droplet in m3
-    nd=vd/(DropletVolume*1e9) # the number distribution in each bin
-    return nd
-
-def vd_to_nc(dias, vd):
-    nd = vd_to_nd(dias, vd)
-    if np.ndim(nd)>1:
-        nc = np.sum(nd, axis=1)
-    else:
-        nc = np.sum(nd)
-    return nc
+        dias                : mid-points of size bins
+        nd                  : unscaled number distribution
         sample_volume       : sample volume of each image
 
     Returns:
