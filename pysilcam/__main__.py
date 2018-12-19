@@ -262,6 +262,9 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
         logger.debug('setting up processing distributor')
         distributor(inputQueue, outputQueue, config_filename, proc_list, gui)
 
+        logger.debug('setting up results collector')
+        collector(inputQueue, outputQueue, config_filename, datafilename, proc_list, False)
+                      
         # iterate on the bggen generator to obtain images
         logger.debug('Starting acquisition loop')
         t2 = time.time()
@@ -280,12 +283,6 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
             logger.debug('Adding image to processing queue: ' + str(timestamp))
             addToQueue(realtime, inputQueue, i, timestamp, imc) # the tuple (i, timestamp, imc) is added to the inputQueue
             logger.debug('Processing queue updated')
-
-            # write the images that are available for the moment into the csv file
-            logger.debug('Running collector')
-            collector(inputQueue, outputQueue, datafilename, proc_list, False,
-                      settings, rts=rts)
-            logger.debug('Data collected')
 
             if not gui==None:
                 logger.debug('Putting data on GUI Queue')
@@ -313,9 +310,8 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
                 inputQueue.put(None)
 
         # some images might still be waiting to be written to the csv file
-        logger.debug('Running collector on left over data')
-        collector(inputQueue, outputQueue, datafilename, proc_list, True,
-                  settings, rts=rts)
+        logger.debug('Running the results collector on left over data')
+        collectResults(inputQueue, outputQueue, config_filename, datafilename, proc_list, True)
         logger.debug('All data collected')
 
         for p in proc_list:
@@ -448,7 +444,6 @@ def loop(config_filename, inputQueue, outputQueue, gui=None):
     # load the model for particle classification and keep it for later
     nnmodel = []
     nnmodel, class_labels = sccl.load_model(model_path=settings.NNClassify.model_path)
-
     while True:
         task = inputQueue.get()
         if task is None:
@@ -470,67 +465,83 @@ def distributor(inputQueue, outputQueue, config_filename, proc_list, gui=None):
                                       initilised using defineQueues()
         outputQueue ()              : queue where information is retrieved from processing
                                       initilised using defineQueues()
+        config_filename (str)          : configuration file
         proc_list   (list)          : list of multiprocessing objects
         gui=None (Class object)     : Queue used to pass information between process thread and GUI
                                       initialised in ProcThread within guicals.py
     '''
-
-    numCores = max(1, multiprocessing.cpu_count() - 2)
+    numCores = max(1, multiprocessing.cpu_count() - 3)
 
     for nbCore in range(numCores):
         proc = multiprocessing.Process(target=loop, args=(config_filename, inputQueue, outputQueue, gui))
         proc_list.append(proc)
         proc.start()
 
-def collector(inputQueue, outputQueue, datafilename, proc_list, testInputQueue,
-        settings, rts=None):
+def collector(inputQueue, outputQueue, config_filename, datafilename, proc_list, testInputQueue):
     '''
-    collects all the results and write them into the stats.csv file
+    generates a separate process to collects all the results and write them into the stats.csv file.
 
     Args:
         inputQueue  ()              : queue where the images are added for processing
                                       initilised using defineQueues()
         outputQueue ()              : queue where information is retrieved from processing
                                       initilised using defineQueues()
+        config_filename (str)       : configuration file                              
         datafilename (str)          : filename where processed data are written to csv
         proc_list   (list)          : list of multiprocessing objects
         testInputQueue (Bool)       : if True function will keep collecting until inputQueue is empty
-        settings (PySilcamSettings) : Settings read from a .ini file
-        rts (Class):                : Class for realtime stats
     '''
+    proc = multiprocessing.Process(target=collectResults, args=(inputQueue, outputQueue, config_filename, datafilename, proc_list, testInputQueue))
+    proc.start()
 
+        
+def collectResults(inputQueue, outputQueue, config_filename, datafilename, proc_list, testInputQueue):
+    '''
+    collect the results of the processing step into the stats.csv file and collect realtime statistics.
+    
+    Args:
+        inputQueue  ()              : queue where the images are added for processing
+                                      initilised using defineQueues()
+        outputQueue ()              : queue where information is retrieved from processing
+                                      initilised using defineQueues()
+        config_filename (str)       : configuration file                              
+        datafilename (str)          : filename where processed data are written to csv
+        proc_list   (list)          : list of multiprocessing objects
+        testInputQueue (Bool)       : if True function will keep collecting until inputQueue is empty
+    '''
+    logger = logging.getLogger(__name__ + '.silcam_process')
+    # write the images that are available for the moment into the csv file
+    logger.debug('Running collector')
     countProcessFinished = 0
+    while True:
+        if ((outputQueue.qsize()>0) or (testInputQueue and inputQueue.qsize()>0)):
+            task = outputQueue.get()
 
-    while ((outputQueue.qsize()>0) or (testInputQueue and inputQueue.qsize()>0)):
+            if (task is None):
+                countProcessFinished = countProcessFinished + 1
+                if (len(proc_list) == 0): # no multiprocessing
+                    break
+                # The collector can be stopped only after all loop processes are finished
+                elif (countProcessFinished == len(proc_list)):
+                    break
+                continue
 
-        task = outputQueue.get()
+            writeCSV(datafilename, task)
+            collect_rts(config_filename, task)
+    logger.debug('Data collected')
 
-        if (task is None):
-            countProcessFinished = countProcessFinished + 1
-            if (len(proc_list) == 0): # no multiprocessing
-                break
-            # The collector can be stopped only after all loop processes are finished
-            elif (countProcessFinished == len(proc_list)):
-                break
-            continue
-
-        writeCSV(datafilename, task)
-        collect_rts(settings, rts, task)
-
-
-def collect_rts(settings, rts, stats_all):
+def collect_rts(config_filename, stats_all):
     '''
     Updater for realtime statistics
 
     Args:
-        settings (PySilcamSettings) : Settings read from a .ini file
-                                      settings.logfile is optional
-                                       settings.loglevel mest exist
-        rts (Class)                 :  Class for realtime stats
-                                       initialised using scog.rt_stats()
+        config_filename (str)       : configuration file
         stats_all (DataFrame)       :  stats dataframe returned from processImage()
     '''
+    settings = PySilcamSettings(config_filename)
+
     if settings.Process.real_time_stats:
+        rts = scog.rt_stats(settings)
         try:
             rts.stats = rts.stats().append(stats_all)
         except:
