@@ -19,8 +19,11 @@ import serial.tools.list_ports
 import glob
 import sys
 from tqdm import tqdm
+import logging
 
 solidityThresh = 0.95
+logger = logging.getLogger(__name__)
+
 
 def getListPortCom():
     try:
@@ -184,7 +187,7 @@ class ServerThread(Process):
         #address = '192.168.1.2'
         Handler = http.server.SimpleHTTPRequestHandler
         with socketserver.TCPServer((self.ip, PORT), Handler) as httpd:
-            print("serving at port", PORT)
+            logger.info("serving at port", PORT)
             httpd.serve_forever()
 
     def go(self):
@@ -273,13 +276,13 @@ class PathLength():
         time.sleep(0.1)
         readout2 = self.ser.read(1000)
         motorvalue = bin(readout2[3])[2]
-        print('readout3: %s' %motorvalue)
+        logger.info('readout3: %s' %motorvalue)
         if int(motorvalue) == 0 :
-            print('motor is OFF')
+            logger.info('motor is OFF')
         elif int(motorvalue) == 1 :
-            print('motor is ON')
+            logger.info('motor is ON')
         else :
-            print('Something fishy is going on')
+            logger.info('Something fishy is going on')
 
     def move(self, ser,newpos):
         newpos = self.convert_pos(int(newpos))
@@ -288,8 +291,8 @@ class PathLength():
         time.sleep(0.1)
         readout1 = self.ser.read(1000)
         readpos = self.readpos()
-        print ('Setpoint: %d' %newpos)
-        print('Actual pos: %d' %readpos)
+        logger.info('Setpoint: %d' %newpos)
+        logger.info('Actual pos: %d' %readpos)
 
     def readpos(self):
         sendstring = self.makepacket('p',1,0)
@@ -321,7 +324,7 @@ class PathLength():
     def finish(self):
         self.motoronoff(self.ser,0)
         self.ser.close()
-        print('actuator port closed!')
+        logger.info('actuator port closed!')
 
 
 def cat_data_pj(timestamp, vd, d50, nparts):
@@ -344,7 +347,7 @@ def convert_to_pj_format(stats_csv_file, config_file):
     SummaryPlot exe'''
 
     settings = PySilcamSettings(config_file)
-    print('Loading stats....')
+    logger.info('Loading stats....')
     stats = pd.read_csv(stats_csv_file)
 
     base_name = stats_csv_file.replace('-STATS.csv', '-PJ.csv')
@@ -357,7 +360,7 @@ def convert_to_pj_format(stats_csv_file, config_file):
     u = stats['timestamp'].unique()
     sample_volume = sc_pp.get_sample_volume(settings.PostProcess.pix_size, path_length=settings.PostProcess.path_length)
 
-    print('Analysing time-series')
+    logger.info('Analysing time-series')
     for s in tqdm(u):
         substats = stats[stats['timestamp'] == s]
         nims = sc_pp.count_images_in_stats(substats)
@@ -381,9 +384,9 @@ def convert_to_pj_format(stats_csv_file, config_file):
         data_gas = cat_data_pj(s, vd_gas, d50_gas, len(gas))
         ogdatafile_gas.append_data(data_gas)
 
-    print('  OK.')
+    logger.info('  OK.')
 
-    print('Deleting header!')
+    logger.info('Deleting header!')
     with open(base_name, 'r') as fin:
         data = fin.read().splitlines(True)
     with open(base_name, 'w') as fout:
@@ -392,4 +395,4 @@ def convert_to_pj_format(stats_csv_file, config_file):
         data = fin.read().splitlines(True)
     with open(gas_name, 'w') as fout:
         fout.writelines(data[1:])
-    print('Conversion complete.')
+    logger.info('Conversion complete.')

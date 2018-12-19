@@ -73,7 +73,7 @@ def _configure_camera(camera, config_file=None):
 
     #If a config is specified, override those values
     for k, v in config.items():
-        print(k,'=',v)
+        logger.info(k,'=',v)
         setattr(camera, k, v)
 
     return camera
@@ -97,7 +97,7 @@ def print_camera_config(camera):
     config_info = '\n'.join(['{0}: {1}'.format(a, camera.getattr(a))
                              for a, b in config_info_map])
 
-    print(config_info)
+    logger.info(config_info) # TODO: Should this be printed?
     logger.debug(config_info)
 
 
@@ -109,11 +109,11 @@ class Acquire():
         if USE_PYMBA:
             self.pymba = pymba
             self.pymba.get_time_stamp = lambda x: pd.Timestamp.now()
-            print('Pymba imported')
+            logger.info('Pymba imported')
             self.get_generator = self.get_generator_camera
         else:
             self.pymba = fakepymba
-            print('using fakepymba')
+            logger.info('using fakepymba')
             self.get_generator = self.get_generator_disc
 
     def get_generator_disc(self, datapath=None, writeToDisk=False, camera_config_file=None):
@@ -152,7 +152,7 @@ class Acquire():
                 except Exception:
                     frame0.img_idx += 1
                     if frame0.img_idx > len(frame0.files):
-                        print('  END OF FILE LIST.')
+                        #print('  END OF FILE LIST.')
                         logger.info('  END OF FILE LIST.')
                         break
 
@@ -197,12 +197,12 @@ class Acquire():
                                 np.save(fh, img, allow_pickle=False)
                                 fh.flush()
                                 os.fsync(fh.fileno())
-                                print('Written', filename)
+                                logger.info('Written', filename)
                         yield timestamp, img
             except pymba.vimbaexception.VimbaException:
-                print('Camera error. Restarting')
+                logger.info('Camera error. Restarting')
             except KeyboardInterrupt:
-                print('User interrupt with ctrl+c, terminating PySilCam.')
+                logger.info('User interrupt with ctrl+c, terminating PySilCam.')
                 sys.exit(0)
            
 
@@ -252,7 +252,7 @@ class Acquire():
                     camera = _init_camera(vimba)
                 except RuntimeError:
                     msg = 'Could not connect to camera, sleeping five seconds and then retrying'
-                    print(msg)
+                    print(msg) # TODO: WHy is there a print here? warning should write to sys.stderr anyway
                     logger.warning(msg, exc_info=True)
                     time.sleep(5)
 

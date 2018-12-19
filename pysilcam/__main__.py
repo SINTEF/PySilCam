@@ -150,7 +150,7 @@ def silcam_acquire(datapath, config_filename, writeToDisk=True, gui=None):
         rest_time = np.max([rest_time, 0.])
         time.sleep(rest_time)
         actual_aq_freq = 1/(1/aq_freq + rest_time)
-        print('Image {0} acquired at frequency {1:.1f} Hz'.format(i, actual_aq_freq))
+        logger.info('Image {0} acquired at frequency {1:.1f} Hz'.format(i, actual_aq_freq))
         t1 = time.time()
 
         if not gui==None:
@@ -187,22 +187,17 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
       gui=None          (Class object)      :  Queue used to pass information between process thread and GUI
                                                initialised in ProcThread within guicals.py
     '''
-    print(config_filename)
-
-    print('')
-    #---- SETUP ----
 
     #Load the configuration, create settings object
     settings = PySilcamSettings(config_filename)
-
+    #Configure logging
+    configure_logger(settings.General)
+    logger = logging.getLogger(__name__ + '.silcam_process')
+    logger.info(config_filename)
     #Print configuration to screen
     print('---- CONFIGURATION ----\n')
     settings.config.write(sys.stdout)
     print('-----------------------\n')
-
-    #Configure logging
-    configure_logger(settings.General)
-    logger = logging.getLogger(__name__ + '.silcam_process')
 
     logger.info('Processing path: ' + datapath)
 
@@ -232,7 +227,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
             camera_config_file=config_filename)
 
     #Get number of images to use for background correction from config
-    print('* Initializing background image handler')
+    logger.info('* Initializing background image handler')
     bggen = backgrounder(settings.Background.num_images, aqgen,
             bad_lighting_limit = settings.Process.bad_lighting_limit,
             real_time_stats=settings.Process.real_time_stats)
@@ -250,7 +245,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     # If only one core is available, no multiprocessing will be done
     multiProcess = multiProcess and (multiprocessing.cpu_count() > 1)
 
-    print('* Commencing image acquisition and processing')
+    logger.info('* Commencing image acquisition and processing')
 
     # initialise realtime stats class regardless of whether it is used later
     rts = scog.rt_stats(settings)
@@ -273,7 +268,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
         for i, (timestamp, imc, imraw) in enumerate(bggen):
             t1 = np.copy(t2)
             t2 = time.time()
-            print(t2-t1, 'Acquisition loop time')
+            logger.info(t2-t1, 'Acquisition loop time')
             logger.debug('Corrected image ' + str(timestamp) +
                         ' acquired from backgrounder')
 
@@ -347,7 +342,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
                 # write the image into the csv file
                 writeCSV( datafilename, stats_all)
 
-    print('PROCESSING COMPLETE.')
+    logger.info('PROCESSING COMPLETE.')
 
     #---- END ----
 	
@@ -583,7 +578,7 @@ def check_path(filename):
          try:
             os.makedirs(path)
          except:
-            print('Could not create catalog:',path)
+            logger.warning('Could not create catalog:',path)
 
 def configure_logger(settings):
     '''Configure a logger according to the settings.
@@ -599,6 +594,11 @@ def configure_logger(settings):
                             level=getattr(logging, settings.loglevel))
     else:
         logging.basicConfig(level=getattr(logging, settings.loglevel))
+    # Adding a handler to print info messages to stdout
+    streamHandler = logging.StreamHandler(sys.stdout)
+    streamHandler.setLevel(logging.INFO)
+    logger = logging.getLogger()
+    logger.addHandler(streamHandler)
 
 
 def adminSTATS(logger, settings, overwriteSTATS, datafilename, datapath):
