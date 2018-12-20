@@ -105,7 +105,7 @@ def load_camera_config(filename, config=None):
     filename = os.path.normpath(filename)
 
     if not os.path.exists(filename):
-       print('Camera config file not found: {0}'.format(filename))
+       logger.info('Camera config file not found: {0}'.format(filename))
        logger.debug('Camera config file not found: {0}'.format(filename))
        return config
 
