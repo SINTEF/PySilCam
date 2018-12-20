@@ -197,7 +197,7 @@ class Acquire():
                                 np.save(fh, img, allow_pickle=False)
                                 fh.flush()
                                 os.fsync(fh.fileno())
-                                logger.info('Written ' + filename)
+                                logger.info('Written {0}'.format(filename))
                         yield timestamp, img
             except pymba.vimbaexception.VimbaException:
                 logger.info('Camera error. Restarting')
