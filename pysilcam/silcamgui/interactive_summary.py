@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 import matplotlib
 from PyQt5.QtWidgets import QMainWindow, QApplication, QAction, QInputDialog, QMessageBox, QFileDialog
 from PyQt5 import QtCore
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from PyQt5 import QtWidgets
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 import sys
@@ -18,6 +17,7 @@ from pysilcam.silcamgui.guicalcs import export_timeseries
 
 
 class FigFrame(QtWidgets.QFrame):
+    '''class for the figure'''
     def __init__(self, parent=None):
         super(FigFrame, self).__init__(parent)
         self.setFrameShape(QtWidgets.QFrame.StyledPanel)
@@ -29,6 +29,7 @@ class FigFrame(QtWidgets.QFrame):
 
 
 class InteractivePlotter(QMainWindow):
+    '''main class for this tool'''
     def __init__(self, parent=None):
         super(InteractivePlotter, self).__init__(parent)
         self.showMaximized()
@@ -68,19 +69,6 @@ class InteractivePlotter(QMainWindow):
         fileMenu.addAction(exitButton)
 
 
-        # self.setWindowTitle('Loading: ' + self.plot_fame.graph_view.stats_filename)
-        # QApplication.processEvents()
-
-        # self.plot_fame.graph_view.setup_figure(self.plot_fame.graph_view.configfile,
-        #                                        self.plot_fame.graph_view.stats_filename)
-
-        # self.setWindowTitle(self.plot_fame.graph_view.stats_filename)
-        # QApplication.processEvents()
-        #
-        # self.plot_fame.graph_view.update_plot()
-        # QApplication.processEvents()
-
-
     def keyPressEvent(self, event):
         pressedkey = event.key()
         if (pressedkey == QtCore.Qt.Key_Up) or (pressedkey == QtCore.Qt.Key_W):
@@ -106,6 +94,7 @@ class InteractivePlotter(QMainWindow):
 
 
     def modify_av_wind(self):
+        '''allow the user to modify the averaging period of interest'''
         window_seconds = self.plot_fame.graph_view.av_window.seconds
         input_value, okPressed = QInputDialog.getInt(self, "Get integer", "Average window:", window_seconds, 0, 60*60, 1)
 
@@ -114,6 +103,7 @@ class InteractivePlotter(QMainWindow):
 
 
 class PlotView(QtWidgets.QWidget):
+    '''class for plotting plots'''
     def __init__(self, parent=None):
         super(PlotView, self).__init__(parent)
 
@@ -150,6 +140,7 @@ class PlotView(QtWidgets.QWidget):
 
 
     def load_data(self):
+        '''handles loading of data, depending on what is available'''
         self.datadir = os.path.split(self.configfile)[0]
 
         self.stats_filename = ''
@@ -205,6 +196,7 @@ class PlotView(QtWidgets.QWidget):
 
 
     def load_from_timeseries(self):
+        '''uses timeseries xls sheets assuming they are available'''
         timeseriesgas_file = self.stats_filename.replace('-STATS.csv', '-TIMESERIESgas.xlsx')
         timeseriesoil_file = self.stats_filename.replace('-STATS.csv', '-TIMESERIESoil.xlsx')
 
@@ -229,6 +221,7 @@ class PlotView(QtWidgets.QWidget):
 
 
     def load_from_stats(self):
+        '''loads stats data and converts to timeseries without saving'''
         stats = pd.read_csv(self.stats_filename, parse_dates=['timestamp'])
 
         u = stats['timestamp'].unique()
@@ -286,10 +279,7 @@ class PlotView(QtWidgets.QWidget):
 
 
     def setup_figure(self):
-
-
-        # f, self.a = plt.subplots(1, 2, figsize=(15, 6))
-
+        '''sets up the plotting figure'''
         plt.sca(self.axisconstant)
         plt.cla()
         plt.pcolormesh(self.u, self.dias, np.log(self.vd_total.T), cmap=cmocean.cm.matter)
@@ -310,6 +300,7 @@ class PlotView(QtWidgets.QWidget):
         self.update_plot()
 
     def on_click(self, event):
+        '''if you click the correct place, update the plot based on where you click'''
         if event.inaxes is not None:
             try:
                 self.mid_time = pd.to_datetime(matplotlib.dates.num2date(event.xdata))
@@ -318,14 +309,10 @@ class PlotView(QtWidgets.QWidget):
             except:
                 pass
         else:
-            print('Clicked ouside axes bounds but inside plot window')
+            pass
 
     def update_plot(self, save=False):
-
-        # mid_time = pd.to_datetime('2018-11-21 11:10:00')
-
-        # self.av_window = pd.to_timedelta('00:00:05')
-
+        '''update the plots and save to excel is save=True'''
         start_time = self.mid_time - self.av_window / 2
         end_time = self.mid_time + self.av_window / 2
         u = pd.to_datetime(self.u)
@@ -466,6 +453,7 @@ class PlotView(QtWidgets.QWidget):
             print('Saved:', outputname)
 
     def save_data(self):
+        '''call the update_plot function with option to save'''
         self.update_plot(save=True)
 
 
