@@ -268,7 +268,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
         for i, (timestamp, imc, imraw) in enumerate(bggen):
             t1 = np.copy(t2)
             t2 = time.time()
-            logger.info(t2-t1, 'Acquisition loop time')
+            logger.info('{0:.3f}Acquisition loop time'.format(t2-t1))
             logger.debug('Corrected image ' + str(timestamp) +
                         ' acquired from backgrounder')
 
@@ -578,7 +578,7 @@ def check_path(filename):
          try:
             os.makedirs(path)
          except:
-            logger.warning('Could not create catalog:',path)
+            logger.warning('Could not create catalog: {0}'.format(path))
 
 def configure_logger(settings):
     '''Configure a logger according to the settings.
