@@ -1,20 +1,22 @@
 # -*- coding: utf-8 -*-
 import os
-import sys
-import logging
 from pysilcam.__main__ import silcam_process
 import pysilcam.postprocess as scpp
 import unittest
 import pandas as pd
-import pysilcam.silcam_classify as sccl
 from pysilcam.config import PySilcamSettings
-import tensorflow as tf
+from pysilcam.config import load_config
+
+if "UNITTEST_DATA_PATH" in os.environ:
+    ROOTPATH = os.environ['UNITTEST_DATA_PATH'] # 'E:/test data/hello_silcam/unittest_bamboo'
+else:
+    ROOTPATH = 'E:/test data/hello_silcam/unittest_entries'
 
 @unittest.skipIf(not os.path.isdir(
-    'E:/test data/hello_silcam/unittest_entries/STANDARDS/StandardsBig'),
+    os.path.join(ROOTPATH, 'STANDARDS/StandardsBig')),
     "test path not accessible")
 @unittest.skipIf(not os.path.isdir(
-    'E:/test data/hello_silcam/unittest_entries/STANDARDS/StandardsSmall'),
+    os.path.join(ROOTPATH, 'STANDARDS/StandardsSmall')),
     "test path not accessible")
 
 def test_big_standards():
@@ -22,9 +24,16 @@ def test_big_standards():
 
     path = os.path.dirname(__file__)
     conf_file = os.path.join(path, 'config_glass_standards.ini')
+    conf = load_config(conf_file)
 
-    data_file = 'E:/test data/hello_silcam/unittest_entries/STANDARDS/StandardsBig'
-    stats_file = 'E:/test data/hello_silcam/unittest_entries/STANDARDS/proc/StandardsBig-STATS.csv'
+    data_file = os.path.join(ROOTPATH, 'STANDARDS/StandardsBig')
+    conf.set('General', 'datafile', os.path.join(ROOTPATH, 'STANDARDS', 'proc'))
+    conf.set('General', 'logfile', os.path.join(ROOTPATH, 'STANDARDS', 'log.log'))
+    conf_file_hand = open(conf_file,'w')
+    conf.write(conf_file_hand)
+    conf_file_hand.close()
+
+    stats_file = os.path.join(ROOTPATH, 'STANDARDS/proc/StandardsBig-STATS.csv')
 
     # if csv file already exists, it has to be deleted
     if (os.path.isfile(stats_file)):
@@ -54,18 +63,25 @@ def test_big_standards():
 
 
 @unittest.skipIf(not os.path.isdir(
-    'E:/test data/hello_silcam/unittest_entries/STANDARDS/StandardsBig'),
+    os.path.join(ROOTPATH, 'STANDARDS/StandardsBig')),
     "test path not accessible")
 @unittest.skipIf(not os.path.isdir(
-    'E:/test data/hello_silcam/unittest_entries/STANDARDS/StandardsSmall'),
+    os.path.join(ROOTPATH, 'STANDARDS/StandardsSmall')),
     "test path not accessible")
 def test_small_standards():
     '''Testing that the small standards are sized correctly'''
     path = os.path.dirname(__file__)
     conf_file = os.path.join(path, 'config_glass_standards.ini')
+    conf = load_config(conf_file)
 
-    data_file = 'E:/test data/hello_silcam/unittest_entries/STANDARDS/StandardsSmall'
-    stats_file = 'E:/test data/hello_silcam/unittest_entries/STANDARDS/proc/StandardsSmall-STATS.csv'
+    data_file = os.path.join(ROOTPATH, 'STANDARDS/StandardsSmall')
+    conf.set('General', 'datafile', os.path.join(ROOTPATH, 'STANDARDS', 'proc'))
+    conf.set('General', 'logfile', os.path.join(ROOTPATH, 'STANDARDS', 'log.log'))
+    conf_file_hand = open(conf_file,'w')
+    conf.write(conf_file_hand)
+    conf_file_hand.close()
+
+    stats_file = os.path.join(ROOTPATH, 'STANDARDS/proc/StandardsSmall-STATS.csv')
 
     # if csv file already exists, it has to be deleted
     if (os.path.isfile(stats_file)):

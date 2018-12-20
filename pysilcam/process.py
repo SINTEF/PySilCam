@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import time
 import numpy as np
 from skimage import morphology
 from skimage import segmentation
@@ -157,7 +158,7 @@ def fancy_props(iml, imc, timestamp, settings, nnmodel, class_labels):
 
     '''
 
-    region_properties = measure.regionprops(iml, cache=False)
+    region_properties = measure.regionprops(iml, cache=False, coordinates='xy')
     # build the stats and export to HDF5
     stats = extract_particles(imc,timestamp,settings,nnmodel,class_labels, region_properties)
 
@@ -423,3 +424,78 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
         HDF5File.close()
 
     return stats
+
+
+def processImage(nnmodel, class_labels, image, settings, logger, gui):
+    '''
+    Proceses an image
+
+    Args:
+        nnmodel (tensorflow model object)   :  loaded using sccl.load_model()
+        class_labels (str)                  :  loaded using sccl.load_model()
+        image  (tuple)                      :  tuple contianing (i, timestamp, imc)
+                                               where i is an int referring to the image number
+                                               timestamp is the image timestamp obtained from passing the filename
+                                               imc is the background-corrected image obtained using the backgrounder generator
+        settings (PySilcamSettings)         :  Settings read from a .ini file
+        logger (logger object)              :  logger object created using
+                                               configure_logger()
+        gui=None (Class object)             :  Queue used to pass information between process thread and GUI
+                                               initialised in ProcThread within guicals.py
+
+    Returns:
+        stats_all (DataFrame)               :  stats dataframe containing particle statistics
+    '''
+    try:
+        i = image[0]
+        timestamp = image[1]
+        imc = image[2]
+
+        # time the full acquisition and processing loop
+        start_time = time.clock()
+
+        logger.info('Processing time stamp {0}'.format(timestamp))
+
+        # Calculate particle statistics
+        stats_all, imbw, saturation = statextract(imc, settings, timestamp,
+                                                  nnmodel, class_labels)
+
+        # if there are not particles identified, assume zero concentration.
+        # This means that the data should indicate that a 'good' image was
+        # obtained, without any particles. Therefore fill all values with nans
+        # and add the image timestamp
+        if len(stats_all) == 0:
+            print('ZERO particles identified')
+            z = np.zeros(len(stats_all.columns)) * np.nan
+            stats_all.loc[0] = z
+            # 'export name' should not be nan because then this column of the
+            # DataFrame will contain multiple types, so label with string instead
+            if settings.ExportParticles.export_images:
+                stats_all['export name'] = 'not_exported'
+
+        # add timestamp to each row of particle statistics
+        stats_all['timestamp'] = timestamp
+
+        # add saturation to each row of particle statistics
+        stats_all['saturation'] = saturation
+
+        # Time the particle statistics processing step
+        proc_time = time.clock() - start_time
+
+        # Print timing information for this iteration
+        infostr = '  Image {0} processed in {1:.2f} sec ({2:.1f} Hz). '
+        infostr = infostr.format(i, proc_time, 1.0 / proc_time)
+        print(infostr)
+
+        # ---- END MAIN PROCESSING LOOP ----
+        # ---- DO SOME ADMIN ----
+
+    except:
+        infostr = 'Failed to process frame {0}, skipping.'.format(i)
+        logger.warning(infostr, exc_info=True)
+        print(infostr)
+        return None
+
+    return stats_all
+
+

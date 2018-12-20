@@ -8,9 +8,9 @@ import numpy as np
 from pysilcam import __version__
 from pysilcam.acquisition import Acquire
 from pysilcam.background import backgrounder
-from pysilcam.process import statextract
+from pysilcam.process import processImage, statextract
 import pysilcam.oilgas as scog
-from pysilcam.config import PySilcamSettings
+from pysilcam.config import PySilcamSettings, updatePathLength
 import os
 import pysilcam.silcam_classify as sccl
 import multiprocessing
@@ -187,22 +187,17 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
       gui=None          (Class object)      :  Queue used to pass information between process thread and GUI
                                                initialised in ProcThread within guicals.py
     '''
-    print(config_filename)
-
-    print('TESTING!!!!!!!!!--------!!!!!!!!!!')
-    #---- SETUP ----
 
     #Load the configuration, create settings object
     settings = PySilcamSettings(config_filename)
-
+    #Configure logging
+    configure_logger(settings.General)
+    logger = logging.getLogger(__name__ + '.silcam_process')
+    logger.info(config_filename)
     #Print configuration to screen
     print('---- CONFIGURATION ----\n')
     settings.config.write(sys.stdout)
     print('-----------------------\n')
-
-    #Configure logging
-    configure_logger(settings.General)
-    logger = logging.getLogger(__name__ + '.silcam_process')
 
     logger.info('Processing path: ' + datapath)
 
@@ -224,38 +219,8 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     datafilename = os.path.join(settings.General.datafile,procfoldername)
     logger.info('output stats to: ' + datafilename)
 
-    #@todo make a function for this admin of the STATS file and appending etc
-    if os.path.isfile(datafilename + '-STATS.csv') and overwriteSTATS:
-        logger.info('removing: ' + datafilename + '-STATS.csv')
-        #print('Overwriting ' + datafilename + '-STATS.csv')
-        os.remove(datafilename + '-STATS.csv')
-    elif os.path.isfile(datafilename + '-STATS.csv'):
-        logger.info('Loading old data from: ' + datafilename + '-STATS.csv')
-        #print('Loading old data from: ' + datafilename + '-STATS.csv')
-        oldstats = pd.read_csv(datafilename + '-STATS.csv')
-        logger.info('  OK.')
-        #print('  OK.')
-        last_time = pd.to_datetime(oldstats['timestamp'].max())
-
-        logger.info('Calculting spooling offset')
-        #print('Calculating spooling offset')
-        from pysilcam.fakepymba import silcam_name2time
-        files = [f for f in sorted(os.listdir(datapath))
-                 if (f.endswith('.silc') or f.endswith('.bmp'))]
-        offsetcalc = pd.DataFrame(columns=['files', 'times'])
-        offsetcalc['files'] = files
-        for i, f in enumerate(files):
-            offsetcalc['times'].iloc[i] = silcam_name2time(f)
-        offset = int(min(np.argwhere(offsetcalc['times'] > last_time)))
-        offset -= settings.Background.num_images # subtract the number of background images, so we get data from the correct start point
-        # and check offset is still positive
-        if offset < 0:
-            offset = 0
-        offset = str(offset)
-        os.environ['PYSILCAM_OFFSET'] = offset
-        logger.info('PYSILCAM_OFFSET set to: ' + offset)
-        #print('PYSILCAM_OFFSET set to: ' + offset)
-
+    adminSTATS(logger, settings, overwriteSTATS, datafilename, datapath)
+	
     #Initialize the image acquisition generator
     aq = Acquire(USE_PYMBA=realtime)
     aqgen = aq.get_generator(datapath, writeToDisk=discWrite,
@@ -380,7 +345,9 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     logger.info('PROCESSING COMPLETE.')
 
     #---- END ----
+	
 
+	
 def addToQueue(realtime, inputQueue, i, timestamp, imc):
     '''
     Put a new image into the Queue.
@@ -460,80 +427,6 @@ class MyManager(BaseManager):
     pass
 
 MyManager.register('LifoQueue', LifoQueue)
-
-
-def processImage(nnmodel, class_labels, image, settings, logger, gui):
-    '''
-    Proceses an image
-    
-    Args:
-        nnmodel (tensorflow model object)   :  loaded using sccl.load_model()
-        class_labels (str)                  :  loaded using sccl.load_model()
-        image  (tuple)                      :  tuple contianing (i, timestamp, imc)
-                                               where i is an int referring to the image number
-                                               timestamp is the image timestamp obtained from passing the filename
-                                               imc is the background-corrected image obtained using the backgrounder generator
-        settings (PySilcamSettings)         :  Settings read from a .ini file
-        logger (logger object)              :  logger object created using
-                                               configure_logger()
-        gui=None (Class object)             :  Queue used to pass information between process thread and GUI
-                                               initialised in ProcThread within guicals.py
-                                               
-    Returns:
-        stats_all (DataFrame)               :  stats dataframe containing particle statistics
-    '''
-    try:
-        i = image[0]
-        timestamp = image[1]
-        imc = image[2]
-
-        #time the full acquisition and processing loop
-        start_time = time.clock()
-
-        logger.info('Processing time stamp {0}'.format(timestamp))
-
-        #Calculate particle statistics
-        stats_all, imbw, saturation = statextract(imc, settings, timestamp,
-                                                  nnmodel, class_labels)
-
-        # if there are not particles identified, assume zero concentration.
-        # This means that the data should indicate that a 'good' image was
-        # obtained, without any particles. Therefore fill all values with nans
-        # and add the image timestamp
-        if len(stats_all) == 0:
-            logger.info('ZERO particles identified')
-            z = np.zeros(len(stats_all.columns)) * np.nan
-            stats_all.loc[0] = z
-            # 'export name' should not be nan because then this column of the
-            # DataFrame will contain multiple types, so label with string instead
-            if settings.ExportParticles.export_images:
-                stats_all['export name'] = 'not_exported'
-
-        # add timestamp to each row of particle statistics
-        stats_all['timestamp'] = timestamp
-
-        # add saturation to each row of particle statistics
-        stats_all['saturation'] = saturation
-
-        #Time the particle statistics processing step
-        proc_time = time.clock() - start_time
-
-        #Print timing information for this iteration
-        infostr = '  Image {0} processed in {1:.2f} sec ({2:.1f} Hz). '
-        infostr = infostr.format(i, proc_time, 1.0/proc_time)
-        logger.info(infostr)
-
-        #---- END MAIN PROCESSING LOOP ----
-        #---- DO SOME ADMIN ----
-
-    except:
-        infostr = 'Failed to process frame {0}, skipping.'.format(i)
-        logger.warning(infostr, exc_info=True)
-        logger.info(infostr)
-        return None
-
-    return stats_all
-
 
 def loop(config_filename, inputQueue, outputQueue, gui=None):
     '''
@@ -707,21 +600,47 @@ def configure_logger(settings):
     logger = logging.getLogger()
     logger.addHandler(streamHandler)
 
-def updatePathLength(settings, logger):
-    '''Adjusts the path length of systems with the actuator installed and RS232
-    connected.
+
+def adminSTATS(logger, settings, overwriteSTATS, datafilename, datapath):
+    '''
+    Administration of the -STATS.csv file
 
     Args:
-        settings (PySilcamSettings): Settings read from a .ini file
-                                     settings.logfile is optional
-                                     settings.loglevel mest exist
-        logger (logger object)     : logger object created using
-                                     configure_logger()
+        logger          (logger object) : logger object created using configure_logger()
+        datafilename    (str)           : name of the folder containing the -STATS.csv
+        datapath        (str)           : name of the path containing the data
+
     '''
-    try:
-        logger.info('Updating path length')
-        pl = scog.PathLength(settings.PostProcess.com_port)
-        pl.gap_to_mm(settings.PostProcess.path_length)
-        pl.finish()
-    except:
-        logger.warning('Could not open port. Path length will not be adjusted.')
+    if (os.path.isfile(datafilename + '-STATS.csv')):
+        if overwriteSTATS:
+            logger.info('removing: ' + datafilename + '-STATS.csv')
+            print('Overwriting ' + datafilename + '-STATS.csv')
+            os.remove(datafilename + '-STATS.csv')
+        else:
+            logger.info('Loading old data from: ' + datafilename + '-STATS.csv')
+            print('Loading old data from: ' + datafilename + '-STATS.csv')
+            oldstats = pd.read_csv(datafilename + '-STATS.csv')
+            logger.info('  OK.')
+            print('  OK.')
+            last_time = pd.to_datetime(oldstats['timestamp'].max())
+
+            logger.info('Calculating spooling offset')
+            print('Calculating spooling offset')
+
+            # TODO: move this import to the top
+            from pysilcam.fakepymba import silcam_name2time
+            files = [f for f in sorted(os.listdir(datapath))
+                     if (f.endswith('.silc') or f.endswith('.bmp'))]
+            offsetcalc = pd.DataFrame(columns=['files', 'times'])
+            offsetcalc['files'] = files
+            for i, f in enumerate(files):
+                offsetcalc['times'].iloc[i] = silcam_name2time(f)
+            offset = int(min(np.argwhere(offsetcalc['times'] > last_time)))
+            offset -= settings.Background.num_images  # subtract the number of background images, so we get data from the correct start point
+            # and check offset is still positive
+            if offset < 0:
+                offset = 0
+            offset = str(offset)
+            os.environ['PYSILCAM_OFFSET'] = offset
+            logger.info('PYSILCAM_OFFSET set to: ' + offset)
+            print('PYSILCAM_OFFSET set to: ' + offset)
