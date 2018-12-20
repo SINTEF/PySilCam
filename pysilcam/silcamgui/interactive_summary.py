@@ -100,6 +100,8 @@ class InteractivePlotter(QMainWindow):
 
         if okPressed:
             self.plot_fame.graph_view.av_window = pd.Timedelta(seconds=input_value)
+            if not self.plot_fame.graph_view.stats_filename == '':
+                self.plot_fame.graph_view.update_plot()
 
 
 class PlotView(QtWidgets.QWidget):
@@ -107,7 +109,6 @@ class PlotView(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super(PlotView, self).__init__(parent)
 
-        # self.fig, self.axes = plt.subplots(2,2)
         self.fig = plt.figure()
         self.axisconstant = plt.subplot(221)
         self.axispsd = plt.subplot(122)
@@ -126,16 +127,6 @@ class PlotView(QtWidgets.QWidget):
         self.stats_filename = ''
         self.av_window = pd.Timedelta(seconds=30)
         self.datadir = os.getcwd()
-        # self.configfile = "E:/PJ/MiniTowerSilCamConfig.ini"
-        # self.stats_filename = "E:/PJ/Oseberg2017OilOnly0.25mmNozzle2-STATS.csv"
-        # self.stats_filename = "E:/PJ/Oseberg2017OilOnly0.25mmNozzle2sdghjsk-STATS.csv"
-
-        # self.load_data()
-
-        # self.load_from_stats()
-
-        # self.load_from_timeseries()
-
         self.canvas.draw()
 
 
@@ -187,7 +178,6 @@ class PlotView(QtWidgets.QWidget):
                 export_timeseries(self.configfile, self.stats_filename)
                 self.load_from_timeseries()
             else:
-                print('cancel')
                 return
 
         self.setup_figure()
@@ -200,8 +190,6 @@ class PlotView(QtWidgets.QWidget):
         timeseriesgas_file = self.stats_filename.replace('-STATS.csv', '-TIMESERIESgas.xlsx')
         timeseriesoil_file = self.stats_filename.replace('-STATS.csv', '-TIMESERIESoil.xlsx')
 
-        print(timeseriesgas_file)
-
         gas = pd.read_excel(timeseriesgas_file, parse_dates=['Time'])
         oil = pd.read_excel(timeseriesoil_file, parse_dates=['Time'])
 
@@ -212,8 +200,6 @@ class PlotView(QtWidgets.QWidget):
         self.u = pd.to_datetime(oil['Time'].values)
         self.d50_gas = gas['D50']
         self.d50_oil = oil['D50']
-
-        # nc = scpp.vd_to_nc(vd_oil, dias)
 
         self.d50_total = np.zeros_like(self.d50_oil)
         for i, vd in enumerate(self.vd_total):
@@ -242,7 +228,6 @@ class PlotView(QtWidgets.QWidget):
         nparticles_oil = 0
         nparticles_gas = 0
 
-        print('Analysing time-series')
         for i, s in enumerate(tqdm(u)):
             substats = stats[stats['timestamp'] == s]
             nparticles_all += len(substats)
@@ -304,7 +289,6 @@ class PlotView(QtWidgets.QWidget):
         if event.inaxes is not None:
             try:
                 self.mid_time = pd.to_datetime(matplotlib.dates.num2date(event.xdata))
-                # mid_time.tz_convert(None)
                 self.update_plot()
             except:
                 pass
@@ -316,7 +300,7 @@ class PlotView(QtWidgets.QWidget):
         start_time = self.mid_time - self.av_window / 2
         end_time = self.mid_time + self.av_window / 2
         u = pd.to_datetime(self.u)
-        timeind = np.argwhere((u > start_time) & (u < end_time))
+        timeind = np.argwhere((u >= start_time) & (u < end_time))
 
         psd_nims = len(timeind)
         if psd_nims < 1:
@@ -329,7 +313,7 @@ class PlotView(QtWidgets.QWidget):
             string += '\n Num images: {:0.0f}'.format(psd_nims)
             string += '\n Start: ' + str(start_time)
             string += '\n End: ' + str(end_time)
-            string += '\n Window [sec.] {:0.0f}:'.format((end_time - start_time).seconds)
+            string += '\n Window [sec.] {:0.3f}:'.format((end_time - start_time).total_seconds())
 
             plt.title(string, verticalalignment='top', horizontalalignment='right', loc='right')
 
@@ -381,7 +365,7 @@ class PlotView(QtWidgets.QWidget):
         string += '\n Num images: {:0.0f}'.format(psd_nims)
         string += '\n Start: ' + str(pd.to_datetime(psd_start[0]))
         string += '\n End: ' + str(pd.to_datetime(psd_end[0]))
-        string += '\n Window [sec.] {:0.0f}:'.format(pd.to_timedelta(psd_end[0]-psd_start[0]).seconds)
+        string += '\n Window [sec.] {:0.3f}:'.format(pd.to_timedelta(psd_end[0]-psd_start[0]).total_seconds())
 
         plt.title(string, verticalalignment='top', horizontalalignment='right', loc='right')
 
