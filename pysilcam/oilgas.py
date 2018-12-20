@@ -187,7 +187,7 @@ class ServerThread(Process):
         #address = '192.168.1.2'
         Handler = http.server.SimpleHTTPRequestHandler
         with socketserver.TCPServer((self.ip, PORT), Handler) as httpd:
-            logger.info("serving at port", PORT)
+            logger.info("serving at port: {0}".format(PORT))
             httpd.serve_forever()
 
     def go(self):
@@ -276,7 +276,7 @@ class PathLength():
         time.sleep(0.1)
         readout2 = self.ser.read(1000)
         motorvalue = bin(readout2[3])[2]
-        logger.info('readout3: %s' %motorvalue)
+        logger.info('readout3: %s', motorvalue)
         if int(motorvalue) == 0 :
             logger.info('motor is OFF')
         elif int(motorvalue) == 1 :
@@ -291,8 +291,8 @@ class PathLength():
         time.sleep(0.1)
         readout1 = self.ser.read(1000)
         readpos = self.readpos()
-        logger.info('Setpoint: %d' %newpos)
-        logger.info('Actual pos: %d' %readpos)
+        logger.info('Setpoint: %d', newpos)
+        logger.info('Actual pos: %d', readpos)
 
     def readpos(self):
         sendstring = self.makepacket('p',1,0)

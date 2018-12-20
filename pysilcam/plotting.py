@@ -274,8 +274,8 @@ def summarise_fancy_stats(stats_csv_file, config_file, monitor=False,
                     oilgas=oilgas)
         except:
             montage = np.zeros((msize, msize, 3), dtype=np.uint8) + 255
-            logger.warning('Unable to make montage. Check:', settings.ExportParticles.outputpath, ' folder for h5 files')
-            logger.warning('  in config file ExportParticles.export_images is ', settings.ExportParticles.export_images)
+            logger.warning('Unable to make montage. Check: {0} folder for h5 files'.format(settings.ExportParticles.outputpath))
+            logger.warning('  in config file ExportParticles.export_images is {0}'.format(settings.ExportParticles.export_images))
 
         stats = pd.read_csv(stats_csv_file)
         stats = stats[(stats['major_axis_length'] *

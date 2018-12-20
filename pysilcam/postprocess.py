@@ -507,11 +507,11 @@ def gen_roifiles(stats, auto_scaler=500):
             'not_exported'].values
 
     # subsample the particles if necessary
-    logger.info('rofiles:',len(roifiles))
+    logger.info('rofiles: {0}'.format(len(roifiles)))
     IMSTEP = np.max([np.int(np.round(len(roifiles)/auto_scaler)),1])
     logger.info('reducing particles by factor of {0}'.format(IMSTEP))
     roifiles = roifiles[np.arange(0,len(roifiles),IMSTEP)]
-    logger.info('rofiles:',len(roifiles))
+    logger.info('rofiles: {0}'.format(len(roifiles)))
 
     return roifiles
 
@@ -786,7 +786,7 @@ def silc_to_bmp(directory):
             outname = os.path.join(directory, fout)
             imo.imwrite(outname, im)
         except:
-            logger.warning(f, ' failed!')
+            logger.warning('{0} failed!'.format(f))
             continue
 
     logger.info('Done.')
