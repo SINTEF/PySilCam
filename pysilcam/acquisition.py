@@ -77,6 +77,7 @@ def _configure_camera(camera, config_file=None):
 
     #If a config is specified, override those values
     for k, v in config.items():
+        logger.info('{0} = {1}'.format(k,v))
         setattr(camera, k, v)
 
     return camera
@@ -121,7 +122,8 @@ def print_camera_config(camera):
     config_info = '\n'.join(['{0}: {1}'.format(a, camera.getattr(a))
                              for a, b in config_info_map])
 
-    logger.debug('%s', config_info)
+    logger.debug(config_info)
+
 
 class Acquire():
     '''
@@ -135,7 +137,7 @@ class Acquire():
             self.get_generator = self.get_generator_camera
         else:
             self.pymba = fakepymba
-            logger.info('Using fakepymba')
+            logger.info('using fakepymba')
             self.get_generator = self.get_generator_disc
 
     def get_generator_disc(self, datapath=None, writeToDisk=False, camera_config_file=None):
@@ -225,6 +227,7 @@ class Acquire():
             except KeyboardInterrupt:
                 logger.info('User interrupt with ctrl+c, terminating PySilCam.')
                 sys.exit(0)
+           
 
     def _acquire_frame(self, camera, frame0):
         '''Aquire a single frame

@@ -127,13 +127,13 @@ def export_timeseries(configfile, statsfile):
             '-TIMESERIES' + '' + '.xlsx')
 
     time_series = pd.DataFrame(data=np.squeeze(vdts_oil), columns=dias)
-    time_series['D50'] = d50_all
+    time_series['D50'] = d50_oil
     time_series['Time'] = timestamp
     time_series.to_excel(outfile +
             '-TIMESERIES' + 'oil' + '.xlsx')
 
     time_series = pd.DataFrame(data=np.squeeze(vdts_gas), columns=dias)
-    time_series['D50'] = d50_all
+    time_series['D50'] = d50_gas
     time_series['Time'] = timestamp
     time_series.to_excel(outfile +
             '-TIMESERIES' + 'gas' + '.xlsx')
