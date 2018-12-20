@@ -14,6 +14,7 @@ from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 import sys
 import os
 from pysilcam.silcamgui.guicalcs import export_timeseries
+from openpyxl import Workbook
 
 
 class FigFrame(QtWidgets.QFrame):
@@ -49,14 +50,14 @@ class InteractivePlotter(QMainWindow):
         loadButton = QAction('Load', self)
         loadButton.setStatusTip('Load data')
         loadButton.setShortcut("Ctrl+o")
-        loadButton.triggered.connect(self.plot_fame.graph_view.load_data)
+        loadButton.triggered.connect(self.callLoadData)
         fileMenu.addAction(loadButton)
 
-        saveButton = QAction('Save', self)
-        saveButton.setStatusTip('Save PSD data to xls')
-        saveButton.setShortcut("Ctrl+s")
-        saveButton.triggered.connect(self.plot_fame.graph_view.save_data)
-        fileMenu.addAction(saveButton)
+        self.saveButton = QAction('Save', self)
+        self.saveButton.setStatusTip('Save PSD data to xls')
+        self.saveButton.triggered.connect(self.plot_fame.graph_view.save_data)
+        fileMenu.addAction(self.saveButton)
+        self.saveButton.setEnabled(False)
 
         avwinButton = QAction('Average window', self)
         avwinButton.setStatusTip('Change the average window')
@@ -67,8 +68,11 @@ class InteractivePlotter(QMainWindow):
         exitButton.setStatusTip('Close')
         exitButton.triggered.connect(self.close)
         fileMenu.addAction(exitButton)
-
-
+        
+    def callLoadData(self):      
+        self.plot_fame.graph_view.load_data()
+        self.saveButton.setEnabled(True)
+        
     def keyPressEvent(self, event):
         pressedkey = event.key()
         if (pressedkey == QtCore.Qt.Key_Up) or (pressedkey == QtCore.Qt.Key_W):
@@ -184,7 +188,6 @@ class PlotView(QtWidgets.QWidget):
 
 
 
-
     def load_from_timeseries(self):
         '''uses timeseries xls sheets assuming they are available'''
         timeseriesgas_file = self.stats_filename.replace('-STATS.csv', '-TIMESERIESgas.xlsx')
@@ -288,7 +291,7 @@ class PlotView(QtWidgets.QWidget):
         '''if you click the correct place, update the plot based on where you click'''
         if event.inaxes is not None:
             try:
-                self.mid_time = pd.to_datetime(matplotlib.dates.num2date(event.xdata))
+                self.mid_time = pd.to_datetime(matplotlib.dates.num2date(event.xdata)).tz_convert(None)
                 self.update_plot()
             except:
                 pass
@@ -383,12 +386,9 @@ class PlotView(QtWidgets.QWidget):
                                                    "Select file to Save", outputname,
                                                    ".xlsx")
             if outputname[1]=='':
-                print('Did not recieve filename')
                 return
             outputname = outputname[0] + outputname[1]
-            print(outputname)
 
-            from openpyxl import Workbook
             wb = Workbook()
             ws = wb.active
             ws['A1'] = 'Start:'
