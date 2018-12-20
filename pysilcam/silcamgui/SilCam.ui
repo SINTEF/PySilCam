@@ -120,7 +120,7 @@
   </action>
   <action name="actionSTATS_to_PJ_csv_converter">
    <property name="text">
-    <string>STATS to PJ converter</string>
+    <string>Interactive summary</string>
    </property>
   </action>
  </widget>
