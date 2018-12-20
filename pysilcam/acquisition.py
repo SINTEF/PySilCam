@@ -8,17 +8,18 @@ from pysilcam.config import load_camera_config
 import pysilcam.fakepymba as fakepymba
 import sys
 import queue
-from cv2 import cvtColor, COLOR_BAYER_BG2RGB
+from cv2 import cvtColor, COLOR_BAYER_BG2RGB, imwrite
 
 
 logger = logging.getLogger(__name__)
 imQueue = queue.LifoQueue(10)
+isBayer = True
+
 
 try:
     import pymba
 except:
     logger.debug('Pymba not available. Cannot use camera')
-
 
 def _init_camera(vimba):
     '''Initialize the camera system from vimba object
@@ -40,7 +41,7 @@ def _init_camera(vimba):
     for cameraId in cameraIds:
         logger.debug('Camera ID: {0}'.format(cameraId))
 
-    #Check that we found a camera, if not, raise an error
+    # Check that we found a camera, if not, raise an error
     if len(cameraIds) == 0:
         logger.debug('No cameras detected')
         raise RuntimeError('No cameras detected!')
@@ -49,7 +50,6 @@ def _init_camera(vimba):
         # get and open a camera
         camera = vimba.getCamera(cameraIds[0])
         camera.openCamera()
-
     return camera
 
 
@@ -64,42 +64,53 @@ def _configure_camera(camera, config_file=None):
         camera       (Camera) : The camera with settings from the config
 
     '''
+    global isBayer
 
-    # Read the configiration values from default config file
+    # Read the configuration values from default config file
     defaultpath = os.path.dirname(os.path.abspath(__file__))
-    defaultfile = os.path.join(defaultpath,'camera_config_defaults.ini')
+    defaultfile = os.path.join(defaultpath,'camera_config_RGBPacked.ini')
     config = load_camera_config(defaultfile)
 
-    # Read the configiration values from users config file
+    # Read the configuration values from users config file
     # The values found in this file, overrides those fro the default file
     # The rest keep the values from the defaults file
     config = load_camera_config(config_file, config)
 
-    #If a config is specified, override those values
+    if config['PixelFormat'].upper().find('BAYERRG8') == 0:
+        isBayer = True
+    else:
+        isBayer = False
+
+    # If a config is specified, override those values
     for k, v in config.items():
         setattr(camera, k, v)
 
     return camera
 
-def _frameDone_callback(frame):
-    frame.queueFrameCapture(frameCallback=_frameDone_callback)
-    img = np.ndarray(buffer=frame.getBufferByteData(), dtype=np.uint8, shape=(frame.height, frame.width))
+def _frame_done_callback(frame):
+    frame.queueFrameCapture(frameCallback=_frame_done_callback)
+
+    if isBayer:
+        img = np.ndarray(buffer=frame.getBufferByteData(), dtype=np.uint8, shape=(frame.height, frame.width))
+    else:
+        img = np.ndarray(buffer=frame.getBufferByteData(), dtype=np.uint8, shape=(frame.height, frame.width, 3))
     timestamp = pymba.get_time_stamp(frame)
     try:
         imQueue.put_nowait([timestamp, img])
     except queue.Full:
         logger.warning("Buffer full, dropping frames")
 
-def _startAqusition(camera):
+
+def _start_acqusition(camera):
     camera.startCapture()
 
     frame = camera.getFrame()
     frame.announceFrame()
-    frame.queueFrameCapture(frameCallback=_frameDone_callback)
+    frame.queueFrameCapture(frameCallback=_frame_done_callback)
 
     camera.runFeatureCommand('AcquisitionStart')
 
-#def _stopAqusition(camera):
+# def _stopAcqusition(camera):
     # TODO implement this!
     # We should do a more gracefull shutdown of the camera when terminating pySilcam.
 
@@ -159,14 +170,14 @@ class Acquire():
         with self.pymba.Vimba() as vimba:
             camera = _init_camera(vimba)
 
-            #Configure camera
+            # Configure camera
             camera = _configure_camera(camera, config_file=camera_config_file)
 
-            #Prepare for image acquisition and create a frame
+            # Prepare for image acquisition and create a frame
             frame0 = camera.getFrame()
             frame0.announceFrame()
 
-            #Aquire raw images and yield to calling context
+            # Aquire raw images and yield to calling context
             while True:
                 try:
                     timestamp, img = self._acquire_frame(camera, frame0)
@@ -196,26 +207,27 @@ class Acquire():
 
         while True:
             try:
-                #Wait until camera wakes up
+                # Wait until camera wakes up
                 self.wait_for_camera()
 
                 with self.pymba.Vimba() as vimba:
                     camera = _init_camera(vimba)
 
-                    #Configure camera
+                    # Configure camera
                     camera = _configure_camera(camera, camera_config_file)
 
-                    #Start stream
-                    _startAqusition(camera)
+                    # Start stream
+                    _start_acqusition(camera)
 
-                    #Aquire raw images and yield to calling context
+                    # Acquire raw images and yield to calling context
                     while True:
                         timestamp, img = imQueue.get()
-                        logger.info('%s acquired', timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc'))
-                        img = cvtColor(img, COLOR_BAYER_BG2RGB)
+                        logger.info('%s acquired', timestamp.strftime('D%Y%m%dT%H%M%S.%f.bmp'))
+                        if isBayer:
+                            img = cvtColor(img, COLOR_BAYER_BG2RGB)
                         if writeToDisk:
-                            filename = os.path.join(datapath, timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc'))
-                            np.save(filename, img, allow_pickle=False)
+                            filename = os.path.join(datapath, timestamp.strftime('D%Y%m%dT%H%M%S.%f.bmp'))
+                            imwrite(filename, img)
                         yield timestamp, img
             except pymba.vimbaexception.VimbaException as e:
                 logger.warning('Camera error: %s, restarting...', e.message)
@@ -238,7 +250,7 @@ class Acquire():
             output (uint8)          : raw image acquired
         '''
 
-        # Aquire single frame from camera
+        # Acquire single frame from camera
         camera.startCapture()
         frame0.queueFrameCapture()
         camera.runFeatureCommand('AcquisitionStart')
