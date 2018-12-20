@@ -268,7 +268,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
         for i, (timestamp, imc, imraw) in enumerate(bggen):
             t1 = np.copy(t2)
             t2 = time.time()
-            logger.info('{0:.3f}Acquisition loop time'.format(t2-t1))
+            logger.info('{0:.3f} : Acquisition loop time'.format(t2-t1))
             logger.debug('Corrected image ' + str(timestamp) +
                         ' acquired from backgrounder')
 
