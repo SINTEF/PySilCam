@@ -5,13 +5,10 @@ import pandas as pd
 import os
 from skimage.draw import circle
 from skimage import util
-
 import pysilcam.postprocess as scpp
-import imageio as imo
 import pysilcam.process as scpr
 import pysilcam.config as sccf
 import pysilcam.silcam_classify as sccl
-import pysilcam.plotting as scplt
 
 def generate_report(report_name, PIX_SIZE = 28.758169934640524,
                     PATH_LENGTH=40, d50 = 400, TotalVolumeConcentration = 800,
@@ -125,7 +122,14 @@ def generate_report(report_name, PIX_SIZE = 28.758169934640524,
     plt.title('Synthetic image')
     pp.savefig(bbox_inches='tight')
 
-    diams, vd, imbw, stat_extract_time = test_analysis(img, PIX_SIZE, PATH_LENGTH)
+    vd = np.zeros_like(log_vd)
+    imbw = np.zeros_like(img[:,:,0])
+    stat_extract_time = pd.Timedelta(seconds=0)
+    try:
+        diams, vd, imbw, stat_extract_time = test_analysis(img, PIX_SIZE, PATH_LENGTH)
+    except:
+        print('Analysis failed')
+        pass
 
 
     f, a = plt.subplots(1,2,figsize=(10,4))
