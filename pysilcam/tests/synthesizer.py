@@ -12,7 +12,7 @@ import pysilcam.silcam_classify as sccl
 
 def generate_report(report_name, PIX_SIZE = 28.758169934640524,
                     PATH_LENGTH=40, d50 = 400, TotalVolumeConcentration = 800,
-                    MinD = 108):
+                    MinD = 108, config_file=''):
     '''Create a report of the expected response of the silcam to the provided experimental setup
 
     Args:
@@ -125,14 +125,15 @@ def generate_report(report_name, PIX_SIZE = 28.758169934640524,
     vd = np.zeros_like(log_vd)
     imbw = np.zeros_like(img[:,:,0])
     stat_extract_time = pd.Timedelta(seconds=0)
+    # @todo this should be handles properly as part of testing
     try:
-        diams, vd, imbw, stat_extract_time = test_analysis(img, PIX_SIZE, PATH_LENGTH)
+        diams, vd, imbw, stat_extract_time = test_analysis(img, PIX_SIZE, PATH_LENGTH, config_file=config_file)
     except:
         print('Analysis failed')
         pass
 
 
-    f, a = plt.subplots(1,2,figsize=(10,4))
+    f, a = plt.subplots(1,2,figsize=(20,8))
 
     plt.sca(a[0])
     plt.plot(diams, vd2, 'r:', label='Initial')
@@ -147,7 +148,7 @@ def generate_report(report_name, PIX_SIZE = 28.758169934640524,
              horizontalalignment='left', loc='left')
 
     plt.sca(a[1])
-    plt.imshow(imbw, vmin=0, vmax=1, extent=[0,imx*PIX_SIZE/1000,0,imy*PIX_SIZE/1000])
+    plt.imshow(imbw, vmin=0, vmax=1, extent=[0,imx*PIX_SIZE/1000,0,imy*PIX_SIZE/1000], cmap='gray')
     plt.xlabel('[mm]')
     plt.ylabel('[mm]')
     plt.title('imbw')
@@ -203,7 +204,7 @@ def synthesize(diams, bin_limits_um, nd, imx, imy, PIX_SIZE):
     return img, log_vd
 
 
-def test_analysis(img, PIX_SIZE, PATH_LENGTH):
+def test_analysis(img, PIX_SIZE, PATH_LENGTH, config_file=''):
     '''wrapper for pysilcam processing
 
     Args:
@@ -220,14 +221,17 @@ def test_analysis(img, PIX_SIZE, PATH_LENGTH):
     '''
 
     # administer configuration settings according to specified setup
-    testconfig = os.path.split(sccf.default_config_path())[0]
-    testconfig = os.path.join(testconfig, 'tests/config.ini')
+    if config_file=='':
+        testconfig = os.path.split(sccf.default_config_path())[0]
+        testconfig = os.path.join(testconfig, 'tests/config.ini')
+        conf.set('Process', 'real_time_stats', 'True')
+        conf.set('Process', 'threshold', '0.85')
+        conf.set('ExportParticles', 'export_images', 'False')
+    else:
+        testconfig = config_file
     conf = sccf.load_config(testconfig)
-    conf.set('ExportParticles', 'export_images', 'False')
     conf.set('PostProcess', 'pix_size', str(PIX_SIZE))
     conf.set('PostProcess', 'path_length', str(PATH_LENGTH))
-    conf.set('Process', 'real_time_stats', 'True')
-    conf.set('Process', 'threshold', '0.85')
 
     settings = sccf.PySilcamSettings(conf) # pass these settings without saving a config file to disc
 
