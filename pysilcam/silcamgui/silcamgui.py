@@ -24,6 +24,7 @@ import pysilcam.silcamgui.guicalcs as gc
 from pysilcam.silcamgui.guicalcs import process_mode
 from pysilcam.config import PySilcamSettings
 from pysilcam.oilgas import PathLength
+from pysilcam.silcamgui.interactive_summary import InteractivePlotter
 
 sns.set_style('ticks')
 sns.set_context(font_scale=2)
@@ -360,6 +361,7 @@ def main():
             plt.imshow(im)
             plt.axis('off')
             self.canvas.draw()
+            plt.close('all')
 
             # ---- define some callbacks
             self.ui.actionServer.triggered.connect(self.server)
@@ -383,25 +385,8 @@ def main():
 
 
         def STATS_to_PJ_csv_converter(self):
-            if self.configfile == '':
-                self.status_update('Asking user for config file')
-                self.load_sc_config()
-                if (self.configfile == ''):
-                    self.status_update('Did not get config file')
-                    return
-
-            self.stats_filename = ''
-            self.status_update('Asking user for *-STATS.csv file')
-            self.load_stats_filename()
-            if self.stats_filename == '':
-                self.status_update('Did not get STATS file')
-                return
-
-            scog.convert_to_pj_format(self.stats_filename, self.configfile)
-            print('STATS-PJ conversion done.')
-
-
-
+            self.SummaryExplorer = InteractivePlotter()
+            self.SummaryExplorer
 
         def path_length_adjuster(self):
             reply = QMessageBox.warning(self, "WARNING!",

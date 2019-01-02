@@ -9,7 +9,9 @@ REQUIRES = [
     'docopt==0.6.2',
     'configparser==3.5.0',
     'numpy==1.15.2',
-    'pandas==0.23.4',
+    'pandas==0.20.3',
+    'xlrd',
+    'openpyxl==2.4.8',
     'matplotlib==3.0.0',
     'imageio==2.4.1',
     'scikit-image==0.14.0',
@@ -26,6 +28,7 @@ REQUIRES = [
     'seaborn==0.9.0',
     'setuptools==40.2.0',
     'PyQt5==5.10',
+    'cmocean==1.2'
 ]
 
 class PyTest(TestCommand):
