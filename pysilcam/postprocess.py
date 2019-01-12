@@ -50,8 +50,8 @@ def d50_from_vd(vd,dias):
     Calculate d50 from a volume distribution
     
     Args:
-        vd (array)           : particle volume distribution calculated from vd_from_stats()
-        dias (array)         : mid-points in the size classes corresponding the the volume distribution,
+        vd            : particle volume distribution calculated from vd_from_stats()
+        dias          : mid-points in the size classes corresponding the the volume distribution,
                                returned from get_size_bins()
         
     Returns:
@@ -1002,3 +1002,39 @@ def show_h5_meta(h5file):
         logger.info('Proc/STATS:')
         stats = pd.read_hdf(h5file, 'Proc/STATS')
         logger.info('  Columns:  ' + str(stats.columns))
+
+
+def vd_to_nd(vd, dias):
+    '''convert volume distribution to number distribution
+
+    Args:
+        vd (array)           : particle volume distribution calculated from vd_from_stats()
+        dias (array)         : mid-points in the size classes corresponding the the volume distribution,
+                               returned from get_size_bins()
+
+    Returns:
+        nd (array)           : number distribution as number per micron per bin (scaling is the same unit as the input vd)
+    '''
+    DropletVolume=((4/3)*np.pi*((dias*1e-6)/2)**3) # the volume of each droplet in m3
+    nd=vd/(DropletVolume*1e9) # the number distribution in each bin
+    return nd
+
+
+def vd_to_nc(vd, dias):
+    '''calculate number concentration from volume distribution
+
+    Args:
+        vd (array)           : particle volume distribution calculated from vd_from_stats()
+        dias (array)         : mid-points in the size classes corresponding the the volume distribution,
+                               returned from get_size_bins()
+
+    Returns:
+        nn (float)           : number concentration (scaling is the same unit as the input vd).
+                               If vd is a 2d array [time, vd_bins], nc will be the concentration for row
+    '''
+    nd = vd_to_nd(dias, vd)
+    if np.ndim(nd)>1:
+        nc = np.sum(nd, axis=1)
+    else:
+        nc = np.sum(nd)
+    return nc
