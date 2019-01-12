@@ -16,7 +16,7 @@ sudo apt-get install -y git wget
 #RUN pip install git+https://github.com/mabl/pymba@python3
 
 # pysilcam requirements
-conda install --yes opencv=3.4.2
+conda install --yes -c anaconda opencv==3.4.2
 conda install --yes pytables=3.4.4
 cd ../
 python setup.py develop
