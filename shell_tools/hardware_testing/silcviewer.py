@@ -105,6 +105,12 @@ def get_image_size(im):
     ims = np.shape(im)
     return ims
 
+def zoomer(zoom):
+    zoom += 1
+    if zoom>2:
+        zoom = 0
+    return zoom
+
 
 def silcview():
     aqgen = get_image()
@@ -118,13 +124,15 @@ def silcview():
     screen = pygame.display.set_mode(size)
     font = pygame.font.SysFont("monospace", 20)
     c = pygame.time.Clock()
-    zoom = False
+    zoom = 0
     direction = 1 # 1=forward 2=backward
     pause = False
     pygame.event.set_blocked(pygame.MOUSEMOTION)
     im = convert_image(imraw, size)
     exit = False
+    c = pygame.time.Clock()
     while not exit:
+        c.tick(60) # restrict to max 60 fps
         if pause:
             event = pygame.event.wait()
             if event.type == 12:
@@ -132,7 +140,7 @@ def silcview():
                 return
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_f:
-                    zoom = np.invert(zoom)
+                    zoom = zoomer(zoom)
                 if event.key == pygame.K_LEFT:
                     direction = -1
                 if event.key == pygame.K_RIGHT:
@@ -146,10 +154,18 @@ def silcview():
         timestamp, imraw = next(aqgen)
         im = convert_image(imraw, size)
 
-        if zoom:
-            label = font.render('ZOOM [F]: ON', 1, (255, 255, 0))
-            im = pygame.transform.scale2x(im)
-            screen.blit(im,(-size[0]/2,-size[1]/2))
+        if zoom>0:
+            label = font.render('ZOOM [F]: ' + str(zoom), 1, (255, 255, 0))
+            #im = pygame.transform.scale2x(im)
+            #screen.blit(im,(-size[0]/2,-size[1]/2))
+            if zoom==1:
+                imcrop = imraw[int(ims[0]/4):-int(ims[0]/4),
+                        int(ims[1]/4):-int(ims[1]/4),:]
+            else:
+                imcrop = imraw[int(ims[0]/2.5):-int(ims[0]/2.5),
+                        int(ims[1]/2.5):-int(ims[1]/2.5),:]
+            im = convert_image(imcrop, size)
+            screen.blit(im,(0,0))
         else:
            im = pygame.transform.scale(im, size)
            screen.blit(im,(0,0))
@@ -167,7 +183,8 @@ def silcview():
         #    screen.blit(label, (0, size[1]-60))
 
         # pygame.display.set_caption('raw image replay:' + os.path.split(f)[0])#, icontitle=None)
-        label = font.render(str(timestamp), 20, (255, 255, 0))
+        label = font.render(str(timestamp) + '    Disp. FPS: ' +
+                str(c.get_fps()), 20, (255, 255, 0))
         screen.blit(label,(0,0))
         label = font.render('Esc to exit',
                 1, (255, 255, 0))
@@ -179,7 +196,7 @@ def silcview():
                 return
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_f:
-                    zoom = np.invert(zoom)
+                    zoom = zoomer(zoom)
                 if event.key == pygame.K_LEFT:
                     direction = -1
                 if event.key == pygame.K_RIGHT:
