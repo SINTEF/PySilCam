@@ -396,6 +396,7 @@ def createLIFOQueues(size):
         outputQueue
     '''
     manager = MyManager()
+    manager.register('LifoQueue', LifoQueue)
     manager.start()
     inputQueue = manager.LifoQueue(size)
     outputQueue = manager.LifoQueue(size)
@@ -422,8 +423,6 @@ class MyManager(BaseManager):
     '''
     pass
 
-MyManager.register('LifoQueue', LifoQueue)
-
 def loop(config_filename, inputQueue, outputQueue, gui=None):
     '''
     Main processing loop, run for each image
@@ -437,6 +436,8 @@ def loop(config_filename, inputQueue, outputQueue, gui=None):
         gui=None (Class object) : Queue used to pass information between process thread and GUI
                                   initialised in ProcThread within guicals.py
     '''
+    pid = psutil.Process(os.getpid())
+    pid.nice(psutil.BELOW_NORMAL_PRIORITY_CLASS)
     settings = PySilcamSettings(config_filename)
     configure_logger(settings.General)
     logger = logging.getLogger(__name__ + '.silcam_process')
@@ -509,6 +510,8 @@ def collectResults(inputQueue, outputQueue, config_filename, datafilename, proc_
         proc_list   (list)          : list of multiprocessing objects
         testInputQueue (Bool)       : if True function will keep collecting until inputQueue is empty
     '''
+    pid = psutil.Process(os.getpid())
+    pid.nice(psutil.BELOW_NORMAL_PRIORITY_CLASS)
     logger = logging.getLogger(__name__ + '.silcam_process')
     # write the images that are available for the moment into the csv file
     logger.debug('Running collector')
