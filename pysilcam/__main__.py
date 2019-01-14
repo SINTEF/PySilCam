@@ -264,6 +264,12 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
 
         logger.debug('setting up results collector')
         collector(inputQueue, outputQueue, config_filename, datafilename, proc_list, False)
+
+        pid = psutil.Process(os.getpid())
+        if (sys.platform == 'linux'):
+            pid.nice(20)
+        else:
+            pid.nice(psutil.ABOVE_NORMAL_PRIORITY_CLASS)
                       
         # iterate on the bggen generator to obtain images
         logger.debug('Starting acquisition loop')
@@ -437,7 +443,10 @@ def loop(config_filename, inputQueue, outputQueue, gui=None):
                                   initialised in ProcThread within guicals.py
     '''
     pid = psutil.Process(os.getpid())
-    pid.nice(psutil.BELOW_NORMAL_PRIORITY_CLASS)
+    if (sys.platform == 'linux'):
+        pid.nice(0)
+    else:
+        pid.nice(psutil.BELOW_NORMAL_PRIORITY_CLASS)
     settings = PySilcamSettings(config_filename)
     configure_logger(settings.General)
     logger = logging.getLogger(__name__ + '.silcam_process')
@@ -511,7 +520,10 @@ def collectResults(inputQueue, outputQueue, config_filename, datafilename, proc_
         testInputQueue (Bool)       : if True function will keep collecting until inputQueue is empty
     '''
     pid = psutil.Process(os.getpid())
-    pid.nice(psutil.BELOW_NORMAL_PRIORITY_CLASS)
+    if (sys.platform == 'linux'):
+        pid.nice(0)
+    else:
+        pid.nice(psutil.BELOW_NORMAL_PRIORITY_CLASS)
     logger = logging.getLogger(__name__ + '.silcam_process')
     # write the images that are available for the moment into the csv file
     logger.debug('Running collector')
@@ -592,7 +604,8 @@ def check_path(filename):
          try:
             os.makedirs(path)
          except:
-            logger.warning('Could not create catalog: {0}'.format(path))
+            pass
+            #logger.warning('Could not create catalog: {0}'.format(path))
 
 def configure_logger(settings):
     '''Configure a logger according to the settings.
