@@ -14,6 +14,7 @@ import pygame
 import time
 import psutil
 from tqdm import tqdm
+import pysilcam.silcamgui.liveviewer as lv
 
 
 def get_data(self):
@@ -227,6 +228,10 @@ def load_image(filename, size):
         im = pygame.image.load(filename).convert()
 
     return im
+
+
+def liveview(datadir, config_file):
+    lv.liveview(datadir, config_file)
 
 
 def silcview(datadir):

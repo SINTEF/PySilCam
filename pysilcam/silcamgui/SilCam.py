@@ -58,6 +58,8 @@ class Ui_SilCam(object):
         self.actionTrim_STATS_file.setObjectName("actionTrim_STATS_file")
         self.actionSTATS_to_PJ_csv_converter = QtWidgets.QAction(SilCam)
         self.actionSTATS_to_PJ_csv_converter.setObjectName("actionSTATS_to_PJ_csv_converter")
+        self.actionLive_view = QtWidgets.QAction(SilCam)
+        self.actionLive_view.setObjectName("actionLive_view")
         self.menuExport.addAction(self.actionExport_summary_data)
         self.menuExport.addAction(self.actionExport_summary_figure)
         self.menuExport.addAction(self.actionConvert_silc_to_bmp)
@@ -69,6 +71,7 @@ class Ui_SilCam(object):
         self.menuProcessing.addAction(self.actionSilc_file_player)
         self.menuProcessing.addAction(self.actionServer)
         self.menuProcessing.addAction(self.actionPath_length_adjuster)
+        self.menuProcessing.addAction(self.actionLive_view)
         self.menubar.addAction(self.menuProcessing.menuAction())
 
         self.retranslateUi(SilCam)
@@ -87,5 +90,5 @@ class Ui_SilCam(object):
         self.actionPath_length_adjuster.setText(_translate("SilCam", "Path length adjuster"))
         self.actionExport_summary_data.setText(_translate("SilCam", "Summary time series (to xls, png)"))
         self.actionTrim_STATS_file.setText(_translate("SilCam", "Trim STATS file"))
-        self.actionSTATS_to_PJ_csv_converter.setText(_translate("SilCam", "Interactive summary"))
+        self.actionSTATS_to_PJ_csv_converter.setText(_translate("SilCam", "STATS to PJ converter"))
 

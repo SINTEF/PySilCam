@@ -15,7 +15,7 @@ REQUIRES = [
     'matplotlib==3.0.0',
     'imageio==2.4.1',
     'scikit-image==0.14.0',
-    'pygame==1.9.2',
+    'pygame==1.9.4',
     'tflearn==0.3.2',
     'tqdm==4.28.1',
     'tensorflow==1.1.0',
