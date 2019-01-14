@@ -14,18 +14,17 @@ from multiprocessing.managers import BaseManager
 
 
 logger = logging.getLogger(__name__)
-#imQueue = queue.LifoQueue(10)
 
+# setup the lifo queue for camera stream
 class MyManager(BaseManager):
     '''
     Customized manager class used to register LifoQueues
     '''
     pass
-
 manager = MyManager()
 manager.register('LifoQueue', LifoQueue)
 manager.start()
-imQueue = manager.LifoQueue(10000)
+imQueue = manager.LifoQueue(100) # make this large but not infinate (we set a limit when it is used later)
 
 isBayer = True
 
@@ -114,14 +113,17 @@ def _frame_done_callback(frame):
         if frame.writeToDisk:
             filename = os.path.join(frame.datapath, timestamp.strftime('D%Y%m%dT%H%M%S.%f.bmp'))
             logger.info('Writing:' + filename)
+            # write images to disc here before anything else gets in the way
             imwrite(filename, img)
-        if imQueue.qsize()<2:
+        if imQueue.qsize()<2: # now we limit this queue so it is very small, and just keep acquiring
+            # this queue must never reach the queue size, otherwise it will block!
             imQueue.put_nowait([timestamp, img])
     except:
         logger.warning("dropping frame!")
 
 
 def _start_acqusition(camera, datapath, writeToDisk):
+    # acquiring images is the most imporant job for this computer
     pid = psutil.Process(os.getpid())
     if (sys.platform == 'linux'):
         pid.nice(20)
@@ -132,6 +134,8 @@ def _start_acqusition(camera, datapath, writeToDisk):
 
     frame = camera.getFrame()
     frame.announceFrame()
+    # add some info about where to save things to disc within the frame class
+    # this is used by _frame_done_callback when it writes to disc
     frame.datapath = datapath
     frame.writeToDisk = writeToDisk
     frame.queueFrameCapture(frameCallback=_frame_done_callback)
@@ -310,3 +314,5 @@ class Acquire():
                                    exc_info=True)
                     time.sleep(5)
 
+if __name__ == "__main__":
+    pass
