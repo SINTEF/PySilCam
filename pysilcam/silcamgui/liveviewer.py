@@ -132,13 +132,16 @@ def liveview(datapath = '/mnt/DATA/emlynd/DATA/', config_filename = 'config_hard
         if pause:
             event = pygame.event.wait()
             if event.type == 12:
-                pygame.quit()
-                return
+                exit = True
+                continue
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_f:
                     zoom = zoomer(zoom)
                 if event.key == pygame.K_p:
                     pause = np.invert(pause)
+                if event.key == pygame.K_ESCAPE:
+                    exit = True
+                    continue
                 else:
                     continue
                 pygame.time.wait(100)
@@ -181,8 +184,11 @@ def liveview(datapath = '/mnt/DATA/emlynd/DATA/', config_filename = 'config_hard
                     zoom = zoomer(zoom)
                 if event.key == pygame.K_SPACE:
                     write_image(datapath, timestamp, imraw)
+                if event.key == pygame.K_p:
+                    pause = np.invert(pause)
                 if event.key == pygame.K_ESCAPE:
                     exit = True
+                    continue
         pygame.display.flip()
     pygame.quit()
 
