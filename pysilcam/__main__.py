@@ -442,7 +442,7 @@ def loop(config_filename, inputQueue, outputQueue, gui=None):
     else:
         pid.nice(psutil.BELOW_NORMAL_PRIORITY_CLASS)
     settings = PySilcamSettings(config_filename)
-    configure_logger(settings.General)
+    #configure_logger(settings.General)
     logger = logging.getLogger(__name__ + '.silcam_process')
 
     # load the model for particle classification and keep it for later

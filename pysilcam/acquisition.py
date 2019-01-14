@@ -113,11 +113,10 @@ def _frame_done_callback(frame):
     try:
         if frame.writeToDisk:
             filename = os.path.join(frame.datapath, timestamp.strftime('D%Y%m%dT%H%M%S.%f.bmp'))
-            print('wiriting:', filename)
+            logger.info('Writing:' + filename)
             imwrite(filename, img)
         if imQueue.qsize()<2:
             imQueue.put_nowait([timestamp, img])
-        print('imageQ:', str(imQueue.qsize()))
     except:
         logger.warning("dropping frame!")
 
