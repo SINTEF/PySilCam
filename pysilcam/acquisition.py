@@ -16,15 +16,16 @@ from multiprocessing.managers import BaseManager
 logger = logging.getLogger(__name__)
 
 # setup the lifo queue for camera stream
-class MyManager(BaseManager):
-    '''
-    Customized manager class used to register LifoQueues
-    '''
-    pass
-manager = MyManager()
-manager.register('LifoQueue', LifoQueue)
-manager.start()
-imQueue = manager.LifoQueue(100) # make this large but not infinate (we set a limit when it is used later)
+# class MyManager(BaseManager):
+#     '''
+#     Customized manager class used to register LifoQueues
+#     '''
+#     pass
+# manager = MyManager()
+# manager.register('LifoQueue', LifoQueue)
+# manager.start()
+# imQueue = manager.LifoQueue(100) # make this large but not infinite (we set a limit when it is used later)
+imQueue = LifoQueue(100)
 
 isBayer = True
 
@@ -124,11 +125,14 @@ def _frame_done_callback(frame):
 
 def _start_acqusition(camera, datapath, writeToDisk):
     # acquiring images is the most imporant job for this computer
-    pid = psutil.Process(os.getpid())
-    if (sys.platform == 'linux'):
-        pid.nice(20)
-    else:
-        pid.nice(psutil.ABOVE_NORMAL_PRIORITY_CLASS)
+    # try:
+    #     pid = psutil.Process(os.getpid())
+    #     if (sys.platform == 'linux'):
+    #         pid.nice(20)
+    #     else:
+    #         pid.nice(psutil.ABOVE_NORMAL_PRIORITY_CLASS)
+    # except:
+    #     logger.warning('Could not prioritise acquisition process!')
 
     camera.startCapture()
 
