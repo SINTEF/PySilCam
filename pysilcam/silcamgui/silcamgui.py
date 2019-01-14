@@ -361,7 +361,6 @@ def main():
             plt.imshow(im)
             plt.axis('off')
             self.canvas.draw()
-            plt.close('all')
 
             # ---- define some callbacks
             self.ui.actionServer.triggered.connect(self.server)
