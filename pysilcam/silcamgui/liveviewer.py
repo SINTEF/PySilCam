@@ -24,16 +24,11 @@ from pysilcam.__main__ import *
 import pygame
 from cv2 import imwrite
 
-datapath = '/mnt/DATA/emlynd/DATA/'
-config_filename = 'config_hardware_test.ini'
-logger = logging.getLogger(__name__ + '.silcam_acquire')
-
-def main():
-    silcview()
+logger = logging.getLogger(__name__)
 
 
-def get_image():
-    aqgen = silcam_acquire(datapath, config_filename, writeToDisk=False)
+def get_image(datapath, config_filename):
+    aqgen = liveview_acquire(datapath, config_filename, writeToDisk=False)
     while True:
         timestamp, im = next(aqgen)
         yield timestamp, im
@@ -47,7 +42,7 @@ def convert_image(im, size):
         return im
 
 
-def silcam_acquire(datapath, config_filename, writeToDisk=False):
+def liveview_acquire(datapath, config_filename, writeToDisk=False):
     '''Aquire images from the SilCam
 
     Args:
@@ -88,14 +83,13 @@ def silcam_acquire(datapath, config_filename, writeToDisk=False):
         requested_freq = settings.Camera.acquisitionframerateabs
         rest_time = (1 / requested_freq) - (1 / aq_freq)
         rest_time = np.max([rest_time, 0.])
-        #time.sleep(rest_time)
         actual_aq_freq = 1/(1/aq_freq + rest_time)
         logger.info('Image {0} acquired at frequency {1:.1f} Hz'.format(i, actual_aq_freq))
         t1 = time.time()
 
         yield timestamp, imraw
 
-def write_image(timestamp, imraw):
+def write_image(datapath, timestamp, imraw):
     filename = os.path.join(datapath, timestamp.strftime('D%Y%m%dT%H%M%S.%f.bmp'))
     imwrite(filename, np.uint8(imraw))
     logger.info('Image written')
@@ -112,23 +106,25 @@ def zoomer(zoom):
     return zoom
 
 
-def silcview():
-    aqgen = get_image()
+def liveview(datapath = '/mnt/DATA/emlynd/DATA/', config_filename = 'config_hardware_test.ini'):
+    try:
+        import pymba
+    except:
+        logger.info('Pymba not available. Cannot use camera')
+        return
+
+    aqgen = get_image(datapath, config_filename)
     timestamp, imraw = next(aqgen)
     ims = get_image_size(imraw)
 
     pygame.init()
     info = pygame.display.Info()
-    #size = (int(info.current_h / (2048/2448))-100, info.current_h-100)
     size = (int(info.current_h / (ims[0]/ims[1]))-50, info.current_h-50)
     screen = pygame.display.set_mode(size)
     font = pygame.font.SysFont("monospace", 20)
-    c = pygame.time.Clock()
     zoom = 0
-    direction = 1 # 1=forward 2=backward
     pause = False
     pygame.event.set_blocked(pygame.MOUSEMOTION)
-    im = convert_image(imraw, size)
     exit = False
     c = pygame.time.Clock()
     while not exit:
@@ -141,10 +137,6 @@ def silcview():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_f:
                     zoom = zoomer(zoom)
-                if event.key == pygame.K_LEFT:
-                    direction = -1
-                if event.key == pygame.K_RIGHT:
-                    direction = 1
                 if event.key == pygame.K_p:
                     pause = np.invert(pause)
                 else:
@@ -152,12 +144,9 @@ def silcview():
                 pygame.time.wait(100)
 
         timestamp, imraw = next(aqgen)
-        im = convert_image(imraw, size)
 
         if zoom>0:
             label = font.render('ZOOM [F]: ' + str(zoom), 1, (255, 255, 0))
-            #im = pygame.transform.scale2x(im)
-            #screen.blit(im,(-size[0]/2,-size[1]/2))
             if zoom==1:
                 imcrop = imraw[int(ims[0]/4):-int(ims[0]/4),
                         int(ims[1]/4):-int(ims[1]/4),:]
@@ -165,24 +154,17 @@ def silcview():
                 imcrop = imraw[int(ims[0]/2.5):-int(ims[0]/2.5),
                         int(ims[1]/2.5):-int(ims[1]/2.5),:]
             im = convert_image(imcrop, size)
-            screen.blit(im,(0,0))
         else:
-           im = pygame.transform.scale(im, size)
-           screen.blit(im,(0,0))
-           label = font.render('ZOOM [F]: OFF', 1, (255, 255, 0))
+            im = convert_image(imraw, size)
+            label = font.render('ZOOM [F]: OFF', 1, (255, 255, 0))
+
+        screen.blit(im, (0, 0))
         screen.blit(label,(0, size[1]-20))
 
         label = font.render('pause[p] write[scpace] exit[Esc]', 1, (255,255,0))
         screen.blit(label, (0, size[1]-40))
 
-        #if counter == 0:
-        #    label = font.render('FIRST IMAGE', 1, (255,255,0))
-        #    screen.blit(label, (0, size[1]-60))
-        #elif counter == len(files)-1:
-        #    label = font.render('LAST IMAGE', 1, (255,255,0))
-        #    screen.blit(label, (0, size[1]-60))
-
-        # pygame.display.set_caption('raw image replay:' + os.path.split(f)[0])#, icontitle=None)
+        pygame.display.set_caption('Image display')
         label = font.render(str(timestamp) + '    Disp. FPS: ' +
                 str(c.get_fps()), 20, (255, 255, 0))
         screen.blit(label,(0,0))
@@ -197,15 +179,8 @@ def silcview():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_f:
                     zoom = zoomer(zoom)
-                if event.key == pygame.K_LEFT:
-                    direction = -1
-                if event.key == pygame.K_RIGHT:
-                    direction = 1
-                if event.key == pygame.K_p:
-                    pause = np.invert(pause)
-                    direction = 0
                 if event.key == pygame.K_SPACE:
-                    write_image(timestamp, imraw)
+                    write_image(datapath, timestamp, imraw)
                 if event.key == pygame.K_ESCAPE:
                     exit = True
         pygame.display.flip()
@@ -213,4 +188,4 @@ def silcview():
 
 
 if __name__ == "__main__":
-    main()
+    pass
