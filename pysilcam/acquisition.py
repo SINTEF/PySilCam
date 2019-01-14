@@ -125,14 +125,14 @@ def _frame_done_callback(frame):
 
 def _start_acqusition(camera, datapath, writeToDisk):
     # acquiring images is the most imporant job for this computer
-    # try:
-    #     pid = psutil.Process(os.getpid())
-    #     if (sys.platform == 'linux'):
-    #         pid.nice(20)
-    #     else:
-    #         pid.nice(psutil.ABOVE_NORMAL_PRIORITY_CLASS)
-    # except:
-    #     logger.warning('Could not prioritise acquisition process!')
+    try:
+        pid = psutil.Process(os.getpid())
+        if (sys.platform == 'linux'):
+            pid.nice(20)
+        else:
+            pid.nice(psutil.ABOVE_NORMAL_PRIORITY_CLASS)
+    except:
+        logger.warning('Could not prioritise acquisition process!')
 
     camera.startCapture()
 
