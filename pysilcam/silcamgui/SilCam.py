@@ -90,5 +90,6 @@ class Ui_SilCam(object):
         self.actionPath_length_adjuster.setText(_translate("SilCam", "Path length adjuster"))
         self.actionExport_summary_data.setText(_translate("SilCam", "Summary time series (to xls, png)"))
         self.actionTrim_STATS_file.setText(_translate("SilCam", "Trim STATS file"))
-        self.actionSTATS_to_PJ_csv_converter.setText(_translate("SilCam", "STATS to PJ converter"))
+        self.actionSTATS_to_PJ_csv_converter.setText(_translate("SilCam", "Interactive summary"))
+        self.actionLive_view.setText(_translate("SilCam", "Live view"))
 
