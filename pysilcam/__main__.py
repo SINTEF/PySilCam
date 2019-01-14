@@ -264,12 +264,6 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
 
         logger.debug('setting up results collector')
         collector(inputQueue, outputQueue, config_filename, datafilename, proc_list, False)
-
-        pid = psutil.Process(os.getpid())
-        if (sys.platform == 'linux'):
-            pid.nice(20)
-        else:
-            pid.nice(psutil.ABOVE_NORMAL_PRIORITY_CLASS)
                       
         # iterate on the bggen generator to obtain images
         logger.debug('Starting acquisition loop')

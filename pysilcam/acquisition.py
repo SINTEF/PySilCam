@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import psutil
 import time
 import numpy as np
 import pandas as pd
@@ -7,12 +8,25 @@ import logging
 from pysilcam.config import load_camera_config
 import pysilcam.fakepymba as fakepymba
 import sys
-import queue
+from queue import LifoQueue
 from cv2 import cvtColor, COLOR_BAYER_BG2RGB, imwrite
+from multiprocessing.managers import BaseManager
 
 
 logger = logging.getLogger(__name__)
-imQueue = queue.LifoQueue(10)
+#imQueue = queue.LifoQueue(10)
+
+class MyManager(BaseManager):
+    '''
+    Customized manager class used to register LifoQueues
+    '''
+    pass
+
+manager = MyManager()
+manager.register('LifoQueue', LifoQueue)
+manager.start()
+imQueue = manager.LifoQueue(10000)
+
 isBayer = True
 
 
@@ -97,16 +111,30 @@ def _frame_done_callback(frame):
         img = np.ndarray(buffer=frame.getBufferByteData(), dtype=np.uint8, shape=(frame.height, frame.width, 3))
     timestamp = pymba.get_time_stamp(frame)
     try:
-        imQueue.put_nowait([timestamp, img])
-    except queue.Full:
-        logger.warning("Buffer full, dropping frames")
+        if frame.writeToDisk:
+            filename = os.path.join(frame.datapath, timestamp.strftime('D%Y%m%dT%H%M%S.%f.bmp'))
+            print('wiriting:', filename)
+            imwrite(filename, img)
+        if imQueue.qsize()<2:
+            imQueue.put_nowait([timestamp, img])
+        print('imageQ:', str(imQueue.qsize()))
+    except:
+        logger.warning("dropping frame!")
 
 
-def _start_acqusition(camera):
+def _start_acqusition(camera, datapath, writeToDisk):
+    pid = psutil.Process(os.getpid())
+    if (sys.platform == 'linux'):
+        pid.nice(20)
+    else:
+        pid.nice(psutil.ABOVE_NORMAL_PRIORITY_CLASS)
+
     camera.startCapture()
 
     frame = camera.getFrame()
     frame.announceFrame()
+    frame.datapath = datapath
+    frame.writeToDisk = writeToDisk
     frame.queueFrameCapture(frameCallback=_frame_done_callback)
 
     camera.runFeatureCommand('AcquisitionStart')
@@ -219,7 +247,7 @@ class Acquire():
                     camera = _configure_camera(camera, camera_config_file)
 
                     # Start stream
-                    _start_acqusition(camera)
+                    _start_acqusition(camera, datapath, writeToDisk)
 
                     # Acquire raw images and yield to calling context
                     while True:
@@ -227,9 +255,6 @@ class Acquire():
                         logger.info('%s acquired', timestamp.strftime('D%Y%m%dT%H%M%S.%f.bmp'))
                         if isBayer:
                             img = cvtColor(img, COLOR_BAYER_BG2RGB)
-                        if writeToDisk:
-                            filename = os.path.join(datapath, timestamp.strftime('D%Y%m%dT%H%M%S.%f.bmp'))
-                            imwrite(filename, img)
                         yield timestamp, img
             except pymba.vimbaexception.VimbaException as e:
                 logger.warning('Camera error: %s, restarting...', e.message)
