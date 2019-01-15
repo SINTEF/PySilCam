@@ -126,9 +126,7 @@ def liveview(datapath = '/mnt/DATA/emlynd/DATA/', config_filename = 'config_hard
     pause = False
     pygame.event.set_blocked(pygame.MOUSEMOTION)
     exit = False
-    c = pygame.time.Clock()
     while not exit:
-        c.tick(60) # restrict to max 60 fps
         if pause:
             event = pygame.event.wait()
             if event.type == 12:
