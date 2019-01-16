@@ -23,6 +23,7 @@ import time
 from pysilcam.__main__ import *
 import pygame
 from cv2 import imwrite
+import cv2
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +92,7 @@ def liveview_acquire(datapath, config_filename, writeToDisk=False):
 
 def write_image(datapath, timestamp, imraw):
     filename = os.path.join(datapath, timestamp.strftime('D%Y%m%dT%H%M%S.%f.bmp'))
-    imwrite(filename, np.uint8(imraw))
+    imwrite(filename, np.uint8(cv2.cvtColor(imraw, cv2.COLOR_RGB2BGR)))
     logger.info('Image written')
 
 

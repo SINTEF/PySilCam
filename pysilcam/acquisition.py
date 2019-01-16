@@ -10,6 +10,7 @@ import pysilcam.fakepymba as fakepymba
 import sys
 from queue import LifoQueue
 from cv2 import cvtColor, COLOR_BAYER_BG2RGB, imwrite
+import cv2
 from multiprocessing.managers import BaseManager
 
 
@@ -115,7 +116,7 @@ def _frame_done_callback(frame):
             filename = os.path.join(frame.datapath, timestamp.strftime('D%Y%m%dT%H%M%S.%f.bmp'))
             logger.info('Writing:' + filename)
             # write images to disc here before anything else gets in the way
-            imwrite(filename, img)
+            imwrite(filename, np.uint8(cv2.cvtColor(img, cv2.COLOR_RGB2BGR)))
         if imQueue.qsize()<2: # now we limit this queue so it is very small, and just keep acquiring
             # this queue must never reach the queue size, otherwise it will block!
             imQueue.put_nowait([timestamp, img])
