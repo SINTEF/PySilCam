@@ -104,7 +104,6 @@ def _configure_camera(camera, config_file=None):
     return camera
 
 def _frame_done_callback(frame):
-    frame.queueFrameCapture(frameCallback=_frame_done_callback)
 
     if isBayer:
         img = np.ndarray(buffer=frame.getBufferByteData(), dtype=np.uint8, shape=(frame.height, frame.width))
@@ -122,6 +121,8 @@ def _frame_done_callback(frame):
             imQueue.put_nowait([timestamp, img])
     except:
         logger.warning("dropping frame!")
+
+    frame.queueFrameCapture(frameCallback=_frame_done_callback)
 
 
 def _start_acqusition(camera, datapath, writeToDisk):
