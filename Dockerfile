@@ -2,7 +2,9 @@
 FROM continuumio/anaconda3:5.3.0
 
 # Create Python 3.5 environment and activate it
-RUN conda create -n silcam python=3.5 anaconda
+# This will use the enviroment.yml file specification
+ADD environment.yml /tmp/environment.yml
+RUN conda env create -f=/tmp/environment.yml
 RUN echo "source activate silcam" > ~/.bashrc
 ENV PATH /opt/conda/envs/silcam/bin:$PATH
 
