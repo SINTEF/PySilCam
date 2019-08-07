@@ -1,31 +1,34 @@
 # -*- coding: utf-8 -*-
-import re
 import os
 import sys
 from setuptools import setup
 from setuptools.command.test import test as TestCommand
-from pysilcam import __version__
-from sphinx.setup_command import BuildDoc
-import sphinx.apidoc
 import distutils.cmd
 
 REQUIRES = [
-    'docopt',
-    'configparser',
-    'numpy',
-    'pandas',
-    'matplotlib',
-    'imageio',
-    'scikit-image',
-    'pygame',
-    'tflearn',
-    'sphinx',
-    'sphinx_rtd_theme',
-    'tqdm',
-    'tables'
-#    'tensorflow',
-#    'pyserial',
-#    'pymba',
+    'docopt==0.6.2',
+    'configparser==3.5.0',
+    'numpy==1.15.2',
+    'pandas==0.20.3',
+    'xlrd',
+    'openpyxl==2.4.8',
+    'matplotlib==3.0.0',
+    'imageio==2.4.1',
+    'scikit-image==0.14.0',
+    'pygame==1.9.2',
+    'tflearn==0.3.2',
+    'tqdm==4.28.1',
+    'tensorflow==1.1.0',
+    'h5py==2.8.0',
+    'psutil==5.4.7',
+    'Sphinx==1.7.9',
+    'sphinx_rtd_theme==0.4.2',
+    'sphinxcontrib-napoleon==0.7',
+    'pyserial==3.4',
+    'seaborn==0.9.0',
+    'setuptools==40.2.0',
+    'PyQt5==5.10',
+    'cmocean==1.2'
 ]
 
 class PyTest(TestCommand):
@@ -77,8 +80,6 @@ setup(
     install_requires=REQUIRES,
     # Use Python 3 branch on alternate repo for Pymba
     #dependency_links=['git+https://github.com/mabl/pymba@python3'],
-    # Use master branch for Pymba on Python 2
-    #dependency_links=['git+https://github.com/morefigs/pymba@python3'],
     zip_safe=False,
     keywords='silcam',
     classifiers=[
@@ -86,7 +87,6 @@ setup(
         'Intended Audience :: Developers',
         'Natural Language :: English',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
     ],
