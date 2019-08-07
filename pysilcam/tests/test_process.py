@@ -22,8 +22,8 @@ print('MODEL_PATH',MODEL_PATH)
 def test_output_files():
     '''Testing that the appropriate STATS.csv file is created'''
 
-    path = os.path.dirname(__file__)
-    conf_file = os.path.join(path, 'config.ini')
+    conf_file = os.path.join(ROOTPATH, 'config.ini')
+    conf_file_out = os.path.join(ROOTPATH, 'config_generated.ini')
     conf = load_config(conf_file)
 
     data_file = os.path.join(ROOTPATH, 'STN04')
@@ -32,7 +32,7 @@ def test_output_files():
     conf.set('ExportParticles', 'outputpath', os.path.join(data_file, 'export'))
     if MODEL_PATH is not None:
         conf.set('NNClassify', 'model_path', MODEL_PATH)
-    conf_file_hand = open(conf_file,'w')
+    conf_file_hand = open(conf_file_out,'w')
     conf.write(conf_file_hand)
     conf_file_hand.close()
 
@@ -49,7 +49,7 @@ def test_output_files():
         os.remove(hdf_file)
 
     # call process function
-    silcam_process(conf_file, data_file, multiProcess=False)
+    silcam_process(conf_file_out, data_file, multiProcess=False)
 
     # check that csv file has been created
     assert os.path.isfile(stats_file), 'STATS csv file not created'
@@ -85,7 +85,7 @@ def test_output_files():
     if (os.path.isfile(report_figure)):
         os.remove(report_figure)
 
-    silcam_report(stats_file, conf_file, dpi=10)
+    silcam_report(stats_file, conf_file_out, dpi=10)
     assert os.path.isfile(report_figure), 'report figure file not created'
 
     # # test synthesizer
