@@ -89,7 +89,7 @@ To run the tests inside the Docker environment:
 
 To get an interactive shell session with the PySilcam Docker environment run:
 
-    docker run --rm -it --entrypoint /bin/bash pysilcam_silcam
+    docker-compose run --rm --entrypoint /bin/bash silcam
 
 Note: make sure to remove any .pyc files generated on the host system, as these can cause problems inside the Docker environment.
 
