@@ -73,6 +73,5 @@ setup(
             'silcam-gui = pysilcam.silcamgui.silcamgui:main',
         ]
     },
-    tests_require=['pytest'],
     cmdclass={'test': PyTest, 'build_sphinx': Documentation}
 )
