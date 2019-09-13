@@ -83,6 +83,8 @@ The Dockerfile will spin up an environment where Anaconda Python 3.5 is installe
 
     docker-compose build
 
+Note: you might need sudo here.
+
 To run the tests inside the Docker environment:
 
     docker-compose up
@@ -92,6 +94,10 @@ To get an interactive shell session with the PySilcam Docker environment run:
     docker-compose run --rm --entrypoint /bin/bash silcam
 
 Note: make sure to remove any .pyc files generated on the host system, as these can cause problems inside the Docker environment.
+
+If you want to mount a local folder inside the docker environment, use -v [local path:docker mount point]:
+
+    docker-compose run -v /mnt/ARRAY/:/mnt/ARRAY/ --rm --entrypoint /bin/bash silcam
 
 
 License
