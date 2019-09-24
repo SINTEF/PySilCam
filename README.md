@@ -10,19 +10,14 @@ Features
 * Real-time processing of SilCam images, particle statistics.
 * Processing images from disk (batch or real-time).
 
-Pymba Requirements
+Requirements
 ------------------
 
-* Python = 3.4
+* Python = 3.5
 
-* Pymba with Python 3 support. Install using
+* Pymba (camera acquisition) with Python 3 support. Install using
 
     pip install git+https://github.com/mabl/pymba@python3
-
-
-* For Python 2, the master branch Pymba is required. Install it with
-
-    pip install -e git+https://github.com/morefigs/pymba#egg=pymba
 
 
 Installing
@@ -31,10 +26,10 @@ Install Anaconda:  https://www.anaconda.com/download/ Python 3.6 version
 
 Anaconda Prompt may be used for the following
 
-Create a virtual environment (preferably containing a username)
+Create a virtual environment (preferably containing a username, example below is for sctest as <name of the environment>)
 
 ```
-    conda create -n <name of the environment> python=3.5 scikit-image pandas seaborn
+    conda create -n <name of the environment> python=3.5
 ```
 
 Unix: 
@@ -52,12 +47,18 @@ Windows:
 
 Install packages
 
-```
-    conda install --yes -c cogsci pygame psutil sphinx sphinxcontrib pyserial seaborn pyserial setuptools
-```
+Navigate to pysilcam/shell_tools
+
+Unix:
 
 ```
-    yes | pip install tensorflow==1.1.0 tflearn h5py cmocean psutil openpyxl Sphinx sphinxcontrib-napoleon
+    bash install.sh
+```
+
+Windows:
+
+```
+    install.bat
 ```
 
 

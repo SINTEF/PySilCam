@@ -24,6 +24,7 @@ import pysilcam.silcamgui.guicalcs as gc
 from pysilcam.silcamgui.guicalcs import process_mode
 from pysilcam.config import PySilcamSettings
 from pysilcam.oilgas import PathLength
+from pysilcam.silcamgui.interactive_summary import InteractivePlotter
 
 sns.set_style('ticks')
 sns.set_context(font_scale=2)
@@ -360,6 +361,7 @@ def main():
             plt.imshow(im)
             plt.axis('off')
             self.canvas.draw()
+            plt.close('all')
 
             # ---- define some callbacks
             self.ui.actionServer.triggered.connect(self.server)
@@ -371,6 +373,7 @@ def main():
 
             self.ui.actionPath_length_adjuster.triggered.connect(self.path_length_adjuster)
             self.ui.actionTrim_STATS_file.triggered.connect(self.stats_trim)
+            self.ui.actionSTATS_to_PJ_csv_converter.triggered.connect(self.STATS_to_PJ_csv_converter)
 
             self.layout = layout
 
@@ -380,6 +383,10 @@ def main():
 
             self.acquire_controller()
 
+
+        def STATS_to_PJ_csv_converter(self):
+            self.SummaryExplorer = InteractivePlotter()
+            self.SummaryExplorer
 
         def path_length_adjuster(self):
             reply = QMessageBox.warning(self, "WARNING!",

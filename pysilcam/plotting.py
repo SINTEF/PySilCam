@@ -9,6 +9,7 @@ import seaborn as sns
 sns.set_style('ticks')
 from pysilcam.config import PySilcamSettings
 import pandas as pd
+import logging
 
 
 class ParticleSizeDistPlot:
@@ -261,6 +262,7 @@ def summarise_fancy_stats(stats_csv_file, config_file, monitor=False,
     ax1 = plt.subplot2grid((2,2),(0, 0))
     ax2 = plt.subplot2grid((2,2),(1, 0))
     ax3 = plt.subplot2grid((2,2), (0, 1), rowspan=2)
+    logger = logging.getLogger(__name__)
 
     while True:
         try:
@@ -272,8 +274,8 @@ def summarise_fancy_stats(stats_csv_file, config_file, monitor=False,
                     oilgas=oilgas)
         except:
             montage = np.zeros((msize, msize, 3), dtype=np.uint8) + 255
-            print('Unable to make montage. Check:', settings.ExportParticles.outputpath, ' folder for h5 files')
-            print('  in config file ExportParticles.export_images is ', settings.ExportParticles.export_images)
+            logger.warning('Unable to make montage. Check: {0} folder for h5 files'.format(settings.ExportParticles.outputpath))
+            logger.warning('  in config file ExportParticles.export_images is {0}'.format(settings.ExportParticles.export_images))
 
         stats = pd.read_csv(stats_csv_file)
         stats = stats[(stats['major_axis_length'] *
