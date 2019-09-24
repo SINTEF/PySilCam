@@ -10,7 +10,11 @@ if "UNITTEST_DATA_PATH" in os.environ:
 else:
     ROOTPATH = 'E:/test data/hello_silcam/unittest_entries'
 
+# Get user-defined tensorflow model path from environment variable
+MODEL_PATH = os.environ.get('SILCAM_MODEL_PATH', None)
+
 print('ROOTPATH',ROOTPATH)
+print('MODEL_PATH',MODEL_PATH)
 
 @unittest.skipIf(not os.path.isdir(
     os.path.join(ROOTPATH,'STN04')),
@@ -18,15 +22,17 @@ print('ROOTPATH',ROOTPATH)
 def test_output_files():
     '''Testing that the appropriate STATS.csv file is created'''
 
-    path = os.path.dirname(__file__)
-    conf_file = os.path.join(path, 'config.ini')
+    conf_file = os.path.join(ROOTPATH, 'config.ini')
+    conf_file_out = os.path.join(ROOTPATH, 'config_generated.ini')
     conf = load_config(conf_file)
 
     data_file = os.path.join(ROOTPATH, 'STN04')
     conf.set('General', 'datafile', os.path.join(data_file, 'proc'))
     conf.set('General', 'logfile', os.path.join(ROOTPATH,'log.log'))
     conf.set('ExportParticles', 'outputpath', os.path.join(data_file, 'export'))
-    conf_file_hand = open(conf_file,'w')
+    if MODEL_PATH is not None:
+        conf.set('NNClassify', 'model_path', MODEL_PATH)
+    conf_file_hand = open(conf_file_out,'w')
     conf.write(conf_file_hand)
     conf_file_hand.close()
 
@@ -43,7 +49,7 @@ def test_output_files():
         os.remove(hdf_file)
 
     # call process function
-    silcam_process(conf_file, data_file, multiProcess=False)
+    silcam_process(conf_file_out, data_file, multiProcess=False)
 
     # check that csv file has been created
     assert os.path.isfile(stats_file), 'STATS csv file not created'
@@ -79,13 +85,13 @@ def test_output_files():
     if (os.path.isfile(report_figure)):
         os.remove(report_figure)
 
-    silcam_report(stats_file, conf_file, dpi=10)
+    silcam_report(stats_file, conf_file_out, dpi=10)
     assert os.path.isfile(report_figure), 'report figure file not created'
 
     # # test synthesizer
-    import pysilcam.tests.synthesizer as synth
-    reportdir = os.path.join(path, '../../test-report')
-    os.makedirs(reportdir, exist_ok=True)
-    synth.generate_report(os.path.join(reportdir, 'imagesynth_report.pdf'), PIX_SIZE=28.758169934640524,
-                          PATH_LENGTH=10, d50=800, TotalVolumeConcentration=800,
-                          MinD=108)
+    #import pysilcam.tests.synthesizer as synth
+    #reportdir = os.path.join(path, '../../test-report')
+    #os.makedirs(reportdir, exist_ok=True)
+    #synth.generate_report(os.path.join(reportdir, 'imagesynth_report.pdf'), PIX_SIZE=28.758169934640524,
+    #                      PATH_LENGTH=10, d50=800, TotalVolumeConcentration=800,
+    #                      MinD=108)

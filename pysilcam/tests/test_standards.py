@@ -12,6 +12,9 @@ if "UNITTEST_DATA_PATH" in os.environ:
 else:
     ROOTPATH = 'E:/test data/hello_silcam/unittest_entries'
 
+# Get user-defined tensorflow model path from environment variable
+MODEL_PATH = os.environ.get('SILCAM_MODEL_PATH', None)
+
 @unittest.skipIf(not os.path.isdir(
     os.path.join(ROOTPATH, 'STANDARDS/StandardsBig')),
     "test path not accessible")
@@ -22,14 +25,16 @@ else:
 def test_big_standards():
     '''Testing that the large standards are sized correctly'''
 
-    path = os.path.dirname(__file__)
-    conf_file = os.path.join(path, 'config_glass_standards.ini')
+    conf_file = os.path.join(ROOTPATH, 'STANDARDS', 'config_glass_standards.ini')
+    conf_file_out = os.path.join(ROOTPATH, 'STANDARDS', 'config_glass_standards_generated.ini')
     conf = load_config(conf_file)
 
     data_file = os.path.join(ROOTPATH, 'STANDARDS/StandardsBig')
     conf.set('General', 'datafile', os.path.join(ROOTPATH, 'STANDARDS', 'proc'))
     conf.set('General', 'logfile', os.path.join(ROOTPATH, 'STANDARDS', 'log.log'))
-    conf_file_hand = open(conf_file,'w')
+    if MODEL_PATH is not None:
+        conf.set('NNClassify', 'model_path', MODEL_PATH)
+    conf_file_hand = open(conf_file_out,'w')
     conf.write(conf_file_hand)
     conf_file_hand.close()
 
@@ -40,7 +45,7 @@ def test_big_standards():
         os.remove(stats_file)
 
     # call process function
-    silcam_process(conf_file, data_file, multiProcess=False, nbImages=10)
+    silcam_process(conf_file_out, data_file, multiProcess=False, nbImages=10)
 
     # check that csv file has been created
     assert os.path.isfile(stats_file), 'stats_file not created'
@@ -56,7 +61,7 @@ def test_big_standards():
             'probability_oil,probability_other,probability_bubble,probability_faecal_pellets,probability_copepod,'\
             'probability_diatom_chain,probability_oily_gas,export name,timestamp,saturation\n', 'columns not properly built'
 
-    settings = PySilcamSettings(conf_file)
+    settings = PySilcamSettings(conf_file_out)
     stats = pd.read_csv(stats_file)
     d50 = scpp.d50_from_stats(stats, settings.PostProcess)
     assert (d50 > 310 and d50 < 330), 'incorrect d50'
@@ -71,13 +76,16 @@ def test_big_standards():
 def test_small_standards():
     '''Testing that the small standards are sized correctly'''
     path = os.path.dirname(__file__)
-    conf_file = os.path.join(path, 'config_glass_standards.ini')
+    conf_file = os.path.join(ROOTPATH, 'STANDARDS', 'config_glass_standards.ini')
+    conf_file_out = os.path.join(ROOTPATH, 'STANDARDS', 'config_glass_standards_generated.ini')
     conf = load_config(conf_file)
 
     data_file = os.path.join(ROOTPATH, 'STANDARDS/StandardsSmall')
     conf.set('General', 'datafile', os.path.join(ROOTPATH, 'STANDARDS', 'proc'))
     conf.set('General', 'logfile', os.path.join(ROOTPATH, 'STANDARDS', 'log.log'))
-    conf_file_hand = open(conf_file,'w')
+    if MODEL_PATH is not None:
+        conf.set('NNClassify', 'model_path', MODEL_PATH)
+    conf_file_hand = open(conf_file_out,'w')
     conf.write(conf_file_hand)
     conf_file_hand.close()
 
@@ -88,7 +96,7 @@ def test_small_standards():
         os.remove(stats_file)
 
     # call process function
-    silcam_process(conf_file, data_file, multiProcess=False, nbImages=10)
+    silcam_process(conf_file_out, data_file, multiProcess=False, nbImages=10)
 
     # check that csv file has been created
     assert os.path.isfile(stats_file), 'stats_file not created'
@@ -104,7 +112,7 @@ def test_small_standards():
             'probability_oil,probability_other,probability_bubble,probability_faecal_pellets,probability_copepod,'\
             'probability_diatom_chain,probability_oily_gas,export name,timestamp,saturation\n', 'columns not properly built'
 
-    settings = PySilcamSettings(conf_file)
+    settings = PySilcamSettings(conf_file_out)
     stats = pd.read_csv(stats_file)
     d50 = scpp.d50_from_stats(stats, settings.PostProcess)
     assert (d50 > 70 and d50 < 90), 'incorrect d50'
