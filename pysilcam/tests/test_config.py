@@ -32,7 +32,7 @@ def test_settings():
 
 def test_camera_config_parser():
     path = os.path.dirname(__file__)
-    filename = os.path.join(path, '..', 'camera_config_RGBPacked.ini')
+    filename = os.path.join(path, '..', 'camera_config_defaults.ini')
     filename = os.path.normpath(filename)
     conf = load_camera_config(filename)
 
