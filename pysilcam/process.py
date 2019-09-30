@@ -17,8 +17,7 @@ import skimage.exposure
 import h5py
 import os
 import pysilcam.silcam_classify as sccl
-from skimage.io import imsave
-import traceback
+import scipy.misc
 
 '''
 Module for processing SilCam data
@@ -232,6 +231,7 @@ def extract_roi(im, bbox):
     Returns:
         roi                 : image cropped to region of interest
     '''
+
     roi = im[bbox[0]:bbox[2], bbox[1]:bbox[3]]  # yep, that't it.
 
     return roi
@@ -353,6 +353,7 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
 
     @todo clean up all the unnesessary conditional statements in this
     '''
+
     filenames = ['not_exported'] * len(region_properties)
 
     # pre-allocation
@@ -379,54 +380,60 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
         #  stack file list.
 
     # define the geometrical properties to be calculated from regionprops
-    propnames = ['major_axis_length', 'minor_axis_length',
-                 'equivalent_diameter', 'solidity']
+    propnames = ['major_axis_length', 'minor_axis_length', 'equivalent_diameter', 'solidity']
 
     # pre-allocate some things
-    data = np.zeros((len(region_properties), len(propnames)), dtype=np.float64)
-    bboxes = np.zeros((len(region_properties), 4), dtype=np.float64)
-    nb_extractable_part = 0
+    particle_data = np.zeros((len(region_properties), len(propnames)), dtype=np.float64)
+    bboxes = np.zeros((len(region_properties), 4), dtype=np.uint16)
+    filenames = ['not_exported'] * len(region_properties)
+    rois = np.zeros((0, 32, 32, 3), dtype=np.float32)
+    predictions = np.zeros((len(region_properties), len(class_labels)))
+    particle_ids_export = []
 
+    # Filter region properties for particles that are being exported and classified
     for i, el in enumerate(region_properties):
-        data[i, :] = [getattr(el, p) for p in propnames]
+        data = [getattr(el, p) for p in propnames]
+        particle_data[i, :] = data
         bboxes[i, :] = el.bbox
 
-        # if operating in realtime mode, assume we only care about oil and gas and skip export of overly-derformed
-        # particles
-        if settings.Process.real_time_stats & (((data[i, 1] / data[i, 0]) < 0.3) | (data[i, 3] < 0.95)):
+
+        # if operating in realtime mode, assume we only care about oil and gas and skip export of overly-derformed particles
+        if settings.Process.real_time_stats and (data[1]/data[0] < 0.3 or data[3] < 0.95):
             continue
         # Find particles that match export criteria
-        if ((data[i, 0] > settings.ExportParticles.min_length) &  # major_axis_length in pixels
-                (data[i, 1] > 2)):  # minor length in pixels
+        if ((data[0] < settings.ExportParticles.min_length) or (data[1] < 2)):
+            continue
 
-            nb_extractable_part += 1
-            # extract the region of interest from the corrected colour image
-            roi = extract_roi(imc, bboxes[i, :].astype(int))
+        particle_ids_export.append(i)
+        roi = imc[el.bbox[0]:el.bbox[2], el.bbox[1]:el.bbox[3]]
 
-            # add the roi to the HDF5 file
-            filenames[int(i)] = filename + '-PN' + str(i)
-            if settings.ExportParticles.export_images:
-                HDF5File.create_dataset('PN' + str(i), data=roi)
-                # @todo also include particle stats here too.
+        # Rescale to neural net input size (32 x 32)
+        roi_rz = scipy.misc.imresize(roi, (32, 32), interp="bicubic").astype(np.float32, casting='unsafe')
+        roi_rz = np.expand_dims(roi_rz, axis=0)
+        rois = np.vstack((rois, roi_rz))
 
-            # run a prediction on what type of particle this might be
-            prediction = sccl.predict(roi, nnmodel)
-            predictions[int(i), :] = prediction[0]
+        filenames[i] = filename + '-PN' + str(i)
+
+        # add the roi to the HDF5 file
+        if settings.ExportParticles.export_images:
+            HDF5File.create_dataset('PN' + str(i), data=roi)
+            # @todo also include particle stats here too.
 
     if settings.ExportParticles.export_images:
-        # close the HDF5 file
         HDF5File.close()
+
+    predictions[particle_ids_export, :] = nnmodel.predict(rois)
 
     # build the column names for the outputed DataFrame
     column_names = np.hstack(([propnames, 'minr', 'minc', 'maxr', 'maxc']))
 
     # merge regionprops statistics with a seperate bounding box columns
-    cat_data = np.hstack((data, bboxes))
+    cat_data = np.hstack((particle_data, bboxes))
 
     # put particle statistics into a DataFrame
     stats = pd.DataFrame(columns=column_names, data=cat_data)
 
-    logger.info('EXTRACTING {0} IMAGES from {1}'.format(nb_extractable_part, len(stats['major_axis_length'])))
+    logger.info('Extracting {0} rois from {1} possible'.format(len(particle_ids_export), len(stats['major_axis_length'])))
 
     # add classification predictions to the particle statistics data
     for n, c in enumerate(class_labels):
@@ -497,7 +504,7 @@ def processImage(nnmodel, class_labels, image, settings, logger, gui):
         proc_time = time.time() - start_time
 
         # Print timing information for this iteration
-        infostr = '  Image {0} processed in {1:.2f} sec ({2:.1f} Hz). '
+        infostr = '  Image {0} processed in {1:.2f} sec ({2:.1f} Hz).'
         infostr = infostr.format(i, proc_time, 1.0 / proc_time)
         print(infostr)
 
