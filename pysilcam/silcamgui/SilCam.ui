@@ -75,6 +75,7 @@
     <addaction name="actionSilc_file_player"/>
     <addaction name="actionServer"/>
     <addaction name="actionPath_length_adjuster"/>
+    <addaction name="actionLive_view"/>
    </widget>
    <addaction name="menuProcessing"/>
   </widget>
@@ -120,7 +121,12 @@
   </action>
   <action name="actionSTATS_to_PJ_csv_converter">
    <property name="text">
-    <string>STATS to PJ converter</string>
+    <string>Interactive summary</string>
+   </property>
+  </action>
+  <action name="actionLive_view">
+   <property name="text">
+    <string>Live view</string>
    </property>
   </action>
  </widget>

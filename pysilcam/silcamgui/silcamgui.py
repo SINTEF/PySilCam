@@ -361,7 +361,6 @@ def main():
             plt.imshow(im)
             plt.axis('off')
             self.canvas.draw()
-            plt.close('all')
 
             # ---- define some callbacks
             self.ui.actionServer.triggered.connect(self.server)
@@ -374,6 +373,7 @@ def main():
             self.ui.actionPath_length_adjuster.triggered.connect(self.path_length_adjuster)
             self.ui.actionTrim_STATS_file.triggered.connect(self.stats_trim)
             self.ui.actionSTATS_to_PJ_csv_converter.triggered.connect(self.STATS_to_PJ_csv_converter)
+            self.ui.actionLive_view.triggered.connect(self.liveview)
 
             self.layout = layout
 
@@ -719,6 +719,21 @@ def main():
 
         def silc_player(self):
             gc.silcview(self.datadir)
+
+
+        def liveview(self):
+            try:
+                import pymba
+            except:
+                self.status_update('Pymba not available. Cannot use camera')
+                return
+            if self.configfile == '':
+                self.status_update('Asking user for config file')
+                self.load_sc_config()
+                if (self.configfile == ''):
+                    self.status_update('Did not get config file')
+                    return
+            gc.liveview(self.datadir, self.configfile)
 
 
         def record(self):

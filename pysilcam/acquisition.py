@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import psutil
 import time
 import numpy as np
 import pandas as pd
@@ -7,14 +8,31 @@ import logging
 from pysilcam.config import load_camera_config
 import pysilcam.fakepymba as fakepymba
 import sys
+from queue import LifoQueue
+from skimage.io import imsave as imwrite
+
 
 logger = logging.getLogger(__name__)
+
+# setup the lifo queue for camera stream
+# class MyManager(BaseManager):
+#     '''
+#     Customized manager class used to register LifoQueues
+#     '''
+#     pass
+# manager = MyManager()
+# manager.register('LifoQueue', LifoQueue)
+# manager.start()
+# imQueue = manager.LifoQueue(100) # make this large but not infinite (we set a limit when it is used later)
+imQueue = LifoQueue(100)
+
+isBayer = True
+
 
 try:
     import pymba
 except:
     logger.debug('Pymba not available. Cannot use camera')
-
 
 def _init_camera(vimba):
     '''Initialize the camera system from vimba object
@@ -36,7 +54,7 @@ def _init_camera(vimba):
     for cameraId in cameraIds:
         logger.debug('Camera ID: {0}'.format(cameraId))
 
-    #Check that we found a camera, if not, raise an error
+    # Check that we found a camera, if not, raise an error
     if len(cameraIds) == 0:
         logger.debug('No cameras detected')
         raise RuntimeError('No cameras detected!')
@@ -45,7 +63,6 @@ def _init_camera(vimba):
         # get and open a camera
         camera = vimba.getCamera(cameraIds[0])
         camera.openCamera()
-
     return camera
 
 
@@ -60,24 +77,78 @@ def _configure_camera(camera, config_file=None):
         camera       (Camera) : The camera with settings from the config
 
     '''
+    global isBayer
 
-    # Read the configiration values from default config file
+    # Read the configuration values from default config file
     defaultpath = os.path.dirname(os.path.abspath(__file__))
-    defaultfile = os.path.join(defaultpath,'camera_config_defaults.ini')
+    defaultfile = os.path.join(defaultpath,'camera_config_RGBPacked.ini')
     config = load_camera_config(defaultfile)
 
-    # Read the configiration values from users config file
+    # Read the configuration values from users config file
     # The values found in this file, overrides those fro the default file
     # The rest keep the values from the defaults file
     config = load_camera_config(config_file, config)
 
-    #If a config is specified, override those values
+    if config['PixelFormat'].upper().find('BAYERRG8') == 0:
+        isBayer = True
+    else:
+        isBayer = False
+
+    # If a config is specified, override those values
     for k, v in config.items():
         logger.info('{0} = {1}'.format(k,v))
         setattr(camera, k, v)
 
     return camera
 
+def _frame_done_callback(frame):
+
+    if isBayer:
+        img = np.ndarray(buffer=frame.getBufferByteData(), dtype=np.uint8, shape=(frame.height, frame.width))
+    else:
+        img = np.ndarray(buffer=frame.getBufferByteData(), dtype=np.uint8, shape=(frame.height, frame.width, 3))
+    timestamp = pymba.get_time_stamp(frame)
+    try:
+        if frame.writeToDisk:
+            filename = os.path.join(frame.datapath, timestamp.strftime('D%Y%m%dT%H%M%S.%f.bmp'))
+            logger.info('Writing:' + filename)
+            # write images to disc here before anything else gets in the way
+            imwrite(filename, np.uint8(img))
+        if imQueue.qsize()<2: # now we limit this queue so it is very small, and just keep acquiring
+            # this queue must never reach the queue size, otherwise it will block!
+            imQueue.put_nowait([timestamp, img])
+    except:
+        logger.warning("dropping frame!")
+
+    frame.queueFrameCapture(frameCallback=_frame_done_callback)
+
+
+def _start_acqusition(camera, datapath, writeToDisk):
+    # acquiring images is the most imporant job for this computer
+    try:
+        pid = psutil.Process(os.getpid())
+        if (sys.platform == 'linux'):
+            pid.nice(20)
+        else:
+            pid.nice(psutil.ABOVE_NORMAL_PRIORITY_CLASS)
+    except:
+        logger.warning('Could not prioritise acquisition process!')
+
+    camera.startCapture()
+
+    frame = camera.getFrame()
+    frame.announceFrame()
+    # add some info about where to save things to disc within the frame class
+    # this is used by _frame_done_callback when it writes to disc
+    frame.datapath = datapath
+    frame.writeToDisk = writeToDisk
+    frame.queueFrameCapture(frameCallback=_frame_done_callback)
+
+    camera.runFeatureCommand('AcquisitionStart')
+
+# def _stopAcqusition(camera):
+    # TODO implement this!
+    # We should do a more gracefull shutdown of the camera when terminating pySilcam.
 
 def print_camera_config(camera):
     '''Print the camera configuration'''
@@ -97,7 +168,6 @@ def print_camera_config(camera):
     config_info = '\n'.join(['{0}: {1}'.format(a, camera.getattr(a))
                              for a, b in config_info_map])
 
-    logger.info(config_info) # TODO: Should this be printed?
     logger.debug(config_info)
 
 
@@ -137,14 +207,14 @@ class Acquire():
         with self.pymba.Vimba() as vimba:
             camera = _init_camera(vimba)
 
-            #Configure camera
+            # Configure camera
             camera = _configure_camera(camera, config_file=camera_config_file)
 
-            #Prepare for image acquisition and create a frame
+            # Prepare for image acquisition and create a frame
             frame0 = camera.getFrame()
             frame0.announceFrame()
 
-            #Aquire raw images and yield to calling context
+            # Aquire raw images and yield to calling context
             while True:
                 try:
                     timestamp, img = self._acquire_frame(camera, frame0)
@@ -152,7 +222,6 @@ class Acquire():
                 except Exception:
                     frame0.img_idx += 1
                     if frame0.img_idx > len(frame0.files):
-                        #print('  END OF FILE LIST.')
                         logger.info('  END OF FILE LIST.')
                         break
 
@@ -175,32 +244,30 @@ class Acquire():
 
         while True:
             try:
-                #Wait until camera wakes up
+                # Wait until camera wakes up
                 self.wait_for_camera()
 
                 with self.pymba.Vimba() as vimba:
                     camera = _init_camera(vimba)
 
-                    #Configure camera
+                    # Configure camera
                     camera = _configure_camera(camera, camera_config_file)
 
-                    #Prepare for image acquisition and create a frame
-                    frame0 = camera.getFrame()
-                    frame0.announceFrame()
+                    # Start stream
+                    _start_acqusition(camera, datapath, writeToDisk)
 
-                    #Aquire raw images and yield to calling context
+                    # Acquire raw images and yield to calling context
                     while True:
-                        timestamp, img = self._acquire_frame(camera, frame0)
-                        if writeToDisk:
-                            filename = os.path.join(datapath, timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc'))
-                            with open(filename, 'wb') as fh:
-                                np.save(fh, img, allow_pickle=False)
-                                fh.flush()
-                                os.fsync(fh.fileno())
-                                logger.info('Written {0}'.format(filename))
+                        timestamp, img = imQueue.get()
+                        logger.info('%s acquired', timestamp.strftime('D%Y%m%dT%H%M%S.%f.bmp'))
+                        if isBayer:
+                            img = cvtColor(img, COLOR_BAYER_BG2RGB)
                         yield timestamp, img
-            except pymba.vimbaexception.VimbaException:
-                logger.info('Camera error. Restarting')
+            except pymba.vimbaexception.VimbaException as e:
+                logger.warning('Camera error: %s, restarting...', e.message)
+            except IOError as e:
+                logger.error('I/O Error: %s', e.message)
+                sys.exit(0)
             except KeyboardInterrupt:
                 logger.info('User interrupt with ctrl+c, terminating PySilCam.')
                 sys.exit(0)
@@ -212,33 +279,29 @@ class Acquire():
             camera (Camera)         : The camera with settings from the config
                                       obtained from _configure_camera()
             frame0  (frame)         : camera frame obtained from camera.getFrame()
-        
+
         Returns:
             timestamp (timestamp)   : timestamp of image acquisition
             output (uint8)          : raw image acquired
         '''
 
-        #Aquire single fram from camera
+        # Acquire single frame from camera
         camera.startCapture()
         frame0.queueFrameCapture()
         camera.runFeatureCommand('AcquisitionStart')
         camera.runFeatureCommand('AcquisitionStop')
         frame0.waitFrameCapture()
 
-        #Copy frame data to numpy array (Bayer format)
-        #bayer_img = np.ndarray(buffer = frame0.getBufferByteData(),
-        #                       dtype = np.uint8,
-        #                       shape = (frame0.height, frame0.width, 3))
-        img = np.ndarray(buffer = frame0.getBufferByteData(),
-                        dtype = np.uint8,
-                        shape = (frame0.height, frame0.width, 3))
+        img = np.ndarray(buffer=frame0.getBufferByteData(),
+                         dtype=np.uint8,
+                         shape=(frame0.height, frame0.width, 3))
 
         timestamp = self.pymba.get_time_stamp(frame0)
 
         camera.endCapture()
 
         output = img.copy()
-        
+
         return timestamp, output
 
     def wait_for_camera(self):
@@ -251,8 +314,9 @@ class Acquire():
                 try:
                     camera = _init_camera(vimba)
                 except RuntimeError:
-                    msg = 'Could not connect to camera, sleeping five seconds and then retrying'
-                    print(msg) # TODO: WHy is there a print here? warning should write to sys.stderr anyway
-                    logger.warning(msg, exc_info=True)
+                    logger.warning('Could not connect to camera, sleeping five seconds and then retrying',
+                                   exc_info=True)
                     time.sleep(5)
 
+if __name__ == "__main__":
+    pass
