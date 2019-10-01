@@ -29,7 +29,7 @@ TODO: add tests for this module
 logger = logging.getLogger(__name__)
 
 
-def image2blackwhite_accurate(imc, greythresh):
+def image2binary_accurate(imc, greythresh):
     ''' converts corrected image (imc) to a binary image
     using greythresh as the threshold value (some auto-scaling of greythresh is done inside)
 
@@ -71,7 +71,7 @@ def image2blackwhite_accurate(imc, greythresh):
     return imbw
 
 
-def image2blackwhite_fast(imc, greythresh):
+def image2binary_fast(imc, greythresh):
     ''' converts corrected image (imc) to a binary image
     using greythresh as the threshold value (fixed scaling of greythresh is done inside)
 
@@ -137,31 +137,7 @@ def filter_bad_stats(stats,settings):
     stats = stats[mmr > settings.Process.min_deformation]
 
     # remove particles that exceed the maximum dimention
-    stats = stats[(stats['major_axis_length'] * settings.PostProcess.pix_size) <
-            settings.Process.max_length]
-
-    return stats
-
-
-def fancy_props(iml, imc, timestamp, settings, nnmodel, class_labels):
-    '''Calculates fancy particle properties
-
-    Args:
-        iml                         : labelled segmented image
-        imc                         : background-corrected image
-        timestamp                   : timestamp of image collection
-        settings                    : PySilCam settings
-        nnmodel                     : loaded tensorflow model from silcam_classify
-        class_labels                : lables of particle classes in tensorflow model
-
-    Return:
-        stats                       : particle statistics
-
-    '''
-
-    region_properties = measure.regionprops(iml, cache=False, coordinates='xy')
-    # build the stats and export to HDF5
-    stats = extract_particles(imc,timestamp,settings,nnmodel,class_labels, region_properties)
+    stats = stats[(stats['major_axis_length'] * settings.PostProcess.pix_size) < settings.Process.max_length]
 
     return stats
 
@@ -219,21 +195,6 @@ def get_spine_length(imbw):
     return spine_length
 
 
-def extract_roi(im, bbox):
-    ''' given an image (im) and bounding box (bbox), this will return the roi
-
-    Args:
-        im                  : any image, such as background-corrected image (imc)
-        bbox                : bounding box from regionprops [r1, c1, r2, c2]
-
-    Returns:
-        roi                 : image cropped to region of interest
-    '''
-    roi = im[bbox[0]:bbox[2], bbox[1]:bbox[3]] # yep, that't it. *Sukk...*
-
-    return roi
-
-
 def measure_particles(imbw, imc, settings, timestamp, nnmodel, class_labels):
     '''Measures properties of particles
 
@@ -266,7 +227,8 @@ def measure_particles(imbw, imc, settings, timestamp, nnmodel, class_labels):
 
 
     # calculate particle statistics
-    stats = fancy_props(iml, imc, timestamp, settings, nnmodel, class_labels)
+    region_properties = measure.regionprops(iml, cache=False, coordinates='xy')
+    stats = extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_properties)
 
     return stats, saturation
 
@@ -288,15 +250,15 @@ def statextract(imc, settings, timestamp, nnmodel, class_labels):
     '''
     logger.debug('segment')
 
-    # simplyfy processing by squeezing the image dimentions into a 2D array
+    # simplify processing by squeezing the image dimentions into a 2D array
     # min is used for squeezing to represent the highest attenuation of all wavelengths
     img = np.uint8(np.min(imc, axis=2))
 
     if settings.Process.real_time_stats:
-        imbw = image2blackwhite_fast(img, settings.Process.threshold) # image2blackwhite_fast is less fancy but
+        imbw = image2binary_fast(img, settings.Process.threshold) # image2binary_fast is less fancy but
     else:
-        imbw = image2blackwhite_accurate(img, settings.Process.threshold) # image2blackwhite_fast is less fancy but
-    # image2blackwhite_fast is faster than image2blackwhite_accurate but might cause problems when trying to
+        imbw = image2binary_accurate(img, settings.Process.threshold) # image2binary_fast is less fancy but
+    # image2binary_fast is faster than image2binary_accurate but might cause problems when trying to
     # process images with bad lighting
 
     logger.debug('clean')
@@ -425,7 +387,7 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
     return stats
 
 
-def processImage(nnmodel, class_labels, image, settings, logger, gui):
+def processImage(nnmodel, class_labels, image, settings):
     '''
     Proceses an image
 
@@ -437,10 +399,6 @@ def processImage(nnmodel, class_labels, image, settings, logger, gui):
                                                timestamp is the image timestamp obtained from passing the filename
                                                imc is the background-corrected image obtained using the backgrounder generator
         settings (PySilcamSettings)         :  Settings read from a .ini file
-        logger (logger object)              :  logger object created using
-                                               configure_logger()
-        gui=None (Class object)             :  Queue used to pass information between process thread and GUI
-                                               initialised in ProcThread within guicals.py
 
     Returns:
         stats_all (DataFrame)               :  stats dataframe containing particle statistics
@@ -456,8 +414,7 @@ def processImage(nnmodel, class_labels, image, settings, logger, gui):
         logger.info('Processing time stamp {0}'.format(timestamp))
 
         # Calculate particle statistics
-        stats_all, imbw, saturation = statextract(imc, settings, timestamp,
-                                                  nnmodel, class_labels)
+        stats_all, imbw, saturation = statextract(imc, settings, timestamp, nnmodel, class_labels)
 
         # if there are not particles identified, assume zero concentration.
         # This means that the data should indicate that a 'good' image was
@@ -485,9 +442,6 @@ def processImage(nnmodel, class_labels, image, settings, logger, gui):
         infostr = '  Image {0} processed in {1:.2f} sec ({2:.1f} Hz).'
         infostr = infostr.format(i, proc_time, 1.0 / proc_time)
         print(infostr)
-
-        # ---- END MAIN PROCESSING LOOP ----
-        # ---- DO SOME ADMIN ----
 
     except:
         infostr = 'Failed to process frame {0}, skipping.'.format(i)
