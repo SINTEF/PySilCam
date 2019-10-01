@@ -371,7 +371,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
 
             image = (i, timestamp, imc)
             # one single image is processed at a time
-            stats_all = processImage(nnmodel, class_labels, image, settings, logger, gui)
+            stats_all = processImage(nnmodel, class_labels, image, settings)
 
             if stats_all is not None:  # if frame processed
                 # write the image into the csv file
@@ -524,7 +524,7 @@ def loop(config_filename, inputQueue, outputQueue, gui=None):
         if task is None:
             outputQueue.put(None)
             break
-        stats_all = processImage(nnmodel, class_labels, task, settings, logger, gui)
+        stats_all = processImage(nnmodel, class_labels, task, settings)
 
         if stats_all is not None:
             outputQueue.put(stats_all)
