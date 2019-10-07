@@ -10,7 +10,15 @@ ENV PATH /opt/conda/envs/silcam/bin:$PATH
 
 # Install build tools, gcc etc
 RUN apt-get update
-RUN apt-get install -y build-essential
+RUN apt-get install -y build-essential vim htop procps
+
+# VNC server for GUI, to be run on port 5920
+RUN apt-get install -y x11vnc xvfb libsdl-ttf2.0-0
+ENV DISPLAY :20
+EXPOSE 5920
+
+# Make Python not create .pyc files
+ENV PYTHONDONTWRITEBYTECODE FALSE
 
 # Add the Pysilcam source directory to the container in order to install Pysilcam
 ADD . /silcam
