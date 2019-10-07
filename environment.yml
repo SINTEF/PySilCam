@@ -31,3 +31,4 @@ dependencies:    # These are the conda packages
         - sphinxcontrib-napoleon==0.7
         - tflearn==0.3.2
         - PyQt5==5.10
+        - cmocean==1.2

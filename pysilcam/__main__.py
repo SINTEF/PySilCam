@@ -33,6 +33,7 @@ title = r'''
        |___/
 '''
 
+
 def silcam():
     '''Main entry point function to acquire/process images from the SilCam.
 
@@ -68,7 +69,7 @@ def silcam():
     if args['<datapath>']:
         # The following is solving problems in transfering arguments from shell on windows
         # Remove ' characters
-        datapath = os.path.normpath(args['<datapath>'].replace("'",""))
+        datapath = os.path.normpath(args['<datapath>'].replace("'", ""))
         # Remove " characters at the end (occurs when user give \" at the end)
         while datapath[-1] == '"':
             datapath = datapath[:-1]
@@ -86,11 +87,11 @@ def silcam():
                 print('Expected type int for --nbimages.')
                 sys.exit(0)
         if args['--appendstats']:
-            overwriteSTATS = False # if you want to append to the stats file, then overwriting should be False
-        silcam_process(args['<configfile>'] ,datapath, multiProcess=multiProcess, realtime=False,
+            overwriteSTATS = False  # if you want to append to the stats file, then overwriting should be False
+        silcam_process(args['<configfile>'], datapath, multiProcess=multiProcess, realtime=False,
                        nbImages=nbImages, overwriteSTATS=overwriteSTATS)
 
-    elif args['acquire']: # this is the standard acquisition method under development now
+    elif args['acquire']:  # this is the standard acquisition method under development now
         silcam_acquire(datapath, args['<configfile>'], writeToDisk=True)
 
     elif args['realtime']:
@@ -101,7 +102,7 @@ def silcam():
         if args['--nomultiproc']:
             multiProcess = False
         if args['--appendstats']:
-            overwriteSTATS = False # if you want to append to the stats file, then overwriting should be False
+            overwriteSTATS = False  # if you want to append to the stats file, then overwriting should be False
         silcam_process(args['<configfile>'], datapath, multiProcess=multiProcess, realtime=True,
                        discWrite=discWrite, overwriteSTATS=overwriteSTATS)
 
@@ -118,10 +119,10 @@ def silcam_acquire(datapath, config_filename, writeToDisk=True, gui=None):
                                                initialised in ProcThread within guicals.py
     '''
 
-    #Load the configuration, create settings object
+    # Load the configuration, create settings object
     settings = PySilcamSettings(config_filename)
 
-    #Print configuration to screen
+    # Print configuration to screen
     print('---- CONFIGURATION ----\n')
     settings.config.write(sys.stdout)
     print('-----------------------\n')
@@ -137,43 +138,44 @@ def silcam_acquire(datapath, config_filename, writeToDisk=True, gui=None):
     # update path_length
     updatePathLength(settings, logger)
 
-    acq = Acquire(USE_PYMBA=True) # ini class
+    acq = Acquire(USE_PYMBA=True)  # ini class
     t1 = time.time()
 
     aqgen = acq.get_generator(datapath, camera_config_file=config_filename, writeToDisk=writeToDisk)
 
     for i, (timestamp, imraw) in enumerate(aqgen):
         t2 = time.time()
-        aq_freq = np.round(1.0/(t2 - t1), 1)
+        aq_freq = np.round(1.0 / (t2 - t1), 1)
         requested_freq = settings.Camera.acquisitionframerateabs
         rest_time = (1 / requested_freq) - (1 / aq_freq)
         rest_time = np.max([rest_time, 0.])
         time.sleep(rest_time)
-        actual_aq_freq = 1/(1/aq_freq + rest_time)
-        logger.info('Image {0} acquired at frequency {1:.1f} Hz'.format(i, actual_aq_freq))
+        actual_aq_freq = 1 / (1 / aq_freq + rest_time)
+        print('Image {0} acquired at frequency {1:.1f} Hz'.format(i, actual_aq_freq))
         t1 = time.time()
 
-        if not gui==None:
+        if not gui == None:
             while (gui.qsize() > 0):
                 try:
                     gui.get_nowait()
                     time.sleep(0.001)
                 except:
                     continue
-            #try:
+            # try:
             rtdict = dict()
             rtdict = {'dias': 0,
-                    'vd_oil': 0,
-                    'vd_gas': 0,
-                    'oil_d50': 0,
-                    'gas_d50': 0,
-                    'saturation': 0}
+                      'vd_oil': 0,
+                      'vd_gas': 0,
+                      'oil_d50': 0,
+                      'gas_d50': 0,
+                      'saturation': 0}
             gui.put_nowait((timestamp, imraw, imraw, rtdict))
 
-# the standard processing method under active development
-def silcam_process(config_filename, datapath, multiProcess=True, realtime=False, discWrite=False, nbImages=None, gui=None,
-                   overwriteSTATS = True):
 
+# the standard processing method under active development
+def silcam_process(config_filename, datapath, multiProcess=True, realtime=False, discWrite=False, nbImages=None,
+                   gui=None,
+                   overwriteSTATS=True):
     '''Run processing of SilCam images
 
     Args:
@@ -187,17 +189,22 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
       gui=None          (Class object)      :  Queue used to pass information between process thread and GUI
                                                initialised in ProcThread within guicals.py
     '''
+    print(config_filename)
 
-    #Load the configuration, create settings object
+    print('')
+    # ---- SETUP ----
+
+    # Load the configuration, create settings object
     settings = PySilcamSettings(config_filename)
-    #Configure logging
-    configure_logger(settings.General)
-    logger = logging.getLogger(__name__ + '.silcam_process')
-    logger.info(config_filename)
-    #Print configuration to screen
+
+    # Print configuration to screen
     print('---- CONFIGURATION ----\n')
     settings.config.write(sys.stdout)
     print('-----------------------\n')
+
+    # Configure logging
+    configure_logger(settings.General)
+    logger = logging.getLogger(__name__ + '.silcam_process')
 
     logger.info('Processing path: ' + datapath)
 
@@ -212,40 +219,40 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
 
     # make datafilename autogenerated for easier batch processing
     if (not os.path.isdir(settings.General.datafile)):
-       logger.info('Folder ' + settings.General.datafile + ' was not found and is created')
-       os.mkdir(settings.General.datafile)
+        logger.info('Folder ' + settings.General.datafile + ' was not found and is created')
+        os.mkdir(settings.General.datafile)
 
     procfoldername = os.path.split(datapath)[-1]
-    datafilename = os.path.join(settings.General.datafile,procfoldername)
+    datafilename = os.path.join(settings.General.datafile, procfoldername)
     logger.info('output stats to: ' + datafilename)
 
     adminSTATS(logger, settings, overwriteSTATS, datafilename, datapath)
-	
-    #Initialize the image acquisition generator
+
+    # Initialize the image acquisition generator
     aq = Acquire(USE_PYMBA=realtime)
     aqgen = aq.get_generator(datapath, writeToDisk=discWrite,
-            camera_config_file=config_filename)
+                             camera_config_file=config_filename)
 
-    #Get number of images to use for background correction from config
-    logger.info('* Initializing background image handler')
+    # Get number of images to use for background correction from config
+    print('* Initializing background image handler')
     bggen = backgrounder(settings.Background.num_images, aqgen,
-            bad_lighting_limit = settings.Process.bad_lighting_limit,
-            real_time_stats=settings.Process.real_time_stats)
+                         bad_lighting_limit=settings.Process.bad_lighting_limit,
+                         real_time_stats=settings.Process.real_time_stats)
 
     # Create export directory if needed
     if settings.ExportParticles.export_images:
-       if (not os.path.isdir(settings.ExportParticles.outputpath)):
-          logger.info('Export folder ' + settings.ExportParticles.outputpath + ' was not found and is created')
-          os.mkdir(settings.ExportParticles.outputpath)
+        if (not os.path.isdir(settings.ExportParticles.outputpath)):
+            logger.info('Export folder ' + settings.ExportParticles.outputpath + ' was not found and is created')
+            os.mkdir(settings.ExportParticles.outputpath)
 
-    #---- END SETUP ----
+    # ---- END SETUP ----
 
-    #---- RUN PROCESSING ----
+    # ---- RUN PROCESSING ----
 
     # If only one core is available, no multiprocessing will be done
     multiProcess = multiProcess and (multiprocessing.cpu_count() > 1)
 
-    logger.info('* Commencing image acquisition and processing')
+    print('* Commencing image acquisition and processing')
 
     # initialise realtime stats class regardless of whether it is used later
     rts = scog.rt_stats(settings)
@@ -254,7 +261,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
         proc_list = []
         mem = psutil.virtual_memory()
         memAvailableMb = mem.available >> 20
-        distributor_q_size = np.min([int(memAvailableMb / 2 * 1/15), np.copy(multiprocessing.cpu_count() * 4)])
+        distributor_q_size = np.min([int(memAvailableMb / 2 * 1 / 15), np.copy(multiprocessing.cpu_count() * 4)])
 
         logger.debug('setting up processing queues')
         inputQueue, outputQueue = defineQueues(realtime, distributor_q_size)
@@ -268,9 +275,9 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
         for i, (timestamp, imc, imraw) in enumerate(bggen):
             t1 = np.copy(t2)
             t2 = time.time()
-            logger.info('{0:.3f} : Acquisition loop time'.format(t2-t1))
+            print(t2 - t1, 'Acquisition loop time')
             logger.debug('Corrected image ' + str(timestamp) +
-                        ' acquired from backgrounder')
+                         ' acquired from backgrounder')
 
             # handle errors if the loop function fails for any reason
             if (nbImages != None):
@@ -278,7 +285,8 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
                     break
 
             logger.debug('Adding image to processing queue: ' + str(timestamp))
-            addToQueue(realtime, inputQueue, i, timestamp, imc) # the tuple (i, timestamp, imc) is added to the inputQueue
+            addToQueue(realtime, inputQueue, i, timestamp,
+                       imc)  # the tuple (i, timestamp, imc) is added to the inputQueue
             logger.debug('Processing queue updated')
 
             # write the images that are available for the moment into the csv file
@@ -287,7 +295,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
                       settings, rts=rts)
             logger.debug('Data collected')
 
-            if not gui==None:
+            if not gui == None:
                 logger.debug('Putting data on GUI Queue')
                 while (gui.qsize() > 0):
                     try:
@@ -295,14 +303,14 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
                         time.sleep(0.001)
                     except:
                         continue
-                #try:
+                # try:
                 rtdict = dict()
                 rtdict = {'dias': rts.dias,
-                        'vd_oil': rts.vd_oil,
-                        'vd_gas': rts.vd_gas,
-                        'oil_d50': rts.oil_d50,
-                        'gas_d50': rts.gas_d50,
-                        'saturation': rts.saturation}
+                          'vd_oil': rts.vd_oil,
+                          'vd_gas': rts.vd_gas,
+                          'oil_d50': rts.oil_d50,
+                          'gas_d50': rts.gas_d50,
+                          'saturation': rts.saturation}
                 gui.put_nowait((timestamp, imc, imraw, rtdict))
                 logger.debug('GUI queue updated')
 
@@ -320,7 +328,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
 
         for p in proc_list:
             p.join()
-            logger.info('%s.exitcode = %s' % (p.name, p.exitcode) )
+            logger.info('%s.exitcode = %s' % (p.name, p.exitcode))
 
     else:
         # load the model for particle classification and keep it for later
@@ -338,16 +346,15 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
             # one single image is processed at a time
             stats_all = processImage(nnmodel, class_labels, image, settings, logger, gui)
 
-            if (not stats_all is None): # if frame processed
+            if (not stats_all is None):  # if frame processed
                 # write the image into the csv file
-                writeCSV( datafilename, stats_all)
+                writeCSV(datafilename, stats_all)
 
-    logger.info('PROCESSING COMPLETE.')
+    print('PROCESSING COMPLETE.')
 
-    #---- END ----
-	
+    # ---- END ----
 
-	
+
 def addToQueue(realtime, inputQueue, i, timestamp, imc):
     '''
     Put a new image into the Queue.
@@ -373,6 +380,7 @@ def addToQueue(realtime, inputQueue, i, timestamp, imc):
             except:
                 pass
 
+
 def defineQueues(realtime, size):
     '''
     Define the input and output queues depending on wether we are in realtime mode
@@ -387,6 +395,7 @@ def defineQueues(realtime, size):
     '''
     createQueues = createLIFOQueues if realtime else createFIFOQueues
     return createQueues(size)
+
 
 def createLIFOQueues(size):
     '''
@@ -405,6 +414,7 @@ def createLIFOQueues(size):
     outputQueue = manager.LifoQueue(size)
     return inputQueue, outputQueue
 
+
 def createFIFOQueues(size):
     '''
     Create a FIFOQueue (First In First Out)
@@ -420,18 +430,21 @@ def createFIFOQueues(size):
     outputQueue = multiprocessing.Queue(size)
     return inputQueue, outputQueue
 
+
 class MyManager(BaseManager):
     '''
     Customized manager class used to register LifoQueues
     '''
     pass
 
+
 MyManager.register('LifoQueue', LifoQueue)
+
 
 def loop(config_filename, inputQueue, outputQueue, gui=None):
     '''
     Main processing loop, run for each image
-    
+
     Args:
         config_filename (str)   : path of the config ini file
         inputQueue  ()          : queue where the images are added for processing
@@ -482,8 +495,9 @@ def distributor(inputQueue, outputQueue, config_filename, proc_list, gui=None):
         proc_list.append(proc)
         proc.start()
 
+
 def collector(inputQueue, outputQueue, datafilename, proc_list, testInputQueue,
-        settings, rts=None):
+              settings, rts=None):
     '''
     collects all the results and write them into the stats.csv file
 
@@ -501,13 +515,13 @@ def collector(inputQueue, outputQueue, datafilename, proc_list, testInputQueue,
 
     countProcessFinished = 0
 
-    while ((outputQueue.qsize()>0) or (testInputQueue and inputQueue.qsize()>0)):
+    while ((outputQueue.qsize() > 0) or (testInputQueue and inputQueue.qsize() > 0)):
 
         task = outputQueue.get()
 
         if (task is None):
             countProcessFinished = countProcessFinished + 1
-            if (len(proc_list) == 0): # no multiprocessing
+            if (len(proc_list) == 0):  # no multiprocessing
                 break
             # The collector can be stopped only after all loop processes are finished
             elif (countProcessFinished == len(proc_list)):
@@ -537,7 +551,7 @@ def collect_rts(settings, rts, stats_all):
             rts.stats = rts.stats.append(stats_all)
         rts.update()
         filename = os.path.join(settings.General.datafile,
-                'OilGasd50.csv')
+                                'OilGasd50.csv')
         rts.to_csv(filename)
 
 
@@ -558,27 +572,28 @@ def writeCSV(datafilename, stats_all):
     # double) GUI promts user regarding this - directly-run functions are more dangerous.
     if not os.path.isfile(datafilename + '-STATS.csv'):
         stats_all.to_csv(datafilename +
-                '-STATS.csv', index_label='particle index')
+                         '-STATS.csv', index_label='particle index')
     else:
         stats_all.to_csv(datafilename + '-STATS.csv',
-                mode='a', header=False)
+                         mode='a', header=False)
 
 
 def check_path(filename):
-   '''Check if a path exists, and create it if not
+    '''Check if a path exists, and create it if not
 
-   Args:
-       filename (str): filame that may or may not include a path
-   '''
+    Args:
+        filename (str): filame that may or may not include a path
+    '''
 
-   file = os.path.normpath(filename)
-   path = os.path.dirname(file)
-   if path:
-      if not os.path.isdir(path):
-         try:
-            os.makedirs(path)
-         except:
-            logger.warning('Could not create catalog: {0}'.format(path))
+    file = os.path.normpath(filename)
+    path = os.path.dirname(file)
+    if path:
+        if not os.path.isdir(path):
+            try:
+                os.makedirs(path)
+            except:
+                print('Could not create catalog:', path)
+
 
 def configure_logger(settings):
     '''Configure a logger according to the settings.
@@ -594,11 +609,6 @@ def configure_logger(settings):
                             level=getattr(logging, settings.loglevel))
     else:
         logging.basicConfig(level=getattr(logging, settings.loglevel))
-    # Adding a handler to print info messages to stdout
-    streamHandler = logging.StreamHandler(sys.stdout)
-    streamHandler.setLevel(logging.INFO)
-    logger = logging.getLogger()
-    logger.addHandler(streamHandler)
 
 
 def adminSTATS(logger, settings, overwriteSTATS, datafilename, datapath):
