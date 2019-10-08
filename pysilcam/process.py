@@ -17,6 +17,7 @@ import skimage.exposure
 import h5py
 import os
 import pysilcam.silcam_classify as sccl
+from skimage.io import imsave
 
 '''
 module for processing SilCam data
@@ -306,11 +307,27 @@ def statextract(imc, settings, timestamp, nnmodel, class_labels):
     # fill holes in particles
     imbw = ndi.binary_fill_holes(imbw)
 
+    write_segmented_images(imbw, settings, timestamp)
+
     logger.debug('measure')
     # calculate particle statistics
     stats, saturation = measure_particles(imbw, imc, settings, timestamp, nnmodel, class_labels)
 
     return stats, imbw, saturation
+
+def write_segmented_images(imbw, settings, timestamp):
+    '''writes binary images as bmp files to the same place as hdf5 files if loglevel is in DEBUG mode
+    Useful for checking threshold and segmentation
+
+    Args:
+        imbw                        : segmented image
+        settings                    : PySilCam settings
+        timestamp                   : timestamp of image collection
+    '''
+    if settings.General.loglevel =='DEBUG':
+        fname = os.path.join(settings.ExportParticles.outputpath, timestamp.strftime('D%Y%m%dT%H%M%S.%f-SEG.bmp'))
+        imbw_ = np.uint8(255*imbw)
+        imsave(fname, imbw_)
 
 
 def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_properties):
