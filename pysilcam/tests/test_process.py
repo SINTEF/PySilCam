@@ -11,7 +11,7 @@ from pysilcam.config import PySilcamSettings
 
 
 # Get user-defined path to unittest data folder
-ROOTPATH = os.environ('UNITTEST_DATA_PATH', None) # 'E:/test data/hello_silcam/unittest_bamboo'
+ROOTPATH = os.environ.get('UNITTEST_DATA_PATH', None)
 
 # Get user-defined tensorflow model path from environment variable
 MODEL_PATH = os.environ.get('SILCAM_MODEL_PATH', None)
