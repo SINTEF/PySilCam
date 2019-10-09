@@ -4,11 +4,14 @@ from pysilcam.__main__ import silcam_process
 import unittest
 from pysilcam.silcreport import silcam_report
 from pysilcam.config import load_config
+from pysilcam.postprocess import count_images_in_stats
+import pandas as pd
+import glob
+from pysilcam.config import PySilcamSettings
 
-if "UNITTEST_DATA_PATH" in os.environ:
-    ROOTPATH = os.environ['UNITTEST_DATA_PATH'] # 'E:/test data/hello_silcam/unittest_bamboo'
-else:
-    ROOTPATH = 'E:/test data/hello_silcam/unittest_entries'
+
+# Get user-defined path to unittest data folder
+ROOTPATH = os.environ.get('UNITTEST_DATA_PATH', None)
 
 # Get user-defined tensorflow model path from environment variable
 MODEL_PATH = os.environ.get('SILCAM_MODEL_PATH', None)
@@ -65,11 +68,16 @@ def test_output_files():
             'probability_oil,probability_other,probability_bubble,probability_faecal_pellets,probability_copepod,'\
             'probability_diatom_chain,probability_oily_gas,export name,timestamp,saturation\n', 'columns not properly built'
 
-    nbimages = 0 # number of images in the csv file
-    for line in lines:
-        if line[0] == '0': # index of particule
-            nbimages += 1
-    assert nbimages == 5, 'images missing from csv file' # 5 images are used for the background, the 5 images left are processed
+    # check the correct number of images have been processed
+    stats = pd.read_csv(stats_file)
+    settings = PySilcamSettings(conf_file_out)
+    background_images = settings.Background.num_images
+    number_processed = count_images_in_stats(stats)
+
+    files = glob.glob(os.path.join(data_file, '*.bmp'))
+    expected_processed = len(files) - background_images
+    assert (number_processed == expected_processed), 'number of images processed does not match the size of the dataset'
+
 
     # check that hdf file has been created
     assert os.path.isfile(hdf_file), 'hdf file not created'
