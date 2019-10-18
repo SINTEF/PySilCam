@@ -19,8 +19,7 @@ MODEL_PATH = os.environ.get('SILCAM_MODEL_PATH', None)
 print('ROOTPATH',ROOTPATH)
 print('MODEL_PATH',MODEL_PATH)
 
-@unittest.skipIf(not os.path.isdir(
-    os.path.join(ROOTPATH,'STN04')),
+@unittest.skipIf((ROOTPATH is None),
     "test path not accessible")
 def test_output_files():
     '''Testing that the appropriate STATS.csv file is created'''

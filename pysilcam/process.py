@@ -324,7 +324,7 @@ def write_segmented_images(imbw, settings, timestamp):
         settings                    : PySilCam settings
         timestamp                   : timestamp of image collection
     '''
-    if settings.General.loglevel =='DEBUG':
+    if (settings.General.loglevel == 'DEBUG') and (settings.ExportParticles.export_images == 'True'):
         fname = os.path.join(settings.ExportParticles.outputpath, timestamp.strftime('D%Y%m%dT%H%M%S.%f-SEG.bmp'))
         imbw_ = np.uint8(255*imbw)
         imsave(fname, imbw_)

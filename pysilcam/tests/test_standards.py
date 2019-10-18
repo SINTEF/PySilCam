@@ -13,13 +13,8 @@ ROOTPATH = os.environ.get('UNITTEST_DATA_PATH', None)
 # Get user-defined tensorflow model path from environment variable
 MODEL_PATH = os.environ.get('SILCAM_MODEL_PATH', None)
 
-@unittest.skipIf(not os.path.isdir(
-    os.path.join(ROOTPATH, 'STANDARDS/StandardsBig')),
+@unittest.skipIf((ROOTPATH is None),
     "test path not accessible")
-@unittest.skipIf(not os.path.isdir(
-    os.path.join(ROOTPATH, 'STANDARDS/StandardsSmall')),
-    "test path not accessible")
-
 def test_big_standards():
     '''Testing that the large standards are sized correctly'''
 
@@ -66,11 +61,7 @@ def test_big_standards():
     assert (d50 > 310 and d50 < 330), 'incorrect d50'
 
 
-@unittest.skipIf(not os.path.isdir(
-    os.path.join(ROOTPATH, 'STANDARDS/StandardsBig')),
-    "test path not accessible")
-@unittest.skipIf(not os.path.isdir(
-    os.path.join(ROOTPATH, 'STANDARDS/StandardsSmall')),
+@unittest.skipIf((ROOTPATH is None),
     "test path not accessible")
 def test_small_standards():
     '''Testing that the small standards are sized correctly'''
