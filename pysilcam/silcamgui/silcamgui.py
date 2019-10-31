@@ -24,7 +24,6 @@ import pysilcam.silcamgui.guicalcs as gc
 from pysilcam.silcamgui.guicalcs import process_mode
 from pysilcam.config import PySilcamSettings
 from pysilcam.oilgas import PathLength
-from pysilcam.silcamgui.interactive_summary import InteractivePlotter
 
 sns.set_style('ticks')
 sns.set_context(font_scale=2)
@@ -385,6 +384,7 @@ def main():
 
 
         def STATS_to_PJ_csv_converter(self):
+            from pysilcam.silcamgui.interactive_summary import InteractivePlotter
             self.SummaryExplorer = InteractivePlotter()
             self.SummaryExplorer
 
