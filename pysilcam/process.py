@@ -18,6 +18,7 @@ import h5py
 import os
 import pysilcam.silcam_classify as sccl
 from skimage.io import imsave
+import traceback
 
 '''
 module for processing SilCam data
@@ -264,7 +265,6 @@ def measure_particles(imbw, imc, settings, timestamp, nnmodel, class_labels):
         imbw *= 0 # this is not a good way to handle this condition
         # @todo handle situation when too many particles are found
 
-
     # calculate particle statistics
     stats = fancy_props(iml, imc, timestamp, settings, nnmodel, class_labels)
 
@@ -288,14 +288,15 @@ def statextract(imc, settings, timestamp, nnmodel, class_labels):
     '''
     logger.debug('segment')
 
-    # simplyfy processing by squeezing the image dimentions into a 2D array
+    # simplyfy processing by squeezing the image dimensions into a 2D array
     # min is used for squeezing to represent the highest attenuation of all wavelengths
     img = np.uint8(np.min(imc, axis=2))
 
-    if settings.Process.real_time_stats:
-        imbw = image2blackwhite_fast(img, settings.Process.threshold) # image2blackwhite_fast is less fancy but
-    else:
-        imbw = image2blackwhite_accurate(img, settings.Process.threshold) # image2blackwhite_fast is less fancy but
+    imbw = image2blackwhite_fast(img, 0.8)  # image2blackwhite_fast is less fancy but
+    # if settings.Process.real_time_stats:
+    #     imbw = image2blackwhite_fast(img, settings.Process.threshold) # image2blackwhite_fast is less fancy but
+    # else:
+    #     imbw = image2blackwhite_accurate(img, settings.Process.threshold) # image2blackwhite_fast is less fancy but
     # image2blackwhite_fast is faster than image2blackwhite_accurate but might cause problems when trying to
     # process images with bad lighting
 
@@ -307,7 +308,7 @@ def statextract(imc, settings, timestamp, nnmodel, class_labels):
     # fill holes in particles
     imbw = ndi.binary_fill_holes(imbw)
 
-    write_segmented_images(imbw, settings, timestamp)
+    write_segmented_images(imbw, imc, settings, timestamp)
 
     logger.debug('measure')
     # calculate particle statistics
@@ -315,7 +316,7 @@ def statextract(imc, settings, timestamp, nnmodel, class_labels):
 
     return stats, imbw, saturation
 
-def write_segmented_images(imbw, settings, timestamp):
+def write_segmented_images(imbw, imc, settings, timestamp):
     '''writes binary images as bmp files to the same place as hdf5 files if loglevel is in DEBUG mode
     Useful for checking threshold and segmentation
 
@@ -324,10 +325,12 @@ def write_segmented_images(imbw, settings, timestamp):
         settings                    : PySilCam settings
         timestamp                   : timestamp of image collection
     '''
-    if (settings.General.loglevel == 'DEBUG') and (settings.ExportParticles.export_images == 'True'):
+    if (settings.General.loglevel == 'DEBUG') and settings.ExportParticles.export_images:
         fname = os.path.join(settings.ExportParticles.outputpath, timestamp.strftime('D%Y%m%dT%H%M%S.%f-SEG.bmp'))
         imbw_ = np.uint8(255*imbw)
         imsave(fname, imbw_)
+        fname = os.path.join(settings.ExportParticles.outputpath, timestamp.strftime('D%Y%m%dT%H%M%S.%f-IMC.bmp'))
+        imsave(fname, imc)
 
 
 def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_properties):
@@ -346,7 +349,6 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
 
     @todo clean up all the unnesessary conditional statements in this
     '''
-
     filenames = ['not_exported'] * len(region_properties)
 
     # pre-allocation
@@ -361,15 +363,15 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
     if settings.ExportParticles.export_images:
         # Make the HDF5 file
         hdf_filename = os.path.join(settings.ExportParticles.outputpath, filename + ".h5")
-        HDF5File = h5py.File(hdf_filename, "w")
-        # metadata
-        meta = HDF5File.create_group('Meta')
-        meta.attrs['Modified'] = str(pd.datetime.now())
-        settings_dict = {s: dict(settings.config.items(s)) for s in settings.config.sections()}
-        meta.attrs['Settings'] = str(settings_dict)
-        meta.attrs['Timestamp'] = str(timestamp)
-        meta.attrs['Raw image name'] = filename
-        #@todo include more useful information in this meta data, e.g. possibly raw image location and background stack file list.
+        with h5py.File(hdf_filename, "w") as HDF5File:
+            # metadata
+            meta = HDF5File.create_group('Meta')
+            meta.attrs['Modified'] = str(pd.datetime.now())
+            settings_dict = {s: dict(settings.config.items(s)) for s in settings.config.sections()}
+            meta.attrs['Settings'] = str(settings_dict)
+            meta.attrs['Timestamp'] = str(timestamp)
+            meta.attrs['Raw image name'] = filename
+            #@todo include more useful information in this meta data, e.g. possibly raw image location and background stack file list.
 
     # define the geometrical properties to be calculated from regionprops
     propnames = ['major_axis_length', 'minor_axis_length',
@@ -387,7 +389,6 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
         # if operating in realtime mode, assume we only care about oil and gas and skip export of overly-derformed particles
         if settings.Process.real_time_stats & (((data[i, 1]/data[i, 0])<0.3) | (data[i, 3]<0.95)):
             continue
-
         # Find particles that match export criteria
         if ((data[i, 0] > settings.ExportParticles.min_length) & #major_axis_length in pixels
             (data[i, 1] > 2)): # minor length in pixels
@@ -399,16 +400,14 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
             # add the roi to the HDF5 file
             filenames[int(i)] = filename + '-PN' + str(i)
             if settings.ExportParticles.export_images:
-                dset = HDF5File.create_dataset('PN' + str(i), data = roi)
-                #@todo also include particle stats here too.
+                with h5py.File(hdf_filename, "w") as HDF5File:
+                    dset = HDF5File.create_dataset('PN' + str(i), data = roi)
+                    #@todo also include particle stats here too.
 
             # run a prediction on what type of particle this might be
             prediction = sccl.predict(roi, nnmodel)
             predictions[int(i),:] = prediction[0]
 
-    if settings.ExportParticles.export_images:
-        # close the HDF5 file
-        HDF5File.close()
 
     # build the column names for the outputed DataFrame
     column_names = np.hstack(([propnames, 'minr', 'minc', 'maxr', 'maxc']))
@@ -429,16 +428,17 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
     # particle statistics data
     stats['export name'] = filenames
 
-    if settings.ExportParticles.export_images:
-        # put a copy of the stats data for this image into the hdf5 file
-        hdf_stats = pd.HDFStore(hdf_filename, 'r+')
-        hdf_stats.put('Proc/STATS', stats)
-        hdf_stats.close()
-
-        HDF5File = h5py.File(hdf_filename, "r+")
-        HDF5File['Proc'].attrs['Modified'] = str(pd.datetime.now())
-        HDF5File['Proc'].attrs['Descriton'] = 'Pandas dataframe of particle stats data. Load it like this: stats = pd.read_hdf(h5file, "Proc/STATS")'
-        HDF5File.close()
+    # the below code is extremely buggy due to file handling and interruptions before closing.
+    # commenting this out so we can get on with other things.
+    # if settings.ExportParticles.export_images:
+    #     # put a copy of the stats data for this image into the hdf5 file
+    #     with pd.HDFStore(hdf_filename, 'r+') as hdf_stats:
+    #         hdf_stats.put('Proc/STATS', stats)
+    #
+    #     with h5py.File(hdf_filename, "w") as HDF5File:
+    #         HDF5File = h5py.File(hdf_filename, "r+")
+    #         HDF5File['Proc'].attrs['Modified'] = str(pd.datetime.now())
+    #         HDF5File['Proc'].attrs['Descriton'] = 'Pandas dataframe of particle stats data. Load it like this: stats = pd.read_hdf(h5file, "Proc/STATS")'
 
     return stats
 
@@ -469,7 +469,7 @@ def processImage(nnmodel, class_labels, image, settings, logger, gui):
         imc = image[2]
 
         # time the full acquisition and processing loop
-        start_time = time.clock()
+        start_time = time.time()
 
         logger.info('Processing time stamp {0}'.format(timestamp))
 
@@ -497,7 +497,7 @@ def processImage(nnmodel, class_labels, image, settings, logger, gui):
         stats_all['saturation'] = saturation
 
         # Time the particle statistics processing step
-        proc_time = time.clock() - start_time
+        proc_time = time.time() - start_time
 
         # Print timing information for this iteration
         infostr = '  Image {0} processed in {1:.2f} sec ({2:.1f} Hz). '
@@ -507,10 +507,11 @@ def processImage(nnmodel, class_labels, image, settings, logger, gui):
         # ---- END MAIN PROCESSING LOOP ----
         # ---- DO SOME ADMIN ----
 
-    except:
+    except Exception as e:
+        print(e)
+        traceback.print_exc()
         infostr = 'Failed to process frame {0}, skipping.'.format(i)
         logger.warning(infostr, exc_info=True)
-        print(infostr)
         return None
 
     return stats_all

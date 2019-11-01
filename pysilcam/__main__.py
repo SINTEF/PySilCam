@@ -330,7 +330,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
             p.join()
             logger.info('%s.exitcode = %s' % (p.name, p.exitcode))
 
-    else:
+    else: # no multiprocessing
         # load the model for particle classification and keep it for later
         nnmodel = []
         nnmodel, class_labels = sccl.load_model(model_path=settings.NNClassify.model_path)
@@ -475,15 +475,12 @@ def loop(config_filename, inputQueue, outputQueue, gui=None):
         if task is None:
             outputQueue.put(None)
             break
-        print('main476')
         stats_all = processImage(nnmodel, class_labels, task, settings, logger, gui)
 
-        print('main479')
         if (not stats_all is None):
             outputQueue.put(stats_all)
         else:
             logger.info('No stats found.')
-            print('No stats found')
 
     # close of the tensorflow session when everything is finished.
     # unsure of behaviour if things crash or are stoppped before reaching this point
