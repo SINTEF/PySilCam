@@ -292,11 +292,10 @@ def statextract(imc, settings, timestamp, nnmodel, class_labels):
     # min is used for squeezing to represent the highest attenuation of all wavelengths
     img = np.uint8(np.min(imc, axis=2))
 
-    imbw = image2blackwhite_fast(img, 0.8)  # image2blackwhite_fast is less fancy but
-    # if settings.Process.real_time_stats:
-    #     imbw = image2blackwhite_fast(img, settings.Process.threshold) # image2blackwhite_fast is less fancy but
-    # else:
-    #     imbw = image2blackwhite_accurate(img, settings.Process.threshold) # image2blackwhite_fast is less fancy but
+    if settings.Process.real_time_stats:
+        imbw = image2blackwhite_fast(img, settings.Process.threshold) # image2blackwhite_fast is less fancy but
+    else:
+        imbw = image2blackwhite_accurate(img, settings.Process.threshold) # image2blackwhite_fast is less fancy but
     # image2blackwhite_fast is faster than image2blackwhite_accurate but might cause problems when trying to
     # process images with bad lighting
 
