@@ -362,15 +362,15 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
     if settings.ExportParticles.export_images:
         # Make the HDF5 file
         hdf_filename = os.path.join(settings.ExportParticles.outputpath, filename + ".h5")
-        with h5py.File(hdf_filename, "w") as HDF5File:
-            # metadata
-            meta = HDF5File.create_group('Meta')
-            meta.attrs['Modified'] = str(pd.datetime.now())
-            settings_dict = {s: dict(settings.config.items(s)) for s in settings.config.sections()}
-            meta.attrs['Settings'] = str(settings_dict)
-            meta.attrs['Timestamp'] = str(timestamp)
-            meta.attrs['Raw image name'] = filename
-            #@todo include more useful information in this meta data, e.g. possibly raw image location and background stack file list.
+        HDF5File = h5py.File(hdf_filename, "w")
+        # metadata
+        meta = HDF5File.create_group('Meta')
+        meta.attrs['Modified'] = str(pd.datetime.now())
+        settings_dict = {s: dict(settings.config.items(s)) for s in settings.config.sections()}
+        meta.attrs['Settings'] = str(settings_dict)
+        meta.attrs['Timestamp'] = str(timestamp)
+        meta.attrs['Raw image name'] = filename
+        #@todo include more useful information in this meta data, e.g. possibly raw image location and background stack file list.
 
     # define the geometrical properties to be calculated from regionprops
     propnames = ['major_axis_length', 'minor_axis_length',
@@ -399,14 +399,16 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
             # add the roi to the HDF5 file
             filenames[int(i)] = filename + '-PN' + str(i)
             if settings.ExportParticles.export_images:
-                with h5py.File(hdf_filename, "w") as HDF5File:
-                    dset = HDF5File.create_dataset('PN' + str(i), data = roi)
-                    #@todo also include particle stats here too.
+                dset = HDF5File.create_dataset('PN' + str(i), data = roi)
+                #@todo also include particle stats here too.
 
             # run a prediction on what type of particle this might be
             prediction = sccl.predict(roi, nnmodel)
             predictions[int(i),:] = prediction[0]
 
+    if settings.ExportParticles.export_images:
+        # close the HDF5 file
+        HDF5File.close()
 
     # build the column names for the outputed DataFrame
     column_names = np.hstack(([propnames, 'minr', 'minc', 'maxr', 'maxc']))
