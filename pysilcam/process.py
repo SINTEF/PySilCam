@@ -429,18 +429,6 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
     # particle statistics data
     stats['export name'] = filenames
 
-    # the below code is extremely buggy due to file handling and interruptions before closing.
-    # commenting this out so we can get on with other things.
-    # if settings.ExportParticles.export_images:
-    #     # put a copy of the stats data for this image into the hdf5 file
-    #     with pd.HDFStore(hdf_filename, 'r+') as hdf_stats:
-    #         hdf_stats.put('Proc/STATS', stats)
-    #
-    #     with h5py.File(hdf_filename, "w") as HDF5File:
-    #         HDF5File = h5py.File(hdf_filename, "r+")
-    #         HDF5File['Proc'].attrs['Modified'] = str(pd.datetime.now())
-    #         HDF5File['Proc'].attrs['Descriton'] = 'Pandas dataframe of particle stats data. Load it like this: stats = pd.read_hdf(h5file, "Proc/STATS")'
-
     return stats
 
 
