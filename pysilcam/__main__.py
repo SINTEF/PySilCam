@@ -330,7 +330,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
             p.join()
             logger.info('%s.exitcode = %s' % (p.name, p.exitcode))
 
-    else:
+    else: # no multiprocessing
         # load the model for particle classification and keep it for later
         nnmodel = []
         nnmodel, class_labels = sccl.load_model(model_path=settings.NNClassify.model_path)
@@ -459,6 +459,14 @@ def loop(config_filename, inputQueue, outputQueue, gui=None):
     logger = logging.getLogger(__name__ + '.silcam_process')
 
     # load the model for particle classification and keep it for later
+
+    # a tensorflow session must be started on each process in order to function reliably in multiprocess.
+    # This also includes the import of tensorflow on each process
+    # @todo the loading of the model and prediction functions should be within a class that is initialized by starting a
+    #  tensorflow session, then this will be cleaner.
+    import tensorflow as tf
+    sess = tf.Session()
+
     nnmodel = []
     nnmodel, class_labels = sccl.load_model(model_path=settings.NNClassify.model_path)
 
@@ -472,7 +480,12 @@ def loop(config_filename, inputQueue, outputQueue, gui=None):
         if (not stats_all is None):
             outputQueue.put(stats_all)
         else:
-            logger.debug('No stats found. skipping image.')
+            logger.info('No stats found.')
+
+    # close of the tensorflow session when everything is finished.
+    # unsure of behaviour if things crash or are stoppped before reaching this point
+    sess.close()
+    return
 
 
 def distributor(inputQueue, outputQueue, config_filename, proc_list, gui=None):

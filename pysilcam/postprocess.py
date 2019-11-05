@@ -990,19 +990,6 @@ def show_h5_meta(h5file):
             logger.info(k + ':')
             logger.info('    ' + f['Meta'].attrs[k])
 
-        keys = list(f['Proc'].attrs.keys())
-
-        for k in keys:
-            logger.info('Proc/' + k + ':')
-            try:
-                logger.info('    ' + f['Proc'].attrs[k])
-            except:
-                continue
-
-        logger.info('Proc/STATS:')
-        stats = pd.read_hdf(h5file, 'Proc/STATS')
-        logger.info('  Columns:  ' + str(stats.columns))
-
 
 def vd_to_nd(vd, dias):
     '''convert volume distribution to number distribution
