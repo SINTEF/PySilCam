@@ -8,7 +8,7 @@ import numpy as np
 from pysilcam import __version__
 from pysilcam.acquisition import Acquire
 from pysilcam.background import backgrounder
-from pysilcam.process import processImage, statextract
+from pysilcam.process import processImage
 import pysilcam.oilgas as scog
 from pysilcam.config import PySilcamSettings, updatePathLength
 import os
@@ -334,6 +334,9 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
                 gui.put_nowait((timestamp, imc, imraw, rtdict))
                 logger.debug('GUI queue updated')
 
+            if 'REALTIME_DISC' in os.environ.keys():
+                scog.realtime_summary(datafilename + '-STATS.csv', config_filename)
+
         logger.debug('Acquisition loop completed')
         if (not realtime):
             logger.debug('Halting processes')
@@ -369,6 +372,8 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
             if (not stats_all is None):  # if frame processed
                 # write the image into the csv file
                 writeCSV(datafilename, stats_all)
+                if 'REALTIME_DISC' in os.environ.keys():
+                    scog.realtime_summary(datafilename + '-STATS.csv', config_filename)
 
             if not gui == None:
                 collect_rts(settings, rts, stats_all)

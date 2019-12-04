@@ -127,6 +127,7 @@ class Frame:
                 self.files = sorted(glob(os.path.join(self.path, '*.silc')),
                                     reverse=True)
                 time.sleep(1)
+            print(' new data found')
 
             self.img_idx = 0
 
