@@ -20,6 +20,7 @@ import psutil
 from shutil import copyfile
 import warnings
 import pandas as pd
+import psutil
 
 if not sys.warnoptions:
     warnings.simplefilter("ignore")
@@ -93,6 +94,14 @@ def silcam():
                        nbImages=nbImages, overwriteSTATS=overwriteSTATS)
 
     elif args['acquire']:  # this is the standard acquisition method under development now
+        try:
+            pid = psutil.Process(os.getpid())
+            if (sys.platform == 'linux'):
+                pid.nice(-20)
+            else:
+                pid.nice(psutil.ABOVE_NORMAL_PRIORITY_CLASS)
+        except:
+            print('Could not prioritise acquisition process!')
         silcam_acquire(datapath, args['<configfile>'], writeToDisk=True)
 
     elif args['realtime']:
@@ -106,8 +115,6 @@ def silcam():
             overwriteSTATS = False  # if you want to append to the stats file, then overwriting should be False
         if args['--discread']:
             os.environ['REALTIME_DISC'] = ''
-            print('multiProcess = False')
-            multiProcess = True
             print('discWrite = False')
             discWrite = False
             print('overwriteSTATS = True')
@@ -362,6 +369,26 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
             if (not stats_all is None):  # if frame processed
                 # write the image into the csv file
                 writeCSV(datafilename, stats_all)
+
+            if not gui == None:
+                collect_rts(settings, rts, stats_all)
+                logger.debug('Putting data on GUI Queue')
+                while (gui.qsize() > 0):
+                    try:
+                        gui.get_nowait()
+                        time.sleep(0.001)
+                    except:
+                        continue
+                # try:
+                rtdict = dict()
+                rtdict = {'dias': rts.dias,
+                          'vd_oil': rts.vd_oil,
+                          'vd_gas': rts.vd_gas,
+                          'oil_d50': rts.oil_d50,
+                          'gas_d50': rts.gas_d50,
+                          'saturation': rts.saturation}
+                gui.put_nowait((timestamp, imc, imraw, rtdict))
+                logger.debug('GUI queue updated')
 
     print('PROCESSING COMPLETE.')
 

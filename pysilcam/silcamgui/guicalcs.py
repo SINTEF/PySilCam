@@ -368,7 +368,7 @@ class ProcThread(Process):
             psc.silcam_acquire(self.datadir, config_filename=self.configfile, writeToDisk=self.disc_write, gui=self.q)
         elif(self.run_type == process_mode.real_time):
             if 'REALTIME_DISC' in os.environ.keys():
-                psc.silcam_process(self.configfile, self.datadir, multiProcess=True, realtime=True,
+                psc.silcam_process(self.configfile, self.datadir, multiProcess=False, realtime=True,
                                    discWrite=False, gui=self.q, overwriteSTATS=True)
             else:
                 psc.silcam_process(self.configfile, self.datadir, multiProcess=True, realtime=True,
