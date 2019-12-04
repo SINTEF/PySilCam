@@ -122,15 +122,13 @@ class Frame:
     def getBufferByteData(self):
         if 'REALTIME_DISC' in os.environ.keys():
             num_old_files = len(self.files)
-            if len(self.files) == num_old_files:
+            while len(self.files) == num_old_files:
                 print('checking for new data')
                 self.files = sorted(glob(os.path.join(self.path, '*.silc')),
                                     reverse=True)
-            if len(self.files) == num_old_files:
-                print('no new data found. trying to process backwards in time')
-            else:
-                print('found new data')
-                self.img_idx = 0
+                time.sleep(1)
+
+            self.img_idx = 0
 
         if self.files is not None:
             frame = silcam_load(self.files[self.img_idx])
