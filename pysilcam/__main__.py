@@ -42,7 +42,7 @@ def silcam():
     Usage:
       silcam acquire <configfile> <datapath>
       silcam process <configfile> <datapath> [--nbimages=<number of images>] [--nomultiproc] [--appendstats]
-      silcam realtime <configfile> <datapath> [--discwrite] [--nomultiproc] [--appendstats]
+      silcam realtime <configfile> <datapath> [--discwrite] [--nomultiproc] [--appendstats] [--discread]
       silcam -h | --help
       silcam --version
 
@@ -58,6 +58,7 @@ def silcam():
       --appendstats                     Appends data to output STATS.csv file. If not specified, the STATS.csv file will be overwritten!
       -h --help                         Show this screen.
       --version                         Show version.
+      --discread                        emergency disc read version of realtime analysis, to be run seperately but at the same time as silcam acquire
 
     '''
     print(title)
@@ -103,6 +104,14 @@ def silcam():
             multiProcess = False
         if args['--appendstats']:
             overwriteSTATS = False  # if you want to append to the stats file, then overwriting should be False
+        if args['--discread']:
+            os.environ['REALTIME_DISC'] = ''
+            print('multiProcess = False')
+            multiProcess = True
+            print('discWrite = False')
+            discWrite = False
+            print('overwriteSTATS = True')
+            overwriteSTATS = True
         silcam_process(args['<configfile>'], datapath, multiProcess=multiProcess, realtime=True,
                        discWrite=discWrite, overwriteSTATS=overwriteSTATS)
 
@@ -229,7 +238,11 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     adminSTATS(logger, settings, overwriteSTATS, datafilename, datapath)
 
     # Initialize the image acquisition generator
-    aq = Acquire(USE_PYMBA=realtime)
+    if 'REALTIME_DISC' in os.environ.keys():
+        print('acq = Acquire(USE_PYMBA=False)')
+        aq = Acquire(USE_PYMBA=False)
+    else:
+        aq = Acquire(USE_PYMBA=realtime)
     aqgen = aq.get_generator(datapath, writeToDisk=discWrite,
                              camera_config_file=config_filename)
 
