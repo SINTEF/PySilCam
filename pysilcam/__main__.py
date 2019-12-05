@@ -117,8 +117,6 @@ def silcam():
             os.environ['REALTIME_DISC'] = ''
             print('discWrite = False')
             discWrite = False
-            print('overwriteSTATS = True')
-            overwriteSTATS = True
         silcam_process(args['<configfile>'], datapath, multiProcess=multiProcess, realtime=True,
                        discWrite=discWrite, overwriteSTATS=overwriteSTATS)
 

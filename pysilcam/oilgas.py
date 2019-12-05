@@ -421,10 +421,11 @@ def realtime_summary(statsfile, config_file):
     dias = timeseries.iloc[:,0:52].columns.values
     vdts = timeseries.iloc[:,0:52].values
 
-    pcm = plt.pcolormesh(timeseries['Time'], dias, vdts.T, cmap=cmocean.cm.turbid, norm=colors.LogNorm())
     plt.gca().cla()
+    pcm = plt.pcolormesh(timeseries['Time'], dias, vdts.T, cmap=cmocean.cm.turbid, norm=colors.LogNorm())
     plt.yscale('log')
     plt.ylabel('Equivalent Circular Diameter [um]')
+    plt.ylim(50, 10000)
     plt.xlabel('Time')
     plt.title('Last data: ' + str(max(timeseries['Time'])))
     plt.draw()
