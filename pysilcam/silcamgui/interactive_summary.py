@@ -51,6 +51,9 @@ class InteractivePlotter(QMainWindow):
         rawButton = QAction('Raw Image [i]', self)
         rawButton.triggered.connect(self.find_raw_data)
         mainMenu.addAction(rawButton)
+        rawButton = QAction('Toggle plot [p]', self)
+        rawButton.triggered.connect(self.plot_fame.graph_view.toggle_plot)
+        mainMenu.addAction(rawButton)
 
         loadButton = QAction('Load', self)
         loadButton.setStatusTip('Load data')
@@ -100,6 +103,9 @@ class InteractivePlotter(QMainWindow):
             event.accept()
         elif (pressedkey == QtCore.Qt.Key_I):
             self.find_raw_data()
+            event.accept()
+        elif (pressedkey == QtCore.Qt.Key_P):
+            self.plot_fame.graph_view.toggle_plot()
             event.accept()
         else:
             event.ignore()
@@ -174,6 +180,7 @@ class PlotView(QtWidgets.QWidget):
         self.configfile = ''
         self.stats_filename = ''
         self.av_window = pd.Timedelta(seconds=30)
+        self.plot_pcolor = True
         self.datadir = os.getcwd()
         self.canvas.draw()
 
@@ -314,18 +321,31 @@ class PlotView(QtWidgets.QWidget):
         '''sets up the plotting figure'''
         plt.sca(self.axisconstant)
         plt.cla()
-        plt.pcolormesh(self.u, self.dias, np.log(self.vd_total.T), cmap=cmocean.cm.matter)
-        plt.plot(self.u, self.d50_total, 'kx', markersize=5, alpha=0.25)
-        plt.plot(self.u, self.d50_gas, 'bx', markersize=5, alpha=0.25)
-        plt.yscale('log')
-        plt.ylabel('ECD [um]')
-        plt.ylim(10, 12000)
+        if self.plot_pcolor==True:
+            plt.pcolormesh(self.u, self.dias, np.log(self.vd_total.T), cmap=cmocean.cm.matter)
+            plt.plot(self.u, self.d50_total, 'kx', markersize=5, alpha=0.25)
+            plt.plot(self.u, self.d50_gas, 'bx', markersize=5, alpha=0.25)
+            plt.yscale('log')
+            plt.ylabel('ECD [um]')
+            plt.ylim(10, 12000)
+            self.yrange = [1, 12000]
+        else:
+            plt.plot(self.u, np.sum(self.vd_total,axis=1),'k.', alpha=0.2)
+            plt.plot(self.u, np.sum(self.vd_oil, axis=1), '.', color=[0.7, 0.4, 0], alpha=0.2)
+            plt.plot(self.u, np.sum(self.vd_gas, axis=1), 'b.', alpha=0.2)
+            self.yrange = [0, max(np.sum(self.vd_total,axis=1))]
+            plt.ylabel('Volume concentration [uL/L]')
+            plt.yscale('log')
+            plt.ylim(min([min(np.sum(self.vd_total,axis=1)),
+                          min(np.sum(self.vd_oil,axis=1)),
+                          min(np.sum(self.vd_gas,axis=1))]),
+                     max(np.sum(self.vd_total,axis=1)))
 
         self.start_time = min(self.u)
         self.end_time = max(self.u)
         self.mid_time = min(self.u) + (max(self.u) - min(self.u)) / 2
-        self.line1 = plt.vlines(self.start_time, 1, 12000, 'r')
-        self.line2 = plt.vlines(self.end_time, 1, 12000, 'r')
+        self.line1 = plt.vlines(self.start_time, self.yrange[0], self.yrange[1], 'r')
+        self.line2 = plt.vlines(self.end_time, self.yrange[0], self.yrange[1], 'r')
 
         self.fig.canvas.callbacks.connect('button_press_event', self.on_click)
 
@@ -341,6 +361,11 @@ class PlotView(QtWidgets.QWidget):
                 pass
         else:
             pass
+
+    def toggle_plot(self):
+        self.plot_pcolor = np.invert(self.plot_pcolor)
+        self.setup_figure()
+
 
     def update_plot(self, save=False):
         '''update the plots and save to excel is save=True'''
@@ -367,8 +392,8 @@ class PlotView(QtWidgets.QWidget):
             plt.sca(self.axisconstant)
             self.line1.remove()
             self.line2.remove()
-            self.line1 = plt.vlines(start_time, 1, 12000, 'r', linestyle='--')
-            self.line2 = plt.vlines(end_time, 1, 12000, 'r', linestyle='--')
+            self.line1 = plt.vlines(start_time, self.yrange[0], self.yrange[1], 'r', linestyle='--')
+            self.line2 = plt.vlines(end_time, self.yrange[0], self.yrange[1], 'r', linestyle='--')
             self.canvas.draw()
             return
 
@@ -419,8 +444,8 @@ class PlotView(QtWidgets.QWidget):
         plt.sca(self.axisconstant)
         self.line1.remove()
         self.line2.remove()
-        self.line1 = plt.vlines(pd.to_datetime(psd_start[0]), 1, 12000, 'r')
-        self.line2 = plt.vlines(pd.to_datetime(psd_end[0]), 1, 12000, 'r')
+        self.line1 = plt.vlines(pd.to_datetime(psd_start[0]), self.yrange[0], self.yrange[1], 'r')
+        self.line2 = plt.vlines(pd.to_datetime(psd_end[0]), self.yrange[0], self.yrange[1], 'r')
         self.canvas.draw()
 
         if save:
