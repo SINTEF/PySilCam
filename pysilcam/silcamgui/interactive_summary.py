@@ -15,7 +15,7 @@ import sys
 import os
 from pysilcam.silcamgui.guicalcs import export_timeseries
 from openpyxl import Workbook
-
+from glob import glob
 
 class FigFrame(QtWidgets.QFrame):
     '''class for the figure'''
@@ -43,9 +43,14 @@ class InteractivePlotter(QMainWindow):
         self.setLayout(self.layout)
         self.setCentralWidget(self.plot_fame)
         self.showMaximized()
+        self.raw_path = ''
 
         mainMenu = self.menuBar()
         fileMenu = mainMenu.addMenu('File')
+
+        rawButton = QAction('Raw Image [i]', self)
+        rawButton.triggered.connect(self.find_raw_data)
+        mainMenu.addAction(rawButton)
 
         loadButton = QAction('Load', self)
         loadButton.setStatusTip('Load data')
@@ -93,8 +98,47 @@ class InteractivePlotter(QMainWindow):
             self.plot_fame.graph_view.av_window = max(pd.Timedelta(seconds=1), self.plot_fame.graph_view.av_window)
             self.plot_fame.graph_view.update_plot()
             event.accept()
+        elif (pressedkey == QtCore.Qt.Key_I):
+            self.find_raw_data()
+            event.accept()
         else:
             event.ignore()
+
+    def find_raw_data(self):
+        if self.raw_path == '':
+            self.raw_path = QFileDialog.getExistingDirectory(self,
+                                                             caption='Where are the raw data?',
+                                                             directory=self.raw_path
+                                                             )
+            self.raw_files = sorted(glob(os.path.join(self.raw_path,
+                                                      '*.silc')))
+            if len(self.raw_files) == 0:
+                self.raw_files = sorted(glob(os.path.join(self.raw_path,
+                                                          '*.bmp')))
+            if len(self.raw_files) == 0:
+                print('no data here!')
+                self.raw_path = ''
+                return
+
+        midtimeidx = np.argwhere(self.plot_fame.graph_view.u > self.plot_fame.graph_view.mid_time)[0]
+        search_time = self.plot_fame.graph_view.u[midtimeidx].to_pydatetime()[0]
+        print('search_time',search_time)
+        estimate_filename = os.path.join(self.raw_path,
+                                         search_time.strftime('D%Y%m%dT%H%M%S.*.silc'))
+        filename = glob(estimate_filename)
+        if len(filename)==0:
+            print('can''t find this:' ,estimate_filename)
+            return
+        img = np.load(filename[0])
+        print('loaded')
+
+        cv = FigureCanvas(plt.figure(figsize=(5, 3)))
+        cv.setWindowTitle(filename[0])
+        plt.imshow(img)
+        plt.title(filename[0])
+        plt.gca().axis('off')
+        cv.show()
+
 
 
     def modify_av_wind(self):
@@ -432,14 +476,12 @@ class PlotView(QtWidgets.QWidget):
                 ws.cell(row=16, column=c + 2, value=psd_oil[c])
                 ws.cell(row=24, column=c + 2, value=psd_gas[c])
 
-
             wb.save(outputname)
             print('Saved:', outputname)
 
     def save_data(self):
         '''call the update_plot function with option to save'''
         self.update_plot(save=True)
-
 
 
 if __name__ == "__main__":
