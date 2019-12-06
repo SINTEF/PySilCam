@@ -427,7 +427,7 @@ class PlotView(QtWidgets.QWidget):
         plt.sca(self.axistext)
 
         string = ''
-        string += 'GOR: {:0.01f}'.format(psd_gor)
+        string += 'GOR [%]: {:0.01f}'.format(psd_gor)
         string += '\n d50 total [um]: {:0.0f}'.format(psd_d50_total)
         string += '\n d50 oil [um]: {:0.0f}'.format(psd_d50_oil)
         string += '\n d50 gas [um]: {:0.0f}'.format(psd_d50_gas)

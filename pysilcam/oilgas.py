@@ -20,6 +20,9 @@ import glob
 import sys
 from tqdm import tqdm
 import logging
+from matplotlib import colors
+import cmocean
+import matplotlib.pyplot as plt
 
 solidityThresh = 0.95
 logger = logging.getLogger(__name__)
@@ -396,3 +399,34 @@ def convert_to_pj_format(stats_csv_file, config_file):
     with open(gas_name, 'w') as fout:
         fout.writelines(data[1:])
     logger.info('Conversion complete.')
+
+
+def realtime_summary(statsfile, config_file):
+    if not os.path.isfile(statsfile):
+        print(statsfile, 'nonexistent')
+        return
+    plt.ion()
+
+    stats = pd.read_csv(statsfile)
+    settings = PySilcamSettings(config_file)
+
+    nims = sc_pp.count_images_in_stats(stats)
+    print(len(stats), 'particles in', nims, 'images')
+
+    if nims < 2:
+        return
+
+    timeseries = sc_pp.make_timeseries_vd(stats, settings)
+
+    dias = timeseries.iloc[:,0:52].columns.values
+    vdts = timeseries.iloc[:,0:52].values
+
+    plt.gca().cla()
+    pcm = plt.pcolormesh(timeseries['Time'], dias, vdts.T, cmap=cmocean.cm.turbid, norm=colors.LogNorm())
+    plt.yscale('log')
+    plt.ylabel('Equivalent Circular Diameter [um]')
+    plt.ylim(50, 10000)
+    plt.xlabel('Time')
+    plt.title('Last data: ' + str(max(timeseries['Time'])))
+    plt.draw()
+    plt.pause(0.01)
