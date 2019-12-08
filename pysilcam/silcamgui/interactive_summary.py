@@ -230,7 +230,7 @@ class PlotView(QtWidgets.QWidget):
         self.configfile = ''
         self.stats_filename = ''
         self.av_window = pd.Timedelta(seconds=30)
-        self.plot_pcolor = True
+        self.plot_pcolor = 0
         self.datadir = os.getcwd()
         self.canvas.draw()
 
@@ -252,6 +252,7 @@ class PlotView(QtWidgets.QWidget):
 
         if os.path.isfile(timeseriesgas_file):
             ws = waitsplash()
+            app.processEvents()
             self.load_from_timeseries()
             ws.close()
         else:
@@ -282,6 +283,7 @@ class PlotView(QtWidgets.QWidget):
                 self.av_window = pd.Timedelta(seconds=self.settings.PostProcess.window_size)
 
                 ws = waitsplash()
+                app.processEvents()
                 self.load_from_stats()
                 ws.close()
 
@@ -289,6 +291,7 @@ class PlotView(QtWidgets.QWidget):
                 export_timeseries(self.configfile, self.stats_filename)
 
                 ws = waitsplash()
+                app.processEvents()
                 self.load_from_timeseries()
                 ws.close()
             else:
@@ -316,8 +319,10 @@ class PlotView(QtWidgets.QWidget):
         self.d50_oil = oil['D50']
 
         self.d50_total = np.zeros_like(self.d50_oil)
+        self.cos = np.zeros_like(self.d50_total)
         for i, vd in enumerate(self.vd_total):
             self.d50_total[i] = scpp.d50_from_vd(vd, self.dias)
+            self.cos[i] = scog.cos_check(self.dias, self.vd_total[i,:])
 
 
     def load_from_stats(self):
@@ -336,6 +341,7 @@ class PlotView(QtWidgets.QWidget):
         d50_gas = np.zeros(len(u))
         d50_oil = np.zeros_like(d50_gas)
         d50_total = np.zeros_like(d50_gas)
+        self.cos = np.zeros_like(d50_total)
         # @todo make this number of particles per image, and sum according to index later
         nparticles_all = 0
         nparticles_total = 0
@@ -367,6 +373,8 @@ class PlotView(QtWidgets.QWidget):
             d50_total[i] = scpp.d50_from_vd(vd_total_, dias)
             vd_total[i, :] = vd_total_
 
+            self.cos[i] = scog.cos_check(dias, vd_total[i, :])
+
         self.vd_total = vd_total
         self.vd_gas = vd_gas
         self.vd_oil = vd_oil
@@ -381,7 +389,7 @@ class PlotView(QtWidgets.QWidget):
         '''sets up the plotting figure'''
         plt.sca(self.axisconstant)
         plt.cla()
-        if self.plot_pcolor==True:
+        if self.plot_pcolor==0:
             plt.pcolormesh(self.u, self.dias, np.log(self.vd_total.T), cmap=cmocean.cm.matter)
             plt.plot(self.u, self.d50_total, 'kx', markersize=5, alpha=0.25)
             plt.plot(self.u, self.d50_gas, 'bx', markersize=5, alpha=0.25)
@@ -389,7 +397,7 @@ class PlotView(QtWidgets.QWidget):
             plt.ylabel('ECD [um]')
             plt.ylim(10, 12000)
             self.yrange = [1, 12000]
-        else:
+        elif self.plot_pcolor==1:
             plt.plot(self.u, np.sum(self.vd_total,axis=1),'k.', alpha=0.2)
             plt.plot(self.u, np.sum(self.vd_oil, axis=1), '.', color=[0.7, 0.4, 0], alpha=0.2)
             plt.plot(self.u, np.sum(self.vd_gas, axis=1), 'b.', alpha=0.2)
@@ -400,6 +408,13 @@ class PlotView(QtWidgets.QWidget):
                           min(np.sum(self.vd_oil,axis=1)),
                           min(np.sum(self.vd_gas,axis=1))]),
                      max(np.sum(self.vd_total,axis=1)))
+        else:
+            plt.plot(self.u, self.cos, 'k.', alpha=0.2)
+            print(self.cos)
+            self.yrange = [0, 1]
+            plt.ylabel('Cosine similarity with log-normal')
+            plt.ylim(self.yrange)
+
 
         self.start_time = min(self.u)
         self.end_time = max(self.u)
@@ -422,7 +437,9 @@ class PlotView(QtWidgets.QWidget):
             pass
 
     def toggle_plot(self):
-        self.plot_pcolor = np.invert(self.plot_pcolor)
+        self.plot_pcolor += 1
+        if self.plot_pcolor==3:
+            self.plot_pcolor=0
         self.setup_figure()
 
 

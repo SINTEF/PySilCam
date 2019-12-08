@@ -430,3 +430,30 @@ def realtime_summary(statsfile, config_file):
     plt.title('Last data: ' + str(max(timeseries['Time'])))
     plt.draw()
     plt.pause(0.01)
+
+
+def gaussian_fit(xdata,ydata):
+    mu = np.sum(xdata*ydata)/np.sum(ydata)
+    sigma = np.sqrt(np.abs(np.sum((xdata-mu)**2*ydata)/np.sum(ydata)))
+    return mu, sigma
+
+def gaussian(x, mu, sig):
+    y=1/np.sqrt(2*sig*sig*np.pi)*np.exp(-(x-mu)*(x-mu)/(2*sig*sig))  #
+    return y
+
+def cosine_similarity(a, b):
+    dot = np.dot(a, b)
+    norma = np.linalg.norm(a)
+    normb = np.linalg.norm(b)
+    cos = dot / (norma * normb)
+    return cos
+
+def cos_check(dias, vd):
+    mu, sig = gaussian_fit(np.arange(0, len(dias)), vd)
+
+    y = gaussian(np.arange(0, len(dias)), mu, sig)
+    y /= max(y)
+    y *= max(vd)
+
+    cos = cosine_similarity(y, vd)
+    return cos
