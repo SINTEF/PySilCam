@@ -288,10 +288,10 @@ class PlotView(QtWidgets.QWidget):
                 ws.close()
 
             elif (msgBox.clickedButton() == convert_stats_button):
-                export_timeseries(self.configfile, self.stats_filename)
-
                 ws = waitsplash()
                 app.processEvents()
+                export_timeseries(self.configfile, self.stats_filename)
+
                 self.load_from_timeseries()
                 ws.close()
             else:
