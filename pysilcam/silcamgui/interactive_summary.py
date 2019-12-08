@@ -11,6 +11,8 @@ import matplotlib
 from PyQt5.QtWidgets import *
 from PyQt5 import QtCore
 from PyQt5 import QtWidgets
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 import sys
 import os
@@ -59,12 +61,14 @@ class InteractivePlotter(QMainWindow):
 
         self.saveButton = QAction('Save', self)
         self.saveButton.setStatusTip('Save PSD data to xls')
+        self.saveButton.setShortcut("Ctrl+s")
         self.saveButton.triggered.connect(self.plot_fame.graph_view.save_data)
         fileMenu.addAction(self.saveButton)
         self.saveButton.setEnabled(False)
 
         avwinButton = QAction('Average window', self)
         avwinButton.setStatusTip('Change the average window')
+        avwinButton.setShortcut("Ctrl+w")
         avwinButton.triggered.connect(self.modify_av_wind)
         fileMenu.addAction(avwinButton)
 
@@ -139,6 +143,7 @@ class InteractivePlotter(QMainWindow):
         end_time = self.plot_fame.graph_view.mid_time + bg_window / 2
         u = pd.to_datetime(self.plot_fame.graph_view.u)
         midtimeidx = np.argwhere((u >= start_time) & (u < end_time))
+        ws = waitsplash()
         self.statusBar.showMessage('Creating background from ' + str(len(midtimeidx)) + ' images', 1e12)
         imbg = np.float64(np.load(self.raw_files[midtimeidx[0][0]]))
         for i in range(len(midtimeidx)-1):
@@ -147,6 +152,7 @@ class InteractivePlotter(QMainWindow):
         imraw = np.float64(np.load(self.filename))
         imc = correct_im_fast(imbg, imraw)
         self.statusBar.showMessage('Background done.', 1e12)
+        ws.close()
         self.plot_image(imc)
 
     def find_raw_data(self):
@@ -245,7 +251,9 @@ class PlotView(QtWidgets.QWidget):
         timeseriesgas_file = self.stats_filename.replace('-STATS.csv', '-TIMESERIESgas.xlsx')
 
         if os.path.isfile(timeseriesgas_file):
+            ws = waitsplash()
             self.load_from_timeseries()
+            ws.close()
         else:
 
             msgBox = QMessageBox()
@@ -272,10 +280,17 @@ class PlotView(QtWidgets.QWidget):
             if (msgBox.clickedButton() == load_stats_button):
                 self.settings = PySilcamSettings(self.configfile)
                 self.av_window = pd.Timedelta(seconds=self.settings.PostProcess.window_size)
+
+                ws = waitsplash()
                 self.load_from_stats()
+                ws.close()
+
             elif (msgBox.clickedButton() == convert_stats_button):
                 export_timeseries(self.configfile, self.stats_filename)
+
+                ws = waitsplash()
                 self.load_from_timeseries()
+                ws.close()
             else:
                 return
 
@@ -452,6 +467,10 @@ class PlotView(QtWidgets.QWidget):
         psd_vc_oil = np.sum(psd_oil)
         psd_vc_gas = np.sum(psd_gas)
 
+        psd_peak_total = self.dias[np.argwhere(psd_total == max(psd_total))][0][0]
+        psd_peak_oil = self.dias[np.argwhere(psd_oil == max(psd_oil))][0][0]
+        psd_peak_gas = self.dias[np.argwhere(psd_gas == max(psd_gas))][0][0]
+
         psd_d50_total = scpp.d50_from_vd(psd_total, self.dias)
         psd_d50_oil = scpp.d50_from_vd(psd_oil, self.dias)
         psd_d50_gas = scpp.d50_from_vd(psd_gas, self.dias)
@@ -463,23 +482,36 @@ class PlotView(QtWidgets.QWidget):
         plt.plot(self.dias, psd_total, 'k', linewidth=5, label='Total')
         plt.plot(self.dias, psd_oil, color=[0.7, 0.4, 0], label='Oil')
         plt.plot(self.dias, psd_gas, 'b', label='Gas')
+
+        plt.vlines(psd_d50_total, 0, max(psd_total), 'k', linestyle='--', linewidth=1, label='Total d50: {:0.0f}um'.format(psd_d50_total))
+        plt.vlines(psd_d50_oil, 0, max(psd_oil), color=[0.7, 0.4, 0], linestyle='--', linewidth=1, label='Oil d50: {:0.0f}um'.format(psd_d50_oil))
+        plt.vlines(psd_d50_gas, 0, max(psd_gas), 'b', linestyle='--', linewidth=1, label='Gas d50: {:0.0f}um'.format(psd_d50_gas))
+
+        plt.vlines(psd_peak_total, 0, max(psd_total), 'k', linestyle=':', linewidth=1, label='Total peak: {:0.0f}um'.format(psd_peak_total))
+        plt.vlines(psd_peak_oil, 0, max(psd_oil), color=[0.7, 0.4, 0], linestyle=':', linewidth=1, label='Oil peak: {:0.0f}um'.format(psd_peak_oil))
+        plt.vlines(psd_peak_gas, 0, max(psd_gas), 'b', linestyle=':', linewidth=1, label='Gas peak d50: {:0.0f}um'.format(psd_peak_gas))
+
         plt.xlabel('ECD [um]')
         plt.ylabel('VD [uL/L]')
         plt.xscale('log')
         plt.xlim(10, 12000)
+        plt.legend(loc='upper left')
 
         plt.sca(self.axistext)
 
         string = ''
         string += 'GOR [%]: {:0.01f}'.format(psd_gor)
-        string += '\n d50 total [um]: {:0.0f}'.format(psd_d50_total)
+        string += '\n\n d50 total [um]: {:0.0f}'.format(psd_d50_total)
+        string += '\n peak total [um]: {:0.0f}'.format(psd_peak_total)
         string += '\n d50 oil [um]: {:0.0f}'.format(psd_d50_oil)
+        string += '\n peak oil [um]: {:0.0f}'.format(psd_peak_oil)
         string += '\n d50 gas [um]: {:0.0f}'.format(psd_d50_gas)
-        string += '\n VC total [uL/L]: {:0.0f}'.format(psd_vc_total)
+        string += '\n peak gas [um]: {:0.0f}'.format(psd_peak_gas)
+        string += '\n\n VC total [uL/L]: {:0.0f}'.format(psd_vc_total)
         string += '\n VC oil [uL/L]: {:0.0f}'.format(psd_vc_oil)
         string += '\n VC gas [uL/L]: {:0.0f}'.format(psd_vc_gas)
-        string += '\n Num images: {:0.0f}'.format(psd_nims)
-        string += '\n Start: ' + str(pd.to_datetime(psd_start[0]))
+        string += '\n\n Num images: {:0.0f}'.format(psd_nims)
+        string += '\n\n Start: ' + str(pd.to_datetime(psd_start[0]))
         string += '\n End: ' + str(pd.to_datetime(psd_end[0]))
         string += '\n Window [sec.] {:0.3f}:'.format(pd.to_timedelta(psd_end[0]-psd_start[0]).total_seconds())
         string += '\n\n mid-time: ' + str(pd.to_datetime(self.mid_time))
@@ -507,8 +539,8 @@ class PlotView(QtWidgets.QWidget):
             ws = wb.active
             ws['A1'] = 'Start:'
             ws['B1'] = min(u)
-            ws['A2'] = 'Weighted average:'
-            ws['B2'] = 'NOT IMPLEMENTED'
+            ws['A2'] = 'Mid:'
+            ws['B2'] = self.mid_time
             ws['A3'] = 'End:'
             ws['B3'] = max(u)
 
@@ -520,17 +552,17 @@ class PlotView(QtWidgets.QWidget):
             ws['A6'] = 'Number of particles:'
             ws['B6'] = 'NOT IMPLEMENTED'
             ws['D6'] = 'peak || modal size class (microns):'
-            ws['E6'] = 'NOT IMPLEMENTED'
+            ws['E6'] = psd_peak_total
 
             ws['D13'] = 'd50(microns):'
             ws['E13'] = psd_d50_oil
             ws['D14'] = 'peak || modal size class (microns):'
-            ws['E14'] = 'NOT IMPLEMENTED'
+            ws['E14'] = psd_peak_oil
 
             ws['D21'] = 'd50(microns):'
             ws['E21'] = psd_d50_gas
             ws['D22'] = 'peak || modal size class (microns):'
-            ws['E22'] = 'NOT IMPLEMENTED'
+            ws['E22'] = psd_peak_gas
 
 
             ws['A8'] = 'Bin mid-sizes (microns):'
@@ -552,6 +584,18 @@ class PlotView(QtWidgets.QWidget):
     def save_data(self):
         '''call the update_plot function with option to save'''
         self.update_plot(save=True)
+
+
+class waitsplash():
+    def __init__(self):
+        splash_pix = QPixmap('loading.png')
+        self.splash = QSplashScreen(splash_pix, Qt.WindowStaysOnTopHint)
+        self.splash.setMask(splash_pix.mask())
+        self.splash.show()
+        app.processEvents()
+
+    def close(self):
+        self.splash.close()
 
 
 if __name__ == "__main__":
