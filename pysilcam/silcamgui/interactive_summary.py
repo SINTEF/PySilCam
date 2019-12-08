@@ -252,7 +252,6 @@ class PlotView(QtWidgets.QWidget):
 
         if os.path.isfile(timeseriesgas_file):
             ws = waitsplash()
-            app.processEvents()
             self.load_from_timeseries()
             ws.close()
         else:
@@ -283,13 +282,11 @@ class PlotView(QtWidgets.QWidget):
                 self.av_window = pd.Timedelta(seconds=self.settings.PostProcess.window_size)
 
                 ws = waitsplash()
-                app.processEvents()
                 self.load_from_stats()
                 ws.close()
 
             elif (msgBox.clickedButton() == convert_stats_button):
                 ws = waitsplash()
-                app.processEvents()
                 export_timeseries(self.configfile, self.stats_filename)
 
                 self.load_from_timeseries()
@@ -410,7 +407,6 @@ class PlotView(QtWidgets.QWidget):
                      max(np.sum(self.vd_total,axis=1)))
         else:
             plt.plot(self.u, self.cos, 'k.', alpha=0.2)
-            print(self.cos)
             self.yrange = [0, 1]
             plt.ylabel('Cosine similarity with log-normal')
             plt.ylim(self.yrange)
@@ -606,10 +602,10 @@ class PlotView(QtWidgets.QWidget):
 class waitsplash():
     def __init__(self):
         splash_pix = QPixmap('loading.png')
-        self.splash = QSplashScreen(splash_pix, Qt.WindowStaysOnTopHint)
+        self.splash = QSplashScreen(splash_pix)#, Qt.WindowStaysOnTopHint)
         self.splash.setMask(splash_pix.mask())
         self.splash.show()
-        app.processEvents()
+        QApplication.processEvents()
 
     def close(self):
         self.splash.close()
