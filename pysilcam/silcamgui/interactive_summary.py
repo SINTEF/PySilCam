@@ -2,12 +2,13 @@ import pandas as pd
 import pysilcam.postprocess as scpp
 import pysilcam.oilgas as scog
 from pysilcam.config import PySilcamSettings
+from pysilcam.background import correct_im_fast
 from tqdm import tqdm
 import numpy as np
 import cmocean
 import matplotlib.pyplot as plt
 import matplotlib
-from PyQt5.QtWidgets import QMainWindow, QApplication, QAction, QInputDialog, QMessageBox, QFileDialog
+from PyQt5.QtWidgets import *
 from PyQt5 import QtCore
 from PyQt5 import QtWidgets
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
@@ -47,13 +48,8 @@ class InteractivePlotter(QMainWindow):
 
         mainMenu = self.menuBar()
         fileMenu = mainMenu.addMenu('File')
+        imageMenu = mainMenu.addMenu('Images')
 
-        rawButton = QAction('Raw Image [i]', self)
-        rawButton.triggered.connect(self.find_raw_data)
-        mainMenu.addAction(rawButton)
-        rawButton = QAction('Toggle plot [p]', self)
-        rawButton.triggered.connect(self.plot_fame.graph_view.toggle_plot)
-        mainMenu.addAction(rawButton)
 
         loadButton = QAction('Load', self)
         loadButton.setStatusTip('Load data')
@@ -76,11 +72,41 @@ class InteractivePlotter(QMainWindow):
         exitButton.setStatusTip('Close')
         exitButton.triggered.connect(self.close)
         fileMenu.addAction(exitButton)
-        
-    def callLoadData(self):      
+
+        self.rawButton = QAction('Raw Image', self)
+        self.rawButton.setShortcut("r")
+        self.rawButton.triggered.connect(self.find_raw_data)
+        imageMenu.addAction(self.rawButton)
+        self.rawButton.setEnabled(False)
+
+        self.imcButton = QAction('Corrected Image', self)
+        self.imcButton.setShortcut("c")
+        self.imcButton.triggered.connect(self.find_imc_data)
+        imageMenu.addAction(self.imcButton)
+        self.imcButton.setEnabled(False)
+
+        self.toggleButton = QAction('Toggle plot  p', self)
+        self.toggleButton.setShortcut("p")
+        self.toggleButton.triggered.connect(self.plot_fame.graph_view.toggle_plot)
+        self.toggleButton.setEnabled(False)
+        mainMenu.addAction(self.toggleButton)
+
+        self.statusBar = QStatusBar()
+        self.setStatusBar(self.statusBar)
+        self.statusBar.showMessage('Hello. Load a -STATS.csv file to start', 1e12)
+
+    def callLoadData(self):
+        self.statusBar.showMessage('Loading data. PLEASE WAIT', 1e12)
         self.plot_fame.graph_view.load_data()
+        self.raw_path = ''
+        self.raw_files = ''
         self.saveButton.setEnabled(True)
-        
+        self.rawButton.setEnabled(True)
+        self.imcButton.setEnabled(True)
+        self.toggleButton.setEnabled(True)
+        self.statusBar.clearMessage()
+        self.setWindowTitle("SummaryExplorer: " + self.plot_fame.graph_view.stats_filename)
+
     def keyPressEvent(self, event):
         pressedkey = event.key()
         if (pressedkey == QtCore.Qt.Key_Up) or (pressedkey == QtCore.Qt.Key_W):
@@ -101,16 +127,36 @@ class InteractivePlotter(QMainWindow):
             self.plot_fame.graph_view.av_window = max(pd.Timedelta(seconds=1), self.plot_fame.graph_view.av_window)
             self.plot_fame.graph_view.update_plot()
             event.accept()
-        elif (pressedkey == QtCore.Qt.Key_I):
-            self.find_raw_data()
-            event.accept()
-        elif (pressedkey == QtCore.Qt.Key_P):
-            self.plot_fame.graph_view.toggle_plot()
-            event.accept()
         else:
             event.ignore()
 
+    def find_imc_data(self):
+        self.extract_filename()
+        if len(self.raw_files) == 0:
+            return
+        bg_window = pd.to_timedelta(5, unit='S')
+        start_time = self.plot_fame.graph_view.mid_time - bg_window / 2
+        end_time = self.plot_fame.graph_view.mid_time + bg_window / 2
+        u = pd.to_datetime(self.plot_fame.graph_view.u)
+        midtimeidx = np.argwhere((u >= start_time) & (u < end_time))
+        self.statusBar.showMessage('Creating background from ' + str(len(midtimeidx)) + ' images', 1e12)
+        imbg = np.float64(np.load(self.raw_files[midtimeidx[0][0]]))
+        for i in range(len(midtimeidx)-1):
+            imbg += np.float64(np.load(self.raw_files[midtimeidx[i+1][0]]))
+        imbg /= len(midtimeidx)
+        imraw = np.float64(np.load(self.filename))
+        imc = correct_im_fast(imbg, imraw)
+        self.statusBar.showMessage('Background done.', 1e12)
+        self.plot_image(imc)
+
     def find_raw_data(self):
+        self.extract_filename()
+        if len(self.raw_files) == 0:
+            return
+        img = np.load(self.filename)
+        self.plot_image(img)
+
+    def extract_filename(self):
         if self.raw_path == '':
             self.raw_path = QFileDialog.getExistingDirectory(self,
                                                              caption='Where are the raw data?',
@@ -122,7 +168,7 @@ class InteractivePlotter(QMainWindow):
                 self.raw_files = sorted(glob(os.path.join(self.raw_path,
                                                           '*.bmp')))
             if len(self.raw_files) == 0:
-                print('no data here!')
+                self.statusBar.showMessage('No data here: ' + self.raw_path, 1e12)
                 self.raw_path = ''
                 return
 
@@ -133,19 +179,17 @@ class InteractivePlotter(QMainWindow):
                                          search_time.strftime('D%Y%m%dT%H%M%S.*.silc'))
         filename = glob(estimate_filename)
         if len(filename)==0:
-            print('can''t find this:' ,estimate_filename)
+            print('can''t find this:', estimate_filename)
             return
-        img = np.load(filename[0])
-        print('loaded')
+        self.filename = filename[0]
 
+    def plot_image(self, img):
         cv = FigureCanvas(plt.figure(figsize=(5, 3)))
-        cv.setWindowTitle(filename[0])
+        cv.setWindowTitle(self.filename)
         plt.imshow(img)
-        plt.title(filename[0])
+        plt.title(self.filename)
         plt.gca().axis('off')
         cv.show()
-
-
 
     def modify_av_wind(self):
         '''allow the user to modify the averaging period of interest'''
@@ -235,6 +279,7 @@ class PlotView(QtWidgets.QWidget):
             else:
                 return
 
+        self.mid_time = min(self.u) + (max(self.u) - min(self.u)) / 2
         self.setup_figure()
 
 
@@ -343,7 +388,6 @@ class PlotView(QtWidgets.QWidget):
 
         self.start_time = min(self.u)
         self.end_time = max(self.u)
-        self.mid_time = min(self.u) + (max(self.u) - min(self.u)) / 2
         self.line1 = plt.vlines(self.start_time, self.yrange[0], self.yrange[1], 'r')
         self.line2 = plt.vlines(self.end_time, self.yrange[0], self.yrange[1], 'r')
 
@@ -438,6 +482,7 @@ class PlotView(QtWidgets.QWidget):
         string += '\n Start: ' + str(pd.to_datetime(psd_start[0]))
         string += '\n End: ' + str(pd.to_datetime(psd_end[0]))
         string += '\n Window [sec.] {:0.3f}:'.format(pd.to_timedelta(psd_end[0]-psd_start[0]).total_seconds())
+        string += '\n\n mid-time: ' + str(pd.to_datetime(self.mid_time))
 
         plt.title(string, verticalalignment='top', horizontalalignment='right', loc='right')
 
