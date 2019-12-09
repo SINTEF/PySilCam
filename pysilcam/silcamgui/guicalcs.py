@@ -1,4 +1,3 @@
-import pysilcam.__main__ as psc
 from multiprocessing import Process, Queue
 import matplotlib.pyplot as plt
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QPushButton, QWidget,
@@ -14,7 +13,6 @@ import pygame
 import time
 import psutil
 from tqdm import tqdm
-import pysilcam.silcamgui.liveviewer as lv
 
 
 def get_data(self):
@@ -231,6 +229,7 @@ def load_image(filename, size):
 
 
 def liveview(datadir, config_file):
+    import pysilcam.silcamgui.liveviewer as lv
     lv.liveview(datadir, config_file)
 
 
@@ -361,6 +360,7 @@ class ProcThread(Process):
 
 
     def run(self):
+        import pysilcam.__main__ as psc
         if(self.run_type == process_mode.process):
             psc.silcam_process(self.configfile, self.datadir, multiProcess=True, realtime=False,
             gui=self.q, overwriteSTATS=self.overwriteSTATS)
@@ -460,3 +460,5 @@ class ProcThread(Process):
     def load_settings(self, configfile):
         self.settings = PySilcamSettings(configfile)
 
+if __name__=='__main__':
+    pass

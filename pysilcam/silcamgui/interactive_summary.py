@@ -11,7 +11,6 @@ import matplotlib
 from PyQt5.QtWidgets import *
 from PyQt5 import QtCore
 from PyQt5 import QtWidgets
-from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 import sys
@@ -601,7 +600,9 @@ class PlotView(QtWidgets.QWidget):
 
 class waitsplash():
     def __init__(self):
-        splash_pix = QPixmap('loading.png')
+        path_here = os.path.realpath(__file__)
+        imfile = os.path.join(os.path.split(path_here)[0], 'loading.png')
+        splash_pix = QPixmap(imfile)
         self.splash = QSplashScreen(splash_pix)#, Qt.WindowStaysOnTopHint)
         self.splash.setMask(splash_pix.mask())
         self.splash.show()
@@ -611,8 +612,11 @@ class waitsplash():
         self.splash.close()
 
 
-if __name__ == "__main__":
+def main():
     app = QApplication(sys.argv)
     window = InteractivePlotter()
     window.show()
     app.exec_()
+
+if __name__ == "__main__":
+    main()

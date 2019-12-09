@@ -506,3 +506,5 @@ def processImage(nnmodel, class_labels, image, settings, logger, gui):
     return stats_all
 
 
+if __name__=='__main__':
+    pass
