@@ -16,6 +16,10 @@ def main(datapath):
             plt.show()
             while True:
                 files = sorted(glob(os.path.join(datapath, '*.silc')))
+                if len(files)<5:
+                    print('waiting for data')
+                    time.sleep(1)
+                    continue
                 idx = np.random.randint(0, len(files))
                 idx = -2
                 print(idx)
