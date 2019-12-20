@@ -3,6 +3,7 @@ import pysilcam.postprocess as scpp
 import pysilcam.oilgas as scog
 from pysilcam.config import PySilcamSettings
 from pysilcam.background import correct_im_fast
+from pysilcam.fakepymba import silcam_load
 from tqdm import tqdm
 import numpy as np
 import cmocean
@@ -144,11 +145,11 @@ class InteractivePlotter(QMainWindow):
         midtimeidx = np.argwhere((u >= start_time) & (u < end_time))
         ws = waitsplash()
         self.statusBar.showMessage('Creating background from ' + str(len(midtimeidx)) + ' images', 1e12)
-        imbg = np.float64(np.load(self.raw_files[midtimeidx[0][0]]))
+        imbg = np.float64(silcam_load(self.raw_files[midtimeidx[0][0]]))
         for i in range(len(midtimeidx)-1):
-            imbg += np.float64(np.load(self.raw_files[midtimeidx[i+1][0]]))
+            imbg += np.float64(silcam_load(self.raw_files[midtimeidx[i+1][0]]))
         imbg /= len(midtimeidx)
-        imraw = np.float64(np.load(self.filename))
+        imraw = np.float64(silcam_load(self.filename))
         imc = correct_im_fast(imbg, imraw)
         self.statusBar.showMessage('Background done.', 1e12)
         ws.close()
@@ -158,7 +159,7 @@ class InteractivePlotter(QMainWindow):
         self.extract_filename()
         if len(self.raw_files) == 0:
             return
-        img = np.load(self.filename)
+        img = silcam_load(self.filename)
         self.plot_image(img)
 
     def extract_filename(self):
@@ -181,7 +182,7 @@ class InteractivePlotter(QMainWindow):
         search_time = self.plot_fame.graph_view.u[midtimeidx].to_pydatetime()[0]
         print('search_time',search_time)
         estimate_filename = os.path.join(self.raw_path,
-                                         search_time.strftime('D%Y%m%dT%H%M%S.*.silc'))
+                                         search_time.strftime('D%Y%m%dT%H%M%S.*.*'))
         filename = glob(estimate_filename)
         if len(filename)==0:
             print('can''t find this:', estimate_filename)
