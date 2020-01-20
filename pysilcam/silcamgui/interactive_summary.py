@@ -551,11 +551,11 @@ class PlotView(QtWidgets.QWidget):
             wb = Workbook()
             ws = wb.active
             ws['A1'] = 'Start:'
-            ws['B1'] = min(u)
+            ws['B1'] = pd.to_datetime(psd_start[0])
             ws['A2'] = 'Mid:'
             ws['B2'] = self.mid_time
             ws['A3'] = 'End:'
-            ws['B3'] = max(u)
+            ws['B3'] = pd.to_datetime(psd_end[0])
 
             ws['A5'] = 'Number of images:'
             ws['B5'] = psd_nims
