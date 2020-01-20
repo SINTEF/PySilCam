@@ -67,7 +67,7 @@ def generate_report(report_name, PIX_SIZE = 28.758169934640524,
              horizontalalignment='left', loc='left')
     pp.savefig(bbox_inches='tight')
 
-    nims = 40 # the number of images to simulate
+    nims = 400 # the number of images to simulate
     # preallocate variables
     log_vd = np.zeros((nims,len(diams)))
     cvd = np.zeros(nims)

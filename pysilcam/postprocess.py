@@ -446,7 +446,8 @@ def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
 
 
 def make_montage(stats_csv_file, pixel_size, roidir,
-        auto_scaler=500, msize=1024, maxlength=100000,
+        auto_scaler=500, msize=1024,
+        maxlength=100000, minlength=0,
         oilgas=outputPartType.all):
     ''' wrapper function for montage_maker
 
@@ -470,6 +471,8 @@ def make_montage(stats_csv_file, pixel_size, roidir,
     stats = stats[~np.isnan(stats['major_axis_length'])]
     stats = stats[(stats['major_axis_length'] *
             pixel_size) < maxlength]
+    stats = stats[(stats['minor_axis_length'] *
+                   pixel_size) > minlength]
 
     # extract only wanted particle stats
     if oilgas==outputPartType.oil:
@@ -478,6 +481,11 @@ def make_montage(stats_csv_file, pixel_size, roidir,
     elif oilgas==outputPartType.gas:
         from pysilcam.oilgas import extract_gas
         stats = extract_gas(stats)
+    else:
+        print('removing bubbles')
+        stats = stats[stats['probability_bubble'] < 0.01]
+        stats = stats[stats['probability_oil'] < 0.01]
+        stats = stats[stats['probability_oily_gas'] < 0.01]
 
     # sort the particles based on their length
     stats.sort_values(by=['major_axis_length'], ascending=False, inplace=True)
@@ -549,7 +557,7 @@ def get_j(dias, nd):
     '''
     # conduct this calculation only on the part of the size distribution where
     # LISST-100 and SilCam data overlap
-    ind = np.isfinite(dias) & np.isfinite(nd) & (dias<300) & (dias>150)
+    ind = np.isfinite(dias) & np.isfinite(nd) & (dias<2500) & (dias>150)
 
     # use polyfit to obtain the slope of the ditriubtion in log-space (which is
     # assumed near-linear in most parts of the ocean)

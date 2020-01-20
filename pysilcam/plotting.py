@@ -265,14 +265,16 @@ def summarise_fancy_stats(stats_csv_file, config_file, monitor=False,
     logger = logging.getLogger(__name__)
 
     while True:
-        try:
+        if True:
+        # try:
             montage = sc_pp.make_montage(stats_csv_file,
                     settings.PostProcess.pix_size,
                     roidir=settings.ExportParticles.outputpath,
                     auto_scaler=msize*2, msize=msize,
-                    maxlength=maxlength,
+                    maxlength=maxlength, minlength=min_length,
                     oilgas=oilgas)
-        except:
+        # except:
+        else:
             montage = np.zeros((msize, msize, 3), dtype=np.uint8) + 255
             logger.warning('Unable to make montage. Check: {0} folder for h5 files'.format(settings.ExportParticles.outputpath))
             logger.warning('  in config file ExportParticles.export_images is {0}'.format(settings.ExportParticles.export_images))

@@ -384,7 +384,7 @@ def main():
 
 
         def STATS_to_PJ_csv_converter(self):
-            from pysilcam.silcamgui.interactive_summary import main as InteractivePlotter
+            from pysilcam.silcamgui.interactive_summary_ocean import main as InteractivePlotter
             import multiprocessing
             p = multiprocessing.Process(target=InteractivePlotter)
             p.start()
