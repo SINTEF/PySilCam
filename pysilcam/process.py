@@ -521,8 +521,9 @@ def ailaron_sim(imc, timestamp, datafilename, threshold, minimum_area):
 
     iml = morphology.label(imbw > 0)
 
-    nc['number_concentration'] = iml.max()
-    nc['timestamp'] = timestamp
+    nc['number_concentration'] = [iml.max()]
+    nc['timestamp'] = [timestamp]
+    print(nc)
 
     if not os.path.isfile(datafilename + '-NC.csv'):
         nc.to_csv(datafilename +
