@@ -251,7 +251,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
 
     # If only one core is available, no multiprocessing will be done
     multiProcess = multiProcess and (multiprocessing.cpu_count() > 1)
-
+    multiProcess = False
     print('* Commencing image acquisition and processing')
 
     # initialise realtime stats class regardless of whether it is used later
@@ -332,9 +332,9 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
 
     else: # no multiprocessing
         # load the model for particle classification and keep it for later
-        nnmodel = []
-        nnmodel, class_labels = sccl.load_model(model_path=settings.NNClassify.model_path)
-
+        #nnmodel = []
+        #nnmodel, class_labels = sccl.load_model(model_path=settings.NNClassify.model_path)
+        print('AILARON SIM')
         # iterate on the bggen generator to obtain images
         for i, (timestamp, imc, imraw) in enumerate(bggen):
             # handle errors if the loop function fails for any reason
