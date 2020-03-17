@@ -508,7 +508,6 @@ def processImage(nnmodel, class_labels, image, settings, logger, gui):
 
 def ailaron_sim(imc, timestamp, datafilename, threshold, minimum_area):
     print('AILARON SIM')
-    input()
     nc = pd.DataFrame(columns=['timestamp, number_concentration'])
 
     img = np.uint8(np.min(imc, axis=2))
