@@ -506,3 +506,27 @@ def processImage(nnmodel, class_labels, image, settings, logger, gui):
     return stats_all
 
 
+def ailaron_sim(imc, timestamp, datafilename, threshold, minimum_area):
+
+    nc = pd.DataFrame(columns=['timestamp, number_concentration'])
+
+    img = np.uint8(np.min(imc, axis=2))
+
+    imbw = image2blackwhite_fast(img, threshold)  # image2blackwhite_fast is less fancy but
+    # image2blackwhite_fast is faster than image2blackwhite_accurate but might cause problems when trying to
+    # process images with bad lighting
+
+    # clean segmented image (small particles and border particles)
+    imbw = clean_bw(imbw, minimum_area)
+
+    iml = morphology.label(imbw > 0)
+
+    nc['number_concentration'] = iml.max()
+    nc['timestamp'] = timestamp
+
+    if not os.path.isfile(datafilename + '-NC.csv'):
+        nc.to_csv(datafilename +
+                         '-NC.csv')
+    else:
+        nc.to_csv(datafilename + '-NC.csv',
+                         mode='a', header=False)

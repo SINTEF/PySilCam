@@ -8,7 +8,7 @@ import numpy as np
 from pysilcam import __version__
 from pysilcam.acquisition import Acquire
 from pysilcam.background import backgrounder
-from pysilcam.process import processImage, statextract
+from pysilcam.process import processImage, statextract, ailaron_sim
 import pysilcam.oilgas as scog
 from pysilcam.config import PySilcamSettings, updatePathLength
 import os
@@ -341,6 +341,10 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
             if (nbImages != None):
                 if (nbImages <= i):
                     break
+
+            ailaron_sim(imc, timestamp, datafilename, settings.Process.threshold, settings.Process.minimum_area)
+
+            continue
 
             image = (i, timestamp, imc)
             # one single image is processed at a time
