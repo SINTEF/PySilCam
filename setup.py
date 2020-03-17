@@ -1,29 +1,9 @@
 # -*- coding: utf-8 -*-
-import re
 import os
 import sys
 from setuptools import setup
 from setuptools.command.test import test as TestCommand
-from pysilcam import __version__
-from sphinx.setup_command import BuildDoc
-import sphinx.apidoc
 import distutils.cmd
-
-REQUIRES = [
-    'docopt',
-    'configparser',
-    'numpy',
-    'pandas',
-    'matplotlib',
-    'imageio',
-    'scikit-image',
-    'pygame',
-    'tflearn',
-    'sphinx',
-    'tqdm'
-#    'tensorflow',
-#    'pymba',
-]
 
 class PyTest(TestCommand):
     def finalize_options(self):
@@ -51,16 +31,8 @@ class Documentation(distutils.cmd.Command):
         pass
 
     def run(self):
-        command = 'sphinx-apidoc -f -o docs/source pysilcam/'
+        command = 'sphinx-apidoc -f -o docs/source pysilcam/ --separate'
         os.system(command)
-        with open("docs/source/pysilcam.rst", "a") as file:
-            file.write("\npysilcam\.silcam\__main__ module \n"
-                        "--------------------------------- \n\n"
-                        ".. automodule:: pysilcam.__main__ \n"
-                        "    :members: \n"
-                        "    :undoc-members: \n"
-                        "    :show-inheritance: \n")
-
         command = 'sphinx-build -b html ./docs/source ./docs/build'
         os.system(command)
         sys.exit()
@@ -79,11 +51,8 @@ setup(
     long_description=read('README.md'),
     author='Emlyn Davies',
     author_email='emlyn.davies@sintef.no',
-    install_requires=REQUIRES,
     # Use Python 3 branch on alternate repo for Pymba
     #dependency_links=['git+https://github.com/mabl/pymba@python3'],
-    # Use master branch for Pymba on Python 2
-    #dependency_links=['git+https://github.com/morefigs/pymba@python3'],
     zip_safe=False,
     keywords='silcam',
     classifiers=[
@@ -91,7 +60,6 @@ setup(
         'Intended Audience :: Developers',
         'Natural Language :: English',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
     ],
@@ -105,6 +73,5 @@ setup(
             'silcam-gui = pysilcam.silcamgui.silcamgui:main',
         ]
     },
-    tests_require=['pytest'],
     cmdclass={'test': PyTest, 'build_sphinx': Documentation}
 )

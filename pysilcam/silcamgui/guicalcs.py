@@ -14,6 +14,7 @@ import pygame
 import time
 import psutil
 from tqdm import tqdm
+import pysilcam.silcamgui.liveviewer as lv
 
 
 def get_data(self):
@@ -127,13 +128,13 @@ def export_timeseries(configfile, statsfile):
             '-TIMESERIES' + '' + '.xlsx')
 
     time_series = pd.DataFrame(data=np.squeeze(vdts_oil), columns=dias)
-    time_series['D50'] = d50_all
+    time_series['D50'] = d50_oil
     time_series['Time'] = timestamp
     time_series.to_excel(outfile +
             '-TIMESERIES' + 'oil' + '.xlsx')
 
     time_series = pd.DataFrame(data=np.squeeze(vdts_gas), columns=dias)
-    time_series['D50'] = d50_all
+    time_series['D50'] = d50_gas
     time_series['Time'] = timestamp
     time_series.to_excel(outfile +
             '-TIMESERIES' + 'gas' + '.xlsx')
@@ -227,6 +228,10 @@ def load_image(filename, size):
         im = pygame.image.load(filename).convert()
 
     return im
+
+
+def liveview(datadir, config_file):
+    lv.liveview(datadir, config_file)
 
 
 def silcview(datadir):

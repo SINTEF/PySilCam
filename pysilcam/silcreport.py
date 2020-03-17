@@ -6,10 +6,14 @@ import pysilcam.plotting as scplt
 import pysilcam.postprocess as scpp
 from docopt import docopt
 import matplotlib.pyplot as plt
+import logging
 
+logger = logging.getLogger(__name__)
 
 def silcreport():
-    """Generate a report figure for a processed dataset from the SilCam
+    """Generate a report figure for a processed dataset from the SilCam.
+
+    You can access this function from the command line using the below documentation.
 
     Usage:
         silcam-report <configfile> <statsfile> [--type=<particle_type>]
@@ -39,7 +43,7 @@ def silcreport():
         particle_type = scpp.outputPartType.gas
         particle_type_str = args['--type']
 
-    print(particle_type_str)
+    logger.info(particle_type_str)
 
     dpi = 600
     if args['--dpi']:
@@ -47,8 +51,8 @@ def silcreport():
 
     monitor = False
     if args['--monitor']:
-        print('  Monitoring enabled:')
-        print('    press ctrl+c to stop.')
+        logger.info('  Monitoring enabled:')
+        logger.info('    press ctrl+c to stop.')
         monitor = True
 
     silcam_report(args['<statsfile>'], args['<configfile>'],
@@ -65,8 +69,8 @@ def silcam_report(statsfile, configfile, particle_type=scpp.outputPartType.all,
     scplt.summarise_fancy_stats(statsfile, configfile,
                                 monitor=monitor, oilgas=particle_type)
 
-    print('  Saving to disc....')
+    logger.info('  Saving to disc....')
     plt.savefig(statsfile.strip('-STATS.csv') + '-Summary_' +
                 particle_type_str + '.png',
                 dpi=dpi, bbox_inches='tight')
-    print('Done.')
+    logger.info('Done.')

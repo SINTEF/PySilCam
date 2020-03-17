@@ -14,10 +14,13 @@ import h5py
 from pysilcam.config import PySilcamSettings
 from enum import Enum
 from tqdm import tqdm
+import logging
+
+logger = logging.getLogger(__name__)
 
 class outputPartType(Enum):
     '''
-    Enum for all (1), oil (2) or gas (3)
+    Enum class for all (1), oil (2) or gas (3)
     '''
     all = 1
     oil = 2
@@ -47,8 +50,8 @@ def d50_from_vd(vd,dias):
     Calculate d50 from a volume distribution
     
     Args:
-        vd (array)           : particle volume distribution calculated from vd_from_stats()
-        dias (array)         : mid-points in the size classes corresponding the the volume distribution,
+        vd            : particle volume distribution calculated from vd_from_stats()
+        dias          : mid-points in the size classes corresponding the the volume distribution,
                                returned from get_size_bins()
         
     Returns:
@@ -138,6 +141,7 @@ def nc_from_nd(count,sv):
     nc = np.sum(count) / sv
     return nc
 
+
 def nc_vc_from_stats(stats, settings, oilgas=outputPartType.all):
     '''
     Calculates important summary statistics from a stats DataFrame
@@ -204,6 +208,14 @@ def nc_vc_from_stats(stats, settings, oilgas=outputPartType.all):
 def nd_from_stats_scaled(stats, settings):
     ''' calcualte a scaled number distribution from stats and settings
     units of nd are in number per micron per litre
+
+    Args:
+        stats (DataFrame)           : particle statistics from silcam process
+        settings (PySilcamSettings) : settings associated with the data, loaded with PySilcamSettings
+
+    Returns:
+        dias                        : mid-points of size bins
+        nd                          : number distribution in number/micron/litre
     '''
     # calculate the number distirbution (number per bin per sample volume)
     dias, necd = nd_from_stats(stats,settings)
@@ -232,6 +244,14 @@ def nd_from_stats_scaled(stats, settings):
 def nd_from_stats(stats, settings):
     ''' calcualte  number distirbution from stats
     units are number per bin per sample volume
+
+    Args:
+        stats (DataFrame)           : particle statistics from silcam process
+        settings (PySilcamSettings) : settings associated with the data, loaded with PySilcamSettings
+
+    Returns:
+        dias                        : mid-points of size bins
+        necd                        : number distribution in number/size-bin/sample-volume
     '''
 
     # convert the equiv diameter from pixels into microns
@@ -255,6 +275,14 @@ def nd_from_stats(stats, settings):
 def vd_from_stats(stats, settings):
     ''' calculate volume distribution from stats
     units of miro-litres per sample volume
+
+    Args:
+        stats (DataFrame)           : particle statistics from silcam process
+        settings (PySilcamSettings) : settings associated with the data, loaded with PySilcamSettings
+
+    Returns:
+        dias                        : mid-points of size bins
+        vd                          : volume distribution in micro-litres/sample-volume
     '''
 
     # obtain the number distribution
@@ -269,6 +297,8 @@ def vd_from_stats(stats, settings):
 
 class TimeIntegratedVolumeDist:
     ''' class used for summarising recent stats in real-time
+
+    Possibly redundant
 
     @todo - re-implement this later
     '''
@@ -308,13 +338,25 @@ def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
     makes nice looking matages from a directory of extracted particle images
 
     use make_montage to call this function
+
+    Args:
+        roifiles                : list of roi files obtained from gen_roifiles(stats, auto_scaler=auto_scaler)
+        roidir                  : location of roifiles usually defined by settings.ExportParticles.outputpath
+        pixel_size              : pixel size of system defined by settings.PostProcess.pix_size
+        msize=2048              : size of canvas in pixels
+        brightness=255          : brighness of packaged particles
+        tightpack=False         : boolean which if True packs particles using segmented alpha-shapes instead of bounding boxes. This is slow, but packs particles more tightly.
+        eyecandy=True           : boolean which if True will explode the contrast of packed particles (nice for natural particles, but not so good for oil and gas).
+
+    Returns:
+        montageplot             : a nicely-made montage in the form of an image, which can be plotted using plotting.montage_plot(montage, settings.PostProcess.pix_size)
     '''
 
     # pre-allocate an empty canvas
     montage = np.zeros((msize,msize,3),dtype=np.uint8())
     # pre-allocate an empty test canvas
     immap_test = np.zeros_like(montage[:,:,0])
-    print('making a montage - this might take some time....')
+    logger.info('making a montage - this might take some time....')
 
     # loop through each extracted particle and attempt to add it to the canvas
     for files in tqdm(roifiles):
@@ -397,7 +439,7 @@ def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
     montageplot = np.copy(montage)
     montageplot[montage>255] = 255
     montageplot[montage==0] = 255
-    print('montage complete')
+    logger.info('montage complete')
 
     return montageplot
 
@@ -406,6 +448,18 @@ def make_montage(stats_csv_file, pixel_size, roidir,
         auto_scaler=500, msize=1024, maxlength=100000,
         oilgas=outputPartType.all):
     ''' wrapper function for montage_maker
+
+    Args:
+        stats_csv_file              : location of the stats_csv file that comes from silcam process
+        pixel_size                  : pixel size of system defined by settings.PostProcess.pix_size
+        roidir                      : location of roifiles usually defined by settings.ExportParticles.outputpath
+        auto_scaler=500             : approximate number of particle that are attempted to be pack into montage
+        msize=1024                  : size of canvas in pixels
+        maxlength=100000            : maximum length in microns of particles to be included in montage
+        oilgas=outputPartType.all   : enum defining which type of particle to be selected for use in the montage
+
+    Returns:
+        montage (uint8)             : a nicely-made montage in the form of an image, which can be plotted using plotting.montage_plot(montage, settings.PostProcess.pix_size)
     '''
 
     # obtain particle statistics from the csv file
@@ -439,22 +493,41 @@ def make_montage(stats_csv_file, pixel_size, roidir,
 
 
 def gen_roifiles(stats, auto_scaler=500):
+    ''' generates a list of filenames suitable for making montages with
+
+    Args:
+        stats (DataFrame)           : particle statistics from silcam process
+        auto_scaler=500             : approximate number of particle that are attempted to be pack into montage
+
+    Returns:
+        roifiles                    : a selection of filenames that can be passed to montage_maker() for making nice montages
+    '''
 
     roifiles = stats['export name'][stats['export name'] !=
             'not_exported'].values
 
     # subsample the particles if necessary
-    print('rofiles:',len(roifiles))
+    logger.info('rofiles: {0}'.format(len(roifiles)))
     IMSTEP = np.max([np.int(np.round(len(roifiles)/auto_scaler)),1])
-    print('reducing particles by factor of {0}'.format(IMSTEP))
+    logger.info('reducing particles by factor of {0}'.format(IMSTEP))
     roifiles = roifiles[np.arange(0,len(roifiles),IMSTEP)]
-    print('rofiles:',len(roifiles))
+    logger.info('rofiles: {0}'.format(len(roifiles)))
 
     return roifiles
 
 
 def get_sample_volume(pix_size, path_length=10, imx=2048, imy=2448):
     ''' calculate the sample volume of one image
+
+    Args:
+        pix_size                    : size of pixels in microns (settings.PostProcess.pixel_size)
+        path_length=10              : path length of sample volume in mm
+        imx=2048                    : image x dimention in pixels
+        imy=2448                    : image y dimention in pixels
+
+    Returns:
+        sample_volume_litres        : the volume of the sample volume in litres
+
     '''
     sample_volume_litres = imx*pix_size/1000 * imy*pix_size/1000 * path_length*1e-6
 
@@ -464,6 +537,14 @@ def get_sample_volume(pix_size, path_length=10, imx=2048, imy=2448):
 def get_j(dias, nd):
     ''' calculates the junge slope from a correctly-scale number distribution
     (number per micron per litre must be the units of nd)
+
+    Args:
+        dias                        : mid-point of size bins
+        nd                          : number distribution in number per micron per litre
+
+    Returns:
+        j                           : Junge slope from fitting of psd between 150 and 300um
+
     '''
     # conduct this calculation only on the part of the size distribution where
     # LISST-100 and SilCam data overlap
@@ -478,6 +559,13 @@ def get_j(dias, nd):
 
 def count_images_in_stats(stats):
     ''' count the number of raw images used to generate stats
+
+    Args:
+        stats                       : pandas DataFrame of particle statistics
+
+    Returns:
+        n_images                    : number of raw images
+
     '''
     u = pd.to_datetime(stats['timestamp']).unique()
     n_images = len(u)
@@ -503,6 +591,15 @@ def extract_nth_longest(stats,settings,n=0):
 
 def d50_timeseries(stats, settings):
     ''' Calculates time series of d50 from stats
+
+    Args:
+        stats               : pandas DataFrame of particle statistics
+        settings            : PySilCam settings
+
+    Returns:
+        d50                 : time series of median particle diameter (50th percentile of volume distribution)
+        time                : timestamps for d50 values
+
     '''
 
     from tqdm import tqdm
@@ -531,6 +628,13 @@ def d50_timeseries(stats, settings):
 
 def explode_contrast(im):
     ''' eye-candy function for exploding the contrast of a particle iamge (roi)
+
+    Args:
+        im   (uint8)       : image (normally a particle ROI)
+
+    Returns:
+        im_mod (uint8)     : image following exploded contrast
+
     '''
     # make sure iamge is float
     im = np.float64(im)
@@ -555,6 +659,14 @@ def explode_contrast(im):
 
 def bright_norm(im,brightness=255):
     ''' eye-candy function for normalising the image brightness
+
+    Args:
+        im   (uint8)    : image
+        brightness=255  : median of histogram will be shifted to align with this value
+
+    Return:
+        im   (uint8)    : image with modified brightness
+
     '''
     peak = np.median(im.flatten())
     bm = brightness - peak
@@ -571,6 +683,14 @@ def nd_rescale(dias, nd, sample_volume):
             number per bin per sample volume
         to
             number per micron per litre
+
+    Args:
+        dias                : mid-points of size bins
+        nd                  : unscaled number distribution
+        sample_volume       : sample volume of each image
+
+    Returns:
+        nd                  : scaled number distribution (number per micron per litre)
     '''
     nd = np.float64(nd) / sample_volume # nc per size bin per litre
 
@@ -581,9 +701,18 @@ def nd_rescale(dias, nd, sample_volume):
 
     return nd
 
+
 def add_depth_to_stats(stats, time, depth):
     ''' if you have a depth time-series, use this function to find the depth of
     each line in stats
+
+    Args:
+        stats               : pandas DataFrame of particle statistics
+        time                : time stamps associated with depth argument
+        depth               : depths associated with the time argument
+
+    Return:
+        stats               : pandas DataFrame of particle statistics, now with a depth column
     '''
     # get times
     sctime = pd.to_datetime(stats['timestamp'])
@@ -596,6 +725,14 @@ def export_name2im(exportname, path):
     ''' returns an image from the export name string in the -STATS.csv file
 
     get the exportname like this: exportname = stats['export name'].values[0]
+
+    Args:
+        exportname              : string containing the name of the exported particle e.g. stats['export name'].values[0]
+        path                    : path to exported h5 files
+
+    Returns:
+        im                      : particle ROI image
+
     '''
 
     # the particle number is defined after the time info
@@ -619,7 +756,12 @@ def extract_latest_stats(stats, window_size):
     ''' extracts the stats data from within the last number of seconds specified
     by window_size.
 
-    returns stats dataframe (from the last window_size seconds)
+    Args:
+        stats                   : pandas DataFrame of particle statistics
+        window_size             : number of seconds to extract from the end of the stats data
+
+    Returns:
+        stats dataframe (from the last window_size seconds)
     '''
     end = np.max(pd.to_datetime(stats['timestamp']))
     start = end - pd.to_timedelta('00:00:' + str(window_size))
@@ -628,6 +770,12 @@ def extract_latest_stats(stats, window_size):
 
 
 def silc_to_bmp(directory):
+    '''Convert a directory of silc files to bmp images
+
+    Args:
+        directory               : path of directory to convert
+
+    '''
     files = [s for s in os.listdir(directory) if s.endswith('.silc')]
     
     for f in files:
@@ -638,10 +786,10 @@ def silc_to_bmp(directory):
             outname = os.path.join(directory, fout)
             imo.imwrite(outname, im)
         except:
-            print(f, ' failed!')
+            logger.warning('{0} failed!'.format(f))
             continue
 
-    print('Done.')
+    logger.info('Done.')
 
 
 def make_timeseries_vd(stats, settings):
@@ -652,7 +800,7 @@ def make_timeseries_vd(stats, settings):
         settings (silcam settings): loaded from PySilCamSettings
 
     Returns:
-        dataframe: of time series
+        dataframe: of time series volume concentrations are in uL/L columns with number headings are diameter min-points
     '''
 
     from tqdm import tqdm
@@ -755,7 +903,20 @@ def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
 
 
 def trim_stats(stats_csv_file, start_time, end_time, write_new=False, stats=[]):
-    '''Chops a STATS.csv file given a start and end time'''
+    '''Chops a STATS.csv file given a start and end time
+
+    Args:
+        stats_csv_file              : filename of stats file
+        start_time                  : start time of interesting window
+        end_time                    : end time of interesting window
+        write_new=False             : boolean if True will write a new stats csv file to disc
+        stats=[]                    : pass stats DataFrame into here if you don't want to load the data from the stats_csv_file given.
+                                      In this case the stats_csv_file string is only used for creating the new output datafilename.
+
+    Returns:
+        trimmed_stats       : pandas DataFram of particle statistics
+        outname             : name of new stats csv file written to disc
+    '''
     if len(stats)==0:
         stats = pd.read_csv(stats_csv_file)
 
@@ -766,7 +927,7 @@ def trim_stats(stats_csv_file, start_time, end_time, write_new=False, stats=[]):
         (pd.to_datetime(stats['timestamp']) > start_time) & (pd.to_datetime(stats['timestamp']) < end_time)]
 
     if np.isnan(trimmed_stats.equivalent_diameter.max()) or len(trimmed_stats) == 0:
-        print('No data in specified time range!')
+        logger.info('No data in specified time range!')
         outname = ''
         return trimmed_stats, outname
 
@@ -813,3 +974,54 @@ def add_best_guesses_to_stats(stats):
 
     return stats
 
+
+def show_h5_meta(h5file):
+    '''
+    prints metadata from an exported hdf5 file created from silcam process
+
+    Args:
+        h5file              : h5 filename from exported data from silcam process
+    '''
+
+    with h5py.File(h5file, 'r') as f:
+        keys = list(f['Meta'].attrs.keys())
+
+        for k in keys:
+            logger.info(k + ':')
+            logger.info('    ' + f['Meta'].attrs[k])
+
+
+def vd_to_nd(vd, dias):
+    '''convert volume distribution to number distribution
+
+    Args:
+        vd (array)           : particle volume distribution calculated from vd_from_stats()
+        dias (array)         : mid-points in the size classes corresponding the the volume distribution,
+                               returned from get_size_bins()
+
+    Returns:
+        nd (array)           : number distribution as number per micron per bin (scaling is the same unit as the input vd)
+    '''
+    DropletVolume=((4/3)*np.pi*((dias*1e-6)/2)**3) # the volume of each droplet in m3
+    nd=vd/(DropletVolume*1e9) # the number distribution in each bin
+    return nd
+
+
+def vd_to_nc(vd, dias):
+    '''calculate number concentration from volume distribution
+
+    Args:
+        vd (array)           : particle volume distribution calculated from vd_from_stats()
+        dias (array)         : mid-points in the size classes corresponding the the volume distribution,
+                               returned from get_size_bins()
+
+    Returns:
+        nn (float)           : number concentration (scaling is the same unit as the input vd).
+                               If vd is a 2d array [time, vd_bins], nc will be the concentration for row
+    '''
+    nd = vd_to_nd(dias, vd)
+    if np.ndim(nd)>1:
+        nc = np.sum(nd, axis=1)
+    else:
+        nc = np.sum(nd)
+    return nc

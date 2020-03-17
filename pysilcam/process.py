@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import time
 import numpy as np
 from skimage import morphology
 from skimage import segmentation
@@ -16,6 +17,8 @@ import skimage.exposure
 import h5py
 import os
 import pysilcam.silcam_classify as sccl
+from skimage.io import imsave
+import traceback
 
 '''
 module for processing SilCam data
@@ -31,8 +34,13 @@ def image2blackwhite_accurate(imc, greythresh):
     ''' converts corrected image (imc) to a binary image
     using greythresh as the threshold value (some auto-scaling of greythresh is done inside)
 
-    returns:
-      imbw (binary image)
+    Args:
+        imc                         : background-corrected image
+        greythresh                  : threshold multiplier (greythresh is multiplied by 50th percentile of the image histogram)
+
+    Returns:
+        imbw                        : segmented image (binary image)
+
     '''
     img = np.copy(imc) # create a copy of the input image (not sure why)
 
@@ -68,8 +76,12 @@ def image2blackwhite_fast(imc, greythresh):
     ''' converts corrected image (imc) to a binary image
     using greythresh as the threshold value (fixed scaling of greythresh is done inside)
 
-    returns:
-      imbw (binary image)
+    Args:
+        imc                         : background-corrected image
+        greythresh                  : threshold multiplier (greythresh is multiplied by 50th percentile of the image histogram)
+
+    Returns:
+        imbw                        : segmented image (binary image)
     '''
     # obtain a semi-autimated treshold which can handle
     # some flicker in the illumination by tracking the 50th percentile of the
@@ -81,8 +93,16 @@ def image2blackwhite_fast(imc, greythresh):
 
 
 def clean_bw(imbw, min_area):
-    '''cleans up particles which are too small and particles touching the
+    ''' cleans up particles which are too small and particles touching the
     border
+
+    Args:
+        imbw                        : segmented image
+        min_area                    : minimum number of accepted pixels for a particle
+
+    Returns:
+        imbw (DataFrame)           : cleaned up segmented image
+
     '''
 
     # remove objects that are below the detection limit defined in the config
@@ -101,7 +121,17 @@ def clean_bw(imbw, min_area):
 
 def filter_bad_stats(stats,settings):
     ''' remove unacceptable particles from the stats
+
+    Note that for oil and gas analysis, this filtering is handled by the functions in the pysilcam.oilgas module.
+
+    Args:
+        stats (DataFrame)           : particle statistics from silcam process
+        settings (PySilcamSettings) : settings associated with the data, loaded with PySilcamSettings
+
+    Returns:
+        stats (DataFrame)           : particle statistics from silcam process
     '''
+
     # calculate minor-major axis ratio
     mmr = stats['minor_axis_length'] / stats['major_axis_length']
     # remove stats where particles are too deformed
@@ -117,12 +147,20 @@ def filter_bad_stats(stats,settings):
 def fancy_props(iml, imc, timestamp, settings, nnmodel, class_labels):
     '''Calculates fancy particle properties
 
-    return pandas.DataFrame
+    Args:
+        iml                         : labelled segmented image
+        imc                         : background-corrected image
+        timestamp                   : timestamp of image collection
+        settings                    : PySilCam settings
+        nnmodel                     : loaded tensorflow model from silcam_classify
+        class_labels                : lables of particle classes in tensorflow model
 
-    partstats = fancy_props(iml, imc, settings)
+    Return:
+        stats                       : particle statistics
+
     '''
 
-    region_properties = measure.regionprops(iml, cache=False)
+    region_properties = measure.regionprops(iml, cache=False, coordinates='xy')
     # build the stats and export to HDF5
     stats = extract_particles(imc,timestamp,settings,nnmodel,class_labels, region_properties)
 
@@ -133,10 +171,13 @@ def concentration_check(imbw, settings):
     ''' Check saturation level of the sample volume by comparing area of
     particles with settings.Process.max_coverage
 
-    sat_check, saturation = concentration_check(imbw, settings)
+    Args:
+        imbw                        : segmented image
+        settings                    : PySilCam settings
 
-    set_check is a flag, which is True if the image is acceptable
-    saturation is the percentaage saturated
+    Returns:
+        sat_check                   : boolean on if the saturation is acceptable. True if the image is acceptable
+        saturation                  : percentage of maximum acceptable saturation defined in settings.Process.max_coverage
     '''
 
     # calcualte the area covered by particles in the binary image
@@ -164,8 +205,11 @@ def get_spine_length(imbw):
     ''' extracts the spine length of particles from a binary particle image
     (imbw is a binary roi)
 
-    returns:
-      spine_length
+    Args:
+        imbw                : segmented particle ROI (assumes only one particle)
+
+    Returns:
+        spine_length        : spine length of particle (in pixels)
     '''
     skel = morphology.skeletonize(imbw)
     for i in range(2):
@@ -179,8 +223,12 @@ def get_spine_length(imbw):
 def extract_roi(im, bbox):
     ''' given an image (im) and bounding box (bbox), this will return the roi
 
-    returns:
-      roi
+    Args:
+        im                  : any image, such as background-corrected image (imc)
+        bbox                : bounding box from regionprops [r1, c1, r2, c2]
+
+    Returns:
+        roi                 : image cropped to region of interest
     '''
     roi = im[bbox[0]:bbox[2], bbox[1]:bbox[3]] # yep, that't it.
 
@@ -190,7 +238,7 @@ def extract_roi(im, bbox):
 def measure_particles(imbw, imc, settings, timestamp, nnmodel, class_labels):
     '''Measures properties of particles
 
-    Parameters:
+    Args:
       imbw (full-frame binary image)
       imc (full-frame corrected raw image)
       image_index (some sort of tag for location matching)
@@ -217,7 +265,6 @@ def measure_particles(imbw, imc, settings, timestamp, nnmodel, class_labels):
         imbw *= 0 # this is not a good way to handle this condition
         # @todo handle situation when too many particles are found
 
-
     # calculate particle statistics
     stats = fancy_props(iml, imc, timestamp, settings, nnmodel, class_labels)
 
@@ -227,13 +274,21 @@ def measure_particles(imbw, imc, settings, timestamp, nnmodel, class_labels):
 def statextract(imc, settings, timestamp, nnmodel, class_labels):
     '''extracts statistics of particles in imc (raw corrected image)
 
-    returns:
-      stats (list of particle statistics for every particle, according to
-      Partstats class)
+    Args:
+        imc                         : background-corrected image
+        timestamp                   : timestamp of image collection
+        settings                    : PySilCam settings
+        nnmodel                     : loaded tensorflow model from silcam_classify
+        class_labels                : lables of particle classes in tensorflow model
+
+    Returns:
+        stats                       : (list of particle statistics for every particle, according to Partstats class)
+        imbw                        : segmented image
+        saturation                  : percentage saturation of image
     '''
     logger.debug('segment')
 
-    # simplyfy processing by squeezing the image dimentions into a 2D array
+    # simplyfy processing by squeezing the image dimensions into a 2D array
     # min is used for squeezing to represent the highest attenuation of all wavelengths
     img = np.uint8(np.min(imc, axis=2))
 
@@ -252,19 +307,47 @@ def statextract(imc, settings, timestamp, nnmodel, class_labels):
     # fill holes in particles
     imbw = ndi.binary_fill_holes(imbw)
 
+    write_segmented_images(imbw, imc, settings, timestamp)
+
     logger.debug('measure')
     # calculate particle statistics
     stats, saturation = measure_particles(imbw, imc, settings, timestamp, nnmodel, class_labels)
 
     return stats, imbw, saturation
 
+def write_segmented_images(imbw, imc, settings, timestamp):
+    '''writes binary images as bmp files to the same place as hdf5 files if loglevel is in DEBUG mode
+    Useful for checking threshold and segmentation
+
+    Args:
+        imbw                        : segmented image
+        settings                    : PySilCam settings
+        timestamp                   : timestamp of image collection
+    '''
+    if (settings.General.loglevel == 'DEBUG') and settings.ExportParticles.export_images:
+        fname = os.path.join(settings.ExportParticles.outputpath, timestamp.strftime('D%Y%m%dT%H%M%S.%f-SEG.bmp'))
+        imbw_ = np.uint8(255*imbw)
+        imsave(fname, imbw_)
+        fname = os.path.join(settings.ExportParticles.outputpath, timestamp.strftime('D%Y%m%dT%H%M%S.%f-IMC.bmp'))
+        imsave(fname, imc)
+
 
 def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_properties):
-    '''extracts the particles to build stats and export particle rois to HDF5
+    '''extracts the particles to build stats and export particle rois to HDF5 files writted to disc in the location of settings.ExportParticles.outputpath
+
+    Args:
+        imc                         : background-corrected image
+        timestamp                   : timestamp of image collection
+        settings                    : PySilCam settings
+        nnmodel                     : loaded tensorflow model from silcam_classify
+        class_labels                : lables of particle classes in tensorflow model
+        region_properties           : region properties object returned from regionprops (measure.regionprops(iml, cache=False))
+
+    Returns:
+        stats                       : (list of particle statistics for every particle, according to Partstats class)
 
     @todo clean up all the unnesessary conditional statements in this
     '''
-
     filenames = ['not_exported'] * len(region_properties)
 
     # pre-allocation
@@ -278,7 +361,16 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
 
     if settings.ExportParticles.export_images:
         # Make the HDF5 file
-        HDF5File = h5py.File(os.path.join(settings.ExportParticles.outputpath, filename + ".h5"), "w")
+        hdf_filename = os.path.join(settings.ExportParticles.outputpath, filename + ".h5")
+        HDF5File = h5py.File(hdf_filename, "w")
+        # metadata
+        meta = HDF5File.create_group('Meta')
+        meta.attrs['Modified'] = str(pd.datetime.now())
+        settings_dict = {s: dict(settings.config.items(s)) for s in settings.config.sections()}
+        meta.attrs['Settings'] = str(settings_dict)
+        meta.attrs['Timestamp'] = str(timestamp)
+        meta.attrs['Raw image name'] = filename
+        #@todo include more useful information in this meta data, e.g. possibly raw image location and background stack file list.
 
     # define the geometrical properties to be calculated from regionprops
     propnames = ['major_axis_length', 'minor_axis_length',
@@ -296,7 +388,6 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
         # if operating in realtime mode, assume we only care about oil and gas and skip export of overly-derformed particles
         if settings.Process.real_time_stats & (((data[i, 1]/data[i, 0])<0.3) | (data[i, 3]<0.95)):
             continue
-
         # Find particles that match export criteria
         if ((data[i, 0] > settings.ExportParticles.min_length) & #major_axis_length in pixels
             (data[i, 1] > 2)): # minor length in pixels
@@ -309,6 +400,7 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
             filenames[int(i)] = filename + '-PN' + str(i)
             if settings.ExportParticles.export_images:
                 dset = HDF5File.create_dataset('PN' + str(i), data = roi)
+                #@todo also include particle stats here too.
 
             # run a prediction on what type of particle this might be
             prediction = sccl.predict(roi, nnmodel)
@@ -338,3 +430,79 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
     stats['export name'] = filenames
 
     return stats
+
+
+def processImage(nnmodel, class_labels, image, settings, logger, gui):
+    '''
+    Proceses an image
+
+    Args:
+        nnmodel (tensorflow model object)   :  loaded using sccl.load_model()
+        class_labels (str)                  :  loaded using sccl.load_model()
+        image  (tuple)                      :  tuple contianing (i, timestamp, imc)
+                                               where i is an int referring to the image number
+                                               timestamp is the image timestamp obtained from passing the filename
+                                               imc is the background-corrected image obtained using the backgrounder generator
+        settings (PySilcamSettings)         :  Settings read from a .ini file
+        logger (logger object)              :  logger object created using
+                                               configure_logger()
+        gui=None (Class object)             :  Queue used to pass information between process thread and GUI
+                                               initialised in ProcThread within guicals.py
+
+    Returns:
+        stats_all (DataFrame)               :  stats dataframe containing particle statistics
+    '''
+    try:
+        i = image[0]
+        timestamp = image[1]
+        imc = image[2]
+
+        # time the full acquisition and processing loop
+        start_time = time.time()
+
+        logger.info('Processing time stamp {0}'.format(timestamp))
+
+        # Calculate particle statistics
+        stats_all, imbw, saturation = statextract(imc, settings, timestamp,
+                                                  nnmodel, class_labels)
+
+        # if there are not particles identified, assume zero concentration.
+        # This means that the data should indicate that a 'good' image was
+        # obtained, without any particles. Therefore fill all values with nans
+        # and add the image timestamp
+        if len(stats_all) == 0:
+            print('ZERO particles identified')
+            z = np.zeros(len(stats_all.columns)) * np.nan
+            stats_all.loc[0] = z
+            # 'export name' should not be nan because then this column of the
+            # DataFrame will contain multiple types, so label with string instead
+            if settings.ExportParticles.export_images:
+                stats_all['export name'] = 'not_exported'
+
+        # add timestamp to each row of particle statistics
+        stats_all['timestamp'] = timestamp
+
+        # add saturation to each row of particle statistics
+        stats_all['saturation'] = saturation
+
+        # Time the particle statistics processing step
+        proc_time = time.time() - start_time
+
+        # Print timing information for this iteration
+        infostr = '  Image {0} processed in {1:.2f} sec ({2:.1f} Hz). '
+        infostr = infostr.format(i, proc_time, 1.0 / proc_time)
+        print(infostr)
+
+        # ---- END MAIN PROCESSING LOOP ----
+        # ---- DO SOME ADMIN ----
+
+    except Exception as e:
+        print(e)
+        traceback.print_exc()
+        infostr = 'Failed to process frame {0}, skipping.'.format(i)
+        logger.warning(infostr, exc_info=True)
+        return None
+
+    return stats_all
+
+
