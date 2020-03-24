@@ -21,7 +21,7 @@ from skimage.io import imsave
 import traceback
 
 '''
-module for processing SilCam data
+Module for processing SilCam data
 
 TODO: add tests for this module
 '''
@@ -504,7 +504,3 @@ def processImage(nnmodel, class_labels, image, settings, logger, gui):
         return None
 
     return stats_all
-
-
-if __name__=='__main__':
-    pass

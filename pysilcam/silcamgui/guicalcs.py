@@ -1,7 +1,7 @@
 from multiprocessing import Process, Queue
 import matplotlib.pyplot as plt
-from PyQt5.QtWidgets import (QMainWindow, QApplication, QPushButton, QWidget,
-QAction, QTabWidget,QVBoxLayout, QFileDialog)
+from PyQt5.QtWidgets import QMainWindow, QApplication, QPushButton, QWidget 
+from PyQt5.QtWidgets import QAction, QTabWidget,QVBoxLayout, QFileDialog
 import os
 from pysilcam.config import PySilcamSettings
 import pysilcam.oilgas as scog
@@ -459,6 +459,3 @@ class ProcThread(Process):
 
     def load_settings(self, configfile):
         self.settings = PySilcamSettings(configfile)
-
-if __name__=='__main__':
-    pass
