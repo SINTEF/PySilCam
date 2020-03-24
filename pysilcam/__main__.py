@@ -8,7 +8,7 @@ import numpy as np
 from pysilcam import __version__
 from pysilcam.acquisition import Acquire
 from pysilcam.background import backgrounder
-from pysilcam.process import processImage, statextract
+from pysilcam.process import processImage
 import pysilcam.oilgas as scog
 from pysilcam.config import PySilcamSettings, updatePathLength
 import os
@@ -20,6 +20,7 @@ import psutil
 from shutil import copyfile
 import warnings
 import pandas as pd
+import psutil
 
 if not sys.warnoptions:
     warnings.simplefilter("ignore")
@@ -42,7 +43,7 @@ def silcam():
     Usage:
       silcam acquire <configfile> <datapath>
       silcam process <configfile> <datapath> [--nbimages=<number of images>] [--nomultiproc] [--appendstats]
-      silcam realtime <configfile> <datapath> [--discwrite] [--nomultiproc] [--appendstats]
+      silcam realtime <configfile> <datapath> [--discwrite] [--nomultiproc] [--appendstats] [--discread]
       silcam -h | --help
       silcam --version
 
@@ -58,6 +59,7 @@ def silcam():
       --appendstats                     Appends data to output STATS.csv file. If not specified, the STATS.csv file will be overwritten!
       -h --help                         Show this screen.
       --version                         Show version.
+      --discread                        emergency disc read version of realtime analysis, to be run seperately but at the same time as silcam acquire
 
     '''
     print(title)
@@ -92,6 +94,14 @@ def silcam():
                        nbImages=nbImages, overwriteSTATS=overwriteSTATS)
 
     elif args['acquire']:  # this is the standard acquisition method under development now
+        try:
+            pid = psutil.Process(os.getpid())
+            if (sys.platform == 'linux'):
+                pid.nice(-20)
+            else:
+                pid.nice(psutil.ABOVE_NORMAL_PRIORITY_CLASS)
+        except:
+            print('Could not prioritise acquisition process!')
         silcam_acquire(datapath, args['<configfile>'], writeToDisk=True)
 
     elif args['realtime']:
@@ -103,6 +113,10 @@ def silcam():
             multiProcess = False
         if args['--appendstats']:
             overwriteSTATS = False  # if you want to append to the stats file, then overwriting should be False
+        if args['--discread']:
+            os.environ['REALTIME_DISC'] = ''
+            print('discWrite = False')
+            discWrite = False
         silcam_process(args['<configfile>'], datapath, multiProcess=multiProcess, realtime=True,
                        discWrite=discWrite, overwriteSTATS=overwriteSTATS)
 
@@ -229,7 +243,11 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     adminSTATS(logger, settings, overwriteSTATS, datafilename, datapath)
 
     # Initialize the image acquisition generator
-    aq = Acquire(USE_PYMBA=realtime)
+    if 'REALTIME_DISC' in os.environ.keys():
+        print('acq = Acquire(USE_PYMBA=False)')
+        aq = Acquire(USE_PYMBA=False)
+    else:
+        aq = Acquire(USE_PYMBA=realtime)
     aqgen = aq.get_generator(datapath, writeToDisk=discWrite,
                              camera_config_file=config_filename)
 
@@ -314,6 +332,9 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
                 gui.put_nowait((timestamp, imc, imraw, rtdict))
                 logger.debug('GUI queue updated')
 
+            if 'REALTIME_DISC' in os.environ.keys():
+                scog.realtime_summary(datafilename + '-STATS.csv', config_filename)
+
         logger.debug('Acquisition loop completed')
         if (not realtime):
             logger.debug('Halting processes')
@@ -349,6 +370,28 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
             if (not stats_all is None):  # if frame processed
                 # write the image into the csv file
                 writeCSV(datafilename, stats_all)
+                if 'REALTIME_DISC' in os.environ.keys():
+                    scog.realtime_summary(datafilename + '-STATS.csv', config_filename)
+
+            if not gui == None:
+                collect_rts(settings, rts, stats_all)
+                logger.debug('Putting data on GUI Queue')
+                while (gui.qsize() > 0):
+                    try:
+                        gui.get_nowait()
+                        time.sleep(0.001)
+                    except:
+                        continue
+                # try:
+                rtdict = dict()
+                rtdict = {'dias': rts.dias,
+                          'vd_oil': rts.vd_oil,
+                          'vd_gas': rts.vd_gas,
+                          'oil_d50': rts.oil_d50,
+                          'gas_d50': rts.gas_d50,
+                          'saturation': rts.saturation}
+                gui.put_nowait((timestamp, imc, imraw, rtdict))
+                logger.debug('GUI queue updated')
 
     print('PROCESSING COMPLETE.')
 
