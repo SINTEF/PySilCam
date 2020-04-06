@@ -1,0 +1,20 @@
+name: Docker build and test
+
+on:
+  push:
+    branches: [ public ]
+  pull_request:
+    branches: [ public ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build the Docker image
+        run: docker build . -f Dockerfile -t pysilcam
+
+      - name: Run the tests
+        run: docker run pysilcam
