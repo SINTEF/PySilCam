@@ -32,13 +32,13 @@ Create a virtual environment (preferably containing a username, example below is
     conda create -n <name of the environment> python=3.5
 ```
 
-Unix: 
+Unix:
 
 ```
-    source activate sctest 
+    source activate sctest
 ```
-    
-Windows: 
+
+Windows:
 
 ```
     activate sctest
@@ -110,4 +110,4 @@ If you want to mount a local folder inside the docker environment, use -v [local
 License
 -------
 
-BSD3 license. See LICENSE
+PySilCam is licensed under the BSD3 license. See LICENSE
