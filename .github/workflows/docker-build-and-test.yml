@@ -2,7 +2,7 @@ name: Docker build and test
 
 on:
   push:
-    branches: [ public ]
+    branches: [ '*' ]
   pull_request:
     branches: [ public ]
 
