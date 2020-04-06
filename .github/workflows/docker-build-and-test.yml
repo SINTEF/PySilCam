@@ -2,9 +2,9 @@ name: Docker build and test
 
 on:
   push:
-    branches: [ master ]
+    branches: [ public ]
   pull_request:
-    branches: [ master ]
+    branches: [ public ]
 
 jobs:
   build:
@@ -12,9 +12,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      
+
       - name: Build the Docker image
         run: docker build . -f Dockerfile -t my-image-name
-    
+
       - name: Run the tests
         run: docker run pysilcam
