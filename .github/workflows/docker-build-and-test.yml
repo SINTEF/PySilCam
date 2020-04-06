@@ -1,10 +1,6 @@
 name: Docker build and test
 
-on:
-  push:
-    branches: [ public ]
-  pull_request:
-    branches: [ public ]
+on: [push, pull_request]
 
 jobs:
   build:
@@ -15,6 +11,13 @@ jobs:
 
       - name: Build the Docker image
         run: docker build . -f Dockerfile -t pysilcam
+
+      - name: Checkout test data
+        uses: actions/checkout@v2
+        with:
+          repository: SINTEF/pysilcam-testdata
+          lfs: true
+          path: testdata
 
       - name: Run the tests
         run: docker run pysilcam
