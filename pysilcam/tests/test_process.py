@@ -64,10 +64,10 @@ def test_classify():
 
             # check if the highest score matches the correct category
             if not class_labels[ind] == category:
-                # if not, the add to the failrure count
+                # if not, the add to the failure count
                 failed += 1
 
-        # turn faile count into a success percent
+        # turn failed count into a success percent
         success = 100 - (failed / len(files)) * 100
         return success
 
