@@ -18,6 +18,9 @@ EXPOSE 5920
 # Make Python not create .pyc files
 ENV PYTHONDONTWRITEBYTECODE FALSE
 
+# Assume that test data is mounted into the testdata path
+ENV UNITTEST_DATA_PATH /testdata
+
 # Add the Pysilcam source directory to the container in order to install Pysilcam
 ADD . /silcam
 
