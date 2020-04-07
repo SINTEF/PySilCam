@@ -19,7 +19,8 @@ EXPOSE 5920
 ENV PYTHONDONTWRITEBYTECODE FALSE
 
 # Assume that test data is mounted into the testdata path
-ENV UNITTEST_DATA_PATH /testdata
+ENV UNITTEST_DATA_PATH /testdata/unittest-data
+ENV SILCAM_MODEL_PATH /testdata/tflmodel
 
 # Add the Pysilcam source directory to the container in order to install Pysilcam
 ADD . /silcam

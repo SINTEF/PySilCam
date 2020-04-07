@@ -13,13 +13,15 @@ jobs:
       - name: Build the Docker image
         run: docker build . -f Dockerfile -t pysilcam
 
-      - name: Checkout test data
-        uses: actions/checkout@v2
-        with:
-          repository: SINTEF/pysilcam-testdata
-          lfs: true
-          path: testdata
+      - name: Download test data
+        shell: bash
+        env:
+          AZURE_TEST_DATA_ACCESS_TOKEN: ${{ secrets.AZURE_TEST_DATA_ACCESS_TOKEN }}
+        run: |
+          wget https://pysilcam.blob.core.windows.net/test-data/pysilcam-testdata.zip?$AZURE_TEST_DATA_ACCESS_TOKEN -O temp.zip
+          unzip temp.zip
+          ls -al
+          ls pysilcam-testdata/ -al
 
       - name: Run the tests
-        run: docker run -v testdata:/testdata pysilcam
-
+        run: docker run -v pysilcam-testdata:/testdata pysilcam
