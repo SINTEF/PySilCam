@@ -33,7 +33,7 @@ jobs:
           unzip temp.zip
 
       - name: Inspect testdata
-        run: docker run -v $PWD/pysilcam-testdata:/testdata tankefugl/pysilcam ls /testdata -al
+        run: docker run -v $PWD/pysilcam-testdata:/testdata tankefugl/pysilcam:github-ci ls /testdata -al
 
       - name: Run the tests
-        run: docker run -v $PWD/pysilcam-testdata:/testdata tankefugl/pysilcam
+        run: docker run -v $PWD/pysilcam-testdata:/testdata tankefugl/pysilcam:github-ci
