@@ -31,7 +31,7 @@ jobs:
           ls pysilcam-testdata/ -al
 
       - name: Inspect testdata
-        run: docker run -v pysilcam-testdata:/testdata pysilcam ls /testdata -al
+        run: docker run --entrypoint /bin/bash -v pysilcam-testdata:/testdata pysilcam ls /testdata -al
 
       - name: Run the tests
         run: docker run -v pysilcam-testdata:/testdata pysilcam
