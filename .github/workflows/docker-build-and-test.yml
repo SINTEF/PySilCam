@@ -10,18 +10,28 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v2
 
-      - name: Build the Docker image
-        run: docker build . -f Dockerfile -t pysilcam
+      - uses: whoan/docker-build-with-cache-action@v4
+        with:
+          push_image_and_stages: false  # useful when you are setting a workflow to run on PRs
+          image_name: pysilcam
+          context: .
+          dockerfile: Dockerfile
+
+      # - name: Build the Docker image
+      #   run: docker build . -f Dockerfile -t pysilcam
 
       - name: Download test data
         shell: bash
         env:
           AZURE_TEST_DATA_ACCESS_TOKEN: ${{ secrets.AZURE_TEST_DATA_ACCESS_TOKEN }}
         run: |
-          wget https://pysilcam.blob.core.windows.net/test-data/pysilcam-testdata.zip?$AZURE_TEST_DATA_ACCESS_TOKEN -O temp.zip
+          wget -q https://pysilcam.blob.core.windows.net/test-data/pysilcam-testdata.zip?$AZURE_TEST_DATA_ACCESS_TOKEN -O temp.zip
           unzip temp.zip
           ls -al
           ls pysilcam-testdata/ -al
+
+      - name: Inspect testdata
+        run: docker run -v pysilcam-testdata:/testdata pysilcam ls /testdata -al
 
       - name: Run the tests
         run: docker run -v pysilcam-testdata:/testdata pysilcam
