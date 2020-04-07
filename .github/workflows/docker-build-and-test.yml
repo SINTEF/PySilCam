@@ -12,8 +12,12 @@ jobs:
 
       - uses: whoan/docker-build-with-cache-action@v4
         with:
-          push_image_and_stages: false  # useful when you are setting a workflow to run on PRs
-          image_name: pysilcam
+          #push_image_and_stages: true  # useful when you are setting a workflow to run on PRs
+          username: tankefugl
+          password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
+          #registry: Docker registry (default: Docker Hub's registry).
+          image_name: tankefugl/pysilcam #sintef/pysilcam?
+          image_tag: github-ci
           context: .
           dockerfile: Dockerfile
 
@@ -29,7 +33,7 @@ jobs:
           unzip temp.zip
 
       - name: Inspect testdata
-        run: docker run -v ./pysilcam-testdata:/testdata pysilcam ls /testdata -al
+        run: docker run -v $PWD/pysilcam-testdata:/testdata pysilcam ls /testdata -al
 
       - name: Run the tests
-        run: docker run -v ./pysilcam-testdata:/testdata pysilcam
+        run: docker run -v $PWD/pysilcam-testdata:/testdata pysilcam
