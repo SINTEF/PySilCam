@@ -36,7 +36,7 @@ Create a virtual environment using the environment.yml (will create an environme
 to update:
 
 ```
-    conda env update --prefix ./silcam --file environment.yml --prune
+    conda env update --file environment.yml --prune
 
 ```
 
