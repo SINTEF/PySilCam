@@ -1,5 +1,6 @@
 PySilCam
 ===============================
+![Docker build and test](https://github.com/emlynjdavies/PySilCam/workflows/Docker%20build%20and%20test/badge.svg)
 
 A Python interface to the SilCam.
 
