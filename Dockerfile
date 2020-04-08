@@ -22,6 +22,9 @@ ENV PYTHONDONTWRITEBYTECODE FALSE
 ENV UNITTEST_DATA_PATH /testdata/unittest-data
 ENV SILCAM_MODEL_PATH /testdata/tflmodel/particle-classifier.tfl
 
+# Supress the usage of a display for unit tests
+ENV MPLBACKEND Agg
+
 # Add the Pysilcam source directory to the container in order to install Pysilcam
 ADD . /silcam
 
