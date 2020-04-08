@@ -40,16 +40,10 @@ to update:
 
 ```
 
-Unix: 
+to activate: 
 
 ```
-    source activate silcam
-```
-    
-Windows: 
-
-```
-    activate silcam
+    conda activate silcam
 ```
 
 Test that it works with
