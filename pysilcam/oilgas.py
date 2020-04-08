@@ -20,6 +20,9 @@ import glob
 import sys
 from tqdm import tqdm
 import logging
+from matplotlib import colors
+import cmocean
+import matplotlib.pyplot as plt
 
 solidityThresh = 0.95
 logger = logging.getLogger(__name__)
@@ -39,7 +42,7 @@ def getListPortCom():
 
 def extract_gas(stats, THRESH=0.85):
     ma = stats['minor_axis_length'] / stats['major_axis_length']
-    stats = stats[ma>0.3]
+    stats = stats[ma>0.3]  # cannot have a deformation more than 0.3
     stats = stats[stats['solidity']>solidityThresh]
     ind = np.logical_or((stats['probability_bubble']>stats['probability_oil']),
             (stats['probability_oily_gas']>stats['probability_oil']))
@@ -57,7 +60,7 @@ def extract_gas(stats, THRESH=0.85):
 
 def extract_oil(stats, THRESH=0.85):
     ma = stats['minor_axis_length'] / stats['major_axis_length']
-    stats = stats[ma>0.3]
+    stats = stats[ma>0.3] # cannot have a deformation more than 0.3
     stats = stats[stats['solidity']>solidityThresh]
     ind = np.logical_or((stats['probability_oil']>stats['probability_bubble']),
             (stats['probability_oil']>stats['probability_oily_gas']))
@@ -396,3 +399,61 @@ def convert_to_pj_format(stats_csv_file, config_file):
     with open(gas_name, 'w') as fout:
         fout.writelines(data[1:])
     logger.info('Conversion complete.')
+
+
+def realtime_summary(statsfile, config_file):
+    if not os.path.isfile(statsfile):
+        print(statsfile, 'nonexistent')
+        return
+    plt.ion()
+
+    stats = pd.read_csv(statsfile)
+    settings = PySilcamSettings(config_file)
+
+    nims = sc_pp.count_images_in_stats(stats)
+    print(len(stats), 'particles in', nims, 'images')
+
+    if nims < 2:
+        return
+
+    timeseries = sc_pp.make_timeseries_vd(stats, settings)
+
+    dias = timeseries.iloc[:,0:52].columns.values
+    vdts = timeseries.iloc[:,0:52].values
+
+    plt.gca().cla()
+    pcm = plt.pcolormesh(timeseries['Time'], dias, vdts.T, cmap=cmocean.cm.turbid, norm=colors.LogNorm())
+    plt.yscale('log')
+    plt.ylabel('Equivalent Circular Diameter [um]')
+    plt.ylim(50, 10000)
+    plt.xlabel('Time')
+    plt.title('Last data: ' + str(max(timeseries['Time'])))
+    plt.draw()
+    plt.pause(0.01)
+
+
+def gaussian_fit(xdata,ydata):
+    mu = np.sum(xdata*ydata)/np.sum(ydata)
+    sigma = np.sqrt(np.abs(np.sum((xdata-mu)**2*ydata)/np.sum(ydata)))
+    return mu, sigma
+
+def gaussian(x, mu, sig):
+    y=1/np.sqrt(2*sig*sig*np.pi)*np.exp(-(x-mu)*(x-mu)/(2*sig*sig))  #
+    return y
+
+def cosine_similarity(a, b):
+    dot = np.dot(a, b)
+    norma = np.linalg.norm(a)
+    normb = np.linalg.norm(b)
+    cos = dot / (norma * normb)
+    return cos
+
+def cos_check(dias, vd):
+    mu, sig = gaussian_fit(np.arange(0, len(dias)), vd)
+
+    y = gaussian(np.arange(0, len(dias)), mu, sig)
+    y /= max(y)
+    y *= max(vd)
+
+    cos = cosine_similarity(y, vd)
+    return cos

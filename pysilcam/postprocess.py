@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 from skimage.filters.rank import median
 from skimage.morphology import disk
 import skimage
-import pysilcam.process as scpr
 from scipy import ndimage as ndi
 import skimage
 from skimage.exposure import rescale_intensity
@@ -352,6 +351,8 @@ def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
         montageplot             : a nicely-made montage in the form of an image, which can be plotted using plotting.montage_plot(montage, settings.PostProcess.pix_size)
     '''
 
+    if tightpack:
+        import pysilcam.process as scpr
     # pre-allocate an empty canvas
     montage = np.zeros((msize,msize,3),dtype=np.uint8())
     # pre-allocate an empty test canvas

@@ -27,43 +27,30 @@ Install Anaconda:  https://www.anaconda.com/download/ Python 3.6 version
 
 Anaconda Prompt may be used for the following
 
-Create a virtual environment (preferably containing a username, example below is for sctest as the name of the environment)
+Create a virtual environment using the environment.yml (will create an environment called silcam)
 
 ```
-    conda create -n <name of the environment> python=3.5
+    conda env create -f environment.yml
 ```
 
-Unix: 
+to update:
 
 ```
-    source activate sctest 
-```
-    
-Windows: 
+    conda env update --file environment.yml --prune
 
 ```
-    activate sctest
-```
 
-
-Install packages
-
-Navigate to pysilcam/shell_tools
-
-Unix:
+to activate: 
 
 ```
-    bash install.sh
+    conda activate silcam
 ```
-
-Windows:
-
-```
-    install.bat
-```
-
 
 Test that it works with
+
+```
+    python setup.py develop
+```
 
 ```
     python setup.py test
@@ -76,11 +63,6 @@ Build the documentation
     python setup.py build_sphinx
 ```
 
-For using jupyter notebooks, install nb_conda so you can use the correct packagaes from your conda environment
-
-```
-conda install nb_conda
-```
 
 See the [wiki](https://github.com/emlynjdavies/PySilCam/wiki) for more details on running PySilCam.
 
