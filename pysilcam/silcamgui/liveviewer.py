@@ -190,7 +190,3 @@ def liveview(datapath = '/mnt/DATA/emlynd/DATA/', config_filename = 'config_hard
                     continue
         pygame.display.flip()
     pygame.quit()
-
-
-if __name__ == "__main__":
-    pass

@@ -1,8 +1,7 @@
-import pysilcam.__main__ as psc
 from multiprocessing import Process, Queue
 import matplotlib.pyplot as plt
-from PyQt5.QtWidgets import (QMainWindow, QApplication, QPushButton, QWidget,
-QAction, QTabWidget,QVBoxLayout, QFileDialog)
+from PyQt5.QtWidgets import QMainWindow, QApplication, QPushButton, QWidget 
+from PyQt5.QtWidgets import QAction, QTabWidget,QVBoxLayout, QFileDialog
 import os
 from pysilcam.config import PySilcamSettings
 import pysilcam.oilgas as scog
@@ -14,7 +13,6 @@ import pygame
 import time
 import psutil
 from tqdm import tqdm
-import pysilcam.silcamgui.liveviewer as lv
 
 
 def get_data(self):
@@ -231,6 +229,7 @@ def load_image(filename, size):
 
 
 def liveview(datadir, config_file):
+    import pysilcam.silcamgui.liveviewer as lv
     lv.liveview(datadir, config_file)
 
 
@@ -361,14 +360,19 @@ class ProcThread(Process):
 
 
     def run(self):
+        import pysilcam.__main__ as psc
         if(self.run_type == process_mode.process):
             psc.silcam_process(self.configfile, self.datadir, multiProcess=True, realtime=False,
             gui=self.q, overwriteSTATS=self.overwriteSTATS)
         elif(self.run_type == process_mode.aquire):
             psc.silcam_acquire(self.datadir, config_filename=self.configfile, writeToDisk=self.disc_write, gui=self.q)
         elif(self.run_type == process_mode.real_time):
-            psc.silcam_process(self.configfile, self.datadir, multiProcess=True, realtime=True,
-                               discWrite=self.disc_write, gui=self.q, overwriteSTATS=self.overwriteSTATS)
+            if 'REALTIME_DISC' in os.environ.keys():
+                psc.silcam_process(self.configfile, self.datadir, multiProcess=False, realtime=True,
+                                   discWrite=False, gui=self.q, overwriteSTATS=True)
+            else:
+                psc.silcam_process(self.configfile, self.datadir, multiProcess=True, realtime=True,
+                                   discWrite=self.disc_write, gui=self.q, overwriteSTATS=self.overwriteSTATS)
 
         #psc.silcam_sim(self.datadir, self.q)
 
@@ -455,4 +459,3 @@ class ProcThread(Process):
 
     def load_settings(self, configfile):
         self.settings = PySilcamSettings(configfile)
-

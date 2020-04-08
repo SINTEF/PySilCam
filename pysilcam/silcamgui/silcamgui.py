@@ -384,9 +384,10 @@ def main():
 
 
         def STATS_to_PJ_csv_converter(self):
-            from pysilcam.silcamgui.interactive_summary import InteractivePlotter
-            self.SummaryExplorer = InteractivePlotter()
-            self.SummaryExplorer
+            from pysilcam.silcamgui.interactive_summary import main as InteractivePlotter
+            import multiprocessing
+            p = multiprocessing.Process(target=InteractivePlotter)
+            p.start()
 
         def path_length_adjuster(self):
             reply = QMessageBox.warning(self, "WARNING!",
