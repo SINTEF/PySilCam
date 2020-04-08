@@ -26,7 +26,7 @@ pip install git+https://github.com/mabl/pymba@python3
 Installing
 ----------
 
-Install ![Anaconda Python 3.6 or later](https://www.anaconda.com/download/)
+Install [Anaconda Python 3.6 or later](https://www.anaconda.com/download/)
 
 Anaconda Prompt may be used for the following
 
