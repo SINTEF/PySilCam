@@ -11,6 +11,7 @@ import numpy as np
 import imageio
 import logging
 import pandas as pd
+from glob import glob
 
 #Handle potential Python 2.7 and Python 3
 try:
@@ -59,7 +60,9 @@ class Camera:
 
     def getFrame(self):
         #time.sleep(1.0/FPS)
-        if 'PYSILCAM_REALTIME_DATA' in os.environ.keys():
+        if 'REALTIME_DISC' in os.environ.keys():
+            return Frame()
+        elif 'PYSILCAM_REALTIME_DATA' in os.environ.keys():
             return RealtimeFrame()
         else:
             return Frame()
@@ -77,14 +80,28 @@ class Frame:
             offset = int(os.environ.get('PYSILCAM_OFFSET', 0))
             path = os.environ['PYSILCAM_TESTDATA']
             path = path.replace('\ ',' ') # handle spaces (not sure on windows behaviour)
-            self.files = [os.path.join(path, f)
-                          for f in sorted(os.listdir(path))
-                          if f.endswith('.silc')][offset:]
-
-            if len(self.files)==0:
+            self.path = path
+            self.timestamp = None
+            if 'REALTIME_DISC' in os.environ.keys():
+                print('get initial file list')
+                self.files = sorted(glob(os.path.join(self.path, '*.silc')),
+                                    reverse=True)
+                print(len(self.files), 'files.')
+                while len(self.files)==0:
+                    print('waiting for data')
+                    time.sleep(1)
+                    self.files = sorted(glob(os.path.join(self.path, '*.silc')),
+                                        reverse=True)
+                    print(self.files)
+            else:
                 self.files = [os.path.join(path, f)
                               for f in sorted(os.listdir(path))
-                              if f.startswith('D') and (f.endswith('.bmp'))][offset:]
+                              if f.endswith('.silc')][offset:]
+
+                if len(self.files)==0:
+                    self.files = [os.path.join(path, f)
+                                  for f in sorted(os.listdir(path))
+                                  if f.startswith('D') and (f.endswith('.bmp'))][offset:]
 
             self.img_idx = 0
 
@@ -97,12 +114,23 @@ class Frame:
 
         else:
             self.files = None
-            self.width = 800
-            self.height = 600
+            self.width = 2448
+            self.height = 2050
 
         logger.debug('Frame acquired')
 
     def getBufferByteData(self):
+        if 'REALTIME_DISC' in os.environ.keys():
+            num_old_files = len(self.files)
+            while len(self.files) == num_old_files:
+                print('checking for new data')
+                self.files = sorted(glob(os.path.join(self.path, '*.silc')),
+                                    reverse=True)
+                time.sleep(1)
+            print(' new data found')
+
+            self.img_idx = 0
+
         if self.files is not None:
             frame = silcam_load(self.files[self.img_idx])
             if len(frame.shape) == 2:
@@ -116,9 +144,10 @@ class Frame:
             logger.debug('Getting buffer byte data from file {0}, {1}/{2}'.format(frame.shape, self.img_idx, len(self.files)))
         else:
             self.timestamp = datetime.now()
-            frame = np.random.random((self.height, self.width, 3))
-            logger.debug('Getting buffer byte data, {0}'.format(frame.shape))
-            time.sleep(1.0/FPS)
+            frame = np.zeros((self.height, self.width, 3),
+                             dtype=np.uint8()) + np.random.randint(0,255)
+            #logger.debug('Getting buffer byte data, {0}'.format(frame.shape))
+            #time.sleep(1.0/FPS)
         return frame.tobytes()
 
     def announceFrame(self):
