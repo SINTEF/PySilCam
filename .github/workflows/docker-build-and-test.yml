@@ -22,8 +22,8 @@ jobs:
           # username: <username>
           # password: ${{ secrets.DOCKER_REGISTRY_ACCESS_TOKEN }}
           # registry: <docker registry> (default: Docker Hub's registry).
-          image_name: ${{ IMAGE_NAME }}
-          image_tag: ${{ IMAGE_TAG }}
+          image_name: ${{ env.IMAGE_NAME }}
+          image_tag: ${{ env.IMAGE_TAG }}
           context: .
           dockerfile: Dockerfile
 
