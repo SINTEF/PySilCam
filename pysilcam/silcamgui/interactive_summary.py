@@ -1,4 +1,7 @@
 import pandas as pd
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtWidgets import QMainWindow, QApplication, QAction, QStatusBar, QFileDialog, QInputDialog, QMessageBox, \
+    QSplashScreen
 import pysilcam.postprocess as scpp
 import pysilcam.oilgas as scog
 from pysilcam.config import PySilcamSettings
@@ -9,10 +12,8 @@ import numpy as np
 import cmocean
 import matplotlib.pyplot as plt
 import matplotlib
-from PyQt5.QtWidgets import *
 from PyQt5 import QtCore
 from PyQt5 import QtWidgets
-from PyQt5.QtGui import *
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 import sys
 import os
@@ -311,7 +312,7 @@ class PlotView(QtWidgets.QWidget):
         self.vd_oil = oil.as_matrix(columns=oil.columns[0:52])
         self.vd_gas = gas.as_matrix(columns=gas.columns[0:52])
         self.vd_total = self.vd_oil + self.vd_gas
-        self.u = pd.to_datetime(oil['Time'].values)
+        self.u = pd.to_datetime(oil['Time'].values).tz_localize('UTC')
         self.d50_gas = gas['D50']
         self.d50_oil = oil['D50']
 
@@ -378,7 +379,7 @@ class PlotView(QtWidgets.QWidget):
         self.d50_total = d50_total
         self.d50_oil = d50_oil
         self.d50_gas = d50_gas
-        self.u = u
+        self.u = u.tz_localize('UTC')
         self.dias = dias
 
 
@@ -455,9 +456,9 @@ class PlotView(QtWidgets.QWidget):
 
             string = ''
             string += '\n Num images: {:0.0f}'.format(psd_nims)
-            string += '\n Start: ' + str(start_time)
-            string += '\n End: ' + str(end_time)
-            string += '\n Window [sec.] {:0.3f}:'.format((end_time - start_time).total_seconds())
+            string += '\n Start: ' + str(start_time.tz_convert(None))
+            string += '\n End: ' + str(end_time.tz_convert(None))
+            string += '\n Window [sec.]: {:0.3f}'.format((end_time - start_time).total_seconds())
 
             plt.title(string, verticalalignment='top', horizontalalignment='right', loc='right')
 
