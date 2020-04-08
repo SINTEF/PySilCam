@@ -2,6 +2,10 @@ name: Docker build and test
 
 on: [push, pull_request]
 
+env:
+  IMAGE_NAME: sintef/pysilcam
+  IMAGE_TAG: github-ci
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -18,8 +22,8 @@ jobs:
           # username: <username>
           # password: ${{ secrets.DOCKER_REGISTRY_ACCESS_TOKEN }}
           # registry: <docker registry> (default: Docker Hub's registry).
-          image_name: sintef/pysilcam
-          image_tag: github-ci
+          image_name: ${{ IMAGE_NAME }}
+          image_tag: ${{ IMAGE_TAG }}
           context: .
           dockerfile: Dockerfile
 
@@ -32,4 +36,4 @@ jobs:
           unzip temp.zip
 
       - name: Run the tests
-        run: docker run -v $PWD/pysilcam-testdata:/testdata sintef/pysilcam:github-ci
+        run: docker run -v $PWD/pysilcam-testdata:/testdata ${IMAGE_NAME}:${IMAGE_TAG}
