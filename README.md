@@ -93,4 +93,4 @@ If you want to mount a local folder inside the docker environment, use -v [local
 License
 -------
 
-BSD3 license. See LICENSE
+PySilCam is licensed under the BSD3 license. See LICENSE
