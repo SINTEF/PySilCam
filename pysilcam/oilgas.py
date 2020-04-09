@@ -4,7 +4,6 @@ module for processing Oil and Gas SilCam data
 '''
 import pysilcam.postprocess as sc_pp
 from pysilcam.config import PySilcamSettings
-from pysilcam.datalogger import DataLogger
 import itertools
 import pandas as pd
 import numpy as np
