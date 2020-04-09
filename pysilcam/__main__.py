@@ -1,26 +1,27 @@
 # -*- coding: utf-8 -*-
-import sys
-import time
 import datetime
 import logging
-from docopt import docopt
+import multiprocessing
+import os
+import sys
+import time
+import warnings
+from multiprocessing.managers import BaseManager
+from queue import LifoQueue
+from shutil import copyfile
+
 import numpy as np
+import pandas as pd
+import psutil
+from docopt import docopt
+
+import pysilcam.oilgas as scog
+import pysilcam.silcam_classify as sccl
 from pysilcam import __version__
 from pysilcam.acquisition import Acquire
 from pysilcam.background import backgrounder
-from pysilcam.process import processImage
-import pysilcam.oilgas as scog
 from pysilcam.config import PySilcamSettings, updatePathLength
-import os
-import pysilcam.silcam_classify as sccl
-import multiprocessing
-from multiprocessing.managers import BaseManager
-from queue import LifoQueue
-import psutil
-from shutil import copyfile
-import warnings
-import pandas as pd
-import psutil
+from pysilcam.process import processImage
 
 if not sys.warnoptions:
     warnings.simplefilter("ignore")
@@ -56,10 +57,12 @@ def silcam():
       --nbimages=<number of images>     Number of images to process.
       --discwrite                       Write images to disc.
       --nomultiproc                     Deactivate multiprocessing.
-      --appendstats                     Appends data to output STATS.csv file. If not specified, the STATS.csv file will be overwritten!
+      --appendstats                     Appends data to output STATS.csv file. If not specified, the STATS.csv file will
+                                        be overwritten!
       -h --help                         Show this screen.
       --version                         Show version.
-      --discread                        emergency disc read version of realtime analysis, to be run seperately but at the same time as silcam acquire
+      --discread                        emergency disc read version of realtime analysis, to be run seperately but at
+                                        the same time as silcam acquire
 
     '''
     print(title)
@@ -82,7 +85,7 @@ def silcam():
         if args['--nomultiproc']:
             multiProcess = False
         nbImages = args['--nbimages']
-        if (nbImages != None):
+        if (nbImages is not None):
             try:
                 nbImages = int(nbImages)
             except ValueError:
@@ -168,7 +171,7 @@ def silcam_acquire(datapath, config_filename, writeToDisk=True, gui=None):
         print('Image {0} acquired at frequency {1:.1f} Hz'.format(i, actual_aq_freq))
         t1 = time.time()
 
-        if not gui == None:
+        if (gui is not None):
             while (gui.qsize() > 0):
                 try:
                     gui.get_nowait()
@@ -196,7 +199,8 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
       config_filename   (str)               :  The filename (including path) of the config.ini file
       datapath          (str)               :  Path to the data directory
       multiProcess=True (bool)              :  If True, multiprocessing is used
-      realtime=False    (bool)              :  If True, a faster but less accurate methods is used for segmentation and rts stats become active
+      realtime=False    (bool)              :  If True, a faster but less accurate methods is used for segmentation and
+                                               rts stats become active
       discWrite=False   (bool)              :  True will enable writing of raw data to disc
                                                False will disable writing of raw data to disc
       nbImages=None     (int)               :  Number of images to skip
@@ -298,7 +302,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
                          ' acquired from backgrounder')
 
             # handle errors if the loop function fails for any reason
-            if (nbImages != None):
+            if (nbImages is not None):
                 if (nbImages <= i):
                     break
 
@@ -313,7 +317,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
                       settings, rts=rts)
             logger.debug('Data collected')
 
-            if not gui == None:
+            if (gui is not None):
                 logger.debug('Putting data on GUI Queue')
                 while (gui.qsize() > 0):
                     try:
@@ -351,7 +355,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
             p.join()
             logger.info('%s.exitcode = %s' % (p.name, p.exitcode))
 
-    else: # no multiprocessing
+    else:  # no multiprocessing
         # load the model for particle classification and keep it for later
         nnmodel = []
         nnmodel, class_labels = sccl.load_model(model_path=settings.NNClassify.model_path)
@@ -359,7 +363,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
         # iterate on the bggen generator to obtain images
         for i, (timestamp, imc, imraw) in enumerate(bggen):
             # handle errors if the loop function fails for any reason
-            if (nbImages != None):
+            if (nbImages is not None):
                 if (nbImages <= i):
                     break
 
@@ -367,13 +371,13 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
             # one single image is processed at a time
             stats_all = processImage(nnmodel, class_labels, image, settings, logger, gui)
 
-            if (not stats_all is None):  # if frame processed
+            if (stats_all is not None):  # if frame processed
                 # write the image into the csv file
                 writeCSV(datafilename, stats_all)
                 if 'REALTIME_DISC' in os.environ.keys():
                     scog.realtime_summary(datafilename + '-STATS.csv', config_filename)
 
-            if not gui == None:
+            if (gui is not None):
                 collect_rts(settings, rts, stats_all)
                 logger.debug('Putting data on GUI Queue')
                 while (gui.qsize() > 0):
@@ -702,7 +706,8 @@ def adminSTATS(logger, settings, overwriteSTATS, datafilename, datapath):
             for i, f in enumerate(files):
                 offsetcalc['times'].iloc[i] = silcam_name2time(f)
             offset = int(min(np.argwhere(offsetcalc['times'] > last_time)))
-            offset -= settings.Background.num_images  # subtract the number of background images, so we get data from the correct start point
+            # subtract the number of background images, so we get data from the correct start point
+            offset -= settings.Background.num_images
             # and check offset is still positive
             if offset < 0:
                 offset = 0
