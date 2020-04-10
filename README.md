@@ -64,7 +64,7 @@ Build the documentation
 python setup.py build_sphinx
 ```
 
-See the [wiki](https://github.com/emlynjdavies/PySilCam/wiki) for more details on running PySilCam.
+See the [wiki](https://github.com/SINTEF/PySilCam/wiki) for more details on running PySilCam.
 
 Docker
 ------
