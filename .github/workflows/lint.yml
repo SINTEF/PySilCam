@@ -15,6 +15,6 @@ jobs:
           # The GitHub API token to create reviews with
           token: ${{ secrets.API_TOKEN_LINTLY }}
           # Fail if "new" violations detected or "any", default "new"
-          failIf: any
+          failIf: new
           # Additional arguments to pass to flake8 can be passed using "args", which defaults to "." (current directory)
           # Note that flake8 already uses repository defaults from the .flake8 configuration file.
