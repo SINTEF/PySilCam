@@ -162,7 +162,6 @@ class rt_stats():
         df = pd.DataFrame()
         df['Oil d50[um]'] = [self.oil_d50]
         df['Gas d50[um]'] = [self.gas_d50]
-        # @todo include saturation here too
         df['saturation [%]'] = [self.saturation]
         df.to_csv(filename, index=False, mode='w')  # do not append to this file
 
