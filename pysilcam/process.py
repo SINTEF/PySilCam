@@ -406,7 +406,7 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
             # add the roi to the HDF5 file
             filenames[int(i)] = filename + '-PN' + str(i)
             if settings.ExportParticles.export_images:
-                dset = HDF5File.create_dataset('PN' + str(i), data=roi)
+                HDF5File.create_dataset('PN' + str(i), data=roi)
                 # @todo also include particle stats here too.
 
             # run a prediction on what type of particle this might be

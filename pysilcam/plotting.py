@@ -53,13 +53,8 @@ class ParticleSizeDistPlot:
         ax.set_yscale('log')
 
         # Plot PSD in lower right axis
-        norm = np.sum(vd_mean['total'].vd_mean) / 100
         ax = self.ax[1, 1]
         self.line, = ax.plot(vd_mean['total'].dias, vd_mean['total'].vd_mean, color='k')
-        #        self.line_oil, = ax.plot(vd_mean['oil'].dias,
-        #                                  vd_mean['oil'].vd_mean, color='darkred')
-        #        self.line_gas, = ax.plot(vd_mean['gas'].dias,
-        #                                  vd_mean['gas'].vd_mean, color='royalblue')
         ax.set_xlim(1, 10000)
         ax.set_ylim(0, 20)
         ax.set_xscale('log')
@@ -318,4 +313,3 @@ def summarise_fancy_stats(stats_csv_file, config_file, monitor=False,
             plt.pause(1)
         else:
             break
-    # plt.show()
