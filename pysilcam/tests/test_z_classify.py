@@ -12,11 +12,12 @@ ROOTPATH = os.environ.get('UNITTEST_DATA_PATH', None)
 # Get user-defined tensorflow model path from environment variable
 MODEL_PATH = os.environ.get('SILCAM_MODEL_PATH', None)
 
-print('ROOTPATH',ROOTPATH)
-print('MODEL_PATH',MODEL_PATH)
+print('ROOTPATH', ROOTPATH)
+print('MODEL_PATH', MODEL_PATH)
+
 
 @unittest.skipIf((ROOTPATH is None),
-    "test path not accessible")
+                 "test path not accessible")
 def test_classify():
     '''
     Basic check of classification prediction against the training database.
@@ -54,10 +55,10 @@ def test_classify():
         # loop through the database images
         for file in files:
 
-            img = imread(file) # load ROI
-            prediction = predict(img, model) # run prediction from silcam_classify
+            img = imread(file)  # load ROI
+            prediction = predict(img, model)  # run prediction from silcam_classify
 
-            ind = np.argmax(prediction) # find the highest score
+            ind = np.argmax(prediction)  # find the highest score
 
             # check if the highest score matches the correct category
             if not class_labels[ind] == category:
