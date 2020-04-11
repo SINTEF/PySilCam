@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
-import os
 from pysilcam.__main__ import silcam_process
-import unittest
 from pysilcam.silcreport import silcam_report
 from pysilcam.config import load_config
 from pysilcam.postprocess import count_images_in_stats
-import pandas as pd
-import glob
 from pysilcam.config import PySilcamSettings
+import glob
+import os
+import unittest
+import pandas as pd
 
 # Get user-defined path to unittest data folder
 ROOTPATH = os.environ.get('UNITTEST_DATA_PATH', None)
@@ -88,7 +88,7 @@ def test_output_files():
     from pysilcam.config import settings_from_h5
     Settings = settings_from_h5(hdf_file)
     # test a an appropriate settting after reading it back from the hdf5 file
-    assert (Settings.ExportParticles.export_images == True), 'unexpected setting read from metadata in hdf5 file'
+    assert (Settings.ExportParticles.export_images is True), 'unexpected setting read from metadata in hdf5 file'
 
     # if report figure already exists, it has to be deleted
     if (os.path.isfile(report_figure)):
