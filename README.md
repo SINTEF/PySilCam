@@ -97,6 +97,19 @@ If you want to mount a local folder inside the docker environment, use -v [local
 docker-compose run -v /mnt/ARRAY/:/mnt/ARRAY/ --rm --entrypoint /bin/bash silcam
 ```
 
+Contributions
+-------------
+
+We welcome additions and improvements to the code!
+
+However, we also request that you follow a few guidelines. These are in place to make sure the code improves over time.
+
+1. All code changes must be submitted as pull requests, either from a branch or a fork.
+2. All pull requests are required to pass all tests. Please do not disable or remove tests just to make your branch pass the pull request.
+3. All pull requests must be reviewed by a person. The benefits from code review are plenty, but we like to emphasise that code reviews help spreading the awarenes of code changes. Please note that code reviews should be a pleasant experience, so be plesant, polite and remember that there is a human being with good intentions on the other side of the screen.
+4. All contributions are linted with flake8. We recommend that you run flake8 on your code while developing to fix any issues as you go.
+5. We recommend using autopep8 to autoformat your Python code (but please check the code behaviour is not affected by autoformatting before pushing). This makes flake8 happy, and makes it easier for us all to maintain a consistent and readable code base.
+
 License
 -------
 
