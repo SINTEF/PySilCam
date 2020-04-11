@@ -38,7 +38,7 @@ def test_big_standards():
         os.remove(stats_file)
 
     # call process function
-    silcam_process(conf_file_out, data_file, multiProcess=False, nbImages=10)
+    silcam_process(conf_file_out, data_file, multiProcess=True, nbImages=10)
 
     # check that csv file has been created
     assert os.path.isfile(stats_file), 'stats_file not created'
@@ -81,7 +81,7 @@ def test_small_standards():
         os.remove(stats_file)
 
     # call process function
-    silcam_process(conf_file_out, data_file, multiProcess=False, nbImages=10)
+    silcam_process(conf_file_out, data_file, multiProcess=True, nbImages=10)
 
     # check that csv file has been created
     assert os.path.isfile(stats_file), 'stats_file not created'
