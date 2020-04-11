@@ -5,6 +5,21 @@ from setuptools import setup
 from setuptools.command.test import test as TestCommand
 import distutils.cmd
 
+
+class PyTestNoSkip(TestCommand):
+    def finalize_options(self):
+        TestCommand.finalize_options(self)
+        self.test_args = ['--error-for-skips']
+        self.test_suite = True
+
+    def run_tests(self):
+        import pytest
+        params = {"args":self.test_args}
+        params["args"] +=  ["--junitxml", "test-report/output.xml"]
+        errcode = pytest.main(self.test_args)
+        sys.exit(errcode)
+
+
 class PyTest(TestCommand):
     def finalize_options(self):
         TestCommand.finalize_options(self)
@@ -73,5 +88,7 @@ setup(
             'silcam-gui = pysilcam.silcamgui.silcamgui:main',
         ]
     },
-    cmdclass={'test': PyTest, 'build_sphinx': Documentation}
+    cmdclass={'test': PyTest,
+              'test_noskip': PyTestNoSkip,
+              'build_sphinx': Documentation}
 )
