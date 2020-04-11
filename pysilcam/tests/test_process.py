@@ -15,12 +15,12 @@ ROOTPATH = os.environ.get('UNITTEST_DATA_PATH', None)
 # Get user-defined tensorflow model path from environment variable
 MODEL_PATH = os.environ.get('SILCAM_MODEL_PATH', None)
 
-print('ROOTPATH',ROOTPATH)
-print('MODEL_PATH',MODEL_PATH)
+print('ROOTPATH', ROOTPATH)
+print('MODEL_PATH', MODEL_PATH)
 
 
 @unittest.skipIf((ROOTPATH is None),
-    "test path not accessible")
+                 "test path not accessible")
 def test_output_files():
     '''Testing that the appropriate STATS.csv file is created'''
 
@@ -30,11 +30,11 @@ def test_output_files():
 
     data_file = os.path.join(ROOTPATH, 'STN04')
     conf.set('General', 'datafile', os.path.join(data_file, 'proc'))
-    conf.set('General', 'logfile', os.path.join(ROOTPATH,'log.log'))
+    conf.set('General', 'logfile', os.path.join(ROOTPATH, 'log.log'))
     conf.set('ExportParticles', 'outputpath', os.path.join(data_file, 'export'))
     if MODEL_PATH is not None:
         conf.set('NNClassify', 'model_path', MODEL_PATH)
-    conf_file_hand = open(conf_file_out,'w')
+    conf_file_hand = open(conf_file_out, 'w')
     conf.write(conf_file_hand)
     conf_file_hand.close()
 
@@ -60,12 +60,13 @@ def test_output_files():
     csvfile = open(stats_file)
     lines = csvfile.readlines()
     numline = len(lines)
-    assert numline > 1 , 'csv file empty'
+    assert numline > 1, 'csv file empty'
 
     # check the columns
-    assert lines[0] == 'particle index,major_axis_length,minor_axis_length,equivalent_diameter,solidity,minr,minc,maxr,maxc,'\
-            'probability_oil,probability_other,probability_bubble,probability_faecal_pellets,probability_copepod,'\
-            'probability_diatom_chain,probability_oily_gas,export name,timestamp,saturation\n', 'columns not properly built'
+    assert lines[
+               0] == 'particle index,major_axis_length,minor_axis_length,equivalent_diameter,solidity,minr,minc,maxr,maxc,' \
+                     'probability_oil,probability_other,probability_bubble,probability_faecal_pellets,probability_copepod,' \
+                     'probability_diatom_chain,probability_oily_gas,export name,timestamp,saturation\n', 'columns not properly built'
 
     # check the correct number of images have been processed
     stats = pd.read_csv(stats_file)
@@ -76,7 +77,6 @@ def test_output_files():
     files = glob.glob(os.path.join(data_file, '*.bmp'))
     expected_processed = len(files) - background_images
     # assert (number_processed == expected_processed), 'number of images processed does not match the size of the dataset'
-
 
     # check that hdf file has been created
     assert os.path.isfile(hdf_file), ('hdf file not created. should be here:' + hdf_file)
@@ -96,9 +96,9 @@ def test_output_files():
     assert os.path.isfile(report_figure), 'report figure file not created'
 
     # # test synthesizer
-    #import pysilcam.tests.synthesizer as synth
-    #reportdir = os.path.join(path, '../../test-report')
-    #os.makedirs(reportdir, exist_ok=True)
-    #synth.generate_report(os.path.join(reportdir, 'imagesynth_report.pdf'), PIX_SIZE=28.758169934640524,
+    # import pysilcam.tests.synthesizer as synth
+    # reportdir = os.path.join(path, '../../test-report')
+    # os.makedirs(reportdir, exist_ok=True)
+    # synth.generate_report(os.path.join(reportdir, 'imagesynth_report.pdf'), PIX_SIZE=28.758169934640524,
     #                      PATH_LENGTH=10, d50=800, TotalVolumeConcentration=800,
     #                      MinD=108)
