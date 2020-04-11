@@ -64,9 +64,10 @@ def test_output_files():
 
     # check the columns
     assert lines[
-               0] == 'particle index,major_axis_length,minor_axis_length,equivalent_diameter,solidity,minr,minc,maxr,maxc,' \
-                     'probability_oil,probability_other,probability_bubble,probability_faecal_pellets,probability_copepod,' \
-                     'probability_diatom_chain,probability_oily_gas,export name,timestamp,saturation\n', 'columns not properly built'
+               0] == 'particle index,major_axis_length,minor_axis_length,equivalent_diameter,solidity,minr,minc,maxr,' \
+                     'maxc,probability_oil,probability_other,probability_bubble,probability_faecal_pellets,' \
+                     'probability_copepod,probability_diatom_chain,probability_oily_gas,export name,timestamp,' \
+                     'saturation\n', 'columns not properly built'
 
     # check the correct number of images have been processed
     stats = pd.read_csv(stats_file)
@@ -76,7 +77,7 @@ def test_output_files():
 
     files = glob.glob(os.path.join(data_file, '*.bmp'))
     expected_processed = len(files) - background_images
-    # assert (number_processed == expected_processed), 'number of images processed does not match the size of the dataset'
+    assert (number_processed == expected_processed), 'number of images processed does not match the size of the dataset'
 
     # check that hdf file has been created
     assert os.path.isfile(hdf_file), ('hdf file not created. should be here:' + hdf_file)
@@ -86,7 +87,7 @@ def test_output_files():
     from pysilcam.config import settings_from_h5
     Settings = settings_from_h5(hdf_file)
     # test a an appropriate settting after reading it back from the hdf5 file
-    assert (Settings.ExportParticles.export_images == True), 'unexpected setting read from metadata in hdf5 file'
+    assert (Settings.ExportParticles.export_images is True), 'unexpected setting read from metadata in hdf5 file'
 
     # if report figure already exists, it has to be deleted
     if (os.path.isfile(report_figure)):
