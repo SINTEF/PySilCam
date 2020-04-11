@@ -40,7 +40,7 @@ def test_output_files():
 
     stats_file = os.path.join(data_file, 'proc', 'STN04-STATS.csv')
     hdf_file = os.path.join(data_file, 'export/D20170509T172705.387171.h5')
-    report_figure = os.path.join(data_file,'proc', 'STN04-Summary_all.png')
+    report_figure = os.path.join(data_file, 'proc', 'STN04-Summary_all.png')
 
     # if csv file already exists, it has to be deleted
     if (os.path.isfile(stats_file)):
