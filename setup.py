@@ -9,6 +9,7 @@ import distutils.cmd
 class PyTestNoSkip(TestCommand):
     def finalize_options(self):
         TestCommand.finalize_options(self)
+        # use pytest plugin to force error if a test is skipped
         self.test_args = ['--error-for-skips']
         self.test_suite = True
 
