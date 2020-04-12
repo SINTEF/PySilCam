@@ -15,6 +15,24 @@ import os
 SilCam TensorFlow analysis for classification of particle types
 '''
 
+def check_model(model_path):
+    '''
+    Raises errors if classification model is not found
+
+    Args:
+        model_path (str)        : path to particle-classifier e.g.
+                                  '/mnt/ARRAY/classifier/model/particle-classifier.tfl'
+                                  usually obtained from settings.NNClassify.model_path
+
+    '''
+    path, filename = os.path.split(model_path)
+    if os.path.exists(path) is False:
+        raise Exception(path + ' not found')
+
+    header_file = os.path.join(path, 'header.tfl.txt')
+    if os.path.isfile(header_file) is False:
+        raise Exception(header_file + ' not found')
+
 
 def get_class_labels(model_path='/mnt/ARRAY/classifier/model/particle-classifier.tfl'):
     '''
@@ -23,6 +41,7 @@ def get_class_labels(model_path='/mnt/ARRAY/classifier/model/particle-classifier
     Args:
         model_path (str)        : path to particle-classifier e.g.
                                   '/mnt/ARRAY/classifier/model/particle-classifier.tfl'
+                                  usually obtained from settings.NNClassify.model_path
 
     Returns:
         class_labels (str)      : labelled catagories which can be predicted
