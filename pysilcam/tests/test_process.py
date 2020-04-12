@@ -87,7 +87,7 @@ def test_output_files():
     show_h5_meta(hdf_file)
     from pysilcam.config import settings_from_h5
     Settings = settings_from_h5(hdf_file)
-    # test a an appropriate settting after reading it back from the hdf5 file
+    # test a an appropriate setting after reading it back from the hdf5 file
     assert (Settings.ExportParticles.export_images is True), 'unexpected setting read from metadata in hdf5 file'
 
     # if report figure already exists, it has to be deleted
