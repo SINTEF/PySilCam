@@ -51,7 +51,7 @@ def test_output_files():
         os.remove(hdf_file)
 
     # call process function
-    silcam_process(conf_file_out, data_file, multiProcess=True, nbImages=10)
+    silcam_process(conf_file_out, data_file, multiProcess=True)
 
     # check that csv file has been created
     assert os.path.isfile(stats_file), ('STATS csv file not created. should be here:' + stats_file)
