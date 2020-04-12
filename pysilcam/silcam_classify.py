@@ -15,6 +15,7 @@ import os
 SilCam TensorFlow analysis for classification of particle types
 '''
 
+
 def check_model(model_path):
     '''
     Raises errors if classification model is not found
