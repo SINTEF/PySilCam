@@ -1,4 +1,4 @@
-from pysilcam.silcam_classify import load_model, predict
+from pysilcam.silcam_classify import check_model, load_model, predict
 from skimage.io import imread
 import glob
 import os
@@ -28,6 +28,8 @@ def test_classify():
 
     # location of the training data
     database_path = os.path.join(ROOTPATH, 'silcam_classification_database')
+
+    check_model(MODEL_PATH)
 
     # a tensorflow session must be started on each process in order to function reliably in multiprocess.
     # This also includes the import of tensorflow on each process
