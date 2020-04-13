@@ -240,6 +240,8 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     datafilename = os.path.join(settings.General.datafile, procfoldername)
     logger.info('output stats to: ' + datafilename)
 
+    sccl.check_model(settings.NNClassify.model_path)
+
     adminSTATS(logger, settings, overwriteSTATS, datafilename, datapath)
 
     # Initialize the image acquisition generator
