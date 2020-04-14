@@ -5,6 +5,22 @@ from setuptools import setup
 from setuptools.command.test import test as TestCommand
 import distutils.cmd
 
+
+class PyTestNoSkip(TestCommand):
+    def finalize_options(self):
+        TestCommand.finalize_options(self)
+        # use pytest plugin to force error if a test is skipped
+        self.test_args = ['--error-for-skips']
+        self.test_suite = True
+
+    def run_tests(self):
+        import pytest
+        params = {"args": self.test_args}
+        params["args"] += ["--junitxml", "test-report/output.xml"]
+        errcode = pytest.main(self.test_args)
+        sys.exit(errcode)
+
+
 class PyTest(TestCommand):
     def finalize_options(self):
         TestCommand.finalize_options(self)
@@ -13,10 +29,11 @@ class PyTest(TestCommand):
 
     def run_tests(self):
         import pytest
-        params = {"args":self.test_args}
-        params["args"] +=  ["--junitxml", "test-report/output.xml"]
+        params = {"args": self.test_args}
+        params["args"] += ["--junitxml", "test-report/output.xml"]
         errcode = pytest.main(self.test_args)
         sys.exit(errcode)
+
 
 class Documentation(distutils.cmd.Command):
     description = '''Build the documentation with Sphinx.
@@ -52,7 +69,7 @@ setup(
     author='Emlyn Davies',
     author_email='emlyn.davies@sintef.no',
     # Use Python 3 branch on alternate repo for Pymba
-    #dependency_links=['git+https://github.com/mabl/pymba@python3'],
+    # dependency_links=['git+https://github.com/mabl/pymba@python3'],
     zip_safe=False,
     keywords='silcam',
     classifiers=[
@@ -73,5 +90,7 @@ setup(
             'silcam-gui = pysilcam.silcamgui.silcamgui:main',
         ]
     },
-    cmdclass={'test': PyTest, 'build_sphinx': Documentation}
+    cmdclass={'test': PyTest,
+              'test_noskip': PyTestNoSkip,
+              'build_sphinx': Documentation}
 )
