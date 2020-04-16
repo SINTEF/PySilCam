@@ -2,6 +2,7 @@ name: silcam
 channels:
     - anaconda
     - cogsci     # Channel for pygame
+    - pytorch    # pytorch
 dependencies:    # These are the conda packages
     - python=3.5
     - numpy=1.15.2
@@ -20,6 +21,8 @@ dependencies:    # These are the conda packages
     - seaborn=0.9.0
     - pytables=3.4.4
     - pytest
+    - pytorch
+    - torchvision
     - pip: # The following packages are installed with pip
         - xlrd
         - configparser==3.5.0
