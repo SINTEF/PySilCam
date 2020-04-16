@@ -203,7 +203,7 @@ def backgrounder(av_window, acquire, bad_lighting_limit=None,
     # Aquire images, apply background correction and yield result
     for timestamp, imraw in acquire:
 
-        if not (bad_lighting_limit is None):
+        if (bad_lighting_limit is not None):
             bgstack_new, imbg_new, imc = shift_and_correct(bgstack, imbg,
                                                            imraw, stacklength, real_time_stats)
 
