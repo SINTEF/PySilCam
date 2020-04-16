@@ -20,7 +20,7 @@ ENV PYTHONDONTWRITEBYTECODE FALSE
 
 # Assume that test data is mounted into the testdata path
 ENV UNITTEST_DATA_PATH /testdata/unittest-data
-ENV SILCAM_MODEL_PATH /testdata/tflmodel/particle-classifier.tfl
+ENV SILCAM_MODEL_PATH /testdata/COAPNetTorch/COAPNet_model.pt
 
 # Supress the usage of a display for unit tests
 ENV MPLBACKEND Agg

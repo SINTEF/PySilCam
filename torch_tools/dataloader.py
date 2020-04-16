@@ -6,7 +6,7 @@ from skimage import io, transform
 import numpy as np
 import matplotlib.pyplot as plt
 
-from torch.utils.data import Dataset, DataLoader, random_split
+from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils, datasets
 import imageio
 import csv
