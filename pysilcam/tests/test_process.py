@@ -64,10 +64,19 @@ def test_output_files():
     assert numline > 1, 'csv file empty'
 
     # check the columns
-    assert lines[0] == 'particle index,major_axis_length,minor_axis_length,equivalent_diameter,solidity,minr,minc,' \
-                       'maxr,maxc,probability_oil,probability_other,probability_bubble,probability_faecal_pellets,' \
-                       'probability_copepod,probability_diatom_chain,probability_oily_gas,export name,timestamp,'\
-                       'saturation\n', 'columns not properly built'
+    path, filename = os.path.split(MODEL_PATH)
+    header = pd.read_csv(os.path.join(path, 'header.tfl.txt'))
+    class_labels = header.columns
+
+    # construct expected column string
+    column_string = 'particle index,major_axis_length,minor_axis_length,equivalent_diameter,solidity,minr,minc,maxr,'\
+                    'maxc'
+    for c in class_labels:
+        column_string += ',probability_' + c
+    column_string += ',export name,timestamp,saturation\n'
+
+    # check that output STATS file contains expected columns
+    assert lines[0] == column_string
 
     # check the correct number of images have been processed
     stats = pd.read_csv(stats_file)
