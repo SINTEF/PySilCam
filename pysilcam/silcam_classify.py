@@ -153,8 +153,9 @@ def load_model(model_path='/mnt/ARRAY/classifier/model/particle-classifier.pt'):
       model = COAPNet(num_classes=len(class_labels))
       name = 'COAPModNet'
       # remap everything onto CPU: loading weights trained on GPU to CPU
-      model.load_state_dict(torch.load(model_path,
-                                     map_location=lambda storage, loc: storage))  # 'cpu'
+      #model.load_state_dict(torch.load(model_path,
+      #                               map_location=lambda storage, loc: storage))  # 'cpu'
+      model.load_state_dict(torch.load(model_path,map_location='cpu'))
 
       return model, class_labels
 
