@@ -150,12 +150,15 @@ def load_model(model_path='/mnt/ARRAY/classifier/model/particle-classifier.pt'):
       #OUTPUTS = len(header.columns)
       class_labels = header.columns
 
+
       model = COAPNet(num_classes=len(class_labels))
       name = 'COAPModNet'
       # remap everything onto CPU: loading weights trained on GPU to CPU
       #model.load_state_dict(torch.load(model_path,
       #                               map_location=lambda storage, loc: storage))  # 'cpu'
-      model.load_state_dict(torch.load(model_path))   # ,map_location='cpu'
+      #model.load_state_dict(torch.load(model_path))   # ,map_location='cpu'
+      device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+      model.load_state_dict(torch.load(model_path), map_location=torch.device(device))
 
       return model, class_labels
 
@@ -194,6 +197,8 @@ def predict(img, model):
       #print('image.shape', image.shape)
 
       model.eval()
+      device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+      model.to(device)
       out_predict = model(image.float())
       #print('out_predict: ', out_predict)
       out_predict = nn.Softmax(dim=1)(out_predict)
