@@ -9,7 +9,6 @@ import os
 import unittest
 import pandas as pd
 import shutil
-import glob
 
 # Get user-defined path to unittest data folder
 ROOTPATH = os.environ.get('UNITTEST_DATA_PATH', None)
