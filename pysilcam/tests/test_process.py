@@ -29,6 +29,7 @@ def test_output_files():
     conf = load_config(conf_file)
 
     data_file = os.path.join(ROOTPATH, 'STN04')
+    conf.set('General', 'loglevel', 'INFO')
     conf.set('General', 'datafile', os.path.join(data_file, 'proc'))
     conf.set('General', 'logfile', os.path.join(ROOTPATH, 'log.log'))
     conf.set('ExportParticles', 'outputpath', os.path.join(data_file, 'export'))

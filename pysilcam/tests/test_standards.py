@@ -23,6 +23,7 @@ def test_big_standards():
     conf = load_config(conf_file)
 
     data_file = os.path.join(ROOTPATH, 'STANDARDS/StandardsBig')
+    conf.set('General', 'loglevel', 'INFO')
     conf.set('General', 'datafile', os.path.join(ROOTPATH, 'STANDARDS', 'proc'))
     conf.set('General', 'logfile', os.path.join(ROOTPATH, 'STANDARDS', 'log.log'))
     if MODEL_PATH is not None:

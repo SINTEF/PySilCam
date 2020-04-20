@@ -31,6 +31,8 @@ ADD . /silcam
 # Assume the source code is mapped to /silcam
 WORKDIR /silcam
 
+RUN df
+
 # Install PySilcam dependencies
 RUN python setup.py develop
 
