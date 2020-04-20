@@ -8,6 +8,7 @@ import glob
 import os
 import unittest
 import pandas as pd
+import shutil
 
 # Get user-defined path to unittest data folder
 ROOTPATH = os.environ.get('UNITTEST_DATA_PATH', None)
@@ -29,7 +30,7 @@ def test_output_files():
     conf = load_config(conf_file)
 
     data_file = os.path.join(ROOTPATH, 'STN04')
-    conf.set('General', 'loglevel', 'INFO')
+    conf.set('General', 'loglevel', 'DEBUG')
     conf.set('General', 'datafile', os.path.join(data_file, 'proc'))
     conf.set('General', 'logfile', os.path.join(ROOTPATH, 'log.log'))
     conf.set('ExportParticles', 'outputpath', os.path.join(data_file, 'export'))
@@ -104,6 +105,9 @@ def test_output_files():
 
     silcam_report(stats_file, conf_file_out, dpi=10)
     assert os.path.isfile(report_figure), 'report figure file not created'
+
+    # cleanup output
+    shutil.rmtree(os.path.join(data_file, 'export'))
 
     # # test synthesizer
     # import pysilcam.tests.synthesizer as synth
