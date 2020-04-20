@@ -9,6 +9,7 @@ import os
 import unittest
 import pandas as pd
 import shutil
+import glob
 
 # Get user-defined path to unittest data folder
 ROOTPATH = os.environ.get('UNITTEST_DATA_PATH', None)
@@ -22,6 +23,42 @@ print('MODEL_PATH', MODEL_PATH)
 
 @unittest.skipIf((ROOTPATH is None),
                  "test path not accessible")
+def test_debug_files():
+    '''Testing that the debug images are created'''
+
+    conf_file = os.path.join(ROOTPATH, 'config.ini')
+    conf_file_out = os.path.join(ROOTPATH, 'config_generated.ini')
+    conf = load_config(conf_file)
+
+    data_file = os.path.join(ROOTPATH, 'STN04')
+    conf.set('General', 'loglevel', 'DEBUG')
+    conf.set('General', 'datafile', os.path.join(data_file, 'proc'))
+    conf.set('General', 'logfile', os.path.join(ROOTPATH, 'log.log'))
+    conf.set('ExportParticles', 'outputpath', os.path.join(data_file, 'export'))
+    if MODEL_PATH is not None:
+        conf.set('NNClassify', 'model_path', MODEL_PATH)
+    conf_file_hand = open(conf_file_out, 'w')
+    conf.write(conf_file_hand)
+    conf_file_hand.close()
+
+    # make sure export directory is empty
+    shutil.rmtree(os.path.join(data_file, 'export'), ignore_errors=True)
+
+    # call process function
+    silcam_process(conf_file_out, data_file, multiProcess=True, nbImages=5)
+
+    imc_files = glob.glob(os.path.join(data_file, 'export', '*-IMC*'))
+    assert len(imc_files) == 5, 'unexpected number of IMC files'
+
+    seg_files = glob.glob(os.path.join(data_file, 'export', '*-SEG*'))
+    assert len(imc_files) == 5, 'unexpected number of SEG files'
+
+    # cleanup output
+    shutil.rmtree(os.path.join(data_file, 'export'))
+
+
+@unittest.skipIf((ROOTPATH is None),
+                 "test path not accessible")
 def test_output_files():
     '''Testing that the appropriate STATS.csv file is created'''
 
@@ -30,7 +67,7 @@ def test_output_files():
     conf = load_config(conf_file)
 
     data_file = os.path.join(ROOTPATH, 'STN04')
-    conf.set('General', 'loglevel', 'DEBUG')
+    conf.set('General', 'loglevel', 'INFO')
     conf.set('General', 'datafile', os.path.join(data_file, 'proc'))
     conf.set('General', 'logfile', os.path.join(ROOTPATH, 'log.log'))
     conf.set('ExportParticles', 'outputpath', os.path.join(data_file, 'export'))
@@ -106,8 +143,6 @@ def test_output_files():
     silcam_report(stats_file, conf_file_out, dpi=10)
     assert os.path.isfile(report_figure), 'report figure file not created'
 
-    # cleanup output
-    shutil.rmtree(os.path.join(data_file, 'export'))
 
     # # test synthesizer
     # import pysilcam.tests.synthesizer as synth
