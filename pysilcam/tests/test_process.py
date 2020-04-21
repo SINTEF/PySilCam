@@ -44,7 +44,7 @@ def test_debug_files():
     shutil.rmtree(os.path.join(data_file, 'export'), ignore_errors=True)
 
     # call process function
-    silcam_process(conf_file_out, data_file, multiProcess=False, nbImages=2)
+    silcam_process(conf_file_out, data_file, multiProcess=True, nbImages=5)
 
     imc_files = glob.glob(os.path.join(data_file, 'export', '*-IMC*'))
     assert len(imc_files) == 2, 'unexpected number of IMC files'
