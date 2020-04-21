@@ -50,11 +50,6 @@ def test_big_standards():
     numline = len(lines)
     assert numline > 1 , 'csv file empty'
 
-    # check the columns
-    assert lines[0] == 'particle index,major_axis_length,minor_axis_length,equivalent_diameter,solidity,minr,minc,maxr,maxc,'\
-            'probability_oil,probability_other,probability_bubble,probability_faecal_pellets,probability_copepod,'\
-            'probability_diatom_chain,probability_oily_gas,export name,timestamp,saturation\n', 'columns not properly built'
-
     settings = PySilcamSettings(conf_file_out)
     stats = pd.read_csv(stats_file)
     d50 = scpp.d50_from_stats(stats, settings.PostProcess)
@@ -97,11 +92,6 @@ def test_small_standards():
     lines = csvfile.readlines()
     numline = len(lines)
     assert numline > 1 , 'csv file empty'
-
-    # check the columns
-    assert lines[0] == 'particle index,major_axis_length,minor_axis_length,equivalent_diameter,solidity,minr,minc,maxr,maxc,'\
-            'probability_oil,probability_other,probability_bubble,probability_faecal_pellets,probability_copepod,'\
-            'probability_diatom_chain,probability_oily_gas,export name,timestamp,saturation\n', 'columns not properly built'
 
     settings = PySilcamSettings(conf_file_out)
     stats = pd.read_csv(stats_file)
