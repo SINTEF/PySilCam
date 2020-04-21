@@ -12,8 +12,16 @@ jobs:
     timeout-minutes: 30
 
     steps:
+      - name: Check space 1
+        shell: bash
+        run: df -h
+
       - name: Check out code
         uses: actions/checkout@v2
+
+      - name: Check space 2
+        shell: bash
+        run: df -h
 
       - uses: whoan/docker-build-with-cache-action@v4
         with:
@@ -28,6 +36,10 @@ jobs:
           context: .
           dockerfile: Dockerfile
 
+      - name: Check space 3
+        shell: bash
+        run: df -h
+
       - name: Download test data
         shell: bash
         env:
@@ -35,6 +47,10 @@ jobs:
         run: |
           wget -nv https://pysilcam.blob.core.windows.net/test-data/pysilcam-testdata.zip?${AZURE_TEST_DATA_ACCESS_TOKEN} -O temp.zip
           unzip temp.zip
+
+      - name: Check space 4
+        shell: bash
+        run: df -h
 
       - name: Run the tests
         run: docker run -v $PWD/pysilcam-testdata:/testdata ${IMAGE_NAME}:${IMAGE_TAG}
