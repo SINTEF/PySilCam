@@ -43,14 +43,16 @@ def test_debug_files():
     # make sure export directory is empty
     shutil.rmtree(os.path.join(data_file, 'export'), ignore_errors=True)
 
+    num_test_ims = 5  # number of images to test
+
     # call process function
-    silcam_process(conf_file_out, data_file, multiProcess=True, nbImages=5)
+    silcam_process(conf_file_out, data_file, multiProcess=True, nbImages=num_test_ims)
 
     imc_files = glob.glob(os.path.join(data_file, 'export', '*-IMC*'))
-    assert len(imc_files) == 2, 'unexpected number of IMC files'
+    assert len(imc_files) == num_test_ims, 'unexpected number of IMC files'
 
     seg_files = glob.glob(os.path.join(data_file, 'export', '*-SEG*'))
-    assert len(seg_files) == 2, 'unexpected number of SEG files'
+    assert len(seg_files) == num_test_ims, 'unexpected number of SEG files'
 
     # cleanup output
     shutil.rmtree(os.path.join(data_file, 'export'))
