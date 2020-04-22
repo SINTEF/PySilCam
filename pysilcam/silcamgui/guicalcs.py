@@ -13,6 +13,7 @@ import pygame
 import time
 import psutil
 from tqdm import tqdm
+import cv2
 
 
 def get_data(self):
@@ -218,6 +219,8 @@ def load_image(filename, size):
     if filename.endswith('.silc'):
         with open(filename, 'rb') as fh:
             im = np.load(fh, allow_pickle=False)
+            im = cv2.cvtColor(im, cv2.COLOR_BAYER_BG2RGB)
+
         im = pygame.surfarray.make_surface(np.uint8(im))
         im = pygame.transform.flip(im, False, True)
         im = pygame.transform.rotate(im, -90)
@@ -232,6 +235,11 @@ def liveview(datadir, config_file):
     import pysilcam.silcamgui.liveviewer as lv
     lv.liveview(datadir, config_file)
 
+def annotate(datadir, filename):
+    a_path = os.path.join(datadir, "annotations.txt")
+    f = open(a_path, 'w')
+    f.write('{}, \n'.format(filename))
+    f.close()
 
 def silcview(datadir):
     files = [os.path.join(datadir, f) for f in
@@ -244,6 +252,7 @@ def silcview(datadir):
     size = (int(info.current_h / (2048/2448))-100, info.current_h-100)
     screen = pygame.display.set_mode(size)
     font = pygame.font.SysFont("monospace", 20)
+    font_colour = (0, 127, 127)
     c = pygame.time.Clock()
     zoom = False
     counter = -1
@@ -263,6 +272,9 @@ def silcview(datadir):
                     direction = -1
                 if event.key == pygame.K_RIGHT:
                     direction = 1
+                if event.key == pygame.K_a:
+                    annotate(datadir, f)
+                    pass
                 if event.key == pygame.K_p:
                     pause = np.invert(pause)
                 else:
@@ -280,13 +292,13 @@ def silcview(datadir):
             im = load_image(filename, size)
 
         if zoom:
-            label = font.render('ZOOM [F]: ON', 1, (255, 255, 0))
+            label = font.render('ZOOM [F]: ON', 1, font_colour)
             im = pygame.transform.scale2x(im)
             screen.blit(im,(-size[0]/2,-size[1]/2))
         else:
            im = pygame.transform.scale(im, size)
            screen.blit(im,(0,0))
-           label = font.render('ZOOM [F]: OFF', 1, (255, 255, 0))
+           label = font.render('ZOOM [F]: OFF', 1, font_colour)
         screen.blit(label,(0, size[1]-20))
 
         if direction==1:
@@ -295,14 +307,14 @@ def silcview(datadir):
             dirtxt = '<<'
         if pause:
             dirtxt = 'PAUSED ' + dirtxt
-        label = font.render('DIRECTION [<-|->|p]: ' + dirtxt, 1, (255,255,0))
+        label = font.render('DIRECTION [<-|->|p]: ' + dirtxt, 1, font_colour)
         screen.blit(label, (0, size[1]-40))
 
         if counter == 0:
-            label = font.render('FIRST IMAGE', 1, (255,255,0))
+            label = font.render('FIRST IMAGE', 1, font_colour)
             screen.blit(label, (0, size[1]-60))
         elif counter == len(files)-1:
-            label = font.render('LAST IMAGE', 1, (255,255,0))
+            label = font.render('LAST IMAGE', 1, font_colour)
             screen.blit(label, (0, size[1]-60))
 
         timestamp = pd.to_datetime(
@@ -310,10 +322,10 @@ def silcview(datadir):
 
 
         pygame.display.set_caption('raw image replay:' + os.path.split(f)[0])#, icontitle=None)
-        label = font.render(str(timestamp), 20, (255, 255, 0))
+        label = font.render(str(timestamp), 20, font_colour)
         screen.blit(label,(0,0))
         label = font.render('Display FPS:' + str(c.get_fps()),
-                1, (255, 255, 0))
+                1, font_colour)
         screen.blit(label,(0,20))
 
         for event in pygame.event.get():
