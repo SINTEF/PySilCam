@@ -6,6 +6,7 @@ from pysilcam.fakepymba import silcam_load, silcam_name2time
 from glob import glob
 import time
 import pandas as pd
+import cv2
 
 def main(datapath):
     print(datapath)
@@ -24,6 +25,7 @@ def main(datapath):
                 idx = -2
                 print(idx)
                 img = silcam_load(files[idx])
+                img = cv2.cvtColor(img, cv2.COLOR_BAYER_BG2RGB)
 
                 timestamp = silcam_name2time(os.path.split(files[idx])[-1])
                 print(timestamp)
