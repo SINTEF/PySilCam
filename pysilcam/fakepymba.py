@@ -11,6 +11,7 @@ import numpy as np
 import imageio
 import logging
 import pandas as pd
+import cv2
 from glob import glob
 
 #Handle potential Python 2.7 and Python 3
@@ -24,6 +25,8 @@ def silcam_load(filename):
     #Load the raw image from disc depending on filetype
     if filename.endswith('.silc'):
         img0 = np.load(filename, allow_pickle=False)
+        img0 = cv2.cvtColor(img0, cv2.COLOR_BAYER_BG2RGB)
+
     else:
         img0 = imageio.imread(filename)
     return img0

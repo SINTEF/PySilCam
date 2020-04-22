@@ -13,6 +13,7 @@ import pygame
 import time
 import psutil
 from tqdm import tqdm
+import cv2
 
 
 def get_data(self):
@@ -218,6 +219,8 @@ def load_image(filename, size):
     if filename.endswith('.silc'):
         with open(filename, 'rb') as fh:
             im = np.load(fh, allow_pickle=False)
+            im = cv2.cvtColor(im, cv2.COLOR_BAYER_BG2RGB)
+
         im = pygame.surfarray.make_surface(np.uint8(im))
         im = pygame.transform.flip(im, False, True)
         im = pygame.transform.rotate(im, -90)
