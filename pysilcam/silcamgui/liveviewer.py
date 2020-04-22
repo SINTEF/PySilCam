@@ -122,7 +122,7 @@ def liveview(datapath = '/mnt/DATA/emlynd/DATA/', config_filename = 'config_hard
     size = (int(info.current_h / (ims[0]/ims[1]))-50, info.current_h-50)
     screen = pygame.display.set_mode(size)
     font = pygame.font.SysFont("monospace", 20)
-    font_colour = (0, 0, 127)
+    font_colour = (0, 127, 127)
     zoom = 0
     pause = False
     pygame.event.set_blocked(pygame.MOUSEMOTION)
@@ -166,7 +166,7 @@ def liveview(datapath = '/mnt/DATA/emlynd/DATA/', config_filename = 'config_hard
         screen.blit(im, (0, 0))
         screen.blit(label,(0, size[1]-20))
 
-        label = font.render('pause[p] write[space] exit[Esc]', 1, (255,255,0))
+        label = font.render('pause[p] write[space] exit[Esc]', 1, font_colour)
         screen.blit(label, (0, size[1]-40))
 
         pygame.display.set_caption('Image display')

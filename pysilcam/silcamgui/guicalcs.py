@@ -218,7 +218,6 @@ def load_image(filename, size):
     if filename.endswith('.silc'):
         with open(filename, 'rb') as fh:
             im = np.load(fh, allow_pickle=False)
-
         im = pygame.surfarray.make_surface(np.uint8(im))
         im = pygame.transform.flip(im, False, True)
         im = pygame.transform.rotate(im, -90)
@@ -272,7 +271,6 @@ def silcview(datadir):
                     direction = 1
                 if event.key == pygame.K_a:
                     annotate(datadir, f)
-                    pass
                 if event.key == pygame.K_p:
                     pause = np.invert(pause)
                 else:
