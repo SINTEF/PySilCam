@@ -242,7 +242,7 @@ def silcview(datadir):
     files = [os.path.join(datadir, f) for f in
             sorted(os.listdir(datadir))
             if f.endswith('.silc') or f.endswith('.bmp')]
-    if len(files)==0:
+    if len(files) == 0:
         return
     pygame.init()
     info = pygame.display.Info()
@@ -279,27 +279,27 @@ def silcview(datadir):
 
         counter += direction
         counter = np.max([counter, 0])
-        counter = np.min([len(files)-1, counter])
+        counter = np.min([len(files) - 1, counter])
         c.tick(15) # restrict to 15Hz
         f = files[counter]
 
-        if not (counter == 0 | counter==len(files)-1):
+        if not (counter == 0 | counter == len(files) - 1):
             filename = os.path.join(datadir, f)
             im = load_image(filename, size)
 
         if zoom:
             label = font.render('ZOOM [F]: ON', 1, font_colour)
             im = pygame.transform.scale2x(im)
-            screen.blit(im,(-size[0]/2,-size[1]/2))
+            screen.blit(im, (-size[0]/2, -size[1]/2))
         else:
-           im = pygame.transform.scale(im, size)
-           screen.blit(im,(0,0))
-           label = font.render('ZOOM [F]: OFF', 1, font_colour)
-        screen.blit(label,(0, size[1]-20))
+            im = pygame.transform.scale(im, size)
+            screen.blit(im, (0, 0))
+            label = font.render('ZOOM [F]: OFF', 1, font_colour)
+        screen.blit(label, (0, size[1] - 20))
 
-        if direction==1:
+        if direction == 1:
             dirtxt = '>>'
-        elif direction==-1:
+        elif direction == -1:
             dirtxt = '<<'
         if pause:
             dirtxt = 'PAUSED ' + dirtxt
@@ -316,13 +316,12 @@ def silcview(datadir):
         timestamp = pd.to_datetime(
                 os.path.splitext(os.path.split(f)[-1])[0][1:])
 
-
         pygame.display.set_caption('raw image replay:' + os.path.split(f)[0])#, icontitle=None)
         label = font.render(str(timestamp), 20, font_colour)
-        screen.blit(label,(0,0))
+        screen.blit(label, (0, 0))
         label = font.render('Display FPS:' + str(c.get_fps()),
-                1, font_colour)
-        screen.blit(label,(0,20))
+                            1, font_colour)
+        screen.blit(label, (0, 20))
 
         for event in pygame.event.get():
             if event.type == 12:
@@ -369,12 +368,12 @@ class ProcThread(Process):
 
     def run(self):
         import pysilcam.__main__ as psc
-        if(self.run_type == process_mode.process):
+        if (self.run_type == process_mode.process):
             psc.silcam_process(self.configfile, self.datadir, multiProcess=True, realtime=False,
             gui=self.q, overwriteSTATS=self.overwriteSTATS)
-        elif(self.run_type == process_mode.aquire):
+        elif (self.run_type == process_mode.aquire):
             psc.silcam_acquire(self.datadir, config_filename=self.configfile, writeToDisk=self.disc_write, gui=self.q)
-        elif(self.run_type == process_mode.real_time):
+        elif (self.run_type == process_mode.real_time):
             if 'REALTIME_DISC' in os.environ.keys():
                 psc.silcam_process(self.configfile, self.datadir, multiProcess=False, realtime=True,
                                    discWrite=False, gui=self.q, overwriteSTATS=True)
