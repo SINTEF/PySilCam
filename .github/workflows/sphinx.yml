@@ -1,0 +1,15 @@
+name: Build PySilcam Sphinx documentation
+
+on: [pull_request]
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v1
+ 
+    - name: Build Sphinx doc
+     uses: ammaraskar/sphinx-action@master
+      with:
+        docs-folder: "docs/"
