@@ -232,11 +232,13 @@ def liveview(datadir, config_file):
     import pysilcam.silcamgui.liveviewer as lv
     lv.liveview(datadir, config_file)
 
+
 def annotate(datadir, filename):
     a_path = os.path.join(datadir, "annotations.txt")
     f = open(a_path, 'w')
     f.write('{}, \n'.format(filename))
     f.close()
+
 
 def silcview(datadir):
     files = [os.path.join(datadir, f) for f in
@@ -246,7 +248,7 @@ def silcview(datadir):
         return
     pygame.init()
     info = pygame.display.Info()
-    size = (int(info.current_h / (2048/2448))-100, info.current_h-100)
+    size = (int(info.current_h / (2048 / 2448)) - 100, info.current_h - 100)
     screen = pygame.display.set_mode(size)
     font = pygame.font.SysFont("monospace", 20)
     font_colour = (0, 127, 127)
@@ -254,28 +256,34 @@ def silcview(datadir):
     zoom = False
     counter = -1
     direction = 1 # 1=forward 2=backward
+    last_direction = direction
     pause = False
     pygame.event.set_blocked(pygame.MOUSEMOTION)
+
     while True:
         if pause:
             event = pygame.event.wait()
             if event.type == 12:
                 pygame.quit()
                 return
-            if event.type == pygame.KEYDOWN:
+            elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_f:
                     zoom = np.invert(zoom)
-                if event.key == pygame.K_LEFT:
-                    direction = -1
-                if event.key == pygame.K_RIGHT:
-                    direction = 1
-                if event.key == pygame.K_a:
-                    annotate(datadir, f)
-                if event.key == pygame.K_p:
+                elif event.key == pygame.K_LEFT:
+                    counter -= 1
+                elif event.key == pygame.K_RIGHT:
+                    counter += 1
+                elif event.key == pygame.K_a:
+                    if counter > -1:
+                        annotate(datadir, files[counter])
+                    else:
+                        annotate(datadir, files[0])  # This should only happen if a is pressed on the very first frame
+                elif event.key == pygame.K_p:
                     pause = np.invert(pause)
+                    direction = last_direction
                 else:
                     continue
-                pygame.time.wait(100)
+                pygame.time.wait(10)
 
         counter += direction
         counter = np.max([counter, 0])
@@ -290,7 +298,7 @@ def silcview(datadir):
         if zoom:
             label = font.render('ZOOM [F]: ON', 1, font_colour)
             im = pygame.transform.scale2x(im)
-            screen.blit(im, (-size[0]/2, -size[1]/2))
+            screen.blit(im, (-size[0] / 2, -size[1] / 2))
         else:
             im = pygame.transform.scale(im, size)
             screen.blit(im, (0, 0))
@@ -301,17 +309,21 @@ def silcview(datadir):
             dirtxt = '>>'
         elif direction == -1:
             dirtxt = '<<'
-        if pause:
+        if pause and not ('PAUSED' in dirtxt):
             dirtxt = 'PAUSED ' + dirtxt
         label = font.render('DIRECTION [<-|->|p]: ' + dirtxt, 1, font_colour)
         screen.blit(label, (0, size[1]-40))
 
         if counter == 0:
             label = font.render('FIRST IMAGE', 1, font_colour)
-            screen.blit(label, (0, size[1]-60))
+            screen.blit(label, (0, size[1] - 60))
         elif counter == len(files)-1:
             label = font.render('LAST IMAGE', 1, font_colour)
-            screen.blit(label, (0, size[1]-60))
+            screen.blit(label, (0, size[1] - 60))
+
+        # Show current counter for debugging purposes
+        # label = font.render('Frame counter: {}'.format(counter), 1, font_colour)
+        # screen.blit(label, (0, size[1] - 80))
 
         timestamp = pd.to_datetime(
                 os.path.splitext(os.path.split(f)[-1])[0][1:])
@@ -323,20 +335,22 @@ def silcview(datadir):
                             1, font_colour)
         screen.blit(label, (0, 20))
 
-        for event in pygame.event.get():
-            if event.type == 12:
-                pygame.quit()
-                return
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_f:
-                    zoom = np.invert(zoom)
-                if event.key == pygame.K_LEFT:
-                    direction = -1
-                if event.key == pygame.K_RIGHT:
-                    direction = 1
-                if event.key == pygame.K_p:
-                    pause = np.invert(pause)
-                    direction = 0
+        if not pause:
+            for event in pygame.event.get():
+                if event.type == 12:
+                    pygame.quit()
+                    return
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_f:
+                        zoom = np.invert(zoom)
+                    elif event.key == pygame.K_LEFT:
+                        direction = -1
+                    elif event.key == pygame.K_RIGHT:
+                        direction = 1
+                    elif event.key == pygame.K_p:
+                        pause = np.invert(pause)
+                        last_direction = direction
+                        direction = 0
 
         pygame.display.flip()
 
