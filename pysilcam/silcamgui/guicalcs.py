@@ -235,8 +235,11 @@ def liveview(datadir, config_file):
 
 def annotate(datadir, filename):
     a_path = os.path.join(datadir, "annotations.txt")
-    f = open(a_path, 'w')
-    f.write('{}, \n'.format(filename))
+    if os.path.isfile(a_path):
+        f = open(a_path, 'a')
+    else:
+        f = open(a_path, 'a')
+    f.write('{}, \n'.format(os.path.basename(filename)))
     f.close()
 
 
