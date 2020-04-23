@@ -10,6 +10,6 @@ jobs:
       uses: actions/checkout@v1
  
     - name: Build Sphinx doc
-     uses: ammaraskar/sphinx-action@master
+      uses: ammaraskar/sphinx-action@master
       with:
         docs-folder: "docs/"
