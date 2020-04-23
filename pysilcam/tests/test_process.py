@@ -39,6 +39,7 @@ def test_output_files():
     conf_file_hand.close()
 
     stats_file = os.path.join(data_file, 'proc', 'STN04-STATS.csv')
+    # todo generate this hdf filename based on input data
     hdf_file = os.path.join(data_file, 'export/D20170509T172705.387171.h5')
     report_figure = os.path.join(data_file, 'proc', 'STN04-Summary_all.png')
 
@@ -85,7 +86,8 @@ def test_output_files():
 
     files = glob.glob(os.path.join(data_file, '*.bmp'))
     expected_processed = len(files) - background_images
-    assert (number_processed == expected_processed), 'number of images processed does not match the size of the dataset'
+    assert (number_processed == expected_processed), (str(number_processed) + ' images were processed. ' +
+                                                      'Expected ' + str(expected_processed))
 
     # check that hdf file has been created
     assert os.path.isfile(hdf_file), ('hdf file not created. should be here:' + hdf_file)
@@ -94,7 +96,7 @@ def test_output_files():
     show_h5_meta(hdf_file)
     from pysilcam.config import settings_from_h5
     Settings = settings_from_h5(hdf_file)
-    # test a an appropriate settting after reading it back from the hdf5 file
+    # test a an appropriate setting after reading it back from the hdf5 file
     assert (Settings.ExportParticles.export_images is True), 'unexpected setting read from metadata in hdf5 file'
 
     # if report figure already exists, it has to be deleted
@@ -103,11 +105,3 @@ def test_output_files():
 
     silcam_report(stats_file, conf_file_out, dpi=10)
     assert os.path.isfile(report_figure), 'report figure file not created'
-
-    # # test synthesizer
-    # import pysilcam.tests.synthesizer as synth
-    # reportdir = os.path.join(path, '../../test-report')
-    # os.makedirs(reportdir, exist_ok=True)
-    # synth.generate_report(os.path.join(reportdir, 'imagesynth_report.pdf'), PIX_SIZE=28.758169934640524,
-    #                      PATH_LENGTH=10, d50=800, TotalVolumeConcentration=800,
-    #                      MinD=108)
