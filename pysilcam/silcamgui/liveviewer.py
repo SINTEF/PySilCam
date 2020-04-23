@@ -121,7 +121,7 @@ def liveview(datapath = '/mnt/DATA/emlynd/DATA/', config_filename = 'config_hard
 
     pygame.init()
     info = pygame.display.Info()
-    size = (int(info.current_h / (ims[0]/ims[1]))-50, info.current_h-50)
+    size = (int(info.current_h / (ims[0] / ims[1])) - 50, info.current_h - 50)
     screen = pygame.display.set_mode(size)
     font = pygame.font.SysFont("monospace", 20)
     font_colour = (0, 127, 127)
@@ -155,21 +155,21 @@ def liveview(datapath = '/mnt/DATA/emlynd/DATA/', config_filename = 'config_hard
         if zoom>0:
             label = font.render('ZOOM [F]: ' + str(zoom), 1, font_colour)
             if zoom==1:
-                imcrop = imraw[int(ims[0]/4):-int(ims[0]/4),
-                               int(ims[1]/4):-int(ims[1]/4), :]
+                imcrop = imraw[int(ims[0] / 4):-int(ims[0] / 4),
+                               int(ims[1] / 4):-int(ims[1] / 4), :]
             else:
-                imcrop = imraw[int(ims[0]/2.5):-int(ims[0]/2.5),
-                               int(ims[1]/2.5):-int(ims[1]/2.5), :]
+                imcrop = imraw[int(ims[0] / 2.5):-int(ims[0] / 2.5),
+                               int(ims[1] / 2.5):-int(ims[1] / 2.5), :]
             im = convert_image(imcrop, size)
         else:
             im = convert_image(imraw, size)
             label = font.render('ZOOM [F]: OFF', 1, font_colour)
 
         screen.blit(im, (0, 0))
-        screen.blit(label, (0, size[1]-20))
+        screen.blit(label, (0, size[1] - 20))
 
         label = font.render('pause[p] write[space] exit[Esc]', 1, font_colour)
-        screen.blit(label, (0, size[1]-40))
+        screen.blit(label, (0, size[1] - 40))
 
         pygame.display.set_caption('Image display')
         label = font.render(str(timestamp) + '    Disp. FPS: ' +

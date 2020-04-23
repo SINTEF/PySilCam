@@ -238,7 +238,7 @@ def annotate(datadir, filename):
     if os.path.isfile(a_path):
         f = open(a_path, 'a')
     else:
-        f = open(a_path, 'a')
+        f = open(a_path, 'w')
     f.write('{}, \n'.format(os.path.basename(filename)))
     f.close()
 
