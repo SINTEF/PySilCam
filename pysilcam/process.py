@@ -199,7 +199,7 @@ def measure_particles(im_binary, imc, settings, timestamp, nnmodel, class_labels
     return stats, saturation
 
 
-def threshold_im(im_rgb, settings):
+def threshold_im(im_rgb, settings, timestamp):
     '''im_rgb (raw corrected image) to binary image
 
     Args:
@@ -231,9 +231,7 @@ def threshold_im(im_rgb, settings):
     # fill holes in particles
     im_binary = ndi.binary_fill_holes(im_binary)
 
-    write_segmented_images(imbw, imc, settings, timestamp)
-
-    logger.debug('measure')
+    write_segmented_images(im_binary, im_rgb, settings, timestamp)
 
     return im_binary
 
@@ -272,14 +270,6 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
 
     @todo clean up all the unnesessary conditional statements in this
     """
-
-    filenames = ['not_exported'] * len(region_properties)
-
-    # pre-allocation
-    predictions = np.zeros((len(region_properties),
-                            len(class_labels)),
-                           dtype='float64')
-    predictions *= np.nan
 
     # obtain the original image filename from the timestamp
     filename = timestamp.strftime('D%Y%m%dT%H%M%S.%f')
@@ -391,7 +381,7 @@ def processImage(nnmodel, class_labels, image_data, settings):
         start_time = time.clock()
         logger.info('Processing time stamp {0}'.format(im_timestamp))
 
-        im_binary = threshold_im(im_rgb, settings)
+        im_binary = threshold_im(im_rgb, settings, im_timestamp)
 
         sat_check, saturation = concentration_check(im_binary, settings)
         if not sat_check:
@@ -426,13 +416,9 @@ def processImage(nnmodel, class_labels, image_data, settings):
         stats_all['timestamp'] = im_timestamp  # add timestamp to each row of particle statistics
         stats_all['saturation'] = saturation  # add saturation to each row of particle statistics
 
-        # Time the particle statistics processing step
-        proc_time = time.time() - start_time
-
-        # Print timing information for this iteration
-        infostr = '  Image {0} processed in {1:.2f} sec ({2:.1f} Hz).'
-        infostr = infostr.format(i, proc_time, 1.0 / proc_time)
-        print(infostr)
+        # Print processing time
+        proc_time = time.clock() - start_time
+        print('  Image {0} processed in {1:.2f} sec ({2:.1f} Hz).'.format(im_idx, proc_time, 1.0 / proc_time))
 
     except:
         infostr = 'Failed to process frame {0}, skipping.'.format(im_idx)
