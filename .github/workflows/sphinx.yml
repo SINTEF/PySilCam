@@ -12,5 +12,5 @@ jobs:
     - name: Build Sphinx doc
       uses: ammaraskar/sphinx-action@master
       with:
-        docs-folder: "docs/"
+        docs-folder: "./"
         build-command: "python setup.py build_sphinx"
