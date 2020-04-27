@@ -1,5 +1,6 @@
 # Use the Anaconda Docker image
-FROM continuumio/anaconda3:5.3.0
+#FROM continuumio/anaconda3:5.3.0
+FROM continuumio/miniconda3
 
 # Install build tools, gcc etc
 RUN apt-get update && apt-get install -y build-essential vim htop procps x11vnc xvfb libsdl-ttf2.0-0
