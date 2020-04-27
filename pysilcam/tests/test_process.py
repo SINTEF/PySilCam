@@ -8,7 +8,7 @@ import glob
 import os
 import unittest
 import pandas as pd
-import shutil
+import tempfile
 
 # Get user-defined path to unittest data folder
 ROOTPATH = os.environ.get('UNITTEST_DATA_PATH', None)
@@ -25,37 +25,35 @@ print('MODEL_PATH', MODEL_PATH)
 def test_debug_files():
     '''Testing that the debug images are created'''
 
-    conf_file = os.path.join(ROOTPATH, 'config.ini')
-    conf_file_out = os.path.join(ROOTPATH, 'config_generated.ini')
-    conf = load_config(conf_file)
+    # do this whole test using a temporary export directory
+    with tempfile.TemporaryDirectory() as tempdir:
+        print('tempdir:', tempdir, 'created')
 
-    data_file = os.path.join(ROOTPATH, 'STN04')
-    conf.set('General', 'loglevel', 'DEBUG')
-    conf.set('General', 'datafile', os.path.join(data_file, 'proc'))
-    conf.set('General', 'logfile', os.path.join(ROOTPATH, 'log.log'))
-    conf.set('ExportParticles', 'outputpath', os.path.join(data_file, 'export'))
-    if MODEL_PATH is not None:
-        conf.set('NNClassify', 'model_path', MODEL_PATH)
-    conf_file_hand = open(conf_file_out, 'w')
-    conf.write(conf_file_hand)
-    conf_file_hand.close()
+        conf_file = os.path.join(ROOTPATH, 'config.ini')
+        conf_file_out = os.path.join(ROOTPATH, 'config_generated.ini')
+        conf = load_config(conf_file)
 
-    # make sure export directory is empty
-    shutil.rmtree(os.path.join(data_file, 'export'), ignore_errors=True)
+        data_file = os.path.join(ROOTPATH, 'STN04')
+        conf.set('General', 'loglevel', 'DEBUG')
+        conf.set('General', 'datafile', os.path.join(data_file, 'proc'))
+        conf.set('General', 'logfile', os.path.join(ROOTPATH, 'log.log'))
+        conf.set('ExportParticles', 'outputpath', tempdir)
+        if MODEL_PATH is not None:
+            conf.set('NNClassify', 'model_path', MODEL_PATH)
+        conf_file_hand = open(conf_file_out, 'w')
+        conf.write(conf_file_hand)
+        conf_file_hand.close()
 
-    num_test_ims = 5  # number of images to test
+        num_test_ims = 5  # number of images to test
 
-    # call process function
-    silcam_process(conf_file_out, data_file, multiProcess=True, nbImages=num_test_ims)
+        # call process function
+        silcam_process(conf_file_out, data_file, multiProcess=True, nbImages=num_test_ims)
 
-    imc_files = glob.glob(os.path.join(data_file, 'export', '*-IMC*'))
-    assert len(imc_files) == num_test_ims, 'unexpected number of IMC files'
+        imc_files = glob.glob(os.path.join(data_file, 'export', '*-IMC*'))
+        assert len(imc_files) == num_test_ims, 'unexpected number of IMC files'
 
-    seg_files = glob.glob(os.path.join(data_file, 'export', '*-SEG*'))
-    assert len(seg_files) == num_test_ims, 'unexpected number of SEG files'
-
-    # cleanup output
-    shutil.rmtree(os.path.join(data_file, 'export'))
+        seg_files = glob.glob(os.path.join(data_file, 'export', '*-SEG*'))
+        assert len(seg_files) == num_test_ims, 'unexpected number of SEG files'
 
 
 @unittest.skipIf((ROOTPATH is None),
