@@ -22,6 +22,7 @@ def get_data(self):
         rts = None
     return rts
 
+
 def count_data(datadir):
     silcfiles = [os.path.join(datadir, f) for f in
             sorted(os.listdir(datadir))
@@ -32,6 +33,7 @@ def count_data(datadir):
     silc = len(silcfiles)
     bmp = len(bmpfiles)
     return silc, bmp
+
 
 def extract_stats_im(guidata):
     imc = guidata['imc']
@@ -258,6 +260,7 @@ def silcview(datadir):
     c = pygame.time.Clock()
     zoom = False
     counter = -1
+    annotate_counter = 0
     direction = 1 # 1=forward 2=backward
     last_direction = direction
     pause = False
@@ -276,7 +279,12 @@ def silcview(datadir):
                     counter -= 1
                 elif event.key == pygame.K_RIGHT:
                     counter += 1
-                elif event.key == pygame.K_a:
+                elif event.key == pygame.K_HOME:
+                    counter = 0
+                elif event.key == pygame.K_END:
+                    counter = len(files) - 1
+                elif event.key == pygame.K_n:
+                    annotate_counter += 1
                     if counter > -1:
                         annotate(datadir, files[counter])
                     else:
@@ -284,6 +292,9 @@ def silcview(datadir):
                 elif event.key == pygame.K_p:
                     pause = np.invert(pause)
                     direction = last_direction
+                elif event.key == pygame.K_q:
+                    pygame.quit()
+                    return
                 else:
                     continue
                 pygame.time.wait(10)
@@ -312,9 +323,9 @@ def silcview(datadir):
             dirtxt = '>>'
         elif direction == -1:
             dirtxt = '<<'
-        if pause and not ('PAUSED' in dirtxt):
-            dirtxt = 'PAUSED ' + dirtxt
-        label = font.render('DIRECTION [<-|->|p]: ' + dirtxt, 1, font_colour)
+        if pause and not ('AUSED' in dirtxt):
+            dirtxt = 'AUSED ' + dirtxt
+        label = font.render('DIRECTION [HOME|<-|->|END] [P]' + dirtxt, 1, font_colour)
         screen.blit(label, (0, size[1]-40))
 
         if counter == 0:
@@ -324,19 +335,21 @@ def silcview(datadir):
             label = font.render('LAST IMAGE', 1, font_colour)
             screen.blit(label, (0, size[1] - 60))
 
-        # Show current counter for debugging purposes
-        # label = font.render('Frame counter: {}'.format(counter), 1, font_colour)
-        # screen.blit(label, (0, size[1] - 80))
-
         timestamp = pd.to_datetime(
                 os.path.splitext(os.path.split(f)[-1])[0][1:])
 
         pygame.display.set_caption('raw image replay:' + os.path.split(f)[0])#, icontitle=None)
         label = font.render(str(timestamp), 20, font_colour)
         screen.blit(label, (0, 0))
-        label = font.render('Display FPS:' + str(c.get_fps()),
-                            1, font_colour)
+        label = font.render('Frame: {0}/{1}'.format(counter, len(files) - 1), 1, font_colour)
         screen.blit(label, (0, 20))
+        label = font.render('Display FPS: {:0.2f}'.format(c.get_fps()),
+                            1, font_colour)
+        screen.blit(label, (0, 40))
+
+        if annotate_counter > 0:
+            label = font.render('Annotations: {}'.format(annotate_counter), 1, font_colour)
+            screen.blit(label, (size[0] - 200, size[1] - 20))
 
         if not pause:
             for event in pygame.event.get():
@@ -350,10 +363,19 @@ def silcview(datadir):
                         direction = -1
                     elif event.key == pygame.K_RIGHT:
                         direction = 1
+                    elif event.key == pygame.K_HOME:
+                        counter = 0
+                        direction = 1
+                    elif event.key == pygame.K_END:
+                        counter = len(files) - 1
+                        direction = -1
                     elif event.key == pygame.K_p:
                         pause = np.invert(pause)
                         last_direction = direction
                         direction = 0
+                    elif event.key == pygame.K_q:
+                        pygame.quit()
+                        return
 
         pygame.display.flip()
 
