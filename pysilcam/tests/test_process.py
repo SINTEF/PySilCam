@@ -49,10 +49,10 @@ def test_debug_files():
         # call process function
         silcam_process(conf_file_out, data_file, multiProcess=True, nbImages=num_test_ims)
 
-        imc_files = glob.glob(os.path.join(data_file, 'export', '*-IMC*'))
+        imc_files = glob.glob(os.path.join(tempdir, '*-IMC*'))
         assert len(imc_files) == num_test_ims, 'unexpected number of IMC files'
 
-        seg_files = glob.glob(os.path.join(data_file, 'export', '*-SEG*'))
+        seg_files = glob.glob(os.path.join(tempdir, '*-SEG*'))
         assert len(seg_files) == num_test_ims, 'unexpected number of SEG files'
 
 
