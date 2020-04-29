@@ -573,7 +573,7 @@ def collector(inputQueue, outputQueue, datafilename, proc_list, testInputQueue,
 
     countProcessFinished = 0
 
-    while ((outputQueue.qsize() > 0) or (testInputQueue and inputQueue.qsize() > 0)):
+    while ((not outputQueue.empty()) or (testInputQueue and not inputQueue.empty())):
 
         task = outputQueue.get()
 
