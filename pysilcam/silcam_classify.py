@@ -135,32 +135,31 @@ def predict_tf(img, model):
 
 
 def load_model(model_path='/mnt/ARRAY/classifier/model/particle-classifier.pt'):
-      '''
-      Load the trained torch model
+    '''
+    Load the trained torch model
 
-      Args:
-          model_path (str)        : path to particle-classifier e.g.
-                                    '/mnt/ARRAY/classifier/model/particle-classifier.pt'
+    Args:
+        model_path (str)        : path to particle-classifier e.g.
+                                '/mnt/ARRAY/classifier/model/particle-classifier.pt'
 
-      Returns:
-          model (tf model object) : loaded tfl model from load_model()
-      '''
-      path, filename = os.path.split(model_path)
-      header = pd.read_csv(os.path.join(path, 'header.tfl.txt'))
-      #OUTPUTS = len(header.columns)
-      class_labels = header.columns
+    Returns:
+        model (tf model object) : loaded tfl model from load_model()
+    '''
+    path, filename = os.path.split(model_path)
+    header = pd.read_csv(os.path.join(path, 'header.tfl.txt'))
+    # OUTPUTS = len(header.columns)
+    class_labels = header.columns
 
+    model = COAPNet(num_classes=len(class_labels))
+    name = 'COAPModNet'
+    # remap everything onto CPU: loading weights trained on GPU to CPU
+    # model.load_state_dict(torch.load(model_path,
+    #                                  map_location=lambda storage, loc: storage))  # 'cpu'
+    # model.load_state_dict(torch.load(model_path))   # ,map_location='cpu'
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.load_state_dict(torch.load(model_path, map_location=torch.device(device)))
 
-      model = COAPNet(num_classes=len(class_labels))
-      name = 'COAPModNet'
-      # remap everything onto CPU: loading weights trained on GPU to CPU
-      #model.load_state_dict(torch.load(model_path,
-      #                               map_location=lambda storage, loc: storage))  # 'cpu'
-      #model.load_state_dict(torch.load(model_path))   # ,map_location='cpu'
-      device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-      model.load_state_dict(torch.load(model_path), map_location=torch.device(device))
-
-      return model, class_labels
+    return model, class_labels
 
 
 def predict(img, model):
