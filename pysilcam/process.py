@@ -46,7 +46,7 @@ def image2binary_accurate(imc, greythresh):
 
     # perform an adaptive historgram equalization to handle some
     # less-than-ideal lighting situations
-    img_adapteq = skimage.exposure.equalize_adapthist(img, clip_limit=(1-greythresh), nbins=256)
+    img_adapteq = skimage.exposure.equalize_adapthist(img, clip_limit=(1 - greythresh), nbins=256)
 
     # use the equalised image to estimate a second semi-automated threshold
     new_thresh = np.percentile(img_adapteq, 0.75) * greythresh
@@ -179,7 +179,7 @@ def measure_particles(im_binary, imc, settings, timestamp, nnmodel, class_labels
     sat_check, saturation = concentration_check(im_binary, settings)
     if sat_check == False:
         logger.warning('....breached concentration limit! Skipping image.')
-        im_binary *= 0 # this is not a good way to handle this condition
+        im_binary *= 0  # this is not a good way to handle this condition
         # @todo handle situation when too many particles are found
 
     # label the segmented image
@@ -217,9 +217,9 @@ def threshold_im(im_rgb, settings, timestamp):
     img = np.uint8(np.min(im_rgb, axis=2))
 
     if settings.Process.real_time_stats:
-        im_binary = image2binary_fast(img, settings.Process.threshold) # image2binary_fast is less fancy but
+        im_binary = image2binary_fast(img, settings.Process.threshold)  # image2binary_fast is less fancy but
     else:
-        im_binary = image2binary_accurate(img, settings.Process.threshold) # image2binary_fast is less fancy but
+        im_binary = image2binary_accurate(img, settings.Process.threshold)  # image2binary_fast is less fancy but
     # image2binary_fast is faster than image2binary_accurate but might cause problems when trying to
     # process images with bad lighting
 
@@ -304,9 +304,8 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
         particle_data[i, :] = data
         bboxes[i, :] = el.bbox
 
-
         # if operating in realtime mode, assume we only care about oil and gas and skip export of overly-derformed particles
-        if settings.Process.real_time_stats and (data[1]/data[0] < 0.3 or data[3] < 0.95):
+        if settings.Process.real_time_stats and (data[1] / data[0] < 0.3 or data[3] < 0.95):
             continue
         # Find particles that match export criteria
         if data[0] < settings.ExportParticles.min_length or data[1] < 2:
@@ -341,11 +340,12 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
     # put particle statistics into a DataFrame
     stats = pd.DataFrame(columns=column_names, data=cat_data)
 
-    logger.info('Extracting {0} rois from {1} possible'.format(len(particle_ids_export), len(stats['major_axis_length'])))
+    logger.info(
+        'Extracting {0} rois from {1} possible'.format(len(particle_ids_export), len(stats['major_axis_length'])))
 
     # add classification predictions to the particle statistics data
-    for n,c in enumerate(class_labels):
-       stats['probability_' + c] = predictions[:, n]
+    for n, c in enumerate(class_labels):
+        stats['probability_' + c] = predictions[:, n]
 
     # add the filenames of the HDF5 file and particle number tag to the
     # particle statistics data
