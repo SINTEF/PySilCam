@@ -509,12 +509,10 @@ def loop(config_filename, inputQueue, outputQueue, gui=None):
 
     # load the model for particle classification and keep it for later
 
-    # a tensorflow session must be started on each process in order to function reliably in multiprocess.
-    # This also includes the import of tensorflow on each process
-    # @todo the loading of the model and prediction functions should be within a class that is initialized by starting a
-    #  tensorflow session, then this will be cleaner.
-    import tensorflow as tf
-    sess = tf.Session()
+    # If using the old tensorflow code, tf must be imported and a session
+    # started, and clsoed at the end of this function.
+    # import tensorflow as tf
+    # sess = tf.Session()
 
     nnmodel = []
     nnmodel, class_labels = sccl.load_model(model_path=settings.NNClassify.model_path)
@@ -531,9 +529,7 @@ def loop(config_filename, inputQueue, outputQueue, gui=None):
         else:
             logger.info('No stats found.')
 
-    # close of the tensorflow session when everything is finished.
-    # unsure of behaviour if things crash or are stoppped before reaching this point
-    sess.close()
+    # sess.close()
     return
 
 
