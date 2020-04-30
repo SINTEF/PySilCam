@@ -163,46 +163,46 @@ def load_model(model_path='/mnt/ARRAY/classifier/model/particle-classifier.pt'):
 
 
 def predict(img, model):
-      '''
-      Use torch model to classify particles
+    '''
+    Use torch model to classify particles
 
-      Args:
-          img (uint8)             : a particle ROI, corrected and treated with the silcam
-                                    explode_contrast function
-          model (torch model object) : loaded torch model from load_model()
+    Args:
+        img (uint8)             : a particle ROI, corrected and treated with the silcam
+                                explode_contrast function
+        model (torch model object) : loaded torch model from load_model()
 
-      Returns:
-          prediction (array)      : the probability of the roi belonging to each class
-      '''
+    Returns:
+        prediction (array)      : the probability of the roi belonging to each class
+    '''
 
-      # Scale it to 32x32
-      #img = scipy.misc.imresize(img, (32, 32), interp="bicubic").astype(np.float32, casting='unsafe')
+    # Scale it to 32x32
+    # img = scipy.misc.imresize(img, (32, 32), interp="bicubic").astype(np.float32, casting='unsafe')
 
-      # Predict
-      #prediction = model.predict([img])
-      #print('before reading the image ')
-      #image = io.imread(img)
-      #print('io.imread(img) ', img.shape)
-      image = transform.resize(img, (64, 64))
-      #print('transform.resize(image, (64, 64)) ', image.shape)
-      image = image.transpose((2, 0, 1))
-      #print('image.transpose((2, 0, 1)) ', image.shape)
-      image = torch.from_numpy(image).float()
-      #print('torch.from_numpy(image).float() ', image.shape)
-      norm = transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-      image = norm(image)
-      #print('image.shape ', image.shape)
-      image = image[np.newaxis, :]
-      #print('image.shape', image.shape)
+    # Predict
+    # prediction = model.predict([img])
+    # print('before reading the image ')
+    # image = io.imread(img)
+    # print('io.imread(img) ', img.shape)
+    image = transform.resize(img, (64, 64))
+    # print('transform.resize(image, (64, 64)) ', image.shape)
+    image = image.transpose((2, 0, 1))
+    # print('image.transpose((2, 0, 1)) ', image.shape)
+    image = torch.from_numpy(image).float()
+    # print('torch.from_numpy(image).float() ', image.shape)
+    norm = transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    image = norm(image)
+    # print('image.shape ', image.shape)
+    image = image[np.newaxis, :]
+    # print('image.shape', image.shape)
 
-      model.eval()
-      device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-      model.to(device)
-      out_predict = model(image.float())
-      #print('out_predict: ', out_predict)
-      out_predict = nn.Softmax(dim=1)(out_predict)
-      #print('out_predict after applying softmax: ', out_predict)
-      out_predict = out_predict.cpu().detach().numpy() #= torch.var(out_predict).data.numpy()
-      #print('out_predict numpy array: ', out_predict)
+    model.eval()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+    out_predict = model(image.float())
+    # print('out_predict: ', out_predict)
+    out_predict = nn.Softmax(dim=1)(out_predict)
+    # print('out_predict after applying softmax: ', out_predict)
+    out_predict = out_predict.cpu().detach().numpy()  # = torch.var(out_predict).data.numpy()
+    # print('out_predict numpy array: ', out_predict)
 
-      return out_predict
+    return out_predict
