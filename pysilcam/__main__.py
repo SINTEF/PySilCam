@@ -172,7 +172,7 @@ def silcam_acquire(datapath, config_filename, writeToDisk=True, gui=None):
         t1 = time.time()
 
         if gui is not None:
-            while (gui.qsize() > 0):
+            while not gui.empty():
                 try:
                     gui.get_nowait()
                     time.sleep(0.001)
@@ -321,7 +321,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
 
             if gui is not None:
                 logger.debug('Putting data on GUI Queue')
-                while (gui.qsize() > 0):
+                while not gui.empty():
                     try:
                         gui.get_nowait()
                         time.sleep(0.001)
@@ -382,7 +382,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
             if gui is not None:
                 collect_rts(settings, rts, stats_all)
                 logger.debug('Putting data on GUI Queue')
-                while gui.qsize() > 0:
+                while not gui.empty():
                     try:
                         gui.get_nowait()
                         time.sleep(0.001)
@@ -577,7 +577,7 @@ def collector(inputQueue, outputQueue, datafilename, proc_list, testInputQueue,
 
     countProcessFinished = 0
 
-    while ((outputQueue.qsize() > 0) or (testInputQueue and inputQueue.qsize() > 0)):
+    while (not outputQueue.empty()) or (testInputQueue and not inputQueue.empty()):
 
         task = outputQueue.get()
 
