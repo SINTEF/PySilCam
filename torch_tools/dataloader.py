@@ -6,13 +6,47 @@ from skimage import io, transform
 import numpy as np
 import matplotlib.pyplot as plt
 
-from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms, utils, datasets
+from torch.utils.data import Dataset
+from torchvision import transforms, utils
 import imageio
 import csv
+import cv2
 import random
 from PIL import Image
+
 from torch_tools.torchutils import *
+
+def single_img_dataloader(filename):
+    """Crop randomly the image in a sample.
+    Args:
+        @:param filename: image filename.
+        @:return image: image tensor after resizing, transpose and normalizing
+    """
+    image = load_image_from_file(filename)
+    image = transform.resize(image, (64, 64))
+    image = image.transpose((2, 0, 1))
+    image = torch.from_numpy(image).float()
+    norm = transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    image = norm(image)
+    print('image.shape ', image.shape)
+    image = image[np.newaxis, :]
+    print('image.shape', image.shape)
+    return image
+def load_image_from_file(filename):
+    """
+    Loading the image from the file
+    and apply opencv normalization for histogram normalization
+    and median blur to remove Gaussian noise
+    :param filename: image filename.
+    :return: image object
+    """
+    image = io.imread(filename)
+    nmin = 0
+    nmax = 255
+    image = cv2.normalize(image, None, alpha=nmin, beta=nmax, norm_type=cv2.NORM_MINMAX)
+    #image = image.astype('float32')
+    image = cv2.medianBlur(image, 3)
+    return image
 
 class PlanktonDataSet(Dataset):
     """ Planktonic dataset data loader """

@@ -12,11 +12,10 @@ import numpy as np
 import pandas as pd
 import os
 
+
 from torch_tools.net import *
 from torch_tools.dataloader import *
-from torchvision import transforms
 from torch import nn
-from skimage import io
 
 
 '''
@@ -149,16 +148,11 @@ def load_model(model_path='/mnt/ARRAY/classifier/model/particle-classifier.pt'):
       header = pd.read_csv(os.path.join(path, 'header.tfl.txt'))
       #OUTPUTS = len(header.columns)
       class_labels = header.columns
-
-
-      model = COAPNet(num_classes=len(class_labels))
-      name = 'COAPModNet'
-      # remap everything onto CPU: loading weights trained on GPU to CPU
-      #model.load_state_dict(torch.load(model_path,
-      #                               map_location=lambda storage, loc: storage))  # 'cpu'
-      #model.load_state_dict(torch.load(model_path))   # ,map_location='cpu'
       device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-      model.load_state_dict(torch.load(model_path), map_location=torch.device(device))
+      model = COAPNet(num_classes=len(class_labels))
+      model.to(device)
+      name = 'COAPModNet'
+      model.load_state_dict(torch.load(model_path, map_location=torch.device(device)))
 
       return model, class_labels
 
@@ -175,26 +169,7 @@ def predict(img, model):
       Returns:
           prediction (array)      : the probability of the roi belonging to each class
       '''
-
-      # Scale it to 32x32
-      #img = scipy.misc.imresize(img, (32, 32), interp="bicubic").astype(np.float32, casting='unsafe')
-
-      # Predict
-      #prediction = model.predict([img])
-      #print('before reading the image ')
-      #image = io.imread(img)
-      #print('io.imread(img) ', img.shape)
-      image = transform.resize(img, (64, 64))
-      #print('transform.resize(image, (64, 64)) ', image.shape)
-      image = image.transpose((2, 0, 1))
-      #print('image.transpose((2, 0, 1)) ', image.shape)
-      image = torch.from_numpy(image).float()
-      #print('torch.from_numpy(image).float() ', image.shape)
-      norm = transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-      image = norm(image)
-      #print('image.shape ', image.shape)
-      image = image[np.newaxis, :]
-      #print('image.shape', image.shape)
+      image = single_img_dataloader(img)
 
       model.eval()
       device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
