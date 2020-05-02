@@ -16,23 +16,23 @@ from PIL import Image
 
 from torch_tools.torchutils import *
 
-def single_img_dataloader(filename):
+def single_img_dataloader(image):
     """Crop randomly the image in a sample.
     Args:
         @:param filename: image filename.
         @:return image: image tensor after resizing, transpose and normalizing
     """
-    image = load_image_from_file(filename)
+    image = load_image_from_file(image)
     image = transform.resize(image, (64, 64))
     image = image.transpose((2, 0, 1))
     image = torch.from_numpy(image).float()
     norm = transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     image = norm(image)
-    print('image.shape ', image.shape)
+    #print('image.shape ', image.shape)
     image = image[np.newaxis, :]
-    print('image.shape', image.shape)
+    #print('image.shape', image.shape)
     return image
-def load_image_from_file(filename):
+def load_image_from_file(image):
     """
     Loading the image from the file
     and apply opencv normalization for histogram normalization
@@ -40,7 +40,6 @@ def load_image_from_file(filename):
     :param filename: image filename.
     :return: image object
     """
-    image = io.imread(filename)
     nmin = 0
     nmax = 255
     image = cv2.normalize(image, None, alpha=nmin, beta=nmax, norm_type=cv2.NORM_MINMAX)
