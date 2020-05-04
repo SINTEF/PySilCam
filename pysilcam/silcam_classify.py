@@ -1,4 +1,4 @@
-  # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 import torch
 import tflearn
 from tflearn.layers.core import input_data, dropout, fully_connected
@@ -16,8 +16,6 @@ from torch_tools.net import *
 from torch_tools.dataloader import *
 from torchvision import transforms
 from torch import nn
-from skimage import io
-
 
 '''
 SilCam TensorFlow analysis for classification of particle types
@@ -107,15 +105,16 @@ def load_model_tf(model_path='/mnt/ARRAY/classifier/model/particle-classifier.tf
                          learning_rate=0.001)
 
     model = tflearn.DNN(network, tensorboard_verbose=0,
-            checkpoint_path=model_path)
+                        checkpoint_path=model_path)
     model.load(model_path)
 
     return model, class_labels
 
+
 def predict_tf(img, model):
     '''
     Use tensorflow model to classify particles
-    
+
     Args:
         img (uint8)             : a particle ROI, corrected and treated with the silcam
                                   explode_contrast function
@@ -151,7 +150,6 @@ def load_model(model_path='/mnt/ARRAY/classifier/model/particle-classifier.pt'):
     class_labels = header.columns
 
     model = COAPNet(num_classes=len(class_labels))
-    name = 'COAPModNet'
     # remap everything onto CPU: loading weights trained on GPU to CPU
     # model.load_state_dict(torch.load(model_path,
     #                                  map_location=lambda storage, loc: storage))  # 'cpu'
