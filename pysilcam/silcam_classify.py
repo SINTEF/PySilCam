@@ -3,12 +3,10 @@ import os
 import numpy as np
 import pandas as pd
 import scipy
-
+import skimage.transform
+import torchvision.transforms
 import torch
 from torch import nn
-from torch_tools.net import *
-from torch_tools.dataloader import *
-from torchvision import transforms
 
 import tflearn
 import tensorflow as tf
@@ -18,6 +16,7 @@ from tflearn.layers.estimator import regression
 from tflearn.data_preprocessing import ImagePreprocessing
 from tflearn.data_augmentation import ImageAugmentation
 
+from torch_tools.net import COAPNet
 
 '''
 SilCam TensorFlow analysis for classification of particle types
@@ -183,13 +182,13 @@ def predict(img, model):
     # print('before reading the image ')
     # image = io.imread(img)
     # print('io.imread(img) ', img.shape)
-    image = transform.resize(img, (64, 64))
-    # print('transform.resize(image, (64, 64)) ', image.shape)
+    image = skimage.transform.resize(img, (64, 64))
+    # print('skimage.transform.resize(image, (64, 64)) ', image.shape)
     image = image.transpose((2, 0, 1))
     # print('image.transpose((2, 0, 1)) ', image.shape)
     image = torch.from_numpy(image).float()
     # print('torch.from_numpy(image).float() ', image.shape)
-    norm = transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    norm = torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     image = norm(image)
     # print('image.shape ', image.shape)
     image = image[np.newaxis, :]
