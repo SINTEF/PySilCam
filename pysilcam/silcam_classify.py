@@ -54,7 +54,7 @@ def get_class_labels(model_path='/mnt/ARRAY/classifier/model/particle-classifier
     Returns:
         class_labels (str)      : labelled catagories which can be predicted
      '''
-    path, filename = os.path.split(model_path)
+    path, _ = os.path.split(model_path)
     header = pd.read_csv(os.path.join(path, 'header.tfl.txt'))
     class_labels = header.columns
     return class_labels
@@ -71,7 +71,7 @@ def load_model_tf(model_path='/mnt/ARRAY/classifier/model/particle-classifier.tf
     Returns:
         model (tf model object) : loaded tfl model from load_model()
     '''
-    path, filename = os.path.split(model_path)
+    path, _ = os.path.split(model_path)
     header = pd.read_csv(os.path.join(path, 'header.tfl.txt'))
     OUTPUTS = len(header.columns)
     class_labels = header.columns
@@ -145,7 +145,7 @@ def load_model(model_path='/mnt/ARRAY/classifier/model/particle-classifier.pt'):
     Returns:
         model (tf model object) : loaded tfl model from load_model()
     '''
-    path, filename = os.path.split(model_path)
+    path, _ = os.path.split(model_path)
     header = pd.read_csv(os.path.join(path, 'header.tfl.txt'))
     # OUTPUTS = len(header.columns)
     class_labels = header.columns
