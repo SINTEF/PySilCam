@@ -1,15 +1,16 @@
 from __future__ import division, print_function
 import numpy as np
 
+
 def linear_interpolation_2D(input_array, indices, outside_val=0, boundary_correction=True):
     # http://stackoverflow.com/questions/6427276/3d-interpolation-of-numpy-arrays-without-scipy
 
-    ind_0 = indices[0,:]
-    ind_1 = indices[1,:]
+    ind_0 = indices[0, :]
+    ind_1 = indices[1, :]
     print('Linear_interpolation_2D input_array.shape: ', input_array.shape)
     # N2 is the number of channels, rotation is performed per channel
     N0, N1, N2 = input_array.shape
-    print('N0, N1, N2 ',N0, N1, N2, indices[0].shape)
+    print('N0, N1, N2 ', N0, N1, N2, indices[0].shape)
 
     output = np.empty([indices[0].shape[0], N2])
 
@@ -35,16 +36,18 @@ def linear_interpolation_2D(input_array, indices, outside_val=0, boundary_correc
     # input_array.take(np.array([x0_0, x1_0, x2_0]))
     print('output.shape ', output.shape)
     for i in range(N2):  # apply rotation per channel
-        output[:,i] = (input_array[x0_0, x1_0, i] * (1 - w0) * (1 - w1)  +
-                     input_array[x0_1, x1_0, i] * w0 * (1 - w1)  +
-                     input_array[x0_0, x1_1, i] * (1 - w0) * w1  +
-                     input_array[x0_1, x1_1, i] * w0 * w1 )
-    #print('output[:, 0].shape ', output[:, 0].shape)
+        output[:, i] = (input_array[x0_0, x1_0, i] * (1 - w0) * (1 - w1)
+                        + input_array[x0_1, x1_0, i] * w0 * (1 - w1)
+                        + input_array[x0_0, x1_1, i] * (1 - w0) * w1
+                        + input_array[x0_1, x1_1, i] * w0 * w1)
+    # print('output[:, 0].shape ', output[:, 0].shape)
     if boundary_correction:
-        output[inds_out_of_range,:] = 0
+        output[inds_out_of_range, :] = 0
 
     return output
-def random_rotation(data, width = 28, height = 28, channels = 3):
+
+
+def random_rotation(data, width=28, height=28, channels=3):
     rot = np.random.rand() * 360  # Random rotation
     grid = getGrid([width, height])
     grid = rotate_grid_2D(grid, rot)
@@ -53,19 +56,21 @@ def random_rotation(data, width = 28, height = 28, channels = 3):
         data = linear_interpolation_2D(data, grid)
         data = np.reshape(data, [width, height, channels])
     print('data.shape ', data.shape, 'data[0].shape', data[0].shape,
-          'data[:,:,0].shape', data[:,:,0].shape)
+          'data[:,:,0].shape', data[:, :, 0].shape)
     data[:, :, 0] = data[:, :, 0] / float(np.max(data[:, :, 0]))
     data[:, :, 1] = data[:, :, 1] / float(np.max(data[:, :, 1]))
     data[:, :, 2] = data[:, :, 2] / float(np.max(data[:, :, 2]))
     return data.astype('float32')
 
+
 def getGrid(siz):
     """ Returns grid with coordinates from -siz[0]/2 : siz[0]/2, -siz[1]/2 : siz[1]/2, ...."""
-    space = [np.linspace( -(N/2), (N/2), N ) for N in siz]
-    mesh = np.meshgrid( *space, indexing='ij' )
-    mesh = [np.expand_dims( ax.ravel(), 0) for ax in mesh]
+    space = [np.linspace(-(N / 2), (N / 2), N) for N in siz]
+    mesh = np.meshgrid(*space, indexing='ij')
+    mesh = [np.expand_dims(ax.ravel(), 0) for ax in mesh]
 
     return np.concatenate(mesh)
+
 
 def rotate_grid_2D(grid, theta):
     """ Rotate grid """
