@@ -1,21 +1,23 @@
 # -*- coding: utf-8 -*-
+import os
+import numpy as np
+import pandas as pd
+import scipy
+
 import torch
+from torch import nn
+from torch_tools.net import *
+from torch_tools.dataloader import *
+from torchvision import transforms
+
 import tflearn
+import tensorflow as tf
 from tflearn.layers.core import input_data, dropout, fully_connected
 from tflearn.layers.conv import conv_2d, max_pool_2d
 from tflearn.layers.estimator import regression
 from tflearn.data_preprocessing import ImagePreprocessing
 from tflearn.data_augmentation import ImageAugmentation
-import tensorflow as tf
-import scipy
-import numpy as np
-import pandas as pd
-import os
 
-from torch_tools.net import *
-from torch_tools.dataloader import *
-from torchvision import transforms
-from torch import nn
 
 '''
 SilCam TensorFlow analysis for classification of particle types
