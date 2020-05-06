@@ -44,7 +44,7 @@
 # export UNITTEST_DATA_PATH='/Users/odin/Sintef/SilCam/pysilcam-testdata/unittest-data/'
 # export SILCAM_MODEL_PATH='/Users/odin/Sintef/SilCam/pysilcam-testdata/tflmodel/particle-classifier.tfl'
 # export UNITTEST_DATA_PATH='/Users/odin/Sintef/SilCam/pysilcam-testdata/unittest-data/'
-# export SILCAM_MODEL_PATH='/Users/odin/Sintef/SilCam/pysilcam-testdata/COAPNetTorch/COAPNet_model.pt'
-export UNITTEST_DATA_PATH='/Users/odin/Sintef/SilCam/pysilcam-testdata-newtorch/unittest-data/'
-export SILCAM_MODEL_PATH='/Users/odin/Sintef/SilCam/pysilcam-testdata-newtorch/COAPNetTorch/COAPModNet_CPU_model.pt'
+export SILCAM_MODEL_PATH='/home/william/SilCam/pysilcam-testdata/COAPNetTorch/COAPNet_model.pt'
+export UNITTEST_DATA_PATH='/home/william/SilCam/pysilcam-testdata/unittest-data/'
+# export SILCAM_MODEL_PATH='/home/william/SilCam/pysilcam-testdata/COAPNetTorch/COAPModNet_GPU_model.pt'
 python setup.py test_noskip
