@@ -5,9 +5,12 @@ import random
 
 test_frac = 0.1
 
-source = '/Users/odin/Sintef/SilCam/pysilcam-testdata-newtorch/unittest-data/silcam_classification_database'
-train_dir = '/Users/odin/Sintef/SilCam/pysilcam-testdata-newtorch/unittest-data/train'
-test_dir = '/Users/odin/Sintef/SilCam/pysilcam-testdata-newtorch/unittest-data/test'
+# source = '/Users/odin/Sintef/SilCam/pysilcam-testdata-newtorch/unittest-data/silcam_classification_database'
+source = '/home/william/SilCam/pysilcam-testdata-newtorch/unittest-data/silcam_classification_database'
+# train_dir = '/Users/odin/Sintef/SilCam/pysilcam-testdata-newtorch/unittest-data/train'
+train_dir = '/home/william/SilCam/pysilcam-testdata-newtorch/unittest-data/train'
+# test_dir = '/Users/odin/Sintef/SilCam/pysilcam-testdata-newtorch/unittest-data/test'
+test_dir = '/home/william/SilCam/pysilcam-testdata-newtorch/unittest-data/test'
 
 file_type = 'tiff'
 exclude_copy = True
