@@ -229,7 +229,8 @@ def montage_plot(montage, pixel_size):
 
 
 def summarise_fancy_stats(stats_csv_file, config_file, monitor=False,
-                          maxlength=100000, msize=2048, oilgas=sc_pp.outputPartType.all):
+                          maxlength=100000, msize=2048, oilgas=sc_pp.outputPartType.all,
+                          crop_stats=False):
     '''
     Plots a summary figure of a dataset which shows
     the volume distribution, number distribution and a montage of randomly selected particles
@@ -244,6 +245,7 @@ def summarise_fancy_stats(stats_csv_file, config_file, monitor=False,
         msize=2048 (int)                : the montage created will have a canvas size of msize x msize pixels
         oilgas=oc_pp.outputPartType.all : the oilgas enum if you want to just make the figure for oil, or just gas
                                           (defulats to all particles)
+        crop_stats=False (Bool)         : if the stats file should be cropped to only include the centre
     '''
     sns.set_style('ticks')
 
@@ -264,7 +266,8 @@ def summarise_fancy_stats(stats_csv_file, config_file, monitor=False,
                                          roidir=settings.ExportParticles.outputpath,
                                          auto_scaler=msize * 2, msize=msize,
                                          maxlength=maxlength,
-                                         oilgas=oilgas)
+                                         oilgas=oilgas,
+                                         crop_stats=crop_stats)
         except:
             montage = np.zeros((msize, msize, 3), dtype=np.uint8) + 255
             logger.warning(
@@ -275,6 +278,8 @@ def summarise_fancy_stats(stats_csv_file, config_file, monitor=False,
         stats = pd.read_csv(stats_csv_file)
         stats = stats[(stats['major_axis_length'] *
                        settings.PostProcess.pix_size) < maxlength]
+        if crop_stats:
+            stats = sc_pp.extract_middle(stats)
 
         # average numer and volume concentrations
         nc, vc, sv_total, junge = sc_pp.nc_vc_from_stats(stats,

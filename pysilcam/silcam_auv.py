@@ -26,39 +26,6 @@ def fix_ctd_time(ctd):
     ctd['Time'] = newtime
     return ctd
 
-def extract_middle(stats):
-    '''
-    Temporary cropping solution due to small window in AUV
-    '''
-    print('initial stats length:', len(stats))
-    r = np.array(((stats['maxr'] - stats['minr'])/2) + stats['minr'])
-    c = np.array(((stats['maxc'] - stats['minc'])/2) + stats['minc'])
-
-    points = []
-    for i in range(len(c)):
-        points.append([(r[i], c[i])])
-
-    pts = np.array(points)
-    pts = pts.squeeze()
-
-    # plt.plot(pts[:, 0], pts[:, 1], 'k.')
-    # plt.axis('equal')
-
-    ll = np.array([500, 500]) # lower-left
-    ur = np.array([1750, 1750])  # upper-right
-
-    inidx = np.all(np.logical_and(ll <= pts, pts <= ur), axis=1)
-    inbox = pts[inidx]
-    print('inbox shape:', inbox.shape)
-
-    stats = stats[inidx]
-
-    # plt.plot(inbox[:,0], inbox[:,1], 'r.')
-    # plt.axis('equal')
-    
-    print('len stats', len(stats))
-    return stats
-
 
 def montager(stats):
     '''
@@ -97,8 +64,8 @@ def add_latlon_to_stats(stats, time, lat, lon):
     return stats
 
 
-def silcam_montage_plot(montage, settings):
-    scplt.montage_plot(montage, settings.PostProcess.pix_size)
+# def silcam_montage_plot(montage, settings):
+#     scplt.montage_plot(montage, settings.PostProcess.pix_size)
 
 
 def depth_timeseries_plot(ctd):
@@ -245,7 +212,7 @@ if __name__ == "__main__":
         stats = pd.read_csv(SilCamDataFile) # load the stats file
 
         print('Cropping stats')
-        stats = extract_middle(stats) # apply temporary (workaround) cropping of stats due to small window
+        stats = scpp.extract_middle(stats) # apply temporary (workaround) cropping of stats due to small window
 
         print('Adding depth and location to stats')
         stats = scpp.add_depth_to_stats(stats, ctd['Time'], ctd[' depth']) # merge ctd data into particle stats

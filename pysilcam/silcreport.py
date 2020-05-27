@@ -17,7 +17,7 @@ def silcreport():
 
     Usage:
         silcam-report <configfile> <statsfile> [--type=<particle_type>]
-                      [--dpi=<dpi>] [--monitor]
+                      [--dpi=<dpi>] [--monitor] [--extract-middle]
 
     Arguments:
         configfile:  The config filename associated with the data
@@ -28,6 +28,8 @@ def silcreport():
                                 'oil', or 'gas'
         --dpi=<dpi>             DPI resolution of figure (default is 600)
         --monitor               Enables continuous monitoring (requires display)
+        --extract-middle        Filters stats file to only include particle from
+                                the centre of the image.
         -h --help               Show this screen.
 
     """
@@ -54,20 +56,28 @@ def silcreport():
         logger.info('  Monitoring enabled:')
         logger.info('    press ctrl+c to stop.')
         monitor = True
+    
+    crop_stats = False
+    if args['--extract-middle']:
+        logger.info('  Extract middle enabled.')
+        crop_stats = True
 
     silcam_report(args['<statsfile>'], args['<configfile>'],
                   particle_type=particle_type,
-                  particle_type_str=particle_type_str, monitor=monitor, dpi=dpi)
+                  particle_type_str=particle_type_str,
+                  monitor=monitor, dpi=dpi, crop_stats=crop_stats)
 
 
 def silcam_report(statsfile, configfile, particle_type=scpp.outputPartType.all,
-                  particle_type_str='all', monitor=False, dpi=600):
+                  particle_type_str='all', monitor=False, dpi=600, crop_stats=False):
     """does reporting"""
 
     plt.figure(figsize=(20, 12))
 
+    # Note, as of now I didn't change the calls to this function in the gui.
     scplt.summarise_fancy_stats(statsfile, configfile,
-                                monitor=monitor, oilgas=particle_type)
+                                monitor=monitor, oilgas=particle_type,
+                                crop_stats=crop_stats)
 
     logger.info('  Saving to disc....')
     plt.savefig(statsfile.strip('-STATS.csv') + '-Summary_' +
