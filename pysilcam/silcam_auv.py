@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
+import os
+from datetime import datetime
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import matplotlib.dates as mdates
-import os
 
 import cartopy.crs as ccrs
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
@@ -14,16 +15,22 @@ import pysilcam.postprocess as scpp
 import pysilcam.plotting as scplt
 from pysilcam.config import PySilcamSettings
 
-datapath = '../NEPTUS' # path to folder containing merged NEPTUS logs
-FOLDER = '250718' # information on mission date used for locating files and understanding times
 
+LOGS_PATH = "/mnt/raid/Thor/Neptus Logs" # path to folder containing merged NEPTUS logs
+FOLDER = '105021_coap1' # information on mission date used for locating files and understanding times
+INI_FILE = "/mnt/raid/Thor/config.ini"
+SILCAM_DATAFILE = "/mnt/raid/Thor/proc/SilCam-STATS.csv"
 
 def fix_ctd_time(ctd):
-    newtime = []
-    for t in ctd[' gmt time']:
-        newtime.append(pd.to_datetime(FOLDER[0:2] + '-' + FOLDER[2:4] + '-' + FOLDER[4:6] + t))
+    """
+    Reformats the timestamp column to a readable format in a new column
+    """
+    new_col_name = 'Time'
+    output_time_format = "%Y-%m-%d %H:%M:%S.%f"
 
-    ctd['Time'] = newtime
+    ctd[new_col_name] = ctd.apply(
+        lambda x: datetime.fromtimestamp(x['timestamp']).strftime(output_time_format),
+        axis=1)
     return ctd
 
 
@@ -198,25 +205,25 @@ if __name__ == "__main__":
     
     outfilename = FOLDER + '-AUV-STATS.csv'
 
-    settings = PySilcamSettings('../DATA/config.ini') # load the settings used for processing
+    settings = PySilcamSettings(INI_FILE) # load the settings used for processing
 
     if not os.path.isfile(outfilename):
         print('Loading CSV file')
         # read the ctd data from the exported NEPTUS logs
-        ctd = pd.read_csv(os.path.join(datapath, FOLDER + '_merged_logs/mra/csv/CTD.csv'), index_col=False)
+        ctd = pd.read_csv(os.path.join(LOGS_PATH, FOLDER, 'exported/EstimatedState.csv'), index_col=False)
         ctd = fix_ctd_time(ctd) # make the ctd time information useable
-
-        SilCamDataFile = ('../DATA/' + FOLDER + '/proc_backup/RAW-STATS.csv')
+        ctd['Lat (deg)'] = ctd[' lat (rad)'].apply(np.rad2deg)
+        ctd['Lon (deg)'] = ctd[' lon (rad)'].apply(np.rad2deg)
 
         print('Loading SilCam STATS data')
-        stats = pd.read_csv(SilCamDataFile) # load the stats file
+        stats = pd.read_csv(SILCAM_DATAFILE) # load the stats file
 
         print('Cropping stats')
         stats = scpp.extract_middle(stats) # apply temporary (workaround) cropping of stats due to small window
 
         print('Adding depth and location to stats')
-        stats = scpp.add_depth_to_stats(stats, ctd['Time'], ctd[' depth']) # merge ctd data into particle stats
-        stats = add_latlon_to_stats(stats, ctd['Time'], ctd[' lat (corrected)'], ctd[' lon (corrected)']) # merge location data into particle stats
+        stats = scpp.add_depth_to_stats(stats, pd.to_datetime(ctd['Time']), ctd[' depth (m)']) # merge ctd data into particle stats
+        stats = add_latlon_to_stats(stats, pd.to_datetime(ctd['Time']), ctd['Lat (deg)'], ctd['Lon (deg)']) # merge location data into particle stats
         
         print(stats.columns)
 
