@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -21,7 +21,7 @@ FOLDER = '105021_coap1' # information on mission date used for locating files an
 INI_FILE = "/mnt/raid/Thor/config.ini"
 SILCAM_DATAFILE = "/mnt/raid/Thor/proc/SilCam-STATS.csv"
 
-def fix_ctd_time(ctd):
+def fix_ctd_time(ctd, hour_delay=0):
     """
     Reformats the timestamp column to a readable format in a new column
     """
@@ -29,7 +29,7 @@ def fix_ctd_time(ctd):
     output_time_format = "%Y-%m-%d %H:%M:%S.%f"
 
     ctd[new_col_name] = ctd.apply(
-        lambda x: datetime.fromtimestamp(x['timestamp']).strftime(output_time_format),
+        lambda x: (datetime.fromtimestamp(x['timestamp']) + timedelta(hours=hour_delay)).strftime(output_time_format),
         axis=1)
     return ctd
 
@@ -211,7 +211,7 @@ if __name__ == "__main__":
         print('Loading CSV file')
         # read the ctd data from the exported NEPTUS logs
         ctd = pd.read_csv(os.path.join(LOGS_PATH, FOLDER, 'exported/EstimatedState.csv'), index_col=False)
-        ctd = fix_ctd_time(ctd) # make the ctd time information useable
+        ctd = fix_ctd_time(ctd, hour_delay=-2) # make the ctd time information useable
         ctd['Lat (deg)'] = ctd[' lat (rad)'].apply(np.rad2deg)
         ctd['Lon (deg)'] = ctd[' lon (rad)'].apply(np.rad2deg)
 
