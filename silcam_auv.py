@@ -13,13 +13,21 @@ import cartopy.io.img_tiles as cimgt
 
 import pysilcam.postprocess as scpp
 import pysilcam.plotting as scplt
+# import postprocess as scpp
+# import plotting as scplt
 from pysilcam.config import PySilcamSettings
 
+# information on mission date used for locating files and understanding times
+FOLDER = '20200528'
+OUTPUT_FOLDER = "Z:\\302004868_COAP_Phase1\\DATA\\Thor\\20200528\\proc"
 
-LOGS_PATH = "/mnt/raid/Thor/Neptus Logs" # path to folder containing merged NEPTUS logs
-FOLDER = '105021_coap1' # information on mission date used for locating files and understanding times
-INI_FILE = "/mnt/raid/Thor/config.ini"
-SILCAM_DATAFILE = "/mnt/raid/Thor/proc/SilCam-STATS.csv"
+# Z: is Nasgul/Miljoteknologi/
+# path to folder containing merged NEPTUS logs:
+AUV_LOGS_PATH = "Z:\\302004868_COAP_Phase1\\Data\\Thor\\20200528\\Neptus\\merge\\mra\\csv"
+INI_FILE = "Z:\\302004868_COAP_Phase1\\Data\\Thor\\20200528\\config_thresh97.ini"
+SILCAM_DATAFILE = "Z:\\302004868_COAP_Phase1\\DATA\\Thor\\20200528\\proc\\SilCam_thresh97-STATS.csv"
+AUV_STATE_FILE = os.path.join(AUV_LOGS_PATH, 'EstimatedState.csv')
+
 
 def fix_ctd_time(ctd, hour_delay=0):
     """
@@ -29,7 +37,7 @@ def fix_ctd_time(ctd, hour_delay=0):
     output_time_format = "%Y-%m-%d %H:%M:%S.%f"
 
     ctd[new_col_name] = ctd.apply(
-        lambda x: (datetime.fromtimestamp(x['timestamp']) + timedelta(hours=hour_delay)).strftime(output_time_format),
+        lambda x: (datetime.utcfromtimestamp(x['timestamp']) + timedelta(hours=hour_delay)).strftime(output_time_format),
         axis=1)
     return ctd
 
@@ -127,15 +135,13 @@ def summary_figure(ctd, montage, stats, settings):
 
     plt.sca(ax1)
     map_plot(ctd, request)
-    plt.title(ctd['Time'].min().strftime('%Y-%m-%d %H:%M') +
-              ' - ' +
-              ctd['Time'].max().strftime('%Y-%m-%d %H:%M') + 
-              '\n' +
-              'Max Depth: {:0.0f} [m]'.format(ctd[' depth'].max()) + 
-              ' | Raw SilCam images analysed: {:0.0f}'.format(scpp.count_images_in_stats(stats)) + 
-              '\n' +
-              'Particles analysed: {:0.0f}'.format(len(stats))
-             , loc='left')
+    plt.title(
+        ctd['Time'].min().strftime('%Y-%m-%d %H:%M')
+        + ' - ' + ctd['Time'].max().strftime('%Y-%m-%d %H:%M')
+        + '\n' + 'Max Depth: {:0.0f} [m]'.format(ctd[' depth'].max())
+        + ' | Raw SilCam images analysed: {:0.0f}'.format(scpp.count_images_in_stats(stats))
+        + '\n' + 'Particles analysed: {:0.0f}'.format(len(stats)),
+        loc='left')
 
     plt.sca(ax2)
     depth_timeseries_plot(ctd)
@@ -210,16 +216,16 @@ if __name__ == "__main__":
     if not os.path.isfile(outfilename):
         print('Loading CSV file')
         # read the ctd data from the exported NEPTUS logs
-        ctd = pd.read_csv(os.path.join(LOGS_PATH, FOLDER, 'exported/EstimatedState.csv'), index_col=False)
-        ctd = fix_ctd_time(ctd, hour_delay=-2) # make the ctd time information useable
+        ctd = pd.read_csv(AUV_STATE_FILE, index_col=False)
+        ctd = fix_ctd_time(ctd, hour_delay=0)  # make the ctd time information useable
         ctd['Lat (deg)'] = ctd[' lat (rad)'].apply(np.rad2deg)
         ctd['Lon (deg)'] = ctd[' lon (rad)'].apply(np.rad2deg)
 
         print('Loading SilCam STATS data')
-        stats = pd.read_csv(SILCAM_DATAFILE) # load the stats file
+        stats = pd.read_csv(SILCAM_DATAFILE)  # load the stats file
 
         print('Cropping stats')
-        stats = scpp.extract_middle(stats) # apply temporary (workaround) cropping of stats due to small window
+        stats = scpp.extract_middle(stats)  # apply temporary (workaround) cropping of stats due to small window
 
         print('Adding depth and location to stats')
         stats = scpp.add_depth_to_stats(stats, pd.to_datetime(ctd['Time']), ctd[' depth (m)']) # merge ctd data into particle stats
@@ -233,7 +239,7 @@ if __name__ == "__main__":
         print(outfilename, 'already exists')
 
         print('Loading', outfilename)
-        stats = pd.read_csv(outfilename) # load the stats file
+        stats = pd.read_csv(outfilename)  # load the stats file
 
         print('Calculating timeseries:')
         timeseries = nc_timeseries(stats, settings.PostProcess)
