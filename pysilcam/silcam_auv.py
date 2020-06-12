@@ -7,19 +7,24 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import matplotlib.dates as mdates
 
-import cartopy.crs as ccrs
-from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
-import cartopy.io.img_tiles as cimgt
+#import cartopy.crs as ccrs
+#from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+#import cartopy.io.img_tiles as cimgt
 
 import pysilcam.postprocess as scpp
 import pysilcam.plotting as scplt
 from pysilcam.config import PySilcamSettings
 
+common_path = '/mnt/nasdrive/Miljoteknologi/302004868_COAP_Phase1/DATA/Thor/20200528'
+LOGS_PATH = "Neptus/merge/mra/csv" # path to folder containing merged NEPTUS logs
+FOLDER = 'proc/emlyn_test/merge' # information on mission date used for locating files and understanding times
+INI_FILE = "config_thresh97.ini"
+SILCAM_DATAFILE = "proc/SilCam-STATS.csv"
 
-LOGS_PATH = "/mnt/raid/Thor/Neptus Logs" # path to folder containing merged NEPTUS logs
-FOLDER = '105021_coap1' # information on mission date used for locating files and understanding times
-INI_FILE = "/mnt/raid/Thor/config.ini"
-SILCAM_DATAFILE = "/mnt/raid/Thor/proc/SilCam-STATS.csv"
+LOGS_PATH = os.path.join(common_path, LOGS_PATH)
+FOLDER = os.path.join(common_path, FOLDER)
+INI_FILE = os.path.join(common_path, INI_FILE)
+SILCAM_DATAFILE = os.path.join(common_path, SILCAM_DATAFILE)
 
 def fix_ctd_time(ctd, hour_delay=0):
     """
@@ -43,7 +48,7 @@ def montager(stats):
     maxlength = 5000000
     minlength = 100
     msize = 2048
-    roidir = '../DATA/' + FOLDER + '/export_backup'
+    #roidir = '../DATA/' + FOLDER + '/export_backup'
 
     stats = stats[~np.isnan(stats['major_axis_length'])]
     stats = stats[(stats['major_axis_length'] *
@@ -201,6 +206,121 @@ def nc_timeseries(stats, settings):
     return timeseries
 
 
+def neptus_csv_ctd(csv_path, start_time=None, end_time=None):
+    '''
+    takes exported neptus csv files and merges them into a DataFrame of 1-second time bins
+
+    :param csv_path: folder location of exported neptus csv files
+                    requires the following files to be exported from Neptus:
+                     Depth, WaterDensity, Salinity, Temperature, Turbidity, Chlorophyll, EstimatedState
+    :param start_time: optional timestamp of where to start
+    :param end_time: optional timestamp of where to stop
+    :return: pandas DataFrame of ctd data
+    '''
+    def date_fix(date):
+        return pd.to_datetime(date, unit='s')
+
+    depth = pd.read_csv(os.path.join(csv_path, 'Depth.csv'),
+                        names=['timestamp', 'system', ' entity ', 'value'], skiprows=1,
+                        parse_dates=['timestamp'], date_parser=date_fix)
+    depth = depth[depth[' entity '] == ' SmartX']
+
+    density = pd.read_csv(os.path.join(csv_path, 'WaterDensity.csv'),
+                          names=['timestamp', 'system', ' entity ', 'value'], skiprows=1,
+                          parse_dates=['timestamp'], date_parser=date_fix)
+    density = density[density[' entity '] == ' SmartX']
+
+    salinity = pd.read_csv(os.path.join(csv_path, 'Salinity.csv'),
+                           names=['timestamp', 'system', ' entity ', 'value'], skiprows=1,
+                           parse_dates=['timestamp'], date_parser=date_fix)
+    salinity = salinity[salinity[' entity '] == ' SmartX']
+
+    temperature = pd.read_csv(os.path.join(csv_path, 'Temperature.csv'),
+                              names=['timestamp', 'system', ' entity ', 'value'], skiprows=1,
+                              parse_dates=['timestamp'], date_parser=date_fix)
+    temperature = temperature[temperature[' entity '] == ' SmartX']
+
+    turbidity = pd.read_csv(os.path.join(csv_path, 'Turbidity.csv'),
+                            names=['timestamp', 'system', ' entity ', 'value'], skiprows=1,
+                            parse_dates=['timestamp'], date_parser=date_fix)
+    turbidity = turbidity[turbidity[' entity '] == ' SmartX']
+
+    chlorophyll = pd.read_csv(os.path.join(csv_path, 'Chlorophyll.csv'),
+                              names=['timestamp', 'system', ' entity ', 'value'], skiprows=1,
+                              parse_dates=['timestamp'], date_parser=date_fix)
+    chlorophyll = chlorophyll[chlorophyll[' entity '] == ' SmartX']
+
+    estimated_state = pd.read_csv(os.path.join(csv_path, 'EstimatedState.csv'),
+                        parse_dates=['timestamp'], date_parser=date_fix)
+    lat_deg = estimated_state[' lat (rad)'].apply(np.rad2deg)
+    lon_deg = estimated_state[' lon (rad)'].apply(np.rad2deg)
+
+    if start_time is None:
+        start_time = min(depth['timestamp'])
+        print(start_time)
+    if end_time is None:
+        end_time = max(depth['timestamp'])
+    time_bins = pd.date_range(start=start_time, end=end_time, freq='S')
+    time_mids = time_bins[0:-1] + pd.to_timedelta('00:00:1')
+
+    depth_ = np.zeros(len(time_mids), dtype=float)
+    for i, t in enumerate(time_mids):
+        depth_[i] = np.nanmean(depth['value'][(depth['timestamp'] > time_bins[i]) &
+                                              (depth['timestamp'] < time_bins[i + 1])].values)
+
+    density_ = np.interp(np.float64(time_mids), np.float64(density['timestamp']), density['value'])
+    salinity_ = np.interp(np.float64(time_mids), np.float64(salinity['timestamp']), salinity['value'])
+    temperature_ = np.interp(np.float64(time_mids), np.float64(temperature['timestamp']), temperature['value'])
+    turbidity_ = np.interp(np.float64(time_mids), np.float64(turbidity['timestamp']), turbidity['value'])
+    chlorophyll_ = np.interp(np.float64(time_mids), np.float64(chlorophyll['timestamp']), chlorophyll['value'])
+    lat_deg_ = np.interp(np.float64(time_mids), np.float64(estimated_state['timestamp']), lat_deg)
+    lon_deg_ = np.interp(np.float64(time_mids), np.float64(estimated_state['timestamp']), lon_deg)
+
+    # not possible to have negative turbidity. convert to relative min(NTU)
+    turbidity_ -= min(turbidity_)
+
+    ctd = pd.DataFrame()
+    ctd['timestamp'] = time_mids
+    ctd['depth'] = depth_
+    ctd['salinity'] = salinity_
+    ctd['density'] = density_
+    ctd['temperature'] = temperature_
+    ctd['turbidity'] = turbidity_
+    ctd['chlorophyll'] = chlorophyll_
+    ctd['lat_deg'] = lat_deg_
+    ctd['lon_deg'] = lon_deg_
+
+    return ctd
+
+
+def add_neptus_to_stats(stats, ctd):
+    '''
+    takes a silcam STATS DataFrame and a neptus CTD DataFrame (use neptus_csv_ctd() to get this),
+    and interpolates the ctd data into the STATS. This gives ctd, chl, turbidity and potition data for every particle.
+
+    :return: a modified STATS DataFrame
+    '''
+    sctime = pd.to_datetime(stats['timestamp'])
+
+    stats = add_latlon_to_stats(stats, pd.to_datetime(ctd['timestamp']), ctd['lat_deg'],
+                                ctd['lon_deg'])  # merge location data into particle stats
+
+    # interpolate data into the SilCam times
+    stats['Depth'] = np.interp(np.float64(sctime),
+                               np.float64(pd.to_datetime(ctd['timestamp'])), ctd['depth'])
+    stats['salinity'] = np.interp(np.float64(sctime),
+                               np.float64(pd.to_datetime(ctd['timestamp'])), ctd['salinity'])
+    stats['density'] = np.interp(np.float64(sctime),
+                               np.float64(pd.to_datetime(ctd['timestamp'])), ctd['density'])
+    stats['temperature'] = np.interp(np.float64(sctime),
+                               np.float64(pd.to_datetime(ctd['timestamp'])), ctd['temperature'])
+    stats['turbidity'] = np.interp(np.float64(sctime),
+                               np.float64(pd.to_datetime(ctd['timestamp'])), ctd['turbidity'])
+    stats['chlorophyll'] = np.interp(np.float64(sctime),
+                               np.float64(pd.to_datetime(ctd['timestamp'])), ctd['chlorophyll'])
+    return stats
+
+
 if __name__ == "__main__":
     
     outfilename = FOLDER + '-AUV-STATS.csv'
@@ -210,10 +330,7 @@ if __name__ == "__main__":
     if not os.path.isfile(outfilename):
         print('Loading CSV file')
         # read the ctd data from the exported NEPTUS logs
-        ctd = pd.read_csv(os.path.join(LOGS_PATH, FOLDER, 'exported/EstimatedState.csv'), index_col=False)
-        ctd = fix_ctd_time(ctd, hour_delay=-2) # make the ctd time information useable
-        ctd['Lat (deg)'] = ctd[' lat (rad)'].apply(np.rad2deg)
-        ctd['Lon (deg)'] = ctd[' lon (rad)'].apply(np.rad2deg)
+        ctd = neptus_csv_ctd(LOGS_PATH)
 
         print('Loading SilCam STATS data')
         stats = pd.read_csv(SILCAM_DATAFILE) # load the stats file
@@ -221,10 +338,9 @@ if __name__ == "__main__":
         print('Cropping stats')
         stats = scpp.extract_middle(stats) # apply temporary (workaround) cropping of stats due to small window
 
-        print('Adding depth and location to stats')
-        stats = scpp.add_depth_to_stats(stats, pd.to_datetime(ctd['Time']), ctd[' depth (m)']) # merge ctd data into particle stats
-        stats = add_latlon_to_stats(stats, pd.to_datetime(ctd['Time']), ctd['Lat (deg)'], ctd['Lon (deg)']) # merge location data into particle stats
-        
+        print('Adding position and ctd data to stats')
+        stats = add_neptus_to_stats(stats, ctd)
+
         print(stats.columns)
 
         print('Saving', outfilename)
