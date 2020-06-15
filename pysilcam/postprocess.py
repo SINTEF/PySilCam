@@ -102,8 +102,8 @@ def extract_middle(stats):
     Temporary cropping solution due to small window in AUV
     '''
     print('initial stats length:', len(stats))
-    r = np.array(((stats['maxr'] - stats['minr'])/2) + stats['minr'])
-    c = np.array(((stats['maxc'] - stats['minc'])/2) + stats['minc'])
+    r = np.array(((stats['maxr'] - stats['minr']) / 2) + stats['minr'])
+    c = np.array(((stats['maxc'] - stats['minc']) / 2) + stats['minc'])
 
     points = []
     for i in range(len(c)):
