@@ -208,7 +208,7 @@ def nc_timeseries(stats, settings):
 
 
 if __name__ == "__main__":
-    
+
     outfilename = FOLDER + '-AUV-STATS.csv'
 
     settings = PySilcamSettings(INI_FILE) # load the settings used for processing
@@ -230,7 +230,7 @@ if __name__ == "__main__":
         print('Adding depth and location to stats')
         stats = scpp.add_depth_to_stats(stats, pd.to_datetime(ctd['Time']), ctd[' depth (m)']) # merge ctd data into particle stats
         stats = add_latlon_to_stats(stats, pd.to_datetime(ctd['Time']), ctd['Lat (deg)'], ctd['Lon (deg)']) # merge location data into particle stats
-        
+
         print(stats.columns)
 
         print('Saving', outfilename)
