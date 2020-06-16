@@ -17,11 +17,15 @@ import pysilcam.plotting as scplt
 # import plotting as scplt
 from pysilcam.config import PySilcamSettings
 
-common_path = '/mnt/nasdrive/Miljoteknologi/302004868_COAP_Phase1/DATA/Thor/20200528'
-LOGS_PATH = "Neptus/merge/mra/csv" # path to folder containing merged NEPTUS logs
-FOLDER = 'proc/emlyn_test/merge' # information on mission date used for locating files and understanding times
+# common_path = '/mnt/nasdrive/Miljoteknologi/302004868_COAP_Phase1/DATA/Thor/20200528'
+common_path = 'Z:\\302004868_COAP_Phase1\\Data\\Thor\\20200528'
+# LOGS_PATH = "Neptus/merge/mra/csv" # path to folder containing merged NEPTUS logs
+LOGS_PATH = "Neptus\\merge\\mra\\csv"
+# FOLDER = 'proc/emlyn_test/merge' # information on mission date used for locating files and understanding times
+FOLDER = 'proc\\test\\merge' # information on mission date used for locating files and understanding times
 INI_FILE = "config_thresh97.ini"
-SILCAM_DATAFILE = "proc/SilCam-STATS.csv"
+# SILCAM_DATAFILE = "proc/SilCam-STATS.csv"
+SILCAM_DATAFILE = "proc\\SilCam_thresh97-STATS.csv"
 
 LOGS_PATH = os.path.join(common_path, LOGS_PATH)
 FOLDER = os.path.join(common_path, FOLDER)
@@ -265,8 +269,9 @@ def neptus_csv_ctd(csv_path, start_time=None, end_time=None):
 
     depth_ = np.zeros(len(time_mids), dtype=float)
     for i, t in enumerate(time_mids):
-        depth_[i] = np.nanmean(depth['value'][(depth['timestamp'] > time_bins[i]) &
-                                              (depth['timestamp'] < time_bins[i + 1])].values)
+        depth_[i] = np.nanmean(
+            depth.loc[(depth['timestamp'] >= time_bins[i])
+                      & (depth['timestamp'] < time_bins[i + 1]), 'value'].values)
 
     density_ = np.interp(np.float64(time_mids), np.float64(density['timestamp']), density['value'])
     salinity_ = np.interp(np.float64(time_mids), np.float64(salinity['timestamp']), salinity['value'])
