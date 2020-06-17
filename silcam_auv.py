@@ -265,14 +265,9 @@ def neptus_csv_ctd(csv_path, start_time=None, end_time=None):
     if end_time is None:
         end_time = max(depth['timestamp'])
     time_bins = pd.date_range(start=start_time, end=end_time, freq='S')
-    time_mids = time_bins[0:-1] + pd.to_timedelta('00:00:1')
+    time_mids = time_bins[0:-1] + pd.to_timedelta((time_bins[1] - time_bins[0]) / 2)
 
-    depth_ = np.zeros(len(time_mids), dtype=float)
-    for i, t in enumerate(time_mids):
-        depth_[i] = np.nanmean(
-            depth.loc[(depth['timestamp'] >= time_bins[i])
-                      & (depth['timestamp'] < time_bins[i + 1]), 'value'].values)
-
+    depth_ = np.interp(np.float64(time_mids), np.float64(depth['timestamp']), depth['value'])
     density_ = np.interp(np.float64(time_mids), np.float64(density['timestamp']), density['value'])
     salinity_ = np.interp(np.float64(time_mids), np.float64(salinity['timestamp']), salinity['value'])
     temperature_ = np.interp(np.float64(time_mids), np.float64(temperature['timestamp']), temperature['value'])
