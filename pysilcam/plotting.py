@@ -259,15 +259,27 @@ def summarise_fancy_stats(stats_csv_file, config_file, monitor=False,
     ax3 = plt.subplot2grid((2, 2), (0, 1), rowspan=2)
     logger = logging.getLogger(__name__)
 
+    print(settings.PostProcess.img_crop)
     while True:
         try:
-            montage = sc_pp.make_montage(stats_csv_file,
-                                         settings.PostProcess.pix_size,
-                                         roidir=settings.ExportParticles.outputpath,
-                                         auto_scaler=msize * 2, msize=msize,
-                                         maxlength=maxlength,
-                                         oilgas=oilgas,
-                                         crop_stats=crop_stats)
+            if crop_stats:
+                montage = sc_pp.make_montage(
+                    stats_csv_file,
+                    settings.PostProcess.pix_size,
+                    roidir=settings.ExportParticles.outputpath,
+                    auto_scaler=msize * 2, msize=msize,
+                    maxlength=maxlength,
+                    oilgas=oilgas,
+                    crop_stats_bounds=settings.PostProcess.img_crop)
+            else:
+                montage = sc_pp.make_montage(
+                    stats_csv_file,
+                    settings.PostProcess.pix_size,
+                    roidir=settings.ExportParticles.outputpath,
+                    auto_scaler=msize * 2, msize=msize,
+                    maxlength=maxlength,
+                    oilgas=oilgas,
+                    crop_stats_bounds=None)
         except:
             montage = np.zeros((msize, msize, 3), dtype=np.uint8) + 255
             logger.warning(
@@ -279,7 +291,7 @@ def summarise_fancy_stats(stats_csv_file, config_file, monitor=False,
         stats = stats[(stats['major_axis_length'] *
                        settings.PostProcess.pix_size) < maxlength]
         if crop_stats:
-            stats = sc_pp.extract_middle(stats)
+            stats = sc_pp.extract_middle(stats, settings.PostProcess.img_crop)
 
         # average numer and volume concentrations
         nc, vc, sv_total, junge = sc_pp.nc_vc_from_stats(stats,

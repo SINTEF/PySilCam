@@ -56,10 +56,10 @@ def silcreport():
         logger.info('  Monitoring enabled:')
         logger.info('    press ctrl+c to stop.')
         monitor = True
-    
+
     crop_stats = False
     if args['--extract-middle']:
-        logger.info('  Extract middle enabled.')
+        logger.info('  Extract middle enabled. Crop area taken from config file.')
         crop_stats = True
 
     silcam_report(args['<statsfile>'], args['<configfile>'],

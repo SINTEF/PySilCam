@@ -97,7 +97,7 @@ def get_size_bins():
     return bin_mids_um, bin_limits_um
 
 
-def extract_middle(stats):
+def extract_middle(stats, crop_bounds):
     '''
     Temporary cropping solution due to small window in AUV
     '''
@@ -115,8 +115,8 @@ def extract_middle(stats):
     # plt.plot(pts[:, 0], pts[:, 1], 'k.')
     # plt.axis('equal')
 
-    ll = np.array([500, 500]) # lower-left
-    ur = np.array([1750, 1750])  # upper-right
+    ll = np.array(crop_bounds[:2]) # lower-left
+    ur = np.array(crop_bounds[2:])  # upper-right
 
     inidx = np.all(np.logical_and(ll <= pts, pts <= ur), axis=1)
     inbox = pts[inidx]
@@ -126,7 +126,7 @@ def extract_middle(stats):
 
     # plt.plot(inbox[:,0], inbox[:,1], 'r.')
     # plt.axis('equal')
-    
+
     print('len stats', len(stats))
     return stats
 
@@ -482,7 +482,7 @@ def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
 
 def make_montage(stats_csv_file, pixel_size, roidir,
         auto_scaler=500, msize=1024, maxlength=100000,
-        oilgas=outputPartType.all, crop_stats=False):
+        oilgas=outputPartType.all, crop_stats_bounds=None):
     ''' wrapper function for montage_maker
 
     Args:
@@ -502,8 +502,8 @@ def make_montage(stats_csv_file, pixel_size, roidir,
     # obtain particle statistics from the csv file
     stats = pd.read_csv(stats_csv_file)
 
-    if crop_stats:
-        stats = extract_middle(stats)
+    if crop_stats_bounds is not None:
+        stats = extract_middle(stats, crop_stats_bounds)
 
     # remove nans because concentrations are not important here
     stats = stats[~np.isnan(stats['major_axis_length'])]

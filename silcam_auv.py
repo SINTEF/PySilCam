@@ -23,7 +23,7 @@ common_path = 'Z:\\302004868_COAP_Phase1\\Data\\Thor\\20200528'
 LOGS_PATH = "Neptus\\merge\\mra\\csv"
 # FOLDER = 'proc/emlyn_test/merge' # information on mission date used for locating files and understanding times
 FOLDER = 'proc\\test\\merge' # information on mission date used for locating files and understanding times
-INI_FILE = "config_thresh97.ini"
+INI_FILE = "config_crop_thresh97.ini"
 # SILCAM_DATAFILE = "proc/SilCam-STATS.csv"
 SILCAM_DATAFILE = "proc\\SilCam_thresh97-STATS.csv"
 
@@ -335,8 +335,9 @@ if __name__ == "__main__":
         print('Loading SilCam STATS data')
         stats = pd.read_csv(SILCAM_DATAFILE)  # load the stats file
 
+        # Apply workaround cropping of stats due to small window
         print('Cropping stats')
-        stats = scpp.extract_middle(stats)  # apply temporary (workaround) cropping of stats due to small window
+        stats = scpp.extract_middle(stats, settings.PostProcess.img_crop)
 
         print('Adding position and ctd data to stats')
         stats = add_neptus_to_stats(stats, ctd)
