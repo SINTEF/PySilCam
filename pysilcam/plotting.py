@@ -259,7 +259,6 @@ def summarise_fancy_stats(stats_csv_file, config_file, monitor=False,
     ax3 = plt.subplot2grid((2, 2), (0, 1), rowspan=2)
     logger = logging.getLogger(__name__)
 
-    print(settings.PostProcess.img_crop)
     while True:
         try:
             if crop_stats:
