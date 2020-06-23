@@ -7,9 +7,9 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import matplotlib.dates as mdates
 
-import cartopy.crs as ccrs
-from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
-import cartopy.io.img_tiles as cimgt
+# import cartopy.crs as ccrs
+# from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+# import cartopy.io.img_tiles as cimgt
 
 import pysilcam.postprocess as scpp
 import pysilcam.plotting as scplt
@@ -102,53 +102,53 @@ def nd_plot(stats, settings):
     plt.ylabel('Number conc. [#/Arb.Vol./um]')
 
 
-def map_plot(ctd, request):
-    ax = plt.gca()
-    gl = ax.gridlines(draw_labels=True)
-    gl.xlabels_top = gl.ylabels_right = False
-    gl.xlocator = mticker.FixedLocator(np.arange(9, 11, 0.05))
-    gl.xformatter = LONGITUDE_FORMATTER
-    gl.yformatter = LATITUDE_FORMATTER
+# def map_plot(ctd, request):
+#     ax = plt.gca()
+#     gl = ax.gridlines(draw_labels=True)
+#     gl.xlabels_top = gl.ylabels_right = False
+#     gl.xlocator = mticker.FixedLocator(np.arange(9, 11, 0.05))
+#     gl.xformatter = LONGITUDE_FORMATTER
+#     gl.yformatter = LATITUDE_FORMATTER
 
-    # ax.set_extent([10.32, 10.45, 63.40, 63.51])
-    ax.set_extent([10.3, 10.5, 63.425, 63.5])
+#     # ax.set_extent([10.32, 10.45, 63.40, 63.51])
+#     ax.set_extent([10.3, 10.5, 63.425, 63.5])
 
-    ax.plot(np.array(ctd[' lon (corrected)']), np.array(ctd[' lat (corrected)']),
-            'k.', markersize=4, transform=ccrs.Geodetic())
+#     ax.plot(np.array(ctd[' lon (corrected)']), np.array(ctd[' lat (corrected)']),
+#             'k.', markersize=4, transform=ccrs.Geodetic())
 
-    plt.setp(ax.get_xticklabels(), fontsize=10, rotation='vertical')
+#     plt.setp(ax.get_xticklabels(), fontsize=10, rotation='vertical')
 
-    ax.add_image(request, 12)
+#     ax.add_image(request, 12)
 
 
-def summary_figure(ctd, montage, stats, settings):
-    '''wrapper for above plotting functions'''
-    f = plt.figure(figsize=(12, 12))
+# def summary_figure(ctd, montage, stats, settings):
+#     '''wrapper for above plotting functions'''
+#     f = plt.figure(figsize=(12, 12))
 
-    request = cimgt.StamenTerrain()
-    ax1 = plt.subplot(221, projection=request.crs)
-    ax2 = plt.subplot(222)
-    ax3 = plt.subplot(223)
-    ax4 = plt.subplot(224)
+#     request = cimgt.StamenTerrain()
+#     ax1 = plt.subplot(221, projection=request.crs)
+#     ax2 = plt.subplot(222)
+#     ax3 = plt.subplot(223)
+#     ax4 = plt.subplot(224)
 
-    plt.sca(ax1)
-    map_plot(ctd, request)
-    plt.title(
-        ctd['Time'].min().strftime('%Y-%m-%d %H:%M')
-        + ' - ' + ctd['Time'].max().strftime('%Y-%m-%d %H:%M')
-        + '\n' + 'Max Depth: {:0.0f} [m]'.format(ctd[' depth'].max())
-        + ' | Raw SilCam images analysed: {:0.0f}'.format(scpp.count_images_in_stats(stats))
-        + '\n' + 'Particles analysed: {:0.0f}'.format(len(stats)),
-        loc='left')
+#     plt.sca(ax1)
+#     map_plot(ctd, request)
+#     plt.title(
+#         ctd['Time'].min().strftime('%Y-%m-%d %H:%M')
+#         + ' - ' + ctd['Time'].max().strftime('%Y-%m-%d %H:%M')
+#         + '\n' + 'Max Depth: {:0.0f} [m]'.format(ctd[' depth'].max())
+#         + ' | Raw SilCam images analysed: {:0.0f}'.format(scpp.count_images_in_stats(stats))
+#         + '\n' + 'Particles analysed: {:0.0f}'.format(len(stats)),
+#         loc='left')
 
-    plt.sca(ax2)
-    depth_timeseries_plot(ctd)
+#     plt.sca(ax2)
+#     depth_timeseries_plot(ctd)
 
-    plt.sca(ax3)
-    scplt.montage_plot(montage, settings.PostProcess.pix_size)
+#     plt.sca(ax3)
+#     scplt.montage_plot(montage, settings.PostProcess.pix_size)
 
-    plt.sca(ax4)
-    nd_plot(stats, settings)
+#     plt.sca(ax4)
+#     nd_plot(stats, settings)
 
 
 def nc_timeseries(stats, settings):
