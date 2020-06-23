@@ -84,5 +84,5 @@ def silcam_report(statsfile, configfile, particle_type=scpp.outputPartType.all,
     logger.info('  Saving to disc....')
     plt.savefig(statsfile.strip('-STATS.csv') + '-Summary_' +
                 particle_type_str + '.png',
-                dpi=dpi, bbox_inches='  tight')
+                dpi=dpi, bbox_inches='tight')
     logger.info('Done.')
