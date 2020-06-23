@@ -10,6 +10,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 def silcreport():
     """Generate a report figure for a processed dataset from the SilCam.
 
@@ -29,7 +30,8 @@ def silcreport():
         --dpi=<dpi>             DPI resolution of figure (default is 600)
         --monitor               Enables continuous monitoring (requires display)
         --extract-middle        Filters stats file to only include particle from
-                                the centre of the image.
+                                the centre of the image. If used config.ini file
+                                must have PostProcess.img_crop: 4-tuple of coords
         -h --help               Show this screen.
 
     """
@@ -82,5 +84,5 @@ def silcam_report(statsfile, configfile, particle_type=scpp.outputPartType.all,
     logger.info('  Saving to disc....')
     plt.savefig(statsfile.strip('-STATS.csv') + '-Summary_' +
                 particle_type_str + '.png',
-                dpi=dpi, bbox_inches='tight')
+                dpi=dpi, bbox_inches='  tight')
     logger.info('Done.')

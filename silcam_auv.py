@@ -7,22 +7,20 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import matplotlib.dates as mdates
 
-#import cartopy.crs as ccrs
-#from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
-#import cartopy.io.img_tiles as cimgt
+import cartopy.crs as ccrs
+from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+import cartopy.io.img_tiles as cimgt
 
 import pysilcam.postprocess as scpp
 import pysilcam.plotting as scplt
-# import postprocess as scpp
-# import plotting as scplt
 from pysilcam.config import PySilcamSettings
 
 # common_path = '/mnt/nasdrive/Miljoteknologi/302004868_COAP_Phase1/DATA/Thor/20200528'
 common_path = 'Z:\\302004868_COAP_Phase1\\Data\\Thor\\20200528'
-# LOGS_PATH = "Neptus/merge/mra/csv" # path to folder containing merged NEPTUS logs
+# LOGS_PATH = "Neptus/merge/mra/csv"  # path to folder containing merged NEPTUS logs
 LOGS_PATH = "Neptus\\merge\\mra\\csv"
-# FOLDER = 'proc/emlyn_test/merge' # information on mission date used for locating files and understanding times
-FOLDER = 'proc\\test\\merge' # information on mission date used for locating files and understanding times
+# FOLDER = 'proc/emlyn_test/merge'  # information on mission date used for locating files and understanding times
+FOLDER = 'proc\\test\\merge'
 INI_FILE = "config_crop_thresh97.ini"
 # SILCAM_DATAFILE = "proc/SilCam-STATS.csv"
 SILCAM_DATAFILE = "proc\\SilCam_thresh97-STATS.csv"
@@ -31,6 +29,7 @@ LOGS_PATH = os.path.join(common_path, LOGS_PATH)
 FOLDER = os.path.join(common_path, FOLDER)
 INI_FILE = os.path.join(common_path, INI_FILE)
 SILCAM_DATAFILE = os.path.join(common_path, SILCAM_DATAFILE)
+
 
 def fix_ctd_time(ctd, hour_delay=0):
     """
@@ -50,21 +49,21 @@ def montager(stats):
     Wrapper for pysilcam montage maker
     '''
 
-    ## Make montages of processed particle images
+    # Make montages of processed particle images
     maxlength = 5000000
     minlength = 100
     msize = 2048
-    #roidir = '../DATA/' + FOLDER + '/export_backup'
+    # roidir = '../DATA/' + FOLDER + '/export_backup'
 
     stats = stats[~np.isnan(stats['major_axis_length'])]
-    stats = stats[(stats['major_axis_length'] *
-            settings.PostProcess.pix_size) < maxlength]
-    stats = stats[(stats['major_axis_length'] *
-            settings.PostProcess.pix_size) > minlength]
-    
-    stats = stats[stats['Depth'] > 2] # only look for things below 2m depth
+    stats = stats[
+        (stats['major_axis_length'] * settings.PostProcess.pix_size) < maxlength]
+    stats = stats[
+        (stats['major_axis_length'] * settings.PostProcess.pix_size) > minlength]
 
-#     stats = stats[stats['probability_other']>0.8] # can filter classified probabilities like this
+    stats = stats[stats['Depth'] > 2]  # only look for things below 2m depth
+
+    # stats = stats[stats['probability_other']>0.8] # can filter classified probabilities like this
 
     stats.sort_values(by=['major_axis_length'], ascending=False, inplace=True)
     roifiles = scpp.gen_roifiles(stats, auto_scaler=msize)
@@ -82,12 +81,8 @@ def add_latlon_to_stats(stats, time, lat, lon):
     return stats
 
 
-# def silcam_montage_plot(montage, settings):
-#     scplt.montage_plot(montage, settings.PostProcess.pix_size)
-
-
 def depth_timeseries_plot(ctd):
-    plt.plot(ctd['Time'], ctd[' depth'],'k.', markersize=4)
+    plt.plot(ctd['Time'], ctd[' depth'], 'k.', markersize=4)
     plt.ylim(30, 0)
     plt.ylabel('Depth [m]')
     plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
@@ -111,16 +106,16 @@ def map_plot(ctd, request):
     ax = plt.gca()
     gl = ax.gridlines(draw_labels=True)
     gl.xlabels_top = gl.ylabels_right = False
-    gl.xlocator = mticker.FixedLocator(np.arange(9,11,0.05))
+    gl.xlocator = mticker.FixedLocator(np.arange(9, 11, 0.05))
     gl.xformatter = LONGITUDE_FORMATTER
     gl.yformatter = LATITUDE_FORMATTER
 
-#     ax.set_extent([10.32, 10.45, 63.40, 63.51])
+    # ax.set_extent([10.32, 10.45, 63.40, 63.51])
     ax.set_extent([10.3, 10.5, 63.425, 63.5])
 
     ax.plot(np.array(ctd[' lon (corrected)']), np.array(ctd[' lat (corrected)']),
             'k.', markersize=4, transform=ccrs.Geodetic())
-    
+
     plt.setp(ax.get_xticklabels(), fontsize=10, rotation='vertical')
 
     ax.add_image(request, 12)
@@ -129,7 +124,7 @@ def map_plot(ctd, request):
 def summary_figure(ctd, montage, stats, settings):
     '''wrapper for above plotting functions'''
     f = plt.figure(figsize=(12, 12))
-    
+
     request = cimgt.StamenTerrain()
     ax1 = plt.subplot(221, projection=request.crs)
     ax2 = plt.subplot(222)
@@ -150,7 +145,7 @@ def summary_figure(ctd, montage, stats, settings):
     depth_timeseries_plot(ctd)
 
     plt.sca(ax3)
-    silcam_montage_plot(montage, settings)
+    scplt.montage_plot(montage, settings.PostProcess.pix_size)
 
     plt.sca(ax4)
     nd_plot(stats, settings)
@@ -173,7 +168,7 @@ def nc_timeseries(stats, settings):
 
     stats.sort_values(by=['timestamp'], inplace=True)
 
-    td = pd.to_timedelta('00:00:' + str(settings.window_size/2.))
+    td = pd.to_timedelta('00:00:' + str(settings.window_size / 2.))
     nc = []
     time = []
     depth = []
@@ -186,7 +181,9 @@ def nc_timeseries(stats, settings):
 
     for t in tqdm(u):
         dt = pd.to_datetime(t)
-        stats_ = stats[(pd.to_datetime(stats['timestamp'])<(dt+td)) & (pd.to_datetime(stats['timestamp'])>(dt-td))]
+        stats_ = stats[
+            (pd.to_datetime(stats['timestamp']) < (dt + td))
+            & (pd.to_datetime(stats['timestamp']) > (dt - td))]
         nc_ = len(stats_) / sample_volume
         nc.append(nc_)
         time.append(t)
@@ -199,8 +196,8 @@ def nc_timeseries(stats, settings):
         nc = np.nan
         time = np.nan
 
-    timeseries = pd.DataFrame(columns=['Time','Depth [m]',
-        'Latitude','Longitude','Number Concentration [#/L]'])
+    timeseries = pd.DataFrame(columns=[
+        'Time', 'Depth [m]', 'Latitude', 'Longitude', 'Number Concentration [#/L]'])
     timeseries['Time'] = time
     timeseries['Depth [m]'] = depth
     timeseries['Latitude'] = lat
@@ -255,7 +252,7 @@ def neptus_csv_ctd(csv_path, start_time=None, end_time=None):
     chlorophyll = chlorophyll[chlorophyll[' entity '] == ' SmartX']
 
     estimated_state = pd.read_csv(os.path.join(csv_path, 'EstimatedState.csv'),
-                        parse_dates=['timestamp'], date_parser=date_fix)
+                                  parse_dates=['timestamp'], date_parser=date_fix)
     lat_deg = estimated_state[' lat (rad)'].apply(np.rad2deg)
     lon_deg = estimated_state[' lon (rad)'].apply(np.rad2deg)
 
@@ -306,18 +303,18 @@ def add_neptus_to_stats(stats, ctd):
                                 ctd['lon_deg'])  # merge location data into particle stats
 
     # interpolate data into the SilCam times
-    stats['Depth'] = np.interp(np.float64(sctime),
-                               np.float64(pd.to_datetime(ctd['timestamp'])), ctd['depth'])
-    stats['salinity'] = np.interp(np.float64(sctime),
-                               np.float64(pd.to_datetime(ctd['timestamp'])), ctd['salinity'])
-    stats['density'] = np.interp(np.float64(sctime),
-                               np.float64(pd.to_datetime(ctd['timestamp'])), ctd['density'])
-    stats['temperature'] = np.interp(np.float64(sctime),
-                               np.float64(pd.to_datetime(ctd['timestamp'])), ctd['temperature'])
-    stats['turbidity'] = np.interp(np.float64(sctime),
-                               np.float64(pd.to_datetime(ctd['timestamp'])), ctd['turbidity'])
-    stats['chlorophyll'] = np.interp(np.float64(sctime),
-                               np.float64(pd.to_datetime(ctd['timestamp'])), ctd['chlorophyll'])
+    stats['Depth'] = np.interp(
+        np.float64(sctime), np.float64(pd.to_datetime(ctd['timestamp'])), ctd['depth'])
+    stats['salinity'] = np.interp(
+        np.float64(sctime), np.float64(pd.to_datetime(ctd['timestamp'])), ctd['salinity'])
+    stats['density'] = np.interp(
+        np.float64(sctime), np.float64(pd.to_datetime(ctd['timestamp'])), ctd['density'])
+    stats['temperature'] = np.interp(
+        np.float64(sctime), np.float64(pd.to_datetime(ctd['timestamp'])), ctd['temperature'])
+    stats['turbidity'] = np.interp(
+        np.float64(sctime), np.float64(pd.to_datetime(ctd['timestamp'])), ctd['turbidity'])
+    stats['chlorophyll'] = np.interp(
+        np.float64(sctime), np.float64(pd.to_datetime(ctd['timestamp'])), ctd['chlorophyll'])
     return stats
 
 
@@ -325,7 +322,7 @@ if __name__ == "__main__":
 
     outfilename = FOLDER + '-AUV-STATS.csv'
 
-    settings = PySilcamSettings(INI_FILE) # load the settings used for processing
+    settings = PySilcamSettings(INI_FILE)  # load the settings used for processing
 
     if not os.path.isfile(outfilename):
         print('Loading CSV file')

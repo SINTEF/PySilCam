@@ -100,8 +100,16 @@ def get_size_bins():
 def extract_middle(stats, crop_bounds):
     '''
     Temporary cropping solution due to small window in AUV
+
+    Args:
+        stats (df)    : silcam stats file
+        crop_bounds (tuple) : 4-tuple of lower-left then upper-right coord of crop
+
+    Returns:
+        stats (df)    : cropped silcam stats file
     '''
-    print('initial stats length:', len(stats))
+
+    # print('initial stats length:', len(stats))
     r = np.array(((stats['maxr'] - stats['minr']) / 2) + stats['minr'])
     c = np.array(((stats['maxc'] - stats['minc']) / 2) + stats['minc'])
 
@@ -115,19 +123,19 @@ def extract_middle(stats, crop_bounds):
     # plt.plot(pts[:, 0], pts[:, 1], 'k.')
     # plt.axis('equal')
 
-    ll = np.array(crop_bounds[:2]) # lower-left
+    ll = np.array(crop_bounds[:2])  # lower-left
     ur = np.array(crop_bounds[2:])  # upper-right
 
     inidx = np.all(np.logical_and(ll <= pts, pts <= ur), axis=1)
-    inbox = pts[inidx]
-    print('inbox shape:', inbox.shape)
-
     stats = stats[inidx]
 
+    # inbox = pts[inidx]
+    # print('inbox shape:', inbox.shape)
     # plt.plot(inbox[:,0], inbox[:,1], 'r.')
     # plt.axis('equal')
 
-    print('len stats', len(stats))
+    # print('len stats', len(stats))
+
     return stats
 
 
@@ -493,7 +501,7 @@ def make_montage(stats_csv_file, pixel_size, roidir,
         msize=1024                  : size of canvas in pixels
         maxlength=100000            : maximum length in microns of particles to be included in montage
         oilgas=outputPartType.all   : enum defining which type of particle to be selected for use in the montage
-        crop_state=False (Bool)     : if the stats file should be cropped to only include the centre
+        crop_stats_bounds=None      : None or 4-tuple of lower-left then upper-right coord of crop
 
     Returns:
         montage (uint8)             : a nicely-made montage in the form of an image, which can be plotted using plotting.montage_plot(montage, settings.PostProcess.pix_size)
