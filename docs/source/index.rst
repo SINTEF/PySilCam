@@ -29,8 +29,8 @@ Processing and analysis is performed using the below functions.
 
 .. autofunction:: pysilcam.__main__.processImage
 .. autofunction:: pysilcam.process.statextract
-.. autofunction:: pysilcam.process.image2blackwhite_fast
-.. autofunction:: pysilcam.process.image2blackwhite_accurate
+.. autofunction:: pysilcam.process.image2binary_fast
+.. autofunction:: pysilcam.process.image2binary_accurate
 .. autofunction:: pysilcam.process.clean_bw
 .. autofunction:: pysilcam.process.measure_particles
 
