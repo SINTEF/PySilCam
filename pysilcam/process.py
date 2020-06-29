@@ -13,11 +13,11 @@ import h5py
 import os
 import scipy.misc
 
-'''
+"""
 Module for processing SilCam data
 
 TODO: add tests for this module
-'''
+"""
 
 # Get module-level logger
 logger = logging.getLogger(__name__)
@@ -82,7 +82,7 @@ def image2binary_fast(imc, greythresh):
 
 
 def clean_bw(im_binary, min_area):
-    ''' cleans up particles which are too small and particles touching the
+    """ cleans up particles which are too small and particles touching the
     border
 
     Args:
@@ -92,7 +92,7 @@ def clean_bw(im_binary, min_area):
     Returns:
         im_binary (DataFrame)       : cleaned up segmented image
 
-    '''
+    """
 
     # remove objects that are below the detection limit defined in the config file.
     # this min_area is usually 12 pixels
@@ -164,7 +164,7 @@ def concentration_check(im_binary, settings):
 
 
 def measure_particles(im_binary, imc, settings, timestamp, nnmodel, class_labels):
-    '''Measures properties of particles
+    """ Measures properties of particles
 
     Args:
       im_binary (full-frame binary image)
@@ -174,10 +174,10 @@ def measure_particles(im_binary, imc, settings, timestamp, nnmodel, class_labels
     Returns:
       stats (list of particle statistics for every particle, according to Partstats class)
 
-    '''
+    """
     # check the converage of the image of particles is acceptable
     sat_check, saturation = concentration_check(im_binary, settings)
-    if sat_check == False:
+    if sat_check is False:
         logger.warning('....breached concentration limit! Skipping image.')
         im_binary *= 0  # this is not a good way to handle this condition
         # @todo handle situation when too many particles are found
@@ -200,7 +200,7 @@ def measure_particles(im_binary, imc, settings, timestamp, nnmodel, class_labels
 
 
 def threshold_im(im_rgb, settings, timestamp):
-    '''im_rgb (raw corrected image) to binary image
+    """ im_rgb (raw corrected image) to binary image
 
     Args:
         im_rgb                      : background-corrected image
@@ -208,7 +208,7 @@ def threshold_im(im_rgb, settings, timestamp):
 
     Returns:
         im_binary                   : segmented image
-    '''
+    """
 
     logger.debug('segment')
 
@@ -237,14 +237,14 @@ def threshold_im(im_rgb, settings, timestamp):
 
 
 def write_segmented_images(imbw, imc, settings, timestamp):
-    '''writes binary images as bmp files to the same place as hdf5 files if loglevel is in DEBUG mode
+    """ writes binary images as bmp files to the same place as hdf5 files if loglevel is in DEBUG mode
     Useful for checking threshold and segmentation
 
     Args:
         imbw                        : segmented image
         settings                    : PySilCam settings
         timestamp                   : timestamp of image collection
-    '''
+    """
     if (settings.General.loglevel == 'DEBUG') and settings.ExportParticles.export_images:
         fname = os.path.join(settings.ExportParticles.outputpath, timestamp.strftime('D%Y%m%dT%H%M%S.%f-SEG.bmp'))
         imbw_ = np.uint8(255 * imbw)
@@ -254,7 +254,7 @@ def write_segmented_images(imbw, imc, settings, timestamp):
 
 
 def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_properties):
-    """extracts the particles to build stats and export particle rois to HDF5 files writted to disc in the location of settings.ExportParticles.outputpath
+    """ extracts the particles to build stats and export particle rois to HDF5 files writted to disc in the location of settings.ExportParticles.outputpath
 
     Args:
         imc                         : background-corrected image
@@ -285,7 +285,8 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
         meta.attrs['Settings'] = str(settings_dict)
         meta.attrs['Timestamp'] = str(timestamp)
         meta.attrs['Raw image name'] = filename
-        # @todo include more useful information in this meta data, e.g. possibly raw image location and background stack file list.
+        # @todo include more useful information in this meta data,
+        #  e.g. possibly raw image location and background stack file list.
 
     # define the geometrical properties to be calculated from regionprops
     propnames = ['major_axis_length', 'minor_axis_length', 'equivalent_diameter', 'solidity']
@@ -304,7 +305,8 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
         particle_data[i, :] = data
         bboxes[i, :] = el.bbox
 
-        # if operating in realtime mode, assume we only care about oil and gas and skip export of overly-derformed particles
+        # if operating in realtime mode, assume we only care about
+        # oil and gas and skip export of overly-derformed particles
         if settings.Process.real_time_stats and (data[1] / data[0] < 0.3 or data[3] < 0.95):
             continue
         # Find particles that match export criteria
@@ -355,7 +357,7 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
 
 
 def processImage(nnmodel, class_labels, image_data, settings):
-    '''
+    """
     Proceses an image
 
     Args:
@@ -370,7 +372,7 @@ def processImage(nnmodel, class_labels, image_data, settings):
 
     Returns:
         stats_all (DataFrame)               :  stats dataframe containing particle statistics
-    '''
+    """
 
     im_idx = image_data[0]
     im_timestamp = image_data[1]
