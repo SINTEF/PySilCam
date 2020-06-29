@@ -89,6 +89,7 @@ def liveview_acquire(datapath, config_filename, writeToDisk=False):
 
         yield timestamp, imraw
 
+
 def write_image(datapath, timestamp, imraw):
     filename = os.path.join(datapath, timestamp.strftime('D%Y%m%dT%H%M%S.%f.bmp'))
     imwrite(filename, np.uint8(imraw))
@@ -98,6 +99,7 @@ def write_image(datapath, timestamp, imraw):
 def get_image_size(im):
     ims = np.shape(im)
     return ims
+
 
 def zoomer(zoom):
     zoom += 1
@@ -119,9 +121,10 @@ def liveview(datapath = '/mnt/DATA/emlynd/DATA/', config_filename = 'config_hard
 
     pygame.init()
     info = pygame.display.Info()
-    size = (int(info.current_h / (ims[0]/ims[1]))-50, info.current_h-50)
+    size = (int(info.current_h / (ims[0] / ims[1])) - 50, info.current_h - 50)
     screen = pygame.display.set_mode(size)
     font = pygame.font.SysFont("monospace", 20)
+    font_colour = (0, 127, 127)
     zoom = 0
     pause = False
     pygame.event.set_blocked(pygame.MOUSEMOTION)
@@ -136,6 +139,8 @@ def liveview(datapath = '/mnt/DATA/emlynd/DATA/', config_filename = 'config_hard
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_f:
                     zoom = zoomer(zoom)
+                if event.key == pygame.K_SPACE:
+                    write_image(datapath, timestamp, imraw)
                 if event.key == pygame.K_p:
                     pause = np.invert(pause)
                 if event.key == pygame.K_ESCAPE:
@@ -148,31 +153,31 @@ def liveview(datapath = '/mnt/DATA/emlynd/DATA/', config_filename = 'config_hard
         timestamp, imraw = next(aqgen)
 
         if zoom>0:
-            label = font.render('ZOOM [F]: ' + str(zoom), 1, (255, 255, 0))
+            label = font.render('ZOOM [F]: ' + str(zoom), 1, font_colour)
             if zoom==1:
-                imcrop = imraw[int(ims[0]/4):-int(ims[0]/4),
-                        int(ims[1]/4):-int(ims[1]/4),:]
+                imcrop = imraw[int(ims[0] / 4):-int(ims[0] / 4),
+                               int(ims[1] / 4):-int(ims[1] / 4), :]
             else:
-                imcrop = imraw[int(ims[0]/2.5):-int(ims[0]/2.5),
-                        int(ims[1]/2.5):-int(ims[1]/2.5),:]
+                imcrop = imraw[int(ims[0] / 2.5):-int(ims[0] / 2.5),
+                               int(ims[1] / 2.5):-int(ims[1] / 2.5), :]
             im = convert_image(imcrop, size)
         else:
             im = convert_image(imraw, size)
-            label = font.render('ZOOM [F]: OFF', 1, (255, 255, 0))
+            label = font.render('ZOOM [F]: OFF', 1, font_colour)
 
         screen.blit(im, (0, 0))
-        screen.blit(label,(0, size[1]-20))
+        screen.blit(label, (0, size[1] - 20))
 
-        label = font.render('pause[p] write[scpace] exit[Esc]', 1, (255,255,0))
-        screen.blit(label, (0, size[1]-40))
+        label = font.render('pause[p] write[space] exit[Esc]', 1, font_colour)
+        screen.blit(label, (0, size[1] - 40))
 
         pygame.display.set_caption('Image display')
         label = font.render(str(timestamp) + '    Disp. FPS: ' +
-                str(c.get_fps()), 20, (255, 255, 0))
-        screen.blit(label,(0,0))
+                            str(c.get_fps()), 20, font_colour)
+        screen.blit(label, (0, 0))
         label = font.render('Esc to exit',
-                1, (255, 255, 0))
-        screen.blit(label,(0,20))
+                            1, font_colour)
+        screen.blit(label, (0, 20))
 
         for event in pygame.event.get():
             if event.type == 12:
