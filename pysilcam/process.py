@@ -29,7 +29,8 @@ def image2binary_accurate(imc, greythresh):
 
    Args:
        imc                         : background-corrected image
-       greythresh                  : threshold multiplier (greythresh is multiplied by 50th percentile of the image histogram)
+       greythresh                  : threshold multiplier (greythresh is multiplied by
+                                        50th percentile of the image histogram)
 
    Returns:
        imbw                        : segmented image (binary image)
@@ -67,7 +68,8 @@ def image2binary_fast(imc, greythresh):
 
    Args:
        imc                         : background-corrected image
-       greythresh                  : threshold multiplier (greythresh is multiplied by 50th percentile of the image histogram)
+       greythresh                  : threshold multiplier (greythresh is multiplied by
+                                        50th percentile of the image histogram)
 
    Returns:
        imbw                        : segmented image (binary image)
@@ -140,7 +142,8 @@ def concentration_check(im_binary, settings):
 
     Returns:
         sat_check                   : boolean on if the saturation is acceptable. True if the image is acceptable
-        saturation                  : percentage of maximum acceptable saturation defined in settings.Process.max_coverage
+        saturation                  : percentage of maximum acceptable saturation
+                                        defined in settings.Process.max_coverage
     """
 
     # calculate the area covered by particles in the binary image
@@ -254,7 +257,8 @@ def write_segmented_images(imbw, imc, settings, timestamp):
 
 
 def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_properties):
-    """ extracts the particles to build stats and export particle rois to HDF5 files writted to disc in the location of settings.ExportParticles.outputpath
+    """ extracts the particles to build stats and export particle rois to HDF5 files writted to disc in the location of
+     settings.ExportParticles.outputpath
 
     Args:
         imc                         : background-corrected image

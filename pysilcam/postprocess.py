@@ -43,11 +43,11 @@ def d50_from_stats(stats, settings):
     dias, vd = vd_from_stats(stats, settings)
 
     # then the d50
-    d50 = d50_from_vd(vd,dias)
+    d50 = d50_from_vd(vd, dias)
     return d50
 
 
-def d50_from_vd(vd,dias):
+def d50_from_vd(vd, dias):
     """
     Calculate d50 from a volume distribution
     
@@ -85,7 +85,7 @@ def get_size_bins():
     # loop through 53 size classes and calculate the bin limits
     for I in np.arange(1, 53, 1):
         # each bin is 1.18 * larger than the previous
-        bin_limits_um[I] = bin_limits_um[I-1] * 1.180
+        bin_limits_um[I] = bin_limits_um[I - 1] * 1.180
 
     # pre-allocate
     bin_mids_um = np.zeros((52), dtype=np.float64)
@@ -96,7 +96,7 @@ def get_size_bins():
     # loop through 53 size classes and calculate the bin mid-points
     for I in np.arange(1, 52, 1):
         # each bin is 1.18 * larger than the previous
-        bin_mids_um[I] = bin_mids_um[I-1] * 1.180
+        bin_mids_um[I] = bin_mids_um[I - 1] * 1.180
 
     return bin_mids_um, bin_limits_um
 
@@ -153,7 +153,8 @@ def nc_vc_from_stats(stats, settings, oilgas=outputPartType.all):
     Args:
         stats (DataFrame)           : particle statistics from silcam process
         settings (PySilcamSettings) : settings associated with the data, loaded with PySilcamSettings
-        oilgas=oc_pp.outputPartType.all : the oilgas enum if you want to just make the figure for oil, or just gas (defaults to all particles)
+        oilgas=oc_pp.outputPartType.all : the oilgas enum if you want to just make the figure for oil,
+                                            or just gas (defaults to all particles)
     
     Returns:
         nc (float)            : the total number concentration in #/L
@@ -238,7 +239,7 @@ def nd_from_stats_scaled(stats, settings):
     nd = nd_rescale(dias, necd, sample_volume)
 
     # nan the first bin in measurement because it will always be part full
-    ind = np.argwhere(nd>0)
+    ind = np.argwhere(nd > 0)
     nd[ind[0]] = np.nan
 
     return dias, nd
@@ -293,7 +294,7 @@ def vd_from_stats(stats, settings):
 
     # convert the number distribution to volume in units of micro-litres per
     # sample volume
-    vd = vd_from_nd(necd,dias)
+    vd = vd_from_nd(necd, dias)
 
     return dias, vd
 
@@ -335,8 +336,7 @@ class TimeIntegratedVolumeDist:
             self.vd_mean = self.vdlist[0]
 
 
-def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
-        tightpack=False, eyecandy=True):
+def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255, tightpack=False, eyecandy=True):
     """
     makes nice looking matages from a directory of extracted particle images
 
@@ -348,11 +348,14 @@ def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
         pixel_size              : pixel size of system defined by settings.PostProcess.pix_size
         msize=2048              : size of canvas in pixels
         brightness=255          : brighness of packaged particles
-        tightpack=False         : boolean which if True packs particles using segmented alpha-shapes instead of bounding boxes. This is slow, but packs particles more tightly.
-        eyecandy=True           : boolean which if True will explode the contrast of packed particles (nice for natural particles, but not so good for oil and gas).
+        tightpack=False         : boolean which if True packs particles using segmented alpha-shapes instead of
+                                    bounding boxes. This is slow, but packs particles more tightly.
+        eyecandy=True           : boolean which if True will explode the contrast of packed particles
+                                    (nice for natural particles, but not so good for oil and gas).
 
     Returns:
-        montageplot             : a nicely-made montage in the form of an image, which can be plotted using plotting.montage_plot(montage, settings.PostProcess.pix_size)
+        montageplot             : a nicely-made montage in the form of an image, which can be plotted using
+                                    plotting.montage_plot(montage, settings.PostProcess.pix_size)
     """
 
     if tightpack:
@@ -404,7 +407,7 @@ def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
 
         # try five times to fit the particle to the canvas by randomly moving
         # it around
-        while (counter < 5):
+        while counter < 5:
             r = np.random.randint(1, msize-height)
             c = np.random.randint(1, msize-width)
 
@@ -412,20 +415,20 @@ def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
             # of the particle area. If not tightpack, then the fitting will be done
             # based on bounding boxes instead
             if tightpack:
-                test = np.max(immap_test[r:r+height, c:c+width]+imbw)
+                test = np.max(immap_test[r:r+height, c:c+width] + imbw)
             else:
-                test = np.max(immap_test[r:r+height, c:c+width,None]+1)
+                test = np.max(immap_test[r:r+height, c:c+width, None] + 1)
 
             # if the new particle is overlapping an existing object in the
             # canvas, then try again and increment the counter
-            if (test > 1):
+            if test > 1:
                 counter += 1
             else:
                 break
 
         # if we reach this point and there is still an overlap, then forget
         # this particle, and move on
-        if (test > 1):
+        if test > 1:
             continue
 
         # if we reach here, then the particle has found a position in the
@@ -436,7 +439,7 @@ def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
         if tightpack:
             immap_test[r:r+height, c:c+width] = imbw
         else:
-            immap_test[r:r+height, c:c+width, None] = immap_test[r:r+height, c:c+width, None]+1
+            immap_test[r:r+height, c:c+width, None] = immap_test[r:r+height, c:c+width, None] + 1
 
     # now the montage is finished
     # here are some small eye-candy scaling things to tidy up
@@ -449,8 +452,8 @@ def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
 
 
 def make_montage(stats_csv_file, pixel_size, roidir,
-        auto_scaler=500, msize=1024, maxlength=100000,
-        oilgas=outputPartType.all):
+                 auto_scaler=500, msize=1024, maxlength=100000,
+                 oilgas=outputPartType.all):
     """ wrapper function for montage_maker
 
     Args:
@@ -463,7 +466,8 @@ def make_montage(stats_csv_file, pixel_size, roidir,
         oilgas=outputPartType.all   : enum defining which type of particle to be selected for use in the montage
 
     Returns:
-        montage (uint8)             : a nicely-made montage in the form of an image, which can be plotted using plotting.montage_plot(montage, settings.PostProcess.pix_size)
+        montage (uint8)             : a nicely-made montage in the form of an image, which can be plotted using
+                                        plotting.montage_plot(montage, settings.PostProcess.pix_size)
     """
 
     # obtain particle statistics from the csv file
@@ -503,7 +507,8 @@ def gen_roifiles(stats, auto_scaler=500):
         auto_scaler=500             : approximate number of particle that are attempted to be pack into montage
 
     Returns:
-        roifiles                    : a selection of filenames that can be passed to montage_maker() for making nice montages
+        roifiles                    : a selection of filenames that can be passed to
+                                        montage_maker() for making nice montages
     """
 
     roifiles = stats['export name'][stats['export name'] != 'not_exported'].values
@@ -616,7 +621,8 @@ def d50_timeseries(stats, settings):
 
     for t in tqdm(u):
         dt = pd.to_datetime(t)
-        stats_ = stats[(pd.to_datetime(stats['timestamp'])<(dt+td)) & (pd.to_datetime(stats['timestamp']) > (dt-td))]
+        stats_ = stats[(pd.to_datetime(stats['timestamp']) < (dt + td)) &
+                       (pd.to_datetime(stats['timestamp']) > (dt - td))]
         d50.append(d50_from_stats(stats_, settings))
         time.append(t)
 
@@ -693,7 +699,7 @@ def nd_rescale(dias, nd, sample_volume):
     Returns:
         nd                  : scaled number distribution (number per micron per litre)
     """
-    nd = np.float64(nd) / sample_volume # nc per size bin per litre
+    nd = np.float64(nd) / sample_volume  # nc per size bin per litre
 
     # convert nd to units of nc per micron per litre
     dd = np.gradient(dias)
@@ -728,7 +734,7 @@ def export_name2im(exportname, path):
     get the exportname like this: exportname = stats['export name'].values[0]
 
     Args:
-        exportname              : string containing the name of the exported particle e.g. stats['export name'].values[0]
+        exportname              : string containing name of the exported particle e.g. stats['export name'].values[0]
         path                    : path to exported h5 files
 
     Returns:
@@ -778,7 +784,7 @@ def silc_to_bmp(directory):
 
     """
     files = [s for s in os.listdir(directory) if s.endswith('.silc')]
-    
+
     for f in files:
         try:
             with open(os.path.join(directory, f), 'rb') as fh:
@@ -809,7 +815,7 @@ def make_timeseries_vd(stats, settings):
     stats['timestamp'] = pd.to_datetime(stats['timestamp'])
 
     u = stats['timestamp'].unique()
-    
+
     sample_volume = get_sample_volume(settings.PostProcess.pix_size, path_length=settings.PostProcess.path_length)
 
     vdts = []
@@ -817,8 +823,7 @@ def make_timeseries_vd(stats, settings):
     timestamp = []
     dias = []
     for s in tqdm(u):
-        dias, vd = vd_from_stats(stats[stats['timestamp'] == s],
-                settings.PostProcess)
+        dias, vd = vd_from_stats(stats[stats['timestamp'] == s], settings.PostProcess)
         nims = count_images_in_stats(stats[stats['timestamp'] == s])
         sv = sample_volume * nims
         vd /= sv
@@ -855,14 +860,15 @@ def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
     Args:
         config_file (string)            : Path of the config file for this data
         stats_filename (string)         : Path of the stats csv file
-        oilgas=oc_pp.outputPartType.all : the oilgas enum if you want to just make the figure for oil, or just gas (defaults to all particles)
+        oilgas=oc_pp.outputPartType.all : the oilgas enum if you want to just make the figure for oil,
+                                            or just gas (defaults to all particles)
 
     Returns:
         dataframe: of time series
         files: in the proc folder)
     """
     settings = PySilcamSettings(config_file)
-    
+
     stats = pd.read_csv(stats_filename)
     stats.sort_values(by='timestamp', inplace=True)
     oilgasTxt = ''
@@ -878,27 +884,24 @@ def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
 
     df = make_timeseries_vd(stats, settings)
 
-    df.to_excel(stats_filename.replace('-STATS.csv', '') +
-            '-TIMESERIES' + oilgasTxt + '.xlsx')
-    
+    df.to_excel(stats_filename.replace('-STATS.csv', '') + '-TIMESERIES' + oilgasTxt + '.xlsx')
+
     sample_volume = get_sample_volume(settings.PostProcess.pix_size, path_length=settings.PostProcess.path_length)
-   
-    dias, vd = vd_from_stats(stats,
-                settings.PostProcess)
+
+    dias, vd = vd_from_stats(stats, settings.PostProcess)
     nims = count_images_in_stats(stats)
     sv = sample_volume * nims
     vd /= sv
-    
+
     d50 = d50_from_vd(vd, dias)
-    
+
     dfa = pd.DataFrame(data=[vd], columns=dias)
     dfa['d50'] = d50
-    
+
     timestamp = np.min(pd.to_datetime(df['Time']))
     dfa['Time'] = timestamp
-    
-    dfa.to_excel(stats_filename.replace('-STATS.csv', '') +
-            '-AVERAGE' + oilgasTxt + '.xlsx')
+
+    dfa.to_excel(stats_filename.replace('-STATS.csv', '') + '-AVERAGE' + oilgasTxt + '.xlsx')
 
     return df
 
@@ -911,8 +914,10 @@ def trim_stats(stats_csv_file, start_time, end_time, write_new=False, stats=[]):
         start_time                  : start time of interesting window
         end_time                    : end time of interesting window
         write_new=False             : boolean if True will write a new stats csv file to disc
-        stats=[]                    : pass stats DataFrame into here if you don't want to load the data from the stats_csv_file given.
-                                      In this case the stats_csv_file string is only used for creating the new output datafilename.
+        stats=[]                    : pass stats DataFrame into here if you don't want to load the data from
+                                        the stats_csv_file given.
+                                      In this case the stats_csv_file string is only used for creating the
+                                        new output datafilename.
 
     Returns:
         trimmed_stats       : pandas DataFram of particle statistics
@@ -964,7 +969,7 @@ def add_best_guesses_to_stats(stats):
     p = np.zeros_like(cols) != 0
     for i, c in enumerate(cols):
         p[i] = str(c).startswith('probability')
-                
+
     pinds = np.squeeze(np.argwhere(p))
 
     parray = np.array(stats.iloc[:, pinds[:]])
@@ -1000,7 +1005,8 @@ def vd_to_nd(vd, dias):
                                returned from get_size_bins()
 
     Returns:
-        nd (array)           : number distribution as number per micron per bin (scaling is the same unit as the input vd)
+        nd (array)           : number distribution as number per micron per bin
+                                (scaling is the same unit as the input vd)
     """
     DropletVolume = ((4 / 3) * np.pi * ((dias * 1e-6) / 2) ** 3)  # the volume of each droplet in m3
     nd = vd / (DropletVolume*1e9)  # the number distribution in each bin
