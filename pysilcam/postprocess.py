@@ -103,15 +103,15 @@ def extract_middle(stats, crop_bounds):
 
     Args:
         stats (df)    : silcam stats file
-        crop_bounds (tuple) : 4-tuple of lower-left then upper-right coord of crop
+        crop_bounds (tuple) : 4-tuple of lower-left (row, column) then upper-right (row, column) coord of crop
 
     Returns:
         stats (df)    : cropped silcam stats file
     '''
 
     # print('initial stats length:', len(stats))
-    r = np.array(((stats['maxr'] - stats['minr']) / 2) + stats['minr'])
-    c = np.array(((stats['maxc'] - stats['minc']) / 2) + stats['minc'])
+    r = np.array(((stats['maxr'] - stats['minr']) / 2) + stats['minr']) # pixel row of middle of bounding box
+    c = np.array(((stats['maxc'] - stats['minc']) / 2) + stats['minc']) # pixel column of middle of bounding box
 
     points = []
     for i in range(len(c)):
