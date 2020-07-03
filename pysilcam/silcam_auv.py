@@ -4,25 +4,14 @@ from datetime import datetime, timedelta
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.ticker as mticker
 import matplotlib.dates as mdates
-
-# import cartopy.crs as ccrs
-# from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
-# import cartopy.io.img_tiles as cimgt
-
 import pysilcam.postprocess as scpp
-import pysilcam.plotting as scplt
 from pysilcam.config import PySilcamSettings
 
-# common_path = '/mnt/nasdrive/Miljoteknologi/302004868_COAP_Phase1/DATA/Thor/20200528'
-common_path = 'Z:\\302004868_COAP_Phase1\\Data\\Thor\\20200528'
-# LOGS_PATH = "Neptus/merge/mra/csv"  # path to folder containing merged NEPTUS logs
-LOGS_PATH = "Neptus\\merge\\mra\\csv"
-# FOLDER = 'proc/emlyn_test/merge'  # information on mission date used for locating files and understanding times
+common_path = 'Z:\\302004868_COAP_Phase1\\Data\\Thor\\20200528' # path to folder containing merged NEPTUS logs
+LOGS_PATH = "Neptus\\merge\\mra\\csv" # information on mission date used for locating files and understanding times
 FOLDER = 'proc\\test\\merge'
 INI_FILE = "config_crop_thresh97.ini"
-# SILCAM_DATAFILE = "proc/SilCam-STATS.csv"
 SILCAM_DATAFILE = "proc\\SilCam_thresh97-STATS.csv"
 
 LOGS_PATH = os.path.join(common_path, LOGS_PATH)
@@ -44,34 +33,6 @@ def fix_ctd_time(ctd, hour_delay=0):
     return ctd
 
 
-def montager(stats):
-    '''
-    Wrapper for pysilcam montage maker
-    '''
-
-    # Make montages of processed particle images
-    maxlength = 5000000
-    minlength = 100
-    msize = 2048
-    # roidir = '../DATA/' + FOLDER + '/export_backup'
-
-    stats = stats[~np.isnan(stats['major_axis_length'])]
-    stats = stats[
-        (stats['major_axis_length'] * settings.PostProcess.pix_size) < maxlength]
-    stats = stats[
-        (stats['major_axis_length'] * settings.PostProcess.pix_size) > minlength]
-
-    stats = stats[stats['Depth'] > 2]  # only look for things below 2m depth
-
-    # stats = stats[stats['probability_other']>0.8] # can filter classified probabilities like this
-
-    stats.sort_values(by=['major_axis_length'], ascending=False, inplace=True)
-    roifiles = scpp.gen_roifiles(stats, auto_scaler=msize)
-
-    montage = scpp.montage_maker(roifiles, roidir, settings.PostProcess.pix_size, msize, eyecandy=True)
-    return montage
-
-
 def add_latlon_to_stats(stats, time, lat, lon):
     '''This is approximate because lat and lon are treated independently!!!!'''
     sctime = pd.to_datetime(stats['timestamp'])
@@ -88,7 +49,6 @@ def depth_timeseries_plot(ctd):
     plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
     plt.xticks(rotation=20)
     plt.xticks(horizontalalignment='right')
-    #     plt.gcf().autofmt_xdate()
 
 
 def nd_plot(stats, settings):
@@ -100,55 +60,6 @@ def nd_plot(stats, settings):
     plt.xlim(100, 10000)
     plt.xlabel('Equiv. diam. [um]')
     plt.ylabel('Number conc. [#/Arb.Vol./um]')
-
-
-# def map_plot(ctd, request):
-#     ax = plt.gca()
-#     gl = ax.gridlines(draw_labels=True)
-#     gl.xlabels_top = gl.ylabels_right = False
-#     gl.xlocator = mticker.FixedLocator(np.arange(9, 11, 0.05))
-#     gl.xformatter = LONGITUDE_FORMATTER
-#     gl.yformatter = LATITUDE_FORMATTER
-
-#     # ax.set_extent([10.32, 10.45, 63.40, 63.51])
-#     ax.set_extent([10.3, 10.5, 63.425, 63.5])
-
-#     ax.plot(np.array(ctd[' lon (corrected)']), np.array(ctd[' lat (corrected)']),
-#             'k.', markersize=4, transform=ccrs.Geodetic())
-
-#     plt.setp(ax.get_xticklabels(), fontsize=10, rotation='vertical')
-
-#     ax.add_image(request, 12)
-
-
-# def summary_figure(ctd, montage, stats, settings):
-#     '''wrapper for above plotting functions'''
-#     f = plt.figure(figsize=(12, 12))
-
-#     request = cimgt.StamenTerrain()
-#     ax1 = plt.subplot(221, projection=request.crs)
-#     ax2 = plt.subplot(222)
-#     ax3 = plt.subplot(223)
-#     ax4 = plt.subplot(224)
-
-#     plt.sca(ax1)
-#     map_plot(ctd, request)
-#     plt.title(
-#         ctd['Time'].min().strftime('%Y-%m-%d %H:%M')
-#         + ' - ' + ctd['Time'].max().strftime('%Y-%m-%d %H:%M')
-#         + '\n' + 'Max Depth: {:0.0f} [m]'.format(ctd[' depth'].max())
-#         + ' | Raw SilCam images analysed: {:0.0f}'.format(scpp.count_images_in_stats(stats))
-#         + '\n' + 'Particles analysed: {:0.0f}'.format(len(stats)),
-#         loc='left')
-
-#     plt.sca(ax2)
-#     depth_timeseries_plot(ctd)
-
-#     plt.sca(ax3)
-#     scplt.montage_plot(montage, settings.PostProcess.pix_size)
-
-#     plt.sca(ax4)
-#     nd_plot(stats, settings)
 
 
 def nc_timeseries(stats, settings):
