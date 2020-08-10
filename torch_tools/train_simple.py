@@ -1,4 +1,5 @@
 import os
+import psutil
 import sys
 import time
 import numpy as np
@@ -6,6 +7,7 @@ import numpy as np
 
 import skimage
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix
 # from sklearn.metrics import accuracy_score
 
 import torch
@@ -17,10 +19,12 @@ from torchvision import transforms
 
 import ml_config as config
 
-silcam_dir = "/Users/odin/Sintef/SilCam/PySilCam"
+# silcam_dir = "/Users/odin/Sintef/SilCam/PySilCam"
+silcam_dir = "/home/william/SilCam/PySilCam"
 sys.path.append(silcam_dir)
 
-data_dir = "/Users/odin/Sintef/SilCam"
+# data_dir = "/Users/odin/Sintef/SilCam"
+data_dir = "/home/william/SilCam/pysilcam-testdata/unittest-data"
 train_dir = os.path.join(data_dir, "train")
 test_dir = os.path.join(data_dir, "test")
 model_dir = os.path.join(data_dir, 'model', 'net_params_4.pt')
@@ -81,6 +85,45 @@ def to_numpy(torch_image):
     '''To convert a torch.Tensor (CxHxW) back to numpy (HxWxC)'''
     return (torch_image.numpy().transpose((1, 2, 0)) + 1) / 2
 
+# First CoapNet like thing, give roughly 75% acc.
+# class CoapNet(nn.Module):
+#     '''
+#     We are assuming that the image_size is divisible by 4.
+#     '''
+
+#     def __init__(self, num_classes, image_size=32):
+#         super(CoapNet, self).__init__()
+#         # Assumes 2 max pool layers:
+#         self.num_conv_features = int((image_size / 4)**2 * 64)
+#         self.conv1 = nn.Conv2d(3, 32, 3, padding=1)
+#         self.conv2 = nn.Conv2d(32, 64, 3, padding=1)
+#         self.conv3 = nn.Conv2d(64, 64, 3, padding=1)
+#         self.conv4 = nn.Conv2d(64, 64, 3, padding=1)
+#         self.conv5 = nn.Conv2d(64, 64, 3, padding=1)
+#         self.conv6 = nn.Conv2d(64, 64, 3, padding=1)
+#         self.fc1 = nn.Linear(self.num_conv_features, 512)
+#         self.fc2 = nn.Linear(512, 256)
+#         self.fc3 = nn.Linear(256, 256)
+#         self.fc4 = nn.Dropout(0.75)
+#         self.fc5 = nn.Linear(256, num_classes)
+
+#     def forward(self, x):
+#         x = F.relu(self.conv1(x))
+#         x = F.max_pool2d(x, (2, 2))
+#         x = self.conv2(x)
+#         x = self.conv3(x)
+#         x = self.conv4(x)
+#         x = self.conv5(x)
+#         x = self.conv6(x)
+#         x = F.max_pool2d(x, (2, 2))
+#         x = x.view(-1, self.num_conv_features)
+#         x = F.relu(self.fc1(x))
+#         x = F.relu(self.fc2(x))
+#         x = F.relu(self.fc3(x))
+#         x = self.fc4(x)
+#         x = self.fc5(x)
+#         return x
+
 
 class CoapNet(nn.Module):
     '''
@@ -97,27 +140,27 @@ class CoapNet(nn.Module):
         self.conv4 = nn.Conv2d(64, 64, 3, padding=1)
         self.conv5 = nn.Conv2d(64, 64, 3, padding=1)
         self.conv6 = nn.Conv2d(64, 64, 3, padding=1)
-        self.fc1 = nn.Linear(self.num_conv_features, 512)
-        self.fc2 = nn.Linear(512, 256)
-        self.fc3 = nn.Linear(256, 256)
-        self.fc4 = nn.Dropout(0.75)
-        self.fc5 = nn.Linear(256, num_classes)
+        self.dropout1 = nn.Dropout2d(0.5)
+        self.fc1 = nn.Linear(self.num_conv_features, 256)
+        self.fc2 = nn.Linear(256, 128)
+        self.dropout2 = nn.Dropout2d(0.5)
+        self.fc3 = nn.Linear(128, 64)
+        self.fc4 = nn.Linear(64, num_classes)
 
     def forward(self, x):
-        x = F.relu(self.conv1(x))
-        x = F.max_pool2d(x, (2, 2))
-        x = self.conv2(x)
-        x = self.conv3(x)
-        x = self.conv4(x)
-        x = self.conv5(x)
-        x = self.conv6(x)
-        x = F.max_pool2d(x, (2, 2))
+        x = F.max_pool2d(F.relu(self.conv1(x)), (2, 2))
+        x = F.relu(self.conv2(x))
+        x = F.relu(self.conv3(x))
+        x = F.relu(self.conv4(x))
+        x = F.relu(self.conv5(x))
+        x = F.max_pool2d(F.relu(self.conv6(x)), (2, 2))
+        x = self.dropout1(x)
         x = x.view(-1, self.num_conv_features)
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
+        x = self.dropout2(x)
         x = F.relu(self.fc3(x))
         x = self.fc4(x)
-        x = self.fc5(x)
         return x
 
 
@@ -161,13 +204,17 @@ class SilcamDataset(Dataset):
 
         return image, label
 
+print("---- Getting the Process ID:")
+pid = os.getpid()
+ps = psutil.Process(pid)
+print("Pricess ID:", pid)
 
 print("---- Getting the data:")
 classes = find_classes()
 print("Classes:", classes)
 
-with open('header.tfl.txt', 'w') as f:
-    f.write(",".join(classes))
+# with open('header.tfl.txt', 'w') as f:
+#     f.write(",".join(classes))
 
 X = np.zeros([0, config.image_size, config.image_size, 3], dtype='uint8')
 Y = np.zeros((0, len(classes)), dtype='uint8')
@@ -203,12 +250,18 @@ val_transform = transforms.Compose([
     transforms.Normalize(config.rgb_means, config.rgb_stds),
 ])
 
+# This is terrible form, but I believe in the original training
+# all images are used in training, so testing this:
+# train_set = SilcamDataset(X, Y, transform=train_transform)
 train_set = SilcamDataset(X_train, Y_train, transform=train_transform)
 trainloader = DataLoader(train_set,
                          batch_size=config.batch_size,
                          shuffle=True,
                          num_workers=0)
 
+# Again, terrible, but following the logic above, we might as well test
+# on all images.
+# val_set = SilcamDataset(X, Y, transform=val_transform)
 val_set = SilcamDataset(X_val, Y_val, transform=val_transform)
 valloader = DataLoader(val_set,
                        batch_size=config.batch_size,
@@ -216,11 +269,17 @@ valloader = DataLoader(val_set,
                        num_workers=0)
 
 print("---- Training:")
+# Can set a manual seed for the init of the network, this seems not
+# to have an effect though
+# torch.manual_seed(np.random.randint(0, 10000))
 net = nn.Sequential(CoapNet(num_classes=len(classes)), nn.Softmax(1))
 # print(net)
 
 criterion = nn.CrossEntropyLoss()
+# Have tried various optimisers, seems Adam results in the time it takes
+# to run an epoch slowing. SGD doens't optimise well.
 optimizer = optim.Adam(net.parameters(), lr=config.start_lr)
+# optimizer = optim.SGD(net.parameters(), lr=0.0001, momentum=0.9)
 
 correct = 0
 total = 0
@@ -231,11 +290,14 @@ with torch.no_grad():
         total += labels.size(0)
         correct += (predicted == labels).sum().item()
 print('Acc after init: %d %%' % (100 * correct / total))
+# print('Confusion matrix:')
+# print(confusion_matrix(labels, predicted))
 for epoch in range(200):  # loop over the dataset multiple times
 
     running_loss = 0.0
     start_time = time.time()
-    adjust_learning_rate(optimizer, epoch, config.start_lr)
+    # Below line has modified LR, but it's commented:
+    # adjust_learning_rate(optimizer, epoch, config.start_lr)
     for i, data in enumerate(trainloader):
         # get the inputs; data is a list of [inputs, labels]
         inputs, labels = data
@@ -265,6 +327,7 @@ for epoch in range(200):  # loop over the dataset multiple times
             correct += (predicted == labels).sum().item()
     print('Acc: %d%%' % (100 * correct / total), end=" ")
     print("Time: %d" % (time.time() - start_time))
+    # print(ps.memory_info())
 print('Finished Training')
 
 print(model_dir)
