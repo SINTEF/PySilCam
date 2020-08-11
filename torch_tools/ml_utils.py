@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+from torch.utils.data import Dataset
 
 import torch_tools.ml_config as config
 
@@ -52,6 +53,27 @@ def show_image(x, y=None, classes=None):
     else:
         plt.title("Unknown class (y not given)")
     plt.show()
+
+
+class SilcamDataset(Dataset):
+    
+    def __init__(self, X, Y, transform=None):
+        # These inputs should be nparrays (loaded outside of this)
+        self.X = X
+        self.Y = Y
+        self.transform = transform
+        
+    def __len__(self):
+        return self.Y.shape[0]
+    
+    def __getitem__(self, index):
+        image = self.X[index]
+        label = self.Y[index].argmax()
+        
+        if self.transform is not None:
+            image = self.transform(image)
+            
+        return image, label
 
 
 # ---- Data processing / Augmentation
