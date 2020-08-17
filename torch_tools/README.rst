@@ -36,3 +36,5 @@ Problems, possible future work
 --------
 
 * There is a header.tfl.txt file, which contains a list of classes. This could be renamed and maybe change to a standard config file or such.
+* Unsure why we read possible classes when loading model. Could this be removed?
+* In Dockerfile we have: ENV SILCAM_MODEL_PATH /testdata/COAPNetTorch/COAPNet_model.pt, why?
