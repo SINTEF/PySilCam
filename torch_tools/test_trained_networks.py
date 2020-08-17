@@ -73,9 +73,9 @@ print("---- Getting the data:")
 classes = util.find_classes(train_dir)
 print(classes)
 
-# In train_simple.py and train_optimise.py there are test and val sets,
-# corresponding to a 90/10 split of the TRAINING data, here we load all
-# the test data, and use the val_transform.
+# In train_network.py there are test and val sets, corresponding
+# to a 90/10 split of the TRAINING data, here we load all the test
+# data, and use the val_transform.
 print('---- Loading data:')
 X = np.zeros([0, config.image_size, config.image_size, 3], dtype='uint8')
 Y = np.zeros((0, len(classes)), dtype='uint8')
