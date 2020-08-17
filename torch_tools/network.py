@@ -2,9 +2,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class COAP(nn.Module):
+class ParticleClassifier(nn.Module):
     def __init__(self):
-        super(COAP, self).__init__()
+        super(ParticleClassifier, self).__init__()
         self.num_conv_features = int(128 * 8 * 8)
         self.conv1 = nn.Conv2d(3, 32, 3, padding=1)
         self.conv2 = nn.Conv2d(32, 64, 3, padding=1)

@@ -18,7 +18,7 @@ sys.path.append(silcam_dir)
 
 import torch_tools.ml_config as config
 import torch_tools.ml_utils as util
-from torch_tools.network import COAP
+from torch_tools.network import ParticleClassifier
 
 # data_dir = "/Users/odin/Sintef/SilCam"
 data_dir = "/home/william/SilCam/pysilcam-testdata/unittest-data"
@@ -110,10 +110,10 @@ def train_net(net, epochs, criterion, optimizer, model_dir, run_name):
     print('Finished training, hope it worked!')
 
 
-run_name = 'coap_32_testing'
+run_name = 'tflike-32_testing'
 criterion = CrossEntropyLoss()
 
-net = COAP()
+net = ParticleClassifier()
 optimizer = optim.Adam(net.parameters(), lr=config.learning_rate, eps=config.epsilon)
 print('======  Training network: ' + run_name)
 print('======  Params:')
