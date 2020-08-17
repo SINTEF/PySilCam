@@ -31,3 +31,8 @@ Additional help
 * `test_network.py` is main purpose of this folder, and should train networks.
 * `test_trained_networks.py` is a quickly written file. Should be updated when we get full testing image sets.
 * `train_test_folders.py` is simply used to split data between two folder (for test/train splitting).
+
+Problems, possible future work
+--------
+
+* There is a header.tfl.txt file, which contains a list of classes. This could be renamed and maybe change to a standard config file or such.
