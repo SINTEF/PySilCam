@@ -9,7 +9,8 @@ from sklearn.metrics import accuracy_score
 
 import torch
 import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader
+from torch.nn import CrossEntropyLoss
+from torch.utils.data import DataLoader
 import torchvision
 import torchvision.transforms as transforms
 
@@ -19,6 +20,7 @@ sys.path.append(silcam_dir)
 
 import torch_tools.ml_config as config
 import torch_tools.ml_utils as util
+from torch_tools.network import COAP
 
 # data_dir = "/Users/odin/Sintef/SilCam"
 data_dir = "/home/william/SilCam/pysilcam-testdata/unittest-data"
@@ -26,10 +28,11 @@ train_dir = os.path.join(data_dir, "train")
 test_dir = os.path.join(data_dir, "test")
 
 
-classes = util.find_classes(train_dir)
-print(classes)
+print('====== Loading training data:')
 
-print('Formatting database (loading training data)....  again as I will try without RandomCrop.')
+classes = util.find_classes(train_dir)
+# If we use the random crop, then we shuold load the images in full size
+# then crop as a part of the transformers.
 # X = np.zeros([0, config.image_size_on_load, config.image_size_on_load, 3], dtype='uint8')
 X = np.zeros([0, config.image_size, config.image_size, 3], dtype='uint8')
 Y = np.zeros((0, len(classes)), dtype='uint8')
@@ -48,7 +51,7 @@ for c_ind, c in enumerate(classes):
 print('Splitting train and validation data.')
 print('Toal shape:', np.shape(Y), np.shape(X))
 X_train, X_val, Y_train, Y_val = train_test_split(X, Y,
-                                                  test_size=0.1,
+                                                  test_size=config.validation_frac,
                                                   random_state=config.random_state,
                                                   stratify=Y)
 
@@ -69,24 +72,11 @@ val_transform = transforms.Compose([
 ])
 
 trainset = util.SilcamDataset(X_train, Y_train, transform=train_transform)
-trainloader = torch.utils.data.DataLoader(trainset, batch_size=config.batch_size,
-                                          shuffle=True, num_workers=0)
+trainloader = DataLoader(trainset, batch_size=config.batch_size,
+                         shuffle=True, num_workers=0)
 testset = util.SilcamDataset(X_val, Y_val, transform=val_transform)
-testloader = torch.utils.data.DataLoader(testset, batch_size=config.batch_size,
-                                         shuffle=True, num_workers=0)
-
-
-def calc_accuracy(net):
-    correct = 0
-    total = 0
-    with torch.no_grad():
-        for data in testloader:
-            images, labels = data
-            outputs = net(images)
-            _, predicted = torch.max(outputs.data, 1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
-        return 100 * correct / total
+testloader = DataLoader(testset, batch_size=config.batch_size,
+                        shuffle=True, num_workers=0)
 
 
 def train_net(net, epochs, criterion, optimizer, model_dir, min_epochs_save=10):
@@ -106,7 +96,7 @@ def train_net(net, epochs, criterion, optimizer, model_dir, min_epochs_save=10):
         # print statistics
         print('[%d] loss: %.3f' %(epoch + 1, loss), end=' ')
         print("Time: %d" % (time.time() - start_time), end=' ')
-        acc = calc_accuracy(net)
+        acc = util.calc_accuracy(net, testloader)
         print("Acc: {:.2f}".format(acc), end=' ')
 
         # If the val-accuracy is the highest yet, save the model
@@ -121,59 +111,22 @@ def train_net(net, epochs, criterion, optimizer, model_dir, min_epochs_save=10):
     print('Finished training, hope it worked!')
 
 
-class COAP(nn.Module):
-    def __init__(self):
-        super(COAP, self).__init__()
-        self.num_conv_features = int(128 * 8 * 8)
-        self.conv1 = nn.Conv2d(3, 32, 3, padding=1)
-        self.conv2 = nn.Conv2d(32, 64, 3, padding=1)
-        self.conv3 = nn.Conv2d(64, 128, 3, padding=1)
-        self.conv4 = nn.Conv2d(128, 128, 3, padding=1)
-        self.conv5 = nn.Conv2d(128, 128, 3, padding=1)
-        self.conv6 = nn.Conv2d(128, 128, 3, padding=1)
-        self.dropout1 = nn.Dropout2d(0.5)
-        self.fc1 = nn.Linear(self.num_conv_features, 512)
-        self.fc2 = nn.Linear(512, 256)
-        self.dropout2 = nn.Dropout(0.5)
-        self.fc3 = nn.Linear(256, 128)
-        self.fc4 = nn.Linear(128, 7)
-
-    def forward(self, x):
-        x = F.relu(self.conv1(x))
-        x = F.max_pool2d(F.relu(self.conv2(x)), (2, 2))
-        x = F.relu(self.conv3(x))
-        x = F.relu(self.conv4(x))
-        x = F.relu(self.conv5(x))
-        x = F.max_pool2d(F.relu(self.conv6(x)), (2, 2))
-        x = self.dropout1(x)
-        x = x.view(-1, self.num_conv_features)
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = self.dropout2(x)
-        x = F.relu(self.fc3(x))
-        x = self.fc4(x)
-        return x
-
-
-run_name = 'coap_32'
-learning_rate = 0.001
-epsilon = 1e-08
-epochs = 200
-criterion = nn.CrossEntropyLoss()
+run_name = 'coap_32_testing'
+criterion = CrossEntropyLoss()
 
 net = COAP()
-optimizer = optim.Adam(net.parameters(), lr=learning_rate, eps=epsilon)
+optimizer = optim.Adam(net.parameters(), lr=config.learning_rate, eps=config.epsilon)
 model_dir = os.path.join(data_dir, 'model', run_name + '.pt')
 print('======  Training network: ' + run_name)
 print('======  Params:')
 print('  image_size = {}'.format(config.image_size))
-print('  learning_rate = {}'.format(learning_rate))
-print('  epsilon = {}'.format(epsilon))
-print('  epochs = {}'.format(epochs))
+print('  learning_rate = {}'.format(config.learning_rate))
+print('  epsilon = {}'.format(config.epsilon))
+print('  epochs = {}'.format(config.epochs))
 print('======  Optimizer:')
 print(optimizer)
 print('======  Network:')
 print(net)
 start_time_training = time.time()
-train_net(net, epochs, criterion, optimizer, model_dir)
+train_net(net, config.epochs, criterion, optimizer, model_dir)
 print('======  Done in {:.1f} mins \n'.format((time.time() - start_time_training) / 60))

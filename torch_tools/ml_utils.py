@@ -5,6 +5,8 @@ import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+
+import torch
 from torch.utils.data import Dataset
 
 import torch_tools.ml_config as config
@@ -89,3 +91,18 @@ def gaussian_blur(image):
 def to_numpy(torch_image):
     '''To convert a torch.Tensor (CxHxW) back to numpy (HxWxC)'''
     return (torch_image.numpy().transpose((1, 2, 0)) + 1) / 2
+
+
+# ---- Training
+
+def calc_accuracy(net, dataloader):
+    correct = 0
+    total = 0
+    with torch.no_grad():
+        for data in dataloader:
+            images, labels = data
+            outputs = net(images)
+            _, predicted = torch.max(outputs.data, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+        return 100 * correct / total
