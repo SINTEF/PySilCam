@@ -46,4 +46,3 @@ for cat in cats:
             shutil.copy(os.path.join(source, cat, f), os.path.join(train_dir, cat))
         for f in test_files:
             shutil.copy(os.path.join(source, cat, f), os.path.join(test_dir, cat))
-

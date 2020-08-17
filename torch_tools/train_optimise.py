@@ -5,13 +5,11 @@ import numpy as np
 
 import skimage
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
 
 import torch
 import torch.optim as optim
 from torch.nn import CrossEntropyLoss
 from torch.utils.data import DataLoader
-import torchvision
 import torchvision.transforms as transforms
 
 # silcam_dir = "/Users/odin/Sintef/SilCam/PySilCam"
@@ -96,7 +94,7 @@ def train_net(net, epochs, criterion, optimizer, model_dir, run_name):
             optimizer.step()
 
         # print statistics
-        print('[%d] loss: %.3f' %(epoch + 1, loss), end=' ')
+        print('[%d] loss: %.3f' % (epoch + 1, loss), end=' ')
         print("Time: %d" % (time.time() - start_time), end=' ')
         acc = util.calc_accuracy(net, testloader)
         print("Acc: {:.2f}".format(acc), end=' ')

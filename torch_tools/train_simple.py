@@ -1,13 +1,13 @@
 import os
-import psutil
 import sys
 import time
+import psutil
 import numpy as np
 # import matplotlib.pyplot as plt
 
 import skimage
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import confusion_matrix
+# from sklearn.metrics import confusion_matrix
 # from sklearn.metrics import accuracy_score
 
 import torch
@@ -204,6 +204,7 @@ class SilcamDataset(Dataset):
 
         return image, label
 
+
 print("---- Getting the Process ID:")
 pid = os.getpid()
 ps = psutil.Process(pid)
@@ -278,7 +279,7 @@ net = nn.Sequential(CoapNet(num_classes=len(classes)), nn.Softmax(1))
 criterion = nn.CrossEntropyLoss()
 # Have tried various optimisers, seems Adam results in the time it takes
 # to run an epoch slowing. SGD doens't optimise well.
-optimizer = optim.Adam(net.parameters(), lr=config.start_lr)
+optimizer = optim.Adam(net.parameters(), lr=config.learning_rate)
 # optimizer = optim.SGD(net.parameters(), lr=0.0001, momentum=0.9)
 
 correct = 0

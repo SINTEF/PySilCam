@@ -58,30 +58,30 @@ def show_image(x, y=None, classes=None):
 
 
 class SilcamDataset(Dataset):
-    
+
     def __init__(self, X, Y, transform=None):
         # These inputs should be nparrays (loaded outside of this)
         self.X = X
         self.Y = Y
         self.transform = transform
-        
+
     def __len__(self):
         return self.Y.shape[0]
-    
+
     def __getitem__(self, index):
         image = self.X[index]
         label = self.Y[index].argmax()
-        
+
         if self.transform is not None:
             image = self.transform(image)
-            
+
         return image, label
 
 
 # ---- Data processing / Augmentation
 
 def gaussian_blur(image):
-    rand = np.random.rand()*config.aug_blur_max
+    rand = np.random.rand() * config.aug_blur_max
     # skimage converts unit8 to float64
     image = skimage.filters.gaussian(image, sigma=rand, multichannel=True)
     image = image * 256

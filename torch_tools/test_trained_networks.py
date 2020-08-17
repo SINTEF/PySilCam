@@ -1,22 +1,17 @@
 import os
-import psutil
 import sys
 import time
+import glob
 import numpy as np
 # import matplotlib.pyplot as plt
 
-import glob
 import skimage
 from skimage.io import imread
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import confusion_matrix
-# from sklearn.metrics import accuracy_score
 
 import torch
-import torch.optim as optim
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader
 from torchvision import transforms
 
 # silcam_dir = "/Users/odin/Sintef/SilCam/PySilCam"
@@ -26,13 +21,14 @@ sys.path.append(silcam_dir)
 import torch_tools.ml_config as config
 import torch_tools.ml_utils as util
 import pysilcam.silcam_classify as sccl
-import pysilcam.postprocess as scpp
+# import pysilcam.postprocess as scpp
 
 # data_dir = "/Users/odin/Sintef/SilCam"
 data_dir = "/home/william/SilCam/pysilcam-testdata/unittest-data"
 train_dir = os.path.join(data_dir, "train")
 test_dir = os.path.join(data_dir, "test")
 model_dir = os.path.join(data_dir, 'model', 'net_params_4.pt')
+
 
 class CoapNet(nn.Module):
     '''
@@ -100,12 +96,13 @@ val_transform = transforms.Compose([
 
 testset_size = Y.shape[0]
 testset = util.SilcamDataset(X, Y, transform=val_transform)
-testloader = torch.utils.data.DataLoader(testset, batch_size=config.batch_size,
-                                         shuffle=True, num_workers=0)
+testloader = DataLoader(testset, batch_size=config.batch_size,
+                        shuffle=True, num_workers=0)
 print('Finished loading, total number of test images: ', testset_size)
 
 
 print("---- Loading network:")
+
 
 class COAP(nn.Module):
     def __init__(self):
@@ -210,4 +207,3 @@ run_time = time.time() - start_time
 print('Predict time: ', str(run_time / total))
 print('Accuracy of the network on the test images: %d %%' % (
     100 * correct / total))
-
