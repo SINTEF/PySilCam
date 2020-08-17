@@ -26,6 +26,7 @@ from torch_tools.network import COAP
 data_dir = "/home/william/SilCam/pysilcam-testdata/unittest-data"
 train_dir = os.path.join(data_dir, "train")
 test_dir = os.path.join(data_dir, "test")
+model_dir = os.path.join(data_dir, "model")
 
 
 print('====== Loading training data:')
@@ -79,8 +80,9 @@ testloader = DataLoader(testset, batch_size=config.batch_size,
                         shuffle=True, num_workers=0)
 
 
-def train_net(net, epochs, criterion, optimizer, model_dir, min_epochs_save=10):
+def train_net(net, epochs, criterion, optimizer, model_dir, run_name):
 
+    model_file = os.path.join(model_dir, run_name + '.pt')
     best_acc = 0
 
     start_time = time.time()
@@ -100,9 +102,8 @@ def train_net(net, epochs, criterion, optimizer, model_dir, min_epochs_save=10):
         print("Acc: {:.2f}".format(acc), end=' ')
 
         # If the val-accuracy is the highest yet, save the model
-        # if epoch > min_epochs_save and acc > best_acc:
         if acc > best_acc:
-            torch.save(net.state_dict(), model_dir)
+            torch.save(net.state_dict(), model_file)
             best_acc = acc
             print('Saved', end=' ')
         print()
@@ -116,7 +117,6 @@ criterion = CrossEntropyLoss()
 
 net = COAP()
 optimizer = optim.Adam(net.parameters(), lr=config.learning_rate, eps=config.epsilon)
-model_dir = os.path.join(data_dir, 'model', run_name + '.pt')
 print('======  Training network: ' + run_name)
 print('======  Params:')
 print('  image_size = {}'.format(config.image_size))
@@ -128,5 +128,5 @@ print(optimizer)
 print('======  Network:')
 print(net)
 start_time_training = time.time()
-train_net(net, config.epochs, criterion, optimizer, model_dir)
+train_net(net, config.epochs, criterion, optimizer, model_dir, run_name)
 print('======  Done in {:.1f} mins \n'.format((time.time() - start_time_training) / 60))
