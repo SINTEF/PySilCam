@@ -7,6 +7,9 @@ All the code for training the classification models.
 In 2020 we moved from mostly using TF to Pytorch, mostly because
 of dependency and compatibility issues.
 
+Network training
+--------
+
 To train the network/a new network then first you need to get the
 training data. This is currently the data from Azure. William split
 off 10% of this data for testing, and this is done using the script:
@@ -21,3 +24,10 @@ in the train_network.py script
 Once all the data is in place you can navigate to the 
 `PySilCam/torch_tools` folder, with the conda silcam conda env
 running, then simply: `python train_network.py`.
+
+Additional help
+--------
+
+* `test_network.py` is main purpose of this folder, and should train networks.
+* `test_trained_networks.py` is a quickly written file. Should be updated when we get full testing image sets.
+* `train_test_folders.py` is simply used to split data between two folder (for test/train splitting).
