@@ -1,7 +1,10 @@
 random_state = 42
-batch_size = 96
-learning_rate = 0.001
 validation_frac = 0.1
+epochs = 200
+
+learning_rate = 0.001
+batch_size = 96
+epsilon = 1e-8
 
 image_size = 32
 image_size_on_load = 48
