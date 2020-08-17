@@ -106,3 +106,31 @@ def calc_accuracy(net, dataloader):
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
         return 100 * correct / total
+
+
+def adjust_learning_rate(optimizer, epoch, learning_rate):
+    """
+    Function to adjust learning rate when training. Currrently this
+    is not used. If you wanted to use it you would do something like:
+
+    for epoch in range(epochs):
+        adjust_learning_rate(optimizer, epoch, config.learning_rate)
+        for data in trainloader:
+            ...
+    """
+    lr = learning_rate
+    if epoch > 180:
+        lr = lr / 1000000
+    elif epoch > 150:
+        lr = lr / 100000
+    elif epoch > 120:
+        lr = lr / 10000
+    elif epoch > 90:
+        lr = lr / 1000
+    elif epoch > 60:
+        lr = lr / 100
+    elif epoch > 30:
+        lr = lr / 10
+
+    for param_group in optimizer.param_groups:
+        param_group["lr"] = lr
