@@ -2,15 +2,12 @@ import os
 import sys
 import time
 import numpy as np
-# import matplotlib.pyplot as plt
 
 import skimage
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 import torchvision
@@ -28,25 +25,6 @@ data_dir = "/home/william/SilCam/pysilcam-testdata/unittest-data"
 train_dir = os.path.join(data_dir, "train")
 test_dir = os.path.join(data_dir, "test")
 
-class SilcamDataset(Dataset):
-    
-    def __init__(self, X, Y, transform=None):
-        # These inputs should be nparrays (loaded outside of this)
-        self.X = X
-        self.Y = Y
-        self.transform = transform
-        
-    def __len__(self):
-        return self.Y.shape[0]
-    
-    def __getitem__(self, index):
-        image = self.X[index]
-        label = self.Y[index].argmax()
-        
-        if self.transform is not None:
-            image = self.transform(image)
-            
-        return image, label
 
 classes = util.find_classes(train_dir)
 print(classes)
@@ -90,10 +68,10 @@ val_transform = transforms.Compose([
     transforms.Normalize(config.rgb_means, config.rgb_stds),
 ])
 
-trainset = SilcamDataset(X_train, Y_train, transform=train_transform)
+trainset = util.SilcamDataset(X_train, Y_train, transform=train_transform)
 trainloader = torch.utils.data.DataLoader(trainset, batch_size=config.batch_size,
                                           shuffle=True, num_workers=0)
-testset = SilcamDataset(X_val, Y_val, transform=val_transform)
+testset = util.SilcamDataset(X_val, Y_val, transform=val_transform)
 testloader = torch.utils.data.DataLoader(testset, batch_size=config.batch_size,
                                          shuffle=True, num_workers=0)
 
