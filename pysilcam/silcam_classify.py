@@ -1,25 +1,25 @@
-  # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
+import os
+import scipy
+import numpy as np
+import pandas as pd
+
 import torch
+from torch_tools.network import ParticleClassifier
+from torch_tools.dataloader import *
+from torch import nn
+
+import tensorflow as tf
 import tflearn
 from tflearn.layers.core import input_data, dropout, fully_connected
 from tflearn.layers.conv import conv_2d, max_pool_2d
 from tflearn.layers.estimator import regression
 from tflearn.data_preprocessing import ImagePreprocessing
 from tflearn.data_augmentation import ImageAugmentation
-import tensorflow as tf
-import scipy
-import numpy as np
-import pandas as pd
-import os
-
-
-from torch_tools.net import *
-from torch_tools.dataloader import *
-from torch import nn
-
 
 '''
-SilCam TensorFlow analysis for classification of particle types
+SilCam classification of particle types. Built now using pytorch,
+previously used tensorflow.
 '''
 
 
@@ -29,7 +29,7 @@ def check_model(model_path):
 
     Args:
         model_path (str)        : path to particle-classifier e.g.
-                                  '/mnt/ARRAY/classifier/model/particle-classifier.tfl'
+                                  '/mnt/ARRAY/classifier/model/particle-classifier.pt'
                                   usually obtained from settings.NNClassify.model_path
 
     '''
@@ -42,7 +42,7 @@ def check_model(model_path):
         raise Exception(header_file + ' not found')
 
 
-def get_class_labels(model_path='/mnt/ARRAY/classifier/model/particle-classifier.tfl'):
+def get_class_labels(model_path='/mnt/ARRAY/classifier/model/particle-classifier.pt'):
     '''
     Read the header file that defines the catagories of particles in the model
 
@@ -106,15 +106,16 @@ def load_model_tf(model_path='/mnt/ARRAY/classifier/model/particle-classifier.tf
                          learning_rate=0.001)
 
     model = tflearn.DNN(network, tensorboard_verbose=0,
-            checkpoint_path=model_path)
+                        checkpoint_path=model_path)
     model.load(model_path)
 
     return model, class_labels
 
+
 def predict_tf(img, model):
     '''
     Use tensorflow model to classify particles
-    
+
     Args:
         img (uint8)             : a particle ROI, corrected and treated with the silcam
                                   explode_contrast function
@@ -134,51 +135,50 @@ def predict_tf(img, model):
 
 
 def load_model(model_path='/mnt/ARRAY/classifier/model/particle-classifier.pt'):
-      '''
-      Load the trained torch model
+    '''
+    Load the trained torch model
 
-      Args:
-          model_path (str)        : path to particle-classifier e.g.
+    Args:
+        model_path (str)        : path to particle-classifier e.g.
                                     '/mnt/ARRAY/classifier/model/particle-classifier.pt'
 
-      Returns:
-          model (tf model object) : loaded tfl model from load_model()
-      '''
-      path, filename = os.path.split(model_path)
-      header = pd.read_csv(os.path.join(path, 'header.tfl.txt'))
-      #OUTPUTS = len(header.columns)
-      class_labels = header.columns
-      device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-      model = COAPNet(num_classes=len(class_labels))
-      model.to(device)
-      name = 'COAPModNet'
-      model.load_state_dict(torch.load(model_path, map_location=torch.device(device)))
+    Returns:
+        model (pt model object) : loaded pt model from load_model()
+        class_labels            : list of the classes from which the model predicts
+    '''
 
-      return model, class_labels
+    class_labels = get_class_labels()
+
+    model = ParticleClassifier()
+    model.load_state_dict(torch.load(model_path))
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+    # We assume model will be being used in for prediction:
+    model.eval()
+
+    return model, class_labels
 
 
 def predict(img, model):
-      '''
-      Use torch model to classify particles
+    '''
+    Use torch model to classify particles
 
-      Args:
-          img (uint8)             : a particle ROI, corrected and treated with the silcam
-                                    explode_contrast function
-          model (torch model object) : loaded torch model from load_model()
+    Args:
+        img (uint8)                : a particle ROI, corrected and treated with the silcam
+                                     explode_contrast function
+        model (torch model object) : loaded torch model from load_model()
 
-      Returns:
-          prediction (array)      : the probability of the roi belonging to each class
-      '''
-      image = single_img_dataloader(img)
+    Returns:
+        prediction (array)         : the probability of the roi belonging to each class
+    '''
+    image = single_img_dataloader(img)
 
-      model.eval()
-      device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-      model.to(device)
-      out_predict = model(image.float())
-      #print('out_predict: ', out_predict)
-      out_predict = nn.Softmax(dim=1)(out_predict)
-      #print('out_predict after applying softmax: ', out_predict)
-      out_predict = out_predict.cpu().detach().numpy() #= torch.var(out_predict).data.numpy()
-      #print('out_predict numpy array: ', out_predict)
+    out_predict = model(image.float())
+    # print('out_predict: ', out_predict)
+    out_predict = nn.Softmax(dim=1)(out_predict)
+    # print('out_predict after applying softmax: ', out_predict)
+    out_predict = out_predict.cpu().detach().numpy()  # = torch.var(out_predict).data.numpy()
+    # print('out_predict numpy array: ', out_predict)
 
-      return out_predict
+    return out_predict
