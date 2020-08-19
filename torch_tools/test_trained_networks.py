@@ -15,7 +15,8 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 
 # silcam_dir = "/Users/odin/Sintef/SilCam/PySilCam"
-silcam_dir = "/home/william/SilCam/PySilCam"
+# silcam_dir = "/home/william/SilCam/PySilCam"
+silcam_dir = "/silcam"
 sys.path.append(silcam_dir)
 
 import torch_tools.ml_config as config
@@ -24,7 +25,8 @@ import pysilcam.silcam_classify as sccl
 # import pysilcam.postprocess as scpp
 
 # data_dir = "/Users/odin/Sintef/SilCam"
-data_dir = "/home/william/SilCam/pysilcam-testdata/unittest-data"
+# data_dir = "/home/william/SilCam/pysilcam-testdata/unittest-data"
+data_dir = "/testdata/unittest-data"
 train_dir = os.path.join(data_dir, "train")
 test_dir = os.path.join(data_dir, "test")
 model_dir = os.path.join(data_dir, 'model', 'net_params_4.pt')
@@ -194,18 +196,18 @@ print('Accuracy of the network on the test images: %d %%' % (
 #     100 * correct / total))
 
 
-print("---- Testing original TF model:")
-model, class_labels = sccl.load_model_tf(model_path='/home/william/SilCam/pysilcam-testdata/tflmodel/particle-classifier.tfl')
+# print("---- Testing original TF model:")
+# model, class_labels = sccl.load_model_tf(model_path='/home/william/SilCam/pysilcam-testdata/tflmodel/particle-classifier.tfl')
 
-correct = 0
-total = len(Y)
-start_time = time.time()
-for x, y in zip(X, Y):
-    prediction = sccl.predict_tf(x, model)  # run prediction from silcam_classify
-    ind = np.argmax(prediction)  # find the highest score
-    if class_labels[ind] == y:
-        correct += 1
-run_time = time.time() - start_time
-print('Predict time: ', str(run_time / total))
-print('Accuracy of the network on the test images: %d %%' % (
-    100 * correct / total))
+# correct = 0
+# total = len(Y)
+# start_time = time.time()
+# for x, y in zip(X, Y):
+#     prediction = sccl.predict_tf(x, model)  # run prediction from silcam_classify
+#     ind = np.argmax(prediction)  # find the highest score
+#     if class_labels[ind] == y:
+#         correct += 1
+# run_time = time.time() - start_time
+# print('Predict time: ', str(run_time / total))
+# print('Accuracy of the network on the test images: %d %%' % (
+#     100 * correct / total))
