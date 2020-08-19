@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 
 import torch
 from torch.utils.data import Dataset
+import torchvision.transforms as transforms
 
 import torch_tools.ml_config as config
 
@@ -91,6 +92,23 @@ def gaussian_blur(image):
 def to_numpy(torch_image):
     '''To convert a torch.Tensor (CxHxW) back to numpy (HxWxC)'''
     return (torch_image.numpy().transpose((1, 2, 0)) + 1) / 2
+
+
+train_transform = transforms.Compose([
+    transforms.Lambda(gaussian_blur),
+    transforms.ToPILImage(),
+    # transforms.RandomCrop(config.image_size),
+    transforms.RandomHorizontalFlip(),
+    transforms.RandomRotation((-config.aug_max_angle, config.aug_max_angle)),
+    transforms.ToTensor(),
+    transforms.Normalize(config.rgb_means, config.rgb_stds),
+])
+pred_transform = transforms.Compose([
+    # transforms.ToPILImage(),
+    # transforms.Resize(config.image_size),
+    transforms.ToTensor(),
+    transforms.Normalize(config.rgb_means, config.rgb_stds),
+])
 
 
 # ---- Training

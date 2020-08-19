@@ -8,9 +8,8 @@ from sklearn.model_selection import train_test_split
 
 import torch
 import torch.optim as optim
-from torch.nn import CrossEntropyLoss
 from torch.utils.data import DataLoader
-import torchvision.transforms as transforms
+from torch.nn import CrossEntropyLoss
 
 # silcam_dir = "/Users/odin/Sintef/SilCam/PySilCam"
 silcam_dir = "/home/william/SilCam/PySilCam"
@@ -54,26 +53,10 @@ X_train, X_val, Y_train, Y_val = train_test_split(X, Y,
                                                   random_state=config.random_state,
                                                   stratify=Y)
 
-train_transform = transforms.Compose([
-    transforms.Lambda(util.gaussian_blur),
-    transforms.ToPILImage(),
-    # transforms.RandomCrop(config.image_size),
-    transforms.RandomHorizontalFlip(),
-    transforms.RandomRotation((-config.aug_max_angle, config.aug_max_angle)),
-    transforms.ToTensor(),
-    transforms.Normalize(config.rgb_means, config.rgb_stds),
-])
-val_transform = transforms.Compose([
-    # transforms.ToPILImage(),
-    # transforms.Resize(config.image_size),
-    transforms.ToTensor(),
-    transforms.Normalize(config.rgb_means, config.rgb_stds),
-])
-
-trainset = util.SilcamDataset(X_train, Y_train, transform=train_transform)
+trainset = util.SilcamDataset(X_train, Y_train, transform=util.train_transform)
 trainloader = DataLoader(trainset, batch_size=config.batch_size,
                          shuffle=True, num_workers=0)
-testset = util.SilcamDataset(X_val, Y_val, transform=val_transform)
+testset = util.SilcamDataset(X_val, Y_val, transform=util.pred_transform)
 testloader = DataLoader(testset, batch_size=config.batch_size,
                         shuffle=True, num_workers=0)
 
