@@ -164,32 +164,34 @@ print('Predict time: ', str(run_time / testset_size))
 print('Accuracy of the network on the test images: %d %%' % (
     100 * correct / total))
 
-print("---- Testing Ayas version of COAP:")
-model, class_labels = sccl.load_model(model_path='/home/william/SilCam/pysilcam-testdata/COAPNetTorch/COAPModNet_GPU_model.pt')
+# This code was built around aya's code from branch pytorch-cpu. Very untidy, but this
+# won't work on other branches.
+# print("---- Testing Ayas version of COAP:")
+# model, class_labels = sccl.load_model(model_path='/home/william/SilCam/pysilcam-testdata/COAPNetTorch/COAPModNet_GPU_model.pt')
 
-X = []
-Y = []
-for cat in class_labels:
-    files = glob.glob(os.path.join(test_dir, cat, '*.tiff'))
-    for f in files:
-        im = imread(f)
-        # im = scpp.explode_contrast(imread(f))
-        X.append(im)
-        Y.append(cat)
+# X = []
+# Y = []
+# for cat in class_labels:
+#     files = glob.glob(os.path.join(test_dir, cat, '*.tiff'))
+#     for f in files:
+#         im = imread(f)
+#         # im = scpp.explode_contrast(imread(f))
+#         X.append(im)
+#         Y.append(cat)
 
-correct = 0
-total = len(Y)
-start_time = time.time()
-for x, y in zip(X, Y):
-    prediction = sccl.predict(x, model)  # run prediction from silcam_classify
-    ind = np.argmax(prediction)  # find the highest score
-    if class_labels[ind] == y:
-        correct += 1
-run_time = time.time() - start_time
-print('Num images:', total)
-print('Predict time: ', str(run_time / total))
-print('Accuracy of the network on the test images: %d %%' % (
-    100 * correct / total))
+# correct = 0
+# total = len(Y)
+# start_time = time.time()
+# for x, y in zip(X, Y):
+#     prediction = sccl.predict(x, model)  # run prediction from silcam_classify
+#     ind = np.argmax(prediction)  # find the highest score
+#     if class_labels[ind] == y:
+#         correct += 1
+# run_time = time.time() - start_time
+# print('Num images:', total)
+# print('Predict time: ', str(run_time / total))
+# print('Accuracy of the network on the test images: %d %%' % (
+#     100 * correct / total))
 
 
 print("---- Testing original TF model:")
