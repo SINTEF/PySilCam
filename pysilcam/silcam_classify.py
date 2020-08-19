@@ -6,7 +6,6 @@ import pandas as pd
 
 import torch
 from torch_tools.network import ParticleClassifier
-from torch_tools.dataloader import *
 from torch import nn
 
 import tensorflow as tf
