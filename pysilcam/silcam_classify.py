@@ -172,13 +172,16 @@ def predict(img, model):
     Returns:
         prediction (array)         : the probability of the roi belonging to each class
     '''
-    image = single_img_dataloader(img)
 
-    out_predict = model(image.float())
-    # print('out_predict: ', out_predict)
-    out_predict = nn.Softmax(dim=1)(out_predict)
-    # print('out_predict after applying softmax: ', out_predict)
-    out_predict = out_predict.cpu().detach().numpy()  # = torch.var(out_predict).data.numpy()
-    # print('out_predict numpy array: ', out_predict)
+    print("img going in: ", type(img))
+    img = util.pred_transform(img[np.newaxis, :])
+    print("img after transform", type(img))
 
-    return out_predict
+    prediction = model(img)
+    print('prediction: ', prediction)
+    prediction = nn.Softmax(dim=1)(prediction)
+    print('prediction after applying softmax: ', prediction)
+    prediction = prediction.cpu().detach().numpy()  # = torch.var(prediction).data.numpy()
+    print('prediction numpy array: ', prediction)
+
+    return prediction
