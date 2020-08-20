@@ -4,7 +4,7 @@ import glob
 import os
 import numpy as np
 import unittest
-import tensorflow as tf
+# import tensorflow as tf
 
 # Get user-defined path to unittest data folder
 ROOTPATH = os.environ.get('UNITTEST_DATA_PATH', None)
@@ -33,7 +33,7 @@ def test_classify():
 
     # a tensorflow session must be started on each process in order to function reliably in multiprocess.
     # This also includes the import of tensorflow on each process
-    sess = tf.Session()
+    # sess = tf.Session()
 
     # Load the trained tensorflow model and class names
     model, class_labels = load_model(MODEL_PATH)
@@ -74,7 +74,7 @@ def test_classify():
 
     # close of the tensorflow session when everything is finished.
     # unsure of behaviour if things crash or are stoppped before reaching this point
-    sess.close()
+    # sess.close()
 
     # loop through each category and calculate the success percentage
     for cat in classes:
