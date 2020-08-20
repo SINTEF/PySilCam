@@ -104,7 +104,7 @@ train_transform = transforms.Compose([
     transforms.Normalize(config.rgb_means, config.rgb_stds),
 ])
 pred_transform = transforms.Compose([
-    # transforms.ToPILImage(),
+    transforms.ToPILImage(),
     # transforms.Resize(config.image_size),
     transforms.ToTensor(),
     transforms.Normalize(config.rgb_means, config.rgb_stds),
