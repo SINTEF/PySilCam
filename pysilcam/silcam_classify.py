@@ -3,9 +3,9 @@ import os
 import scipy
 import numpy as np
 import pandas as pd
+from skimage.transform import resize
 
 import torch
-from torch_tools.network import ParticleClassifier
 from torch import nn
 
 import tensorflow as tf
@@ -15,6 +15,10 @@ from tflearn.layers.conv import conv_2d, max_pool_2d
 from tflearn.layers.estimator import regression
 from tflearn.data_preprocessing import ImagePreprocessing
 from tflearn.data_augmentation import ImageAugmentation
+
+from torch_tools.network import ParticleClassifier
+import torch_tools.ml_utils as util
+import torch_tools.ml_config as config
 
 '''
 SilCam classification of particle types. Built now using pytorch,
@@ -41,7 +45,7 @@ def check_model(model_path):
         raise Exception(header_file + ' not found')
 
 
-def get_class_labels(model_path='/mnt/ARRAY/classifier/model/particle-classifier.pt'):
+def get_class_labels(model_path):
     '''
     Read the header file that defines the catagories of particles in the model
 
@@ -59,7 +63,7 @@ def get_class_labels(model_path='/mnt/ARRAY/classifier/model/particle-classifier
     return class_labels
 
 
-def load_model_tf(model_path='/mnt/ARRAY/classifier/model/particle-classifier.tfl'):
+def load_model_tf(model_path):
     '''
     Load the trained tensorflow model
 
@@ -133,7 +137,7 @@ def predict_tf(img, model):
     return prediction
 
 
-def load_model(model_path='/mnt/ARRAY/classifier/model/particle-classifier.pt'):
+def load_model(model_path):
     '''
     Load the trained torch model
 
@@ -146,7 +150,7 @@ def load_model(model_path='/mnt/ARRAY/classifier/model/particle-classifier.pt'):
         class_labels            : list of the classes from which the model predicts
     '''
 
-    class_labels = get_class_labels()
+    class_labels = get_class_labels(model_path)
 
     model = ParticleClassifier()
     model.load_state_dict(torch.load(model_path))
@@ -172,15 +176,17 @@ def predict(img, model):
         prediction (array)         : the probability of the roi belonging to each class
     '''
 
-    print("img going in: ", type(img))
-    img = util.pred_transform(img[np.newaxis, :])
-    print("img after transform", type(img))
+    # print("img going in: ", type(img), img.shape, img.dtype)
+    img = resize(img, (config.image_size, config.image_size, 3), mode='reflect', preserve_range=True)
+    # print("img post resize in: ", type(img), img.shape, img.dtype)
+    img = util.pred_transform(img.astype(np.uint8))
+    # print("img after transform", type(img))
 
-    prediction = model(img)
-    print('prediction: ', prediction)
+    prediction = model(img.unsqueeze(0))
+    # print('prediction: ', prediction)
     prediction = nn.Softmax(dim=1)(prediction)
-    print('prediction after applying softmax: ', prediction)
+    # print('prediction after applying softmax: ', prediction)
     prediction = prediction.cpu().detach().numpy()  # = torch.var(prediction).data.numpy()
-    print('prediction numpy array: ', prediction)
+    # print('prediction numpy array: ', prediction)
 
     return prediction
