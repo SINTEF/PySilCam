@@ -63,6 +63,7 @@ def test_classify():
             ind = np.argmax(prediction)  # find the highest score
 
             # check if the highest score matches the correct category
+            # print("Pred, ind, class_lab[int], cat:", prediction, ind, class_labels[ind], category)
             if not class_labels[ind] == category:
                 # if not, the add to the failure count
                 failed += 1
