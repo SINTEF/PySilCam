@@ -1,4 +1,5 @@
 name: silcam
+
 channels:
     - anaconda
     - cogsci     # Channel for pygame
