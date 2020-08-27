@@ -303,14 +303,16 @@ class PlotView(QtWidgets.QWidget):
         '''uses timeseries xls sheets assuming they are available'''
         timeseriesgas_file = self.stats_filename.replace('-STATS.csv', '-TIMESERIESgas.xlsx')
         timeseriesoil_file = self.stats_filename.replace('-STATS.csv', '-TIMESERIESoil.xlsx')
+        timeseriestotal_file = self.stats_filename.replace('-STATS.csv', '-TIMESERIES.xlsx')
 
         gas = pd.read_excel(timeseriesgas_file, parse_dates=['Time'])
         oil = pd.read_excel(timeseriesoil_file, parse_dates=['Time'])
+        total = pd.read_excel(timeseriestotal_file, parse_dates=['Time'])
 
         self.dias = np.array(oil.columns[0:52], dtype=float)
         self.vd_oil = oil.as_matrix(columns=oil.columns[0:52])
         self.vd_gas = gas.as_matrix(columns=gas.columns[0:52])
-        self.vd_total = self.vd_oil + self.vd_gas
+        self.vd_total = total.as_matrix(columns=total.columns[0:52])
         self.u = pd.to_datetime(oil['Time'].values)
         self.d50_gas = gas['D50']
         self.d50_oil = oil['D50']
