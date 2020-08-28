@@ -1,7 +1,7 @@
-cd E:/
+cd C:/
 #E:\Anaconda3\python.exe E:\emlynd\pysilcam-develop\pysilcam\pysilcam\silcamgui\silcamgui.py
 
-E:\Anaconda3\envs\emlynd\python.exe E:\emlynd\pysilcam-develop\pysilcam\pysilcam\silcamgui\silcamgui.py
+C:\Users\perjb\AppData\local\Continuum\anaconda3\envs\silcam\python.exe C:\Users\perjb\pysilcam\pysilcam\silcamgui\silcamgui.py
 
 pause
 
