@@ -2,6 +2,7 @@ name: silcam
 channels:
     - anaconda
     - cogsci     # Channel for pygame
+    - conda-forge
 dependencies:    # These are the conda packages
     - python=3.5
     - numpy=1.15.2
