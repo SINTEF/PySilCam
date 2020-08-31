@@ -252,7 +252,7 @@ class PlotView(QtWidgets.QWidget):
         self.datadir = os.path.split(self.configfile)[0]
 
         self.stats_filename = ''
-        self.stats= []
+        self.stats = []
         self.stats_filename = QFileDialog.getOpenFileName(self,
                                                           caption='Load a *-STATS.csv file',
                                                           directory=self.datadir,
@@ -617,7 +617,7 @@ class PlotView(QtWidgets.QWidget):
         start_time = self.mid_time - self.av_window / 2
         end_time = self.mid_time + self.av_window / 2
 
-        if len(self.stats)==0:
+        if len(self.stats)==0 or not os.isfile(self.stats_filename):
             reply = QMessageBox.question(self, "STATS file has not been loaded.",
                                          'Would you like to load the STATS file?\n' +
                                          '(It might take some time)\n\n' +
