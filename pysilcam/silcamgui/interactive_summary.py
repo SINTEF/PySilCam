@@ -251,6 +251,8 @@ class PlotView(QtWidgets.QWidget):
         '''handles loading of data, depending on what is available'''
         self.datadir = os.path.split(self.configfile)[0]
 
+        stats_filename_original = self.stats_filename
+        stats_original = self.stats
         self.stats_filename = ''
         self.stats = []
         self.stats_filename = QFileDialog.getOpenFileName(self,
@@ -259,6 +261,8 @@ class PlotView(QtWidgets.QWidget):
                                                           filter=(('*-STATS.csv'))
                                                           )[0]
         if self.stats_filename == '':
+            self.stats_filename = stats_filename_original
+            self.stats = stats_original
             return
 
         timeseriesgas_file = self.stats_filename.replace('-STATS.csv', '-TIMESERIESgas.xlsx')
@@ -617,7 +621,7 @@ class PlotView(QtWidgets.QWidget):
         start_time = self.mid_time - self.av_window / 2
         end_time = self.mid_time + self.av_window / 2
 
-        if len(self.stats)==0 or not os.isfile(self.stats_filename):
+        if len(self.stats)==0:
             reply = QMessageBox.question(self, "STATS file has not been loaded.",
                                          'Would you like to load the STATS file?\n' +
                                          '(It might take some time)\n\n' +
