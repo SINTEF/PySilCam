@@ -9,8 +9,9 @@ acquire() must produce a float64 np array
 import numpy as np
 import logging
 
-#Get module-level logger
+# Get module-level logger
 logger = logging.getLogger(__name__)
+
 
 def ini_background(av_window, acquire):
     '''
@@ -26,7 +27,7 @@ def ini_background(av_window, acquire):
     bgstack = []
     bgstack.append(next(acquire)[1])  # get the first image
 
-    for i in range(av_window-1):  # loop through the rest, appending to bgstack
+    for i in range(av_window - 1):  # loop through the rest, appending to bgstack
         bgstack.append(next(acquire)[1])
 
     imbg = np.mean(bgstack, axis=0)  # average the images in the stack
@@ -77,9 +78,9 @@ def shift_bgstack_fast(bgstack, imbg, imnew, stacklength):
     '''
     imold = bgstack.pop(0)  # pop the oldest image from the stack,
     # subtract the old image from the average (scaled by the average window)
-    imbg -= (imold/stacklength)
+    imbg -= (imold / stacklength)
     # add the new image to the average (scaled by the average window)
-    imbg += (imnew/stacklength)
+    imbg += (imnew / stacklength)
     bgstack.append(imnew)  # append the new image to the stack
     return bgstack, imbg
 
@@ -100,14 +101,13 @@ def correct_im_accurate(imbg, imraw):
     '''
 
     imc = np.float64(imraw) - np.float64(imbg)
-    imc[:,:,0] += (255/2 - np.percentile(imc[:,:,0], 50))
-    imc[:,:,1] += (255/2 - np.percentile(imc[:,:,1], 50))
-    imc[:,:,2] += (255/2 - np.percentile(imc[:,:,2], 50))
-    #imc += 255 - np.percentile(imc, 99)
+    imc[:, :, 0] += (255 / 2 - np.percentile(imc[:, :, 0], 50))
+    imc[:, :, 1] += (255 / 2 - np.percentile(imc[:, :, 1], 50))
+    imc[:, :, 2] += (255 / 2 - np.percentile(imc[:, :, 2], 50))
     imc += 255 - imc.max()
 
-    imc[imc>255] = 255
-    imc[imc<0] = 0
+    imc[imc > 255] = 255
+    imc[imc < 0] = 0
     imc = np.uint8(imc)
 
     return imc
@@ -131,8 +131,8 @@ def correct_im_fast(imbg, imraw):
     imc = imraw - imbg
 
     imc += 215
-    imc[imc<0] = 0
-    imc[imc>255] = 255
+    imc[imc < 0] = 0
+    imc[imc > 255] = 255
     imc = np.uint8(imc)
 
     return imc
@@ -149,7 +149,8 @@ def shift_and_correct(bgstack, imbg, imraw, stacklength, real_time_stats=False):
         bgstack (list)                  : list of all images in the background stack
         imbg (uint8)                    : background image
         imraw (uint8)                   : raw image
-        stacklength (int)               : unsed int here - just there to maintain the same behaviour as shift_bgstack_fast()
+        stacklength (int)               : unsed int here - just there to maintain the same behaviour as
+                                          shift_bgstack_fast()
         real_time_stats=False (Bool)    : if True use fast functions, if False use accurate functions
         
     Returns:
@@ -169,7 +170,7 @@ def shift_and_correct(bgstack, imbg, imraw, stacklength, real_time_stats=False):
 
 
 def backgrounder(av_window, acquire, bad_lighting_limit=None,
-        real_time_stats=False):
+                 real_time_stats=False):
     '''
     Generator which interacts with acquire to return a corrected image
     given av_window number of frame to use in creating a moving background
@@ -177,7 +178,8 @@ def backgrounder(av_window, acquire, bad_lighting_limit=None,
     Args:
         av_window (int)               : number of images to use in creating the background
         acquire (generator object)    : acquire generator object created by the Acquire class
-        bad_lighting_limit=None (int) : if a number is supplied it is used for throwing away raw images that have a standard deviation in colour which exceeds the given value
+        bad_lighting_limit=None (int) : if a number is supplied it is used for throwing away raw images that have a
+                                        standard deviation in colour which exceeds the given value
 
     Yields:
         timestamp (timestamp)         : timestamp of when raw image was acquired 
@@ -201,9 +203,9 @@ def backgrounder(av_window, acquire, bad_lighting_limit=None,
     # Aquire images, apply background correction and yield result
     for timestamp, imraw in acquire:
 
-        if not (bad_lighting_limit==None):
+        if bad_lighting_limit is not None:
             bgstack_new, imbg_new, imc = shift_and_correct(bgstack, imbg,
-                    imraw, stacklength, real_time_stats)
+                                                           imraw, stacklength, real_time_stats)
 
             # basic check of image quality
             r = imc[:, :, 0]
@@ -211,7 +213,7 @@ def backgrounder(av_window, acquire, bad_lighting_limit=None,
             b = imc[:, :, 2]
             s = np.std([r, g, b])
             # ignore bad images
-            if (s <= bad_lighting_limit):
+            if s <= bad_lighting_limit:
                 bgstack = bgstack_new
                 imbg = imbg_new
                 yield timestamp, imc, imraw
@@ -219,5 +221,5 @@ def backgrounder(av_window, acquire, bad_lighting_limit=None,
                 logger.info('bad lighting, std={0}'.format(s))
         else:
             bgstack, imbg, imc = shift_and_correct(bgstack, imbg, imraw,
-                    stacklength, real_time_stats)
+                                                   stacklength, real_time_stats)
             yield timestamp, imc, imraw
