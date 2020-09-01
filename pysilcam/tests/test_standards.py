@@ -23,6 +23,7 @@ def test_big_standards():
     conf = load_config(conf_file)
 
     data_file = os.path.join(ROOTPATH, 'STANDARDS/StandardsBig')
+    conf.set('General', 'loglevel', 'INFO')
     conf.set('General', 'datafile', os.path.join(ROOTPATH, 'STANDARDS', 'proc'))
     conf.set('General', 'logfile', os.path.join(ROOTPATH, 'STANDARDS', 'log.log'))
     if MODEL_PATH is not None:
@@ -38,7 +39,7 @@ def test_big_standards():
         os.remove(stats_file)
 
     # call process function
-    silcam_process(conf_file_out, data_file, multiProcess=False, nbImages=10)
+    silcam_process(conf_file_out, data_file, multiProcess=True, nbImages=10)
 
     # check that csv file has been created
     assert os.path.isfile(stats_file), 'stats_file not created'
@@ -48,11 +49,6 @@ def test_big_standards():
     lines = csvfile.readlines()
     numline = len(lines)
     assert numline > 1 , 'csv file empty'
-
-    # check the columns
-    assert lines[0] == 'particle index,major_axis_length,minor_axis_length,equivalent_diameter,solidity,minr,minc,maxr,maxc,'\
-            'probability_oil,probability_other,probability_bubble,probability_faecal_pellets,probability_copepod,'\
-            'probability_diatom_chain,probability_oily_gas,export name,timestamp,saturation\n', 'columns not properly built'
 
     settings = PySilcamSettings(conf_file_out)
     stats = pd.read_csv(stats_file)
@@ -86,7 +82,7 @@ def test_small_standards():
         os.remove(stats_file)
 
     # call process function
-    silcam_process(conf_file_out, data_file, multiProcess=False, nbImages=10)
+    silcam_process(conf_file_out, data_file, multiProcess=True, nbImages=10)
 
     # check that csv file has been created
     assert os.path.isfile(stats_file), 'stats_file not created'
@@ -96,11 +92,6 @@ def test_small_standards():
     lines = csvfile.readlines()
     numline = len(lines)
     assert numline > 1 , 'csv file empty'
-
-    # check the columns
-    assert lines[0] == 'particle index,major_axis_length,minor_axis_length,equivalent_diameter,solidity,minr,minc,maxr,maxc,'\
-            'probability_oil,probability_other,probability_bubble,probability_faecal_pellets,probability_copepod,'\
-            'probability_diatom_chain,probability_oily_gas,export name,timestamp,saturation\n', 'columns not properly built'
 
     settings = PySilcamSettings(conf_file_out)
     stats = pd.read_csv(stats_file)

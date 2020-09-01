@@ -22,6 +22,7 @@ def get_data(self):
         rts = None
     return rts
 
+
 def count_data(datadir):
     silcfiles = [os.path.join(datadir, f) for f in
             sorted(os.listdir(datadir))
@@ -32,6 +33,7 @@ def count_data(datadir):
     silc = len(silcfiles)
     bmp = len(bmpfiles)
     return silc, bmp
+
 
 def extract_stats_im(guidata):
     imc = guidata['imc']
@@ -233,103 +235,147 @@ def liveview(datadir, config_file):
     lv.liveview(datadir, config_file)
 
 
+def annotate(datadir, filename):
+    a_path = os.path.join(datadir, "annotations.txt")
+    if os.path.isfile(a_path):
+        f = open(a_path, 'a')
+    else:
+        f = open(a_path, 'w')
+    f.write('{}, \n'.format(os.path.basename(filename)))
+    f.close()
+
+
 def silcview(datadir):
     files = [os.path.join(datadir, f) for f in
             sorted(os.listdir(datadir))
             if f.endswith('.silc') or f.endswith('.bmp')]
-    if len(files)==0:
+    if len(files) == 0:
         return
     pygame.init()
     info = pygame.display.Info()
-    size = (int(info.current_h / (2048/2448))-100, info.current_h-100)
+    size = (int(info.current_h / (2048 / 2448)) - 100, info.current_h - 100)
     screen = pygame.display.set_mode(size)
     font = pygame.font.SysFont("monospace", 20)
+    font_colour = (0, 127, 127)
     c = pygame.time.Clock()
     zoom = False
     counter = -1
+    annotate_counter = 0
     direction = 1 # 1=forward 2=backward
+    last_direction = direction
     pause = False
     pygame.event.set_blocked(pygame.MOUSEMOTION)
+
     while True:
         if pause:
             event = pygame.event.wait()
             if event.type == 12:
                 pygame.quit()
                 return
-            if event.type == pygame.KEYDOWN:
+            elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_f:
                     zoom = np.invert(zoom)
-                if event.key == pygame.K_LEFT:
-                    direction = -1
-                if event.key == pygame.K_RIGHT:
-                    direction = 1
-                if event.key == pygame.K_p:
+                elif event.key == pygame.K_LEFT:
+                    counter -= 1
+                elif event.key == pygame.K_RIGHT:
+                    counter += 1
+                elif event.key == pygame.K_HOME:
+                    counter = 0
+                elif event.key == pygame.K_END:
+                    counter = len(files) - 1
+                elif event.key == pygame.K_n:
+                    annotate_counter += 1
+                    if counter > -1:
+                        annotate(datadir, files[counter])
+                    else:
+                        annotate(datadir, files[0])  # This should only happen if a is pressed on the very first frame
+                elif event.key == pygame.K_p:
                     pause = np.invert(pause)
+                    direction = last_direction
+                elif event.key == pygame.K_q:
+                    pygame.quit()
+                    return
                 else:
                     continue
-                pygame.time.wait(100)
+                pygame.time.wait(10)
 
         counter += direction
         counter = np.max([counter, 0])
-        counter = np.min([len(files)-1, counter])
+        counter = np.min([len(files) - 1, counter])
         c.tick(15) # restrict to 15Hz
         f = files[counter]
 
-        if not (counter == 0 | counter==len(files)-1):
+        if not (counter == 0 | counter == len(files) - 1):
             filename = os.path.join(datadir, f)
             im = load_image(filename, size)
 
         if zoom:
-            label = font.render('ZOOM [F]: ON', 1, (255, 255, 0))
+            label = font.render('ZOOM [F]: ON', 1, font_colour)
             im = pygame.transform.scale2x(im)
-            screen.blit(im,(-size[0]/2,-size[1]/2))
+            screen.blit(im, (-size[0] / 2, -size[1] / 2))
         else:
-           im = pygame.transform.scale(im, size)
-           screen.blit(im,(0,0))
-           label = font.render('ZOOM [F]: OFF', 1, (255, 255, 0))
-        screen.blit(label,(0, size[1]-20))
+            im = pygame.transform.scale(im, size)
+            screen.blit(im, (0, 0))
+            label = font.render('ZOOM [F]: OFF', 1, font_colour)
+        screen.blit(label, (0, size[1] - 20))
 
-        if direction==1:
+        if direction == 1:
             dirtxt = '>>'
-        elif direction==-1:
+        elif direction == -1:
             dirtxt = '<<'
-        if pause:
-            dirtxt = 'PAUSED ' + dirtxt
-        label = font.render('DIRECTION [<-|->|p]: ' + dirtxt, 1, (255,255,0))
+        if pause and not ('AUSED' in dirtxt):
+            dirtxt = 'AUSED ' + dirtxt
+        label = font.render('DIRECTION [HOME|<-|->|END] [P]' + dirtxt, 1, font_colour)
         screen.blit(label, (0, size[1]-40))
 
         if counter == 0:
-            label = font.render('FIRST IMAGE', 1, (255,255,0))
-            screen.blit(label, (0, size[1]-60))
+            label = font.render('FIRST IMAGE', 1, font_colour)
+            screen.blit(label, (0, size[1] - 60))
         elif counter == len(files)-1:
-            label = font.render('LAST IMAGE', 1, (255,255,0))
-            screen.blit(label, (0, size[1]-60))
+            label = font.render('LAST IMAGE', 1, font_colour)
+            screen.blit(label, (0, size[1] - 60))
 
         timestamp = pd.to_datetime(
                 os.path.splitext(os.path.split(f)[-1])[0][1:])
 
-
         pygame.display.set_caption('raw image replay:' + os.path.split(f)[0])#, icontitle=None)
-        label = font.render(str(timestamp), 20, (255, 255, 0))
-        screen.blit(label,(0,0))
-        label = font.render('Display FPS:' + str(c.get_fps()),
-                1, (255, 255, 0))
-        screen.blit(label,(0,20))
+        label = font.render(str(timestamp), 20, font_colour)
+        screen.blit(label, (0, 0))
+        label = font.render('Frame: {0}/{1}'.format(counter, len(files) - 1), 1, font_colour)
+        screen.blit(label, (0, 20))
+        label = font.render('Display FPS: {:0.2f}'.format(c.get_fps()),
+                            1, font_colour)
+        screen.blit(label, (0, 40))
 
-        for event in pygame.event.get():
-            if event.type == 12:
-                pygame.quit()
-                return
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_f:
-                    zoom = np.invert(zoom)
-                if event.key == pygame.K_LEFT:
-                    direction = -1
-                if event.key == pygame.K_RIGHT:
-                    direction = 1
-                if event.key == pygame.K_p:
-                    pause = np.invert(pause)
-                    direction = 0
+        if annotate_counter > 0:
+            label = font.render('Annotations: {}'.format(annotate_counter), 1, font_colour)
+            screen.blit(label, (size[0] - 200, size[1] - 20))
+
+        if not pause:
+            for event in pygame.event.get():
+                if event.type == 12:
+                    pygame.quit()
+                    return
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_f:
+                        zoom = np.invert(zoom)
+                    elif event.key == pygame.K_LEFT:
+                        direction = -1
+                    elif event.key == pygame.K_RIGHT:
+                        direction = 1
+                    elif event.key == pygame.K_HOME:
+                        counter = 0
+                        direction = 1
+                    elif event.key == pygame.K_END:
+                        counter = len(files) - 1
+                        direction = -1
+                    elif event.key == pygame.K_p:
+                        pause = np.invert(pause)
+                        last_direction = direction
+                        direction = 0
+                    elif event.key == pygame.K_q:
+                        pygame.quit()
+                        return
 
         pygame.display.flip()
 
@@ -361,12 +407,12 @@ class ProcThread(Process):
 
     def run(self):
         import pysilcam.__main__ as psc
-        if(self.run_type == process_mode.process):
+        if (self.run_type == process_mode.process):
             psc.silcam_process(self.configfile, self.datadir, multiProcess=True, realtime=False,
             gui=self.q, overwriteSTATS=self.overwriteSTATS)
-        elif(self.run_type == process_mode.aquire):
+        elif (self.run_type == process_mode.aquire):
             psc.silcam_acquire(self.datadir, config_filename=self.configfile, writeToDisk=self.disc_write, gui=self.q)
-        elif(self.run_type == process_mode.real_time):
+        elif (self.run_type == process_mode.real_time):
             if 'REALTIME_DISC' in os.environ.keys():
                 psc.silcam_process(self.configfile, self.datadir, multiProcess=False, realtime=True,
                                    discWrite=False, gui=self.q, overwriteSTATS=True)
