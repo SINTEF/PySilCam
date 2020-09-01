@@ -515,6 +515,7 @@ def processImage(nnmodel, class_labels, image, settings, logger, gui):
 
 
 def ailaron_sim(imc, timestamp, datafilename, threshold, minimum_area):
+    '''produce number concentration directly to a csv file accoring to datafilename, and do nothing else'''
     print('AILARON SIM')
     nc = pd.DataFrame(columns=['timestamp, number_concentration'])
 
