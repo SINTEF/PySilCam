@@ -5,7 +5,7 @@ channels:
 dependencies:    # These are the conda packages
     - python=3.5
     - pip=10.0.1
-    - libffi=3.2.1
+    - conda-forge::libffi=3.2.1
     - numpy=1.15.2
     - scipy=1.0.0
     - pandas=0.20.3
