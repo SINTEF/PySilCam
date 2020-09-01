@@ -21,7 +21,7 @@ from skimage.io import imsave
 import traceback
 
 '''
-module for processing SilCam data
+Module for processing SilCam data
 
 TODO: add tests for this module
 '''
