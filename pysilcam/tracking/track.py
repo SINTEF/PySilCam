@@ -1,20 +1,7 @@
-'''
-SilCam Tracking wrapper for particleinstrumenttools/silcamtracker analysis tools
-
-Usage:
-  track.py bottle <day> <bottle>
-  track.py column <dataset> <offset>
-  track.py plastic <dataset> <offset>
-  track.py eggs <dataset> <offset>
-  track.py image <dataset> <offset>
-  track.py plot <dataset>
-'''
-
-
 from docopt import docopt
 import cmocean
 import sys
-from silcamtracker import *
+from pysilcam.tracking.silcamtracker import *
 import numpy as np
 import sys
 import glob
@@ -224,3 +211,27 @@ if __name__ == "__main__":
 
     if args['plot']:
         plot_single(datapath)
+
+
+def silctrack():
+    """
+    does tracking
+
+    Usage:
+        silcam-track <datapath> [--offset=<offset>]
+    """
+
+    #@todo intended usage: silcam-track <configfile> <datapath> [--offset=<offset>]
+
+    args = docopt(silctrack.__doc__)
+    datapath = args['<datapath>']
+    offset = args['--offset']
+    if offset is not None:
+        try:
+            offset = int(offset)
+        except ValueError:
+            print('Expected type int for --offset.')
+            sys.exit(0)
+    else:
+        offset = 0
+    plastic(datapath, offset)
