@@ -12,6 +12,7 @@ from tqdm import tqdm
 import pysilcam.process as scpr
 from pysilcam.acquisition import Acquire
 from pysilcam.background import backgrounder
+from pysilcam.fakepymba import silcam_load
 import pickle
 import glob as glob
 
@@ -37,10 +38,12 @@ class Tracker:
 
 
     def initialise(self):
-
+        print('* INITIALISE')
         if self.files == None:
             self.files = [os.path.join(self.path, f)
-                    for f in sorted(os.listdir(self.path)) if f.endswith('.bmp')]
+                    for f in sorted(os.listdir(self.path)) if f.endswith('.bmp') or f.endswith('.silc') or f.endswith('.silc_mono')]
+        print('  File list obtained:')
+        print(len(self.files), 'files found')
 
         # imbg = np.float64(imo.imread(self.files[0]))
         # print('Background averaging....')
@@ -66,8 +69,9 @@ class Tracker:
         # i = 0
         for f in tqdm(self.files):
             # try:
-            img = imo.imread(f)
-            img = img[250:1750,:]
+            # img = imo.imread(f)
+            # img = img[250:1750,:]
+            img = silcam_load(f)
 
             if np.ndim(img)==3:
                 img = np.min(img, axis=2)
