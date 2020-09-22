@@ -617,12 +617,11 @@ class PlotView(QtWidgets.QWidget):
         '''call the update_plot function with option to save'''
         self.update_plot(save=True)
 
-
     def save_trimmed_stats(self):
         start_time = self.mid_time - self.av_window / 2
         end_time = self.mid_time + self.av_window / 2
 
-        if len(self.stats)==0:
+        if len(self.stats) == 0:
             reply = QMessageBox.question(self, "STATS file has not been loaded.",
                                          'Would you like to load the STATS file?\n' +
                                          '(It might take some time)\n\n' +
