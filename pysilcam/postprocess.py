@@ -1026,6 +1026,3 @@ def vd_to_nc(vd, dias):
     else:
         nc = np.sum(nd)
     return nc
-
-if __name__=='__main__':
-    pass
