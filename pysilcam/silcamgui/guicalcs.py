@@ -13,6 +13,9 @@ import pygame
 import time
 import psutil
 from tqdm import tqdm
+from pysilcam.fakepymba import silcam_load
+
+import pygame.font
 
 
 def get_data(self):
@@ -217,15 +220,11 @@ def export_timeseries(configfile, statsfile):
 
 
 def load_image(filename, size):
-    if filename.endswith('.silc'):
-        with open(filename, 'rb') as fh:
-            im = np.load(fh, allow_pickle=False)
-        im = pygame.surfarray.make_surface(np.uint8(im))
-        im = pygame.transform.flip(im, False, True)
-        im = pygame.transform.rotate(im, -90)
-        im = pygame.transform.scale(im, size)
-    else:
-        im = pygame.image.load(filename).convert()
+    im = silcam_load(filename)
+    im = pygame.surfarray.make_surface(np.uint8(im))
+    im = pygame.transform.flip(im, False, True)
+    im = pygame.transform.rotate(im, -90)
+    im = pygame.transform.scale(im, size)
 
     return im
 
@@ -248,7 +247,7 @@ def annotate(datadir, filename):
 def silcview(datadir):
     files = [os.path.join(datadir, f) for f in
             sorted(os.listdir(datadir))
-            if f.endswith('.silc') or f.endswith('.bmp')]
+            if f.endswith('.silc') or f.endswith('.bmp') or f.endswith('.silc_mono')]
     if len(files) == 0:
         return
     pygame.init()

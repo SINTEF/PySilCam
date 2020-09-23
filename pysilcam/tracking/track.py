@@ -50,16 +50,18 @@ def plastic(datapath, offset=0):
     sctr.DATAFILE = outputpath
 
     sctr.av_window = 50
-    #sctr.files = subsample_files(datapath, offset=offset)
+    #sctr.files = subsample_files(datapath, approx_files=200,
+    #        offset=offset)
     sctr.initialise()
     sctr.files = sctr.files[offset:]
-    sctr.MIN_LENGTH = 30
+    sctr.files = sctr.files[2000:2200]
+    sctr.MIN_LENGTH = 200
     #sctr.MIN_LENGTH = 200
     sctr.MIN_SPEED = 0.000001 # cm/s
     sctr.GOOD_FIT = 0.1
     sctr.THRESHOLD = 0.95
     sctr.ecd_tollerance = 5 # percent
-    sctr.PIX_SIZE = 27.532679738562095 / 2
+    sctr.PIX_SIZE = 27.532679738562095
     sctr.process()
 
 def column_track(datapath, offset):
@@ -83,11 +85,24 @@ def column_track(datapath, offset):
 def subsample_files(datapath, approx_files=2000, offset=int(0)):
     print('Subsampling files....')
 
-    files = [os.path.join(datapath, f) for f in sorted(os.listdir(datapath)) if f.endswith('.bmp')]
+    files = [os.path.join(datapath, f) for f in sorted(os.listdir(datapath)) if f.endswith('.bmp') or f.endswith('.silc')
+            or f.endswith('.silc_mono')]
     files = files[int(offset):]
 
-    times = [f.replace(datapath + '/D','').replace('.bmp','') for f in files]
-    times = pd.to_datetime(times)
+    try:
+        times = [f.replace(datapath + '/D','').replace('.bmp','') for f in files]
+        times = pd.to_datetime(times)
+    except:
+        try:
+            times = [f.replace(datapath + '/D','').replace('.silc','') for f in files]
+            times = pd.to_datetime(times)
+        except:
+            try:
+                times = [f.replace(datapath + '/D','').replace('.silc_mono','') for f in files]
+                times = pd.to_datetime(times)
+            except:
+                pass
+
 
     t1 = times[0]
 
