@@ -15,6 +15,8 @@ from pysilcam.background import backgrounder
 from pysilcam.fakepymba import silcam_load
 import pickle
 import glob as glob
+from skimage.transform import rotate
+from pysilcam.postprocess import explode_contrast
 
 
 class Tracker:
@@ -841,13 +843,6 @@ def calculate_density(w, r):
     return rho_p
 
 
-def load_single_data(datapath, search_sring='output_s*'):
-    '''load only the first hit in the search string'''
-    files = glob.glob(datapath + '/' + search_sring + '.csv')
-    data = pd.read_csv(files[0])
-    return data
-
-
 def load_data(datapath, search_sring='output_s*'):
     '''load and merge all data that matches the search string'''
     files = glob.glob(datapath + '/' + search_sring + '.csv')
@@ -863,6 +858,7 @@ def load_data(datapath, search_sring='output_s*'):
 
     return data_all
 
+
 def post_process(data, PIX_SIZE, track_length_limit=15, max_starts=None):
     data = extract_continuous_tracks(data, max_starts=max_starts)
     data = data[data['n-tracks']>track_length_limit]
@@ -870,3 +866,154 @@ def post_process(data, PIX_SIZE, track_length_limit=15, max_starts=None):
     data = calculate_speed_df(data, PIX_SIZE)
 
     return data
+
+
+def load_and_process(tracksfile, PIX_SIZE,
+                     minlength=0, maxlength=1e6, track_length_limit=15):
+    data = pd.read_csv(tracksfile)
+    data = data[(data['length']*PIX_SIZE/1000 > minlength) &
+                ((data['length']*PIX_SIZE/1000 < maxlength))]
+    tracks = post_process(data, PIX_SIZE,
+            track_length_limit=track_length_limit, max_starts=50)
+
+    return data, tracks
+
+
+def make_output_files_for_giffing(datapath, dataset_name, data, PIX_SIZE, track_length_limit=15):
+
+    print('make_output_files_for_giffing')
+
+    outputdir = os.path.join(datapath, 'output_' + dataset_name)
+    os.makedirs(outputdir, exist_ok=True)
+
+    sctr = Tracker()
+
+    sctr.path = os.path.join(datapath, dataset_name)
+
+    sctr.av_window = 15
+    #sctr.files = subsample_files(datapath, offset=offset)
+    sctr.initialise()
+    # sctr.files = sctr.files[166:]
+    sctr.files = sctr.files[-200:]
+    sctr.MIN_LENGTH = 300
+    sctr.MIN_SPEED = 0.000001 # cm/s
+    sctr.GOOD_FIT = 0.1
+    sctr.THRESHOLD = 0.99
+    sctr.ecd_tollerance = 5
+    sctr.PIX_SIZE = PIX_SIZE
+
+    while True:
+        print('looping')
+
+        try:
+            im, timestamp = sctr.load_image()
+        except:
+            break
+        name = timestamp.strftime('D%Y%m%dT%H%M%S.%f')[:-4] + '.bmp'
+        tmptracks = data[pd.to_datetime(data['t2'])==pd.to_datetime(timestamp)]
+    #     tmptracks = tracks_[pd.to_datetime(timestamp)==pd.to_datetime(tracks_['t2'])]
+        if len(tmptracks)==0:
+            print(name, 'no tracks.')
+            continue
+    #     tmptracks = tracks[pd.to_datetime(timestamp)==pd.to_datetime(tracks['t2'])]
+
+#         plt.close('all')
+        plt.figure(figsize=(7,10))
+        r, c = np.shape(im)
+        print('image shape:', r, c)
+        input()
+        plt.imshow(rotate(explode_contrast(np.uint8(im)),
+            270, resize=True),
+                cmap='gray',
+                extent=[0, r * PIX_SIZE / 1000,
+                    0, c * PIX_SIZE / 1000])
+        #plt.title(str(timestamp))
+
+        tmptracks_ = tmptracks[(tmptracks['n-tracks']>1) & (tmptracks['n-tracks']<=track_length_limit)]
+        for m in tmptracks_.index:
+            match3 = tmptracks_.loc[m]
+            match3 = calculate_speed_df(match3, PIX_SIZE)
+            linex = np.float64(
+                    [match3['x-arrival'], match3['x-departure']])
+            liney = np.float64(
+                    [match3['y-arrival'], match3['y-departure']])
+            linex *= PIX_SIZE/1000
+            liney *= PIX_SIZE/1000
+            linex = c * PIX_SIZE/1000 - linex
+            liney = r * PIX_SIZE/1000 - liney
+            plt.plot(liney, linex ,'r-', linewidth=1)
+
+            plt.text(liney[0], linex[0], ('{:0.2f}mm {:0.2f}mm/s'.format(match3['length']*PIX_SIZE/1000,
+                                                                         match3['S_cms']*10)),
+                     fontsize=12, color='r')
+
+        tmptracks = tmptracks[tmptracks['n-tracks']>track_length_limit]
+        for m in tmptracks.index:
+            match3 = tmptracks.loc[m]
+            match3 = calculate_speed_df(match3, PIX_SIZE)
+            linex = np.float64(
+                    [match3['x-arrival'], match3['x-departure']])
+            liney = np.float64(
+                    [match3['y-arrival'], match3['y-departure']])
+            linex *= PIX_SIZE/1000
+            liney *= PIX_SIZE/1000
+            linex = c * PIX_SIZE/1000 - linex
+            liney = r * PIX_SIZE/1000 - liney
+            plt.plot(liney, linex ,'g-', linewidth=2)
+
+            plt.text(liney[0], linex[0], ('{:0.2f}mm {:0.2f}mm/s'.format(match3['length']*PIX_SIZE/1000,
+                                                                         match3['S_cms']*10)),
+                     fontsize=12, color='g')
+
+    #     except:
+    #         pass
+        #plt.axis('off')
+        plt.xlabel('mm')
+        plt.ylabel('mm')
+        plt.gca().invert_yaxis()
+
+        plt.savefig(os.path.join(outputdir, name[:-4] + '-tr.png'), dpi=300, bbox_inches='tight')
+        #plt.savefig(os.path.join(outputdir, name[:-4] + '-tr.png'), dpi=50)
+    #     input()
+
+    # use convert -delay 12 -loop 0 *.png output_ALL.gif to make a gif
+
+
+def make_boxplot(dataset_names, tracks, PIX_SIZE, figurename):
+    ps = np.arange(0,len(dataset_names))
+    ls = dataset_names
+
+    f, a = plt.subplots(3,1,figsize=(6,12))
+
+    plt.sca(a[0])
+    box_data = [tracks[dataset_names[i]]['width']/
+                tracks[dataset_names[i]]['length']
+                for i in range(len(dataset_names))]
+    plt.boxplot(box_data, positions=ps, labels=ls)
+    plt.ylabel('Minor/Major axis')
+    plt.ylim(0, 1)
+    plt.gca().xaxis.tick_top()
+    plt.xticks(rotation=45, horizontalalignment='left')
+
+    plt.sca(a[1])
+    box_data = [tracks[dataset_names[i]]['length']*PIX_SIZE/1000
+                for i in range(len(dataset_names))]
+    plt.boxplot(box_data, positions=ps, labels=ls)
+    plt.ylabel('Maxjor Axis Length [mm]')
+    plt.xticks([])
+    plt.ylim(0, 12)
+
+    plt.sca(a[2])
+    box_data = [tracks[dataset_names[i]]['S_cms']*10
+                for i in range(len(dataset_names))]
+
+    plt.boxplot(box_data, positions=ps, labels=ls)
+    plt.ylabel('Net speed [mm/s]')
+    # plt.yscale('log')
+    plt.xticks(rotation=45, horizontalalignment='right')
+    plt.ylim(0, 2.5)
+
+    figurename = os.path.join(figurename + '.png')
+    print('  saving:', figurename)
+    plt.savefig(figurename,dpi=600, bbox_inches='tight')
+    print('  saved')

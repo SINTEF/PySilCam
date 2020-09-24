@@ -54,7 +54,7 @@ def plastic(datapath, offset=0):
     #        offset=offset)
     sctr.initialise()
     sctr.files = sctr.files[offset:]
-    sctr.files = sctr.files[2000:2200]
+    sctr.files = sctr.files[-200:]
     sctr.MIN_LENGTH = 200
     #sctr.MIN_LENGTH = 200
     sctr.MIN_SPEED = 0.000001 # cm/s
@@ -233,20 +233,57 @@ def silctrack():
     does tracking
 
     Usage:
-        silcam-track <datapath> [--offset=<offset>]
+        silcam-track process <datapath> [--offset=<offset>]
+        silcam-track post-process <tracksfile> [--gif] [<datapath>] [<dataset_name>]
+        silcam-track boxplot <picklefile>
     """
 
     #@todo intended usage: silcam-track <configfile> <datapath> [--offset=<offset>]
 
+    PIX_SIZE = 27.532679738562095
+    print('!! HARDCODED PIX_SIZE:', PIX_SIZE)
+
     args = docopt(silctrack.__doc__)
-    datapath = args['<datapath>']
-    offset = args['--offset']
-    if offset is not None:
-        try:
-            offset = int(offset)
-        except ValueError:
-            print('Expected type int for --offset.')
-            sys.exit(0)
-    else:
-        offset = 0
-    plastic(datapath, offset)
+
+
+    if args['process']:
+        datapath = args['<datapath>']
+        offset = args['--offset']
+        if offset is not None:
+            try:
+                offset = int(offset)
+            except ValueError:
+                print('Expected type int for --offset.')
+                sys.exit(0)
+        else:
+            offset = 0
+        plastic(datapath, offset)
+
+    if args['post-process']:
+
+        data = dict()
+        tracks = dict()
+
+        print('* Load and process')
+        tracksfile = args['<tracksfile>']
+        key = os.path.split(tracksfile)[-1]
+        key = os.path.splitext(key)[0].replace('output_', '')
+        data[key], tracks[key] = load_and_process(tracksfile, PIX_SIZE)
+        picklename = '/mnt/nasdrive/Miljoteknologi/PlasticSettling2020/proc/data-TRACKS.pkl'
+        print('* Saving:', picklename)
+        pickle.dump((data, tracks), open(picklename, 'wb'))
+
+        if args['--gif']:
+            make_output_files_for_giffing(args['<datapath>'], args['<dataset_name>'], data, PIX_SIZE,
+                                          track_length_limit = 15)
+
+    if args['boxplot']:
+        picklefile = args['<picklefile>']
+        print('* Loading', picklefile)
+        data, tracks = pickle.load(open(picklefile, 'rb'))
+        print('  OK.')
+        dataset_names = list(data)
+        print('* Creating boxplot from:')
+        print(dataset_names)
+        make_boxplot(dataset_names, tracks, PIX_SIZE,
+                     '/mnt/nasdrive/Miljoteknologi/PlasticSettling2020/proc/boxplot')
