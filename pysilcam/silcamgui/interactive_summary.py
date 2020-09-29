@@ -598,7 +598,7 @@ class PlotView(QtWidgets.QWidget):
     def save_data(self):
         '''call the update_plot function with option to save'''
         self.update_plot(save=True)
-
+ 
 
 class waitsplash():
     def __init__(self):
