@@ -245,7 +245,6 @@ def silctrack():
 
     args = docopt(silctrack.__doc__)
 
-
     if args['process']:
         datapath = args['<datapath>']
         offset = args['--offset']
@@ -274,7 +273,7 @@ def silctrack():
         pickle.dump((data, tracks), open(picklename, 'wb'))
 
         if args['--gif']:
-            make_output_files_for_giffing(args['<datapath>'], args['<dataset_name>'], data, PIX_SIZE,
+            make_output_files_for_giffing(args['<datapath>'], args['<dataset_name>'], data[key], PIX_SIZE,
                                           track_length_limit = 15)
 
     if args['boxplot']:

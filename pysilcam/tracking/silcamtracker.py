@@ -894,7 +894,7 @@ def make_output_files_for_giffing(datapath, dataset_name, data, PIX_SIZE, track_
     #sctr.files = subsample_files(datapath, offset=offset)
     sctr.initialise()
     # sctr.files = sctr.files[166:]
-    sctr.files = sctr.files[-200:]
+    sctr.files = sctr.files[-100:]
     sctr.MIN_LENGTH = 300
     sctr.MIN_SPEED = 0.000001 # cm/s
     sctr.GOOD_FIT = 0.1
@@ -903,8 +903,6 @@ def make_output_files_for_giffing(datapath, dataset_name, data, PIX_SIZE, track_
     sctr.PIX_SIZE = PIX_SIZE
 
     while True:
-        print('looping')
-
         try:
             im, timestamp = sctr.load_image()
         except:
@@ -920,8 +918,6 @@ def make_output_files_for_giffing(datapath, dataset_name, data, PIX_SIZE, track_
 #         plt.close('all')
         plt.figure(figsize=(7,10))
         r, c = np.shape(im)
-        print('image shape:', r, c)
-        input()
         plt.imshow(rotate(explode_contrast(np.uint8(im)),
             270, resize=True),
                 cmap='gray',
@@ -929,41 +925,60 @@ def make_output_files_for_giffing(datapath, dataset_name, data, PIX_SIZE, track_
                     0, c * PIX_SIZE / 1000])
         #plt.title(str(timestamp))
 
-        tmptracks_ = tmptracks[(tmptracks['n-tracks']>1) & (tmptracks['n-tracks']<=track_length_limit)]
+        tmptracks_ = tmptracks[(tmptracks['n-tracks'] > 1) & (tmptracks['n-tracks'] <= 150)]
         for m in tmptracks_.index:
             match3 = tmptracks_.loc[m]
             match3 = calculate_speed_df(match3, PIX_SIZE)
             linex = np.float64(
-                    [match3['x-arrival'], match3['x-departure']])
+                [match3['x-arrival'], match3['x-departure']])
             liney = np.float64(
-                    [match3['y-arrival'], match3['y-departure']])
-            linex *= PIX_SIZE/1000
-            liney *= PIX_SIZE/1000
-            linex = c * PIX_SIZE/1000 - linex
-            liney = r * PIX_SIZE/1000 - liney
-            plt.plot(liney, linex ,'r-', linewidth=1)
+                [match3['y-arrival'], match3['y-departure']])
+            linex *= PIX_SIZE / 1000
+            liney *= PIX_SIZE / 1000
+            linex = c * PIX_SIZE / 1000 - linex
+            liney = r * PIX_SIZE / 1000 - liney
+            plt.plot(liney, linex, 'b-', linewidth=1)
 
-            plt.text(liney[0], linex[0], ('{:0.2f}mm {:0.2f}mm/s'.format(match3['length']*PIX_SIZE/1000,
-                                                                         match3['S_cms']*10)),
-                     fontsize=12, color='r')
+            plt.text(liney[0], linex[0], ('{:0.2f}mm {:0.2f}mm/s'.format(match3['length'] * PIX_SIZE / 1000,
+                                                                         match3['S_cms'] * 10)),
+                     fontsize=12, color='b')
 
-        tmptracks = tmptracks[tmptracks['n-tracks']>track_length_limit]
-        for m in tmptracks.index:
-            match3 = tmptracks.loc[m]
-            match3 = calculate_speed_df(match3, PIX_SIZE)
-            linex = np.float64(
-                    [match3['x-arrival'], match3['x-departure']])
-            liney = np.float64(
-                    [match3['y-arrival'], match3['y-departure']])
-            linex *= PIX_SIZE/1000
-            liney *= PIX_SIZE/1000
-            linex = c * PIX_SIZE/1000 - linex
-            liney = r * PIX_SIZE/1000 - liney
-            plt.plot(liney, linex ,'g-', linewidth=2)
+        if False:
+            tmptracks_ = tmptracks[(tmptracks['n-tracks']>1) & (tmptracks['n-tracks']<=track_length_limit)]
+            for m in tmptracks_.index:
+                match3 = tmptracks_.loc[m]
+                match3 = calculate_speed_df(match3, PIX_SIZE)
+                linex = np.float64(
+                        [match3['x-arrival'], match3['x-departure']])
+                liney = np.float64(
+                        [match3['y-arrival'], match3['y-departure']])
+                linex *= PIX_SIZE/1000
+                liney *= PIX_SIZE/1000
+                linex = c * PIX_SIZE/1000 - linex
+                liney = r * PIX_SIZE/1000 - liney
+                plt.plot(liney, linex ,'r-', linewidth=1)
 
-            plt.text(liney[0], linex[0], ('{:0.2f}mm {:0.2f}mm/s'.format(match3['length']*PIX_SIZE/1000,
-                                                                         match3['S_cms']*10)),
-                     fontsize=12, color='g')
+                plt.text(liney[0], linex[0], ('{:0.2f}mm {:0.2f}mm/s'.format(match3['length']*PIX_SIZE/1000,
+                                                                             match3['S_cms']*10)),
+                         fontsize=12, color='r')
+
+            tmptracks = tmptracks[tmptracks['n-tracks']>track_length_limit]
+            for m in tmptracks.index:
+                match3 = tmptracks.loc[m]
+                match3 = calculate_speed_df(match3, PIX_SIZE)
+                linex = np.float64(
+                        [match3['x-arrival'], match3['x-departure']])
+                liney = np.float64(
+                        [match3['y-arrival'], match3['y-departure']])
+                linex *= PIX_SIZE/1000
+                liney *= PIX_SIZE/1000
+                linex = c * PIX_SIZE/1000 - linex
+                liney = r * PIX_SIZE/1000 - liney
+                plt.plot(liney, linex ,'g-', linewidth=2)
+
+                plt.text(liney[0], linex[0], ('{:0.2f}mm {:0.2f}mm/s'.format(match3['length']*PIX_SIZE/1000,
+                                                                             match3['S_cms']*10)),
+                         fontsize=12, color='g')
 
     #     except:
     #         pass
