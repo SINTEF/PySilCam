@@ -15,30 +15,6 @@ def make_output_path(datapath):
     os.makedirs(outputpath,exist_ok=True)
     return outputpath
 
-
-def eggs(datapath, offset=0):
-
-    outputpath = make_output_path(datapath)
-    print('* Output path:', outputpath)
-
-    sctr = Tracker()
-
-    sctr.path = datapath
-    sctr.DATAFILE = outputpath
-
-    sctr.av_window = 50
-    #sctr.files = subsample_files(datapath, offset=offset)
-    sctr.initialise()
-    sctr.files = sctr.files[offset:]
-    sctr.MIN_LENGTH = 500
-    sctr.MIN_SPEED = 0.000001 # cm/s
-    sctr.GOOD_FIT = 0.1
-    sctr.THRESHOLD = 0.95
-    sctr.ecd_tollerance = 5 # percent
-    sctr.PIX_SIZE = 27.532679738562095
-    sctr.process()
-
-
 def plastic(datapath, offset=0):
 
     outputpath = make_output_path(datapath)
@@ -54,7 +30,7 @@ def plastic(datapath, offset=0):
     #        offset=offset)
     sctr.initialise()
     sctr.files = sctr.files[offset:]
-    sctr.files = sctr.files[-200:]
+    #sctr.files = sctr.files[-200:]
     sctr.MIN_LENGTH = 200
     #sctr.MIN_LENGTH = 200
     sctr.MIN_SPEED = 0.000001 # cm/s
@@ -62,23 +38,6 @@ def plastic(datapath, offset=0):
     sctr.THRESHOLD = 0.95
     sctr.ecd_tollerance = 5 # percent
     sctr.PIX_SIZE = 27.532679738562095
-    sctr.process()
-
-def column_track(datapath, offset):
-
-    outputpath = make_output_path(datapath)
-
-    sctr = Tracker()
-
-    sctr.path = datapath
-    sctr.DATAFILE = outputpath
-
-    sctr.av_window = 5
-    sctr.files = subsample_files(datapath, offset=offset)
-    sctr.initialise()
-    sctr.MIN_LENGTH = 500
-    sctr.MIN_SPEED = 0.0001 # cm/s
-    sctr.GOOD_FIT = 0.2
     sctr.process()
 
 
@@ -268,9 +227,8 @@ def silctrack():
         key = os.path.split(tracksfile)[-1]
         key = os.path.splitext(key)[0].replace('output_', '')
         data[key], tracks[key] = load_and_process(tracksfile, PIX_SIZE)
-        picklename = '/mnt/nasdrive/Miljoteknologi/PlasticSettling2020/proc/data-TRACKS.pkl'
-        print('* Saving:', picklename)
-        pickle.dump((data, tracks), open(picklename, 'wb'))
+
+        #@todo add this to nc file created from silcam-track process
 
         if args['--gif']:
             make_output_files_for_giffing(args['<datapath>'], args['<dataset_name>'], data[key], PIX_SIZE,

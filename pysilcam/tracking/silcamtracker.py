@@ -17,6 +17,7 @@ import pickle
 import glob as glob
 from skimage.transform import rotate
 from pysilcam.postprocess import explode_contrast
+import xarray as xr
 
 
 class Tracker:
@@ -211,7 +212,10 @@ class Tracker:
 
             tracks = match_last_pair(tracks)
 
-            tracks.to_csv(DATAFILE + '.csv')
+            tracks.to_csv(DATAFILE + '-TRACKS.csv')
+            print(DATAFILE + '-TRACKS.csv written')
+            xr.Dataset.from_dataframe(tracks).to_netcdf(DATAFILE + '-TRACKS.nc')
+            print(DATAFILE + '-TRACKS.nc written')
             # times_in_data = np.unique(tracks['t1'])
             # if len(times_in_data)>1:
             #     tracks = match_last_pair(tracks)
