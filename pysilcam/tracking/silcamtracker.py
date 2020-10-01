@@ -18,6 +18,7 @@ import glob as glob
 from skimage.transform import rotate
 from pysilcam.postprocess import explode_contrast
 import xarray as xr
+import h5py
 
 
 class Tracker:
@@ -108,8 +109,19 @@ class Tracker:
         MIN_LENGTH = self.MIN_LENGTH
         GOOD_FIT = self.GOOD_FIT
         DATAFILE = self.DATAFILE
-        # imy = self.imy
-        # imx = self.imx
+
+        if DATAFILE == '':
+            print('DATAFILE not specified')
+            print('---- END ----')
+            return
+
+        # setup HDF5 file and metadata
+        HDF5File = h5py.File(DATAFILE + '.h5', "w")
+        meta = HDF5File.create_group('Meta')
+        meta.attrs['Modified'] = str(pd.datetime.now())
+        meta.attrs['DatasetName'] = 'not implemented'
+        HDF5File.create_group("Tracking")
+        HDF5File.close()
 
         N = len(files) - 1
 
@@ -213,112 +225,16 @@ class Tracker:
             tracks = match_last_pair(tracks)
 
             tracks.to_csv(DATAFILE + '-TRACKS.csv')
-            print(DATAFILE + '-TRACKS.csv written')
-            xr.Dataset.from_dataframe(tracks).to_netcdf(DATAFILE + '-TRACKS.nc')
-            print(DATAFILE + '-TRACKS.nc written')
-            # times_in_data = np.unique(tracks['t1'])
-            # if len(times_in_data)>1:
-            #     tracks = match_last_pair(tracks)
-            #     if c==0:
-            #         print('first write')
-            #         tracks.to_csv(DATAFILE + '.csv')
-            #         c = 125682935
-            #     else:
-            #         print('subsequent write')
-            #         output = tracks[(tracks['t1']==max(tracks['t1']))]
-            #         output.to_csv(DATAFILE + '.csv', mode='a', header=False)
 
-            # limit the number of image pairs kept in dataframe
-            # if len(times_in_data)>10:
-                # tracks = tracks[(tracks['t1']>times_in_data[-10])]
+            tracks.to_hdf(DATAFILE + '.h5', 'Tracking/data', mode='r+')
 
-            # print('writing data')
-            # output_data = (tracks, PIX_SIZE)
-            # pickle.dump(output_data, open(DATAFILE + '.p', "wb") )
-            # print('OK')
-            # if len(tracks)>100:
-                # raise
-
-
-            continue
-
-            # x_j, y_j, ecd, length, width = join_vectors(X_prev, Y_prev, t_prev, t2, np.array(X), np.array(Y), ecd, length, width)
-
-            # print(x_j, y_j)
-
-            # X_prev = np.copy(x_j)
-            # Y_prev = np.copy(y_j)
-            # t_prev = np.copy(x_j[3,:])
-
-            ecd_mm, S_cms, length_mm, width_mm, Xs_cms = stuff2speed(x_j, y_j,
-                                                                     ecd, length, width,
-                                                                     PIX_SIZE)
-
-            # ecd_mm, S_cms, length_mm, width_mm, Xs_cms = stuff2speed(x_j, y_j,
-            #                                                          ecd, length, width, dt,
-            #                                                          PIX_SIZE)
-
-            Xs_cms[S_cms < MIN_SPEED] = np.nan
-            S_cms[S_cms < MIN_SPEED] = np.nan
-
-            for j in range(len(ecd_mm)):
-                df = update_dataframe(df, t2, ecd_mm[j],
-                                      S_cms[j], Xs_cms[j], length_mm[j], width_mm[j])
-
-            df.to_csv(DATAFILE + '.csv', index=False)
-
-            # if i == 0:
-            #     df.to_csv(DATAFILE + '.csv', index=False)
-            # else:
-                # df.to_csv(DATAFILE + '.csv', mode='a', header=False, index=False)
-
-            dias, bin_limits_um = scpp.get_size_bins()
-            necd, edges = np.histogram(np.array(ecd)/1000, bin_limits_um)
-            vd = scpp.vd_from_nd(necd, dias)
-
-            # individual_droplet_volume = 4 / 3 * np.pi * ((ecd_mm / 1000) / 2) ** 3  # m3
-            # individual_droplet_mass = individual_droplet_volume * 880  # kg
-            # horizontal_vectors = -Xs_cms / 100  # m/s
-            # flux_volume = (imy * PIX_SIZE) * 0.5 * 0.15  # m3
-            # mass_flux = np.sum((individual_droplet_mass / flux_volume) * horizontal_vectors)  # kg/s/m2
-
-            ecd_mm_ALL.append(ecd_mm)
-            length_mm_ALL.append(length_mm)
-            S_cms_ALL.append(S_cms)
-            Xs_cms_ALL.append(Xs_cms)
-
-            # plt.sca(a[0, 0])
-            plt.sca(a[0,0])
-            plt.cla()
-            plot_image(img2, PIX_SIZE, imx, imy)
-            # plot_pair_vectors(X, Y, PIX_SIZE)
-            plot_pair_vectors(x_j, y_j, PIX_SIZE)
-            plt.title(t2)
-
-            plt.sca(a[0,1])
-            plt.cla()
-            plot_psd(dias, vd)
-
-            plt.sca(a[1,0])
-            plt.cla()
-            # plot_all_vectors(PIX_SIZE, X, Y, imx, imy)
-            plot_all_vectors(PIX_SIZE, x_j, y_j, imx, imy)
-
-            plt.sca(a[1,1])
-            plt.cla()
-            plt.plot(df['ECD [mm]'], df['Speed [cm/s]'], '.', color='0.8', alpha=0.25)
-            plt.plot(ecd_mm, S_cms,'r.')
-            plt.xlabel('ECD [mm]')
-            plt.ylabel('Speed [cm/s]')
-
-            if not writer == None:
-                writer.grab_frame()
-            # print(DATAFILE + '_' + tname + '.png')
-            plt.savefig(DATAFILE + '_' + tname + '.png', dpi=100,
-                        bbox_inches='tight')
-            # plt.savefig(DATAFILE + '_' + str(i) + '.png', dpi=100,
-            #             bbox_inches='tight')
         print('Processing done.')
+
+        print('* Starting post-process')
+        continuous_tracks = post_process(tracks, PIX_SIZE, track_length_limit=15, max_starts=None)
+
+        continuous_tracks.to_hdf(DATAFILE + '.h5', 'Tracking/tracks', mode='r+')
+        print('Post-processing done.')
 
 
     def load_image(self):
@@ -589,21 +505,6 @@ def update_dataframe(df, timestamp, ecd_mm, S_cms, W_cms, length_mm,
     return df
 
 
-def frode_time(tname):
-    '''convert frode's filenames into a readable string for pandas'''
-    timestring = (tname[-20:-16] + '/' + tname[-15:-13] + '/' + tname[-12:-10] +
-                  ' ' + tname[-10:-8] + ':' + tname[-8:-6] + ':' + tname[-6:-4] + '.' + tname[-3:])
-
-    return timestring
-
-
-def csv_to_xls(DATAFILE):
-    print('convert to excel')
-    df = pd.read_csv(DATAFILE + '.csv')
-    df.to_excel(DATAFILE + '.xlsx')
-    print('OK.')
-
-
 def plot_image(img, PIX_SIZE, imx, imy):
     plt.cla()
     # a[0].imshow(np.uint8(img2),cmap='gray',vmin=0, vmax=255, extent=[0,(2448)*PIX_SIZE/1000,2048*PIX_SIZE/1000,0])
@@ -863,7 +764,9 @@ def load_data(datapath, search_sring='output_s*'):
     return data_all
 
 
-def post_process(data, PIX_SIZE, track_length_limit=15, max_starts=None):
+def post_process(data, PIX_SIZE, track_length_limit=15, max_starts=None, minlength=0, maxlength=1000000000):
+    data = data[(data['length'] * PIX_SIZE / 1000 > minlength) &
+                ((data['length'] * PIX_SIZE / 1000 < maxlength))]
     data = extract_continuous_tracks(data, max_starts=max_starts)
     data = data[data['n-tracks']>track_length_limit]
 
@@ -874,25 +777,21 @@ def post_process(data, PIX_SIZE, track_length_limit=15, max_starts=None):
 
 def load_and_process(tracksfile, PIX_SIZE,
                      minlength=0, maxlength=1e6, track_length_limit=15):
-    data = pd.read_csv(tracksfile)
-    data = data[(data['length']*PIX_SIZE/1000 > minlength) &
-                ((data['length']*PIX_SIZE/1000 < maxlength))]
+    data = pd.read_hdf(tracksfile,'Tracking/data')
     tracks = post_process(data, PIX_SIZE,
-            track_length_limit=track_length_limit, max_starts=50)
+            track_length_limit=track_length_limit, max_starts=50, # @todo max_starts at 50 is temporary for quick testing!
+                          minlength=minlength, maxlength=maxlength)
 
     return data, tracks
 
 
-def make_output_files_for_giffing(datapath, dataset_name, data, PIX_SIZE, track_length_limit=15):
+def make_output_files_for_giffing(data, outputdir, PIX_SIZE, track_length_limit=15):
 
     print('make_output_files_for_giffing')
 
-    outputdir = os.path.join(datapath, 'output_' + dataset_name)
     os.makedirs(outputdir, exist_ok=True)
 
     sctr = Tracker()
-
-    sctr.path = os.path.join(datapath, dataset_name)
 
     sctr.av_window = 15
     #sctr.files = subsample_files(datapath, offset=offset)
@@ -947,7 +846,7 @@ def make_output_files_for_giffing(datapath, dataset_name, data, PIX_SIZE, track_
                                                                          match3['S_cms'] * 10)),
                      fontsize=12, color='b')
 
-        if False:
+        if False: # @todo this is temporary!!
             tmptracks_ = tmptracks[(tmptracks['n-tracks']>1) & (tmptracks['n-tracks']<=track_length_limit)]
             for m in tmptracks_.index:
                 match3 = tmptracks_.loc[m]

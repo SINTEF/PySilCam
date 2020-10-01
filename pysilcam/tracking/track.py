@@ -15,31 +15,6 @@ def make_output_path(datapath):
     os.makedirs(outputpath,exist_ok=True)
     return outputpath
 
-def plastic(datapath, offset=0):
-
-    outputpath = make_output_path(datapath)
-    print('* Output path:', outputpath)
-
-    sctr = Tracker()
-
-    sctr.path = datapath
-    sctr.DATAFILE = outputpath
-
-    sctr.av_window = 50
-    #sctr.files = subsample_files(datapath, approx_files=200,
-    #        offset=offset)
-    sctr.initialise()
-    sctr.files = sctr.files[offset:]
-    #sctr.files = sctr.files[-200:]
-    sctr.MIN_LENGTH = 200
-    #sctr.MIN_LENGTH = 200
-    sctr.MIN_SPEED = 0.000001 # cm/s
-    sctr.GOOD_FIT = 0.1
-    sctr.THRESHOLD = 0.95
-    sctr.ecd_tollerance = 5 # percent
-    sctr.PIX_SIZE = 27.532679738562095
-    sctr.process()
-
 
 def subsample_files(datapath, approx_files=2000, offset=int(0)):
     print('Subsampling files....')
@@ -95,23 +70,6 @@ def subsample_files(datapath, approx_files=2000, offset=int(0)):
     return resampled_files
 
 
-def bottle_track(day, bottle):
-
-    ROOT = '/mnt/nasdrive/Miljoteknologi/302003070_Marine snow flocculation and sedimentation in relation to oil spill responses_OGB/'
-
-    sctr = Tracker()
-
-    sctr.path = os.path.join(ROOT,
-	                         'RawData/WP3/d' + day + '/d' + day + '_S' + bottle)
-    sctr.DATAFILE = os.path.join(ROOT,
-	                             'AutoProcessing/tracking/WP3-d' + day + '-S' + bottle + '/WP3-d' + day + '-S' + bottle)
-
-    sctr.av_window = 15
-    sctr.initialise()
-    #sctr.files_all = np.copy(sctr.files)
-    #sctr.files = sctr.files_all[10:]
-    sctr.process()
-
 def plot_single(datapath):
     outputpath = make_output_path(datapath)
     csv_file = (outputpath + '.csv')
@@ -156,51 +114,40 @@ def show_image(datapath, offset):
         plt.show()
 
 
-if __name__ == "__main__":
-    args = docopt(__doc__)
-    # args['<dataset>'] could be 'settling_d6_19'
-
-    # root directory
-    datapath = '/mnt/nasdrive/Miljoteknologi/302003070_Marine snow flocculation and sedimentation in relation to oil spill responses_OGB/RawData/Settling/'
-
-    # functions below here require datapath to point to the actual data
-    datapath = os.path.join(datapath, args['<dataset>'])
-
-    if args['bottle']:
-        bottle_track(args['day'], args['bottle'])
-
-    if args['column']:
-        column_track(datapath, int(args['<offset>']))
-
-    if args['plastic']:
-        datapath = args['<dataset>']
-        plastic(datapath, int(args['<offset>']))
-
-    if args['eggs']:
-        datapath = args['<dataset>']
-        eggs(datapath, int(args['<offset>']))
-
-    if args['image']:
-        show_image(datapath, args['<offset>'])
-
-    if args['plot']:
-        plot_single(datapath)
-
-
 def silctrack():
     """
     does tracking
 
     Usage:
         silcam-track process <datapath> [--offset=<offset>]
-        silcam-track post-process <tracksfile> [--gif] [<datapath>] [<dataset_name>]
-        silcam-track boxplot <picklefile>
+        silcam-track post-process <tracksfile>
+        silcam-track plotting <tracksfile> [--gif=<outputdir>]
     """
 
-    #@todo intended usage: silcam-track <configfile> <datapath> [--offset=<offset>]
+    #@todo intended final usage: silcam-track <configfile> <datapath> [--offset=<offset>]
 
     PIX_SIZE = 27.532679738562095
     print('!! HARDCODED PIX_SIZE:', PIX_SIZE)
+
+    sctr = Tracker()
+
+    # @todo read these settings from a normal silcam config file, with an extra place for tracking specific settings.
+
+    sctr.av_window = 15
+    # sctr.files = subsample_files(datapath, approx_files=200,
+    #        offset=offset)
+    sctr.initialise()
+
+    # sctr.files = sctr.files[-200:]
+    sctr.MIN_LENGTH = 200
+    # sctr.MIN_LENGTH = 200
+    sctr.MIN_SPEED = 0.000001  # cm/s
+    sctr.GOOD_FIT = 0.1
+    sctr.THRESHOLD = 0.95
+    sctr.ecd_tollerance = 5  # percent
+    sctr.PIX_SIZE = 27.532679738562095
+
+    print('!! HARDCODED SETTINGS')
 
     args = docopt(silctrack.__doc__)
 
@@ -215,32 +162,46 @@ def silctrack():
                 sys.exit(0)
         else:
             offset = 0
-        plastic(datapath, offset)
+
+        #outputpath = make_output_path(datapath)
+        #print('* Output path:', outputpath)
+
+        sctr.path = datapath
+        sctr.DATAFILE = datapath
+        sctr.files = sctr.files[offset:]
+        sctr.process()
 
     if args['post-process']:
-
-        data = dict()
-        tracks = dict()
-
         print('* Load and process')
-        tracksfile = args['<tracksfile>']
-        key = os.path.split(tracksfile)[-1]
-        key = os.path.splitext(key)[0].replace('output_', '')
-        data[key], tracks[key] = load_and_process(tracksfile, PIX_SIZE)
+        data, tracks = load_and_process(args['<tracksfile>'], PIX_SIZE)
+        tracks.to_hdf(args['<tracksfile>'], 'Tracking/tracks', mode='r+')
 
-        #@todo add this to nc file created from silcam-track process
-
+    if args['plotting']:
         if args['--gif']:
-            make_output_files_for_giffing(args['<datapath>'], args['<dataset_name>'], data[key], PIX_SIZE,
+            data = pd.read_hdf(args['<tracksfile>'], 'Tracking/data')
+            outputdir = args['--gif']
+
+            make_output_files_for_giffing(data, outputdir, data, PIX_SIZE,
                                           track_length_limit = 15)
 
-    if args['boxplot']:
-        picklefile = args['<picklefile>']
-        print('* Loading', picklefile)
-        data, tracks = pickle.load(open(picklefile, 'rb'))
-        print('  OK.')
-        dataset_names = list(data)
-        print('* Creating boxplot from:')
-        print(dataset_names)
-        make_boxplot(dataset_names, tracks, PIX_SIZE,
-                     '/mnt/nasdrive/Miljoteknologi/PlasticSettling2020/proc/boxplot')
+        if args['--boxplot']:
+            print('unfinished code')
+            return
+            # @todo This should look for a bunch of h5 files in a given directory and use these to make a dictionary of
+            #       tracks for the boxplotting
+            return
+            # do some glob search for h5 files
+
+            # loop trough tracks files and add them to a dict
+            data = dict()
+            tracks = dict()
+            print('* Loading', tracksfile)
+            tracks = pd.read_hdf(tracksfile, 'Tracking/tracks')
+            print('  OK.')
+            dataset_names = list(tracks)
+            print('* Creating boxplot from:')
+            print(dataset_names)
+            print('WAITING FOR INPUT BEFORE PROCEEDING')
+            input()
+            make_boxplot(dataset_names, tracks, PIX_SIZE,
+                         '/mnt/nasdrive/Miljoteknologi/PlasticSettling2020/proc/boxplot')
