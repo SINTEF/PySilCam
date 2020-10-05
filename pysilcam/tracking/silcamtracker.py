@@ -426,15 +426,16 @@ def get_vect(img1, img2, PIX_SIZE, MIN_LENGTH, GOOD_FIT, thresh=0.98,
         length.append(el.major_axis_length)
         width.append(el.minor_axis_length)
 
-        # plt.figure(figsize=(20,20))
-        # plt.imshow(img2, cmap='gray')
-        # plt.plot([search_box[1], search_box[1], search_box[3], search_box[3]],
-        #          [search_box[0], search_box[2], search_box[0], search_box[2]],
-        #          'rx')
-        # plt.plot([bbox[1], bbox[1], bbox[3], bbox[3]],
-        #          [bbox[0], bbox[2], bbox[0], bbox[2]],
-        #          'gx')
-        # plt.plot([cr2[1], cr[1]], [cr2[0], cr[0]] ,'r')
+        #plt.figure()
+        #plt.imshow((img2+img1)/2, cmap='gray')
+        #plt.plot([search_box[1], search_box[1], search_box[3], search_box[3]],
+        #         [search_box[0], search_box[2], search_box[0], search_box[2]],
+        #         'rx')
+        #plt.plot([bbox[1], bbox[1], bbox[3], bbox[3]],
+        #         [bbox[0], bbox[2], bbox[0], bbox[2]],
+        #         'gx')
+        #plt.plot([cr2[1], cr[1]], [cr2[0], cr[0]] ,'r')
+        #plt.show()
         # plt.savefig('/mnt/ARRAY/plastic_settling/figs/tmp.png')
         # input()
 
@@ -785,7 +786,7 @@ def load_and_process(tracksfile, PIX_SIZE,
     return data, tracks
 
 
-def make_output_files_for_giffing(data, outputdir, PIX_SIZE, track_length_limit=15):
+def make_output_files_for_giffing(tmptracks, rawdatapath, outputdir, PIX_SIZE, track_length_limit=15):
 
     print('make_output_files_for_giffing')
 
@@ -794,10 +795,11 @@ def make_output_files_for_giffing(data, outputdir, PIX_SIZE, track_length_limit=
     sctr = Tracker()
 
     sctr.av_window = 15
+    sctr.path = rawdatapath
     #sctr.files = subsample_files(datapath, offset=offset)
     sctr.initialise()
     # sctr.files = sctr.files[166:]
-    sctr.files = sctr.files[-100:]
+    #sctr.files = sctr.files[-100:]
     sctr.MIN_LENGTH = 300
     sctr.MIN_SPEED = 0.000001 # cm/s
     sctr.GOOD_FIT = 0.1
@@ -810,11 +812,8 @@ def make_output_files_for_giffing(data, outputdir, PIX_SIZE, track_length_limit=
             im, timestamp = sctr.load_image()
         except:
             break
-        name = timestamp.strftime('D%Y%m%dT%H%M%S.%f')[:-4] + '.bmp'
-        tmptracks = data[pd.to_datetime(data['t2'])==pd.to_datetime(timestamp)]
-    #     tmptracks = tracks_[pd.to_datetime(timestamp)==pd.to_datetime(tracks_['t2'])]
         if len(tmptracks)==0:
-            print(name, 'no tracks.')
+            print(str(timestamp), 'no tracks.')
             continue
     #     tmptracks = tracks[pd.to_datetime(timestamp)==pd.to_datetime(tracks['t2'])]
 

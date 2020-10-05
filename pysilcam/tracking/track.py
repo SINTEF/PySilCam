@@ -121,7 +121,7 @@ def silctrack():
     Usage:
         silcam-track process <datapath> [--offset=<offset>]
         silcam-track post-process <tracksfile>
-        silcam-track plotting <tracksfile> [--gif=<outputdir>]
+        silcam-track plotting <tracksfile> [--gif=<outputdir>] [<rawdatapath>] [--boxplot]
     """
 
     #@todo intended final usage: silcam-track <configfile> <datapath> [--offset=<offset>]
@@ -135,8 +135,7 @@ def silctrack():
 
     sctr.av_window = 15
     # sctr.files = subsample_files(datapath, approx_files=200,
-    #        offset=offset)
-    sctr.initialise()
+    #        offset=offset
 
     # sctr.files = sctr.files[-200:]
     sctr.MIN_LENGTH = 200
@@ -145,7 +144,7 @@ def silctrack():
     sctr.GOOD_FIT = 0.1
     sctr.THRESHOLD = 0.95
     sctr.ecd_tollerance = 5  # percent
-    sctr.PIX_SIZE = 27.532679738562095
+    sctr.PIX_SIZE = PIX_SIZE
 
     print('!! HARDCODED SETTINGS')
 
@@ -168,21 +167,24 @@ def silctrack():
 
         sctr.path = datapath
         sctr.DATAFILE = datapath
+        sctr.initialise()
         sctr.files = sctr.files[offset:]
         sctr.process()
 
     if args['post-process']:
         print('* Load and process')
-        data, tracks = load_and_process(args['<tracksfile>'], PIX_SIZE)
+        data, tracks = load_and_process(args['<tracksfile>'], PIX_SIZE, track_length_limit=5)
         tracks.to_hdf(args['<tracksfile>'], 'Tracking/tracks', mode='r+')
+        # @todo add track length limit used in processing to metadata
 
     if args['plotting']:
         if args['--gif']:
-            data = pd.read_hdf(args['<tracksfile>'], 'Tracking/data')
+            tracks = pd.read_hdf(args['<tracksfile>'], 'Tracking/tracks')
             outputdir = args['--gif']
+            rawdatapath = args['<rawdatapath>']
 
-            make_output_files_for_giffing(data, outputdir, data, PIX_SIZE,
-                                          track_length_limit = 15)
+            make_output_files_for_giffing(tracks, rawdatapath, outputdir, PIX_SIZE,
+                                          track_length_limit = 5)
 
         if args['--boxplot']:
             print('unfinished code')
