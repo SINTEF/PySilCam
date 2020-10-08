@@ -989,7 +989,9 @@ def show_h5_meta(h5file):
 
         for k in keys:
             logger.info(k + ':')
+            print(k + ':')
             logger.info('    ' + f['Meta'].attrs[k])
+            print('    ' + f['Meta'].attrs[k])
 
 
 def vd_to_nd(vd, dias):
