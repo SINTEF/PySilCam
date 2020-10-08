@@ -19,10 +19,6 @@ EXPOSE 5920
 # Make Python not create .pyc files
 ENV PYTHONDONTWRITEBYTECODE FALSE
 
-# Assume that test data is mounted into the testdata path
-ENV UNITTEST_DATA_PATH /testdata/unittest-data
-ENV SILCAM_MODEL_PATH /testdata/tflmodel/particle-classifier.tfl
-
 # Supress the usage of a display for unit tests
 ENV MPLBACKEND Agg
 
