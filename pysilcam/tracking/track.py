@@ -169,6 +169,8 @@ def silctrack():
         sctr.DATAFILE = datapath
         sctr.initialise()
         sctr.files = sctr.files[offset:]
+
+        print('sctr.DATAFILE',sctr.DATAFILE)
         sctr.process()
 
     if args['post-process']:
@@ -179,12 +181,24 @@ def silctrack():
 
     if args['plotting']:
         if args['--gif']:
-            tracks = pd.read_hdf(args['<tracksfile>'], 'Tracking/tracks')
+
+
+            if not checkgroup(args['<tracksfile>'], 'Tracking/unfiltered_tracks'):
+                print('* Extracting unfiltered tracks')
+                data = pd.read_hdf(args['<tracksfile>'], 'Tracking/data')
+                unfiltered_tracks = extract_continuous_tracks(data, max_starts=10)
+                with pd.HDFStore(args['<tracksfile>']) as fh:
+                    unfiltered_tracks.to_hdf(fh, 'Tracking/unfiltered_tracks', mode='r+')
+                print('  OK.')
+            else:
+                unfiltered_tracks = pd.read_hdf(args['<tracksfile>'], 'Tracking/unfiltered_tracks')
+
             outputdir = args['--gif']
             rawdatapath = args['<rawdatapath>']
 
-            make_output_files_for_giffing(tracks, rawdatapath, outputdir, PIX_SIZE,
+            make_output_files_for_giffing(unfiltered_tracks, rawdatapath, outputdir, PIX_SIZE,
                                           track_length_limit = 5)
+            #make_output_files_for_giffing_old(rawdatapath, outputdir, data, PIX_SIZE)
 
         if args['--boxplot']:
             print('unfinished code')

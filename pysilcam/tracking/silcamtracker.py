@@ -19,7 +19,8 @@ from skimage.transform import rotate
 from pysilcam.postprocess import explode_contrast
 import xarray as xr
 import h5py
-
+import glob
+import names
 
 class Tracker:
     '''
@@ -627,8 +628,8 @@ def calculate_speed_df(data, PIX_SIZE):
     dX_mm = np.diff(X_mm, axis=0)
     dD_mm = np.sqrt(dY_mm**2 + dX_mm**2)
     dD_m = dD_mm / 1000
-    S_ms = dD_m/dt
-    S_cms = S_ms * 100
+    S_ms = dD_m/dt # speed in m/s
+    S_cms = S_ms * 100 # speed in cm/s
 
     Xs_mms = dX_mm/dt
     Xs_cms = Xs_mms / 10
@@ -654,8 +655,8 @@ def calculate_speed(x_arr, x_dep, y_arr, y_dep, t_arr, t_dep, PIX_SIZE):
     dX_mm = np.diff(X_mm, axis=0)
     dD_mm = np.sqrt(dY_mm**2 + dX_mm**2)
     dD_m = dD_mm / 1000
-    S_ms = dD_m/dt
-    S_cms = S_ms * 100
+    S_ms = dD_m/dt # speed in m/s
+    S_cms = S_ms * 100 # speed in cm/s
 
     Xs_mms = dX_mm/dt
     Xs_cms = Xs_mms / 10
@@ -687,6 +688,8 @@ def extract_continuous_tracks(tracks, max_starts=None):
         tracks.loc[s, 't-arrival'] = tracks.loc[s, 't1']
         c = 1 # counter for number of tracks
         tracks.loc[s, 'n-tracks'] = c
+        particle_name = names.get_full_name()
+        tracks.loc[s, 'ParticleName'] = particle_name
 
         # search for future data for this particle
         new_loc = tracks.loc[s, 'UPID-forward-match']
@@ -694,6 +697,7 @@ def extract_continuous_tracks(tracks, max_starts=None):
         while not np.isnan(new_loc):
             c += 1
             # carry previous information
+            tracks.loc[new_loc, 'ParticleName'] = particle_name
             tracks.loc[new_loc, 'x-arrival'] = tracks.loc[s, 'x1']
             tracks.loc[new_loc, 'y-arrival'] = tracks.loc[s, 'y1']
             tracks.loc[new_loc, 't-arrival'] = tracks.loc[s, 't1']
@@ -715,7 +719,7 @@ def extract_continuous_tracks(tracks, max_starts=None):
             new_loc = tracks.loc[new_loc, 'UPID-forward-match']
 
     # replace tracks so it only contains particle departures with backward matches
-    tracks = tracks[np.isnan(tracks['UPID-forward-match']) & ~np.isnan(tracks['UPID-backward-match'])]
+    #tracks = tracks[np.isnan(tracks['UPID-forward-match']) & ~np.isnan(tracks['UPID-backward-match'])]
     return tracks
 
 
@@ -780,56 +784,152 @@ def load_and_process(tracksfile, PIX_SIZE,
                      minlength=0, maxlength=1e6, track_length_limit=15):
     data = pd.read_hdf(tracksfile,'Tracking/data')
     tracks = post_process(data, PIX_SIZE,
-            track_length_limit=track_length_limit, max_starts=50, # @todo max_starts at 50 is temporary for quick testing!
+            track_length_limit=track_length_limit,
                           minlength=minlength, maxlength=maxlength)
 
     return data, tracks
 
 
-def make_output_files_for_giffing(tmptracks, rawdatapath, outputdir, PIX_SIZE, track_length_limit=15):
+def im_from_timestamp(timestamp, rawdatapath):
+    searchfilename = timestamp.strftime('D%Y%m%dT%H%M%S.%f')
+    hits = glob.glob(os.path.join(rawdatapath, searchfilename + '*'))
+    imagename = hits[0]
+    im = silcam_load(imagename)
+    return im
 
-    print('make_output_files_for_giffing')
+
+def checkgroup(h5filename, groupstr):
+    '''check if a groupstr exists in the hdf5 file, h5filename
+    Args:
+        h5filename (str)        : hdf5 file name
+        groupstr (str)          : path to search for existence
+
+    Returns:
+        bool
+    '''
+    objs = []
+    with h5py.File(h5filename) as f:
+        f.visit(objs.append)
+        groups = [obj for obj in objs if isinstance(f[obj], h5py.Group)]
+    return groupstr in groups
+
+
+def make_output_files_for_giffing(data, rawdatapath, outputdir, PIX_SIZE, track_length_limit=15):
+
+    print('* make_output_files_for_giffing')
+
+    #tracks = post_process(data, PIX_SIZE, track_length_limit=0)
 
     os.makedirs(outputdir, exist_ok=True)
 
-    sctr = Tracker()
+    #u = np.unique(data[~np.isnan(data['ParticleName'])]['t2'])
+    u = np.unique(data['t2'])
 
-    sctr.av_window = 15
-    sctr.path = rawdatapath
-    #sctr.files = subsample_files(datapath, offset=offset)
-    sctr.initialise()
-    # sctr.files = sctr.files[166:]
-    #sctr.files = sctr.files[-100:]
-    sctr.MIN_LENGTH = 300
-    sctr.MIN_SPEED = 0.000001 # cm/s
-    sctr.GOOD_FIT = 0.1
-    sctr.THRESHOLD = 0.99
-    sctr.ecd_tollerance = 5
-    sctr.PIX_SIZE = PIX_SIZE
-
-    while True:
-        try:
-            im, timestamp = sctr.load_image()
-        except:
-            break
-        if len(tmptracks)==0:
-            print(str(timestamp), 'no tracks.')
+    for timestamp in u:
+        print('making tracks for', timestamp)
+        tmptracks = data[pd.to_datetime(data['t2']) == pd.to_datetime(timestamp)]
+        #     tmptracks = tracks_[pd.to_datetime(timestamp)==pd.to_datetime(tracks_['t2'])]
+        print('len(tmptracks)', len(tmptracks))
+        if len(tmptracks) == 0:
             continue
-    #     tmptracks = tracks[pd.to_datetime(timestamp)==pd.to_datetime(tracks['t2'])]
+        #     tmptracks = tracks[pd.to_datetime(timestamp)==pd.to_datetime(tracks['t2'])]
 
-#         plt.close('all')
-        plt.figure(figsize=(7,10))
+        try:
+            im = im_from_timestamp(pd.to_datetime(timestamp), rawdatapath)
+            im = np.uint8(np.min(im, axis=2))
+        except:
+            print('could not load image from:', str(tmptracks.iloc[0]['t2']))
+            continue
+
+        #         plt.close('all')
+        plt.figure(figsize=(7, 10))
         r, c = np.shape(im)
         plt.imshow(rotate(explode_contrast(np.uint8(im)),
-            270, resize=True),
-                cmap='gray',
-                extent=[0, r * PIX_SIZE / 1000,
-                    0, c * PIX_SIZE / 1000])
-        #plt.title(str(timestamp))
+                          270, resize=True),
+                   cmap='gray',
+                   extent=[0, r * PIX_SIZE / 1000,
+                           0, c * PIX_SIZE / 1000])
+        plt.title(str(timestamp))
 
-        tmptracks_ = tmptracks[(tmptracks['n-tracks'] > 1) & (tmptracks['n-tracks'] <= 150)]
+        subset = data[data['t2'] <= pd.to_datetime(timestamp)]
+        #subset = subset[~np.isnan(subset['ParticleName'])]
+
+        for p in subset['ParticleName'].values:
+            this_particle = subset[subset['ParticleName'] == p]
+            if len(this_particle) == 0:
+                continue
+
+            t_arr = min(this_particle['t1'])
+            t_dep = max(this_particle['t2'])
+            x_arrival = this_particle[this_particle['t1'] == t_arr]['x1'].values[0]
+            x_departure = this_particle[this_particle['t2'] == t_dep]['x2'].values[0]
+            linex = np.float64([x_arrival, x_departure])
+            y_arrival = this_particle[this_particle['t1'] == t_arr]['y1'].values[0]
+            y_departure = this_particle[this_particle['t2'] == t_dep]['y2'].values[0]
+            liney = np.float64([y_arrival, y_departure])
+
+            speed = calculate_speed(x_arrival, x_departure, y_arrival, y_departure, t_arr, t_dep, PIX_SIZE)
+
+            linex *= PIX_SIZE / 1000
+            liney *= PIX_SIZE / 1000
+            linex = c * PIX_SIZE / 1000 - linex
+            liney = r * PIX_SIZE / 1000 - liney
+            n_tracks = len(this_particle)  # should be the same as max(this_particle['n-tracks'])
+            plot_color = 'r-'
+            if n_tracks > track_length_limit:
+                plot_color = 'g-'
+
+                plt.text(liney[0], linex[0], (p + ' {:0.2f}mm {:0.2f}mm/s'.format(this_particle['length'].values[0] * PIX_SIZE / 1000,
+                                                                         speed * 10)),
+                        fontsize=12, color='g')
+
+            plt.plot(liney, linex, plot_color, linewidth=1)
+
+        plt.xlabel('mm')
+        plt.ylabel('mm')
+        plt.gca().invert_yaxis()
+
+        name = pd.to_datetime(timestamp).strftime('D%Y%m%dT%H%M%S.%f')
+        print('saving', os.path.join(outputdir, name + '-tr.png'))
+        plt.savefig(os.path.join(outputdir, name + '-tr.png'), dpi=300, bbox_inches='tight')
+
+        continue
+
+
+        for m in tmptracks.index:
+            match3 = tmptracks.loc[m]
+            # match3 = calculate_speed_df(match3, PIX_SIZE)
+            linex = np.float64(
+                [match3['x1'], match3['x2']])
+            liney = np.float64(
+                [match3['y1'], match3['y2']])
+            linex *= PIX_SIZE / 1000
+            liney *= PIX_SIZE / 1000
+            linex = c * PIX_SIZE / 1000 - linex
+            liney = r * PIX_SIZE / 1000 - liney
+            plt.plot(liney, linex, 'b-', linewidth=1)
+
+        tmptracks_ = data[(data['n-tracks'] > 1) & (data['n-tracks'] <= track_length_limit)]
         for m in tmptracks_.index:
             match3 = tmptracks_.loc[m]
+            #match3 = calculate_speed_df(match3, PIX_SIZE)
+            linex = np.float64(
+                [match3['x-arrival'], match3['x-departure']])
+            liney = np.float64(
+                [match3['y-arrival'], match3['y-departure']])
+            linex *= PIX_SIZE / 1000
+            liney *= PIX_SIZE / 1000
+            linex = c * PIX_SIZE / 1000 - linex
+            liney = r * PIX_SIZE / 1000 - liney
+            plt.plot(liney, linex, 'r-', linewidth=1)
+
+            plt.text(liney[0], linex[0], ('{:0.2f}mm {:0.2f}mm/s'.format(match3['length'] * PIX_SIZE / 1000,
+                                                                         match3['S_cms'] * 10)),
+                     fontsize=12, color='r')
+
+        tmptracks = data[data['n-tracks'] > track_length_limit]
+        for m in tmptracks.index:
+            match3 = tmptracks.loc[m]
             match3 = calculate_speed_df(match3, PIX_SIZE)
             linex = np.float64(
                 [match3['x-arrival'], match3['x-departure']])
@@ -839,59 +939,22 @@ def make_output_files_for_giffing(tmptracks, rawdatapath, outputdir, PIX_SIZE, t
             liney *= PIX_SIZE / 1000
             linex = c * PIX_SIZE / 1000 - linex
             liney = r * PIX_SIZE / 1000 - liney
-            plt.plot(liney, linex, 'b-', linewidth=1)
+            plt.plot(liney, linex, 'g-', linewidth=2)
 
             plt.text(liney[0], linex[0], ('{:0.2f}mm {:0.2f}mm/s'.format(match3['length'] * PIX_SIZE / 1000,
                                                                          match3['S_cms'] * 10)),
-                     fontsize=12, color='b')
+                     fontsize=12, color='g')
 
-        if False: # @todo this is temporary!!
-            tmptracks_ = tmptracks[(tmptracks['n-tracks']>1) & (tmptracks['n-tracks']<=track_length_limit)]
-            for m in tmptracks_.index:
-                match3 = tmptracks_.loc[m]
-                match3 = calculate_speed_df(match3, PIX_SIZE)
-                linex = np.float64(
-                        [match3['x-arrival'], match3['x-departure']])
-                liney = np.float64(
-                        [match3['y-arrival'], match3['y-departure']])
-                linex *= PIX_SIZE/1000
-                liney *= PIX_SIZE/1000
-                linex = c * PIX_SIZE/1000 - linex
-                liney = r * PIX_SIZE/1000 - liney
-                plt.plot(liney, linex ,'r-', linewidth=1)
-
-                plt.text(liney[0], linex[0], ('{:0.2f}mm {:0.2f}mm/s'.format(match3['length']*PIX_SIZE/1000,
-                                                                             match3['S_cms']*10)),
-                         fontsize=12, color='r')
-
-            tmptracks = tmptracks[tmptracks['n-tracks']>track_length_limit]
-            for m in tmptracks.index:
-                match3 = tmptracks.loc[m]
-                match3 = calculate_speed_df(match3, PIX_SIZE)
-                linex = np.float64(
-                        [match3['x-arrival'], match3['x-departure']])
-                liney = np.float64(
-                        [match3['y-arrival'], match3['y-departure']])
-                linex *= PIX_SIZE/1000
-                liney *= PIX_SIZE/1000
-                linex = c * PIX_SIZE/1000 - linex
-                liney = r * PIX_SIZE/1000 - liney
-                plt.plot(liney, linex ,'g-', linewidth=2)
-
-                plt.text(liney[0], linex[0], ('{:0.2f}mm {:0.2f}mm/s'.format(match3['length']*PIX_SIZE/1000,
-                                                                             match3['S_cms']*10)),
-                         fontsize=12, color='g')
-
-    #     except:
-    #         pass
-        #plt.axis('off')
+        #     except:
+        #         pass
+        # plt.axis('off')
         plt.xlabel('mm')
         plt.ylabel('mm')
         plt.gca().invert_yaxis()
 
-        plt.savefig(os.path.join(outputdir, name[:-4] + '-tr.png'), dpi=300, bbox_inches='tight')
-        #plt.savefig(os.path.join(outputdir, name[:-4] + '-tr.png'), dpi=50)
-    #     input()
+        name = pd.to_datetime(timestamp).strftime('D%Y%m%dT%H%M%S.%f')
+        print('saving', os.path.join(outputdir, name + '-tr.png'))
+        plt.savefig(os.path.join(outputdir, name + '-tr.png'), dpi=300, bbox_inches='tight')
 
     # use convert -delay 12 -loop 0 *.png output_ALL.gif to make a gif
 
