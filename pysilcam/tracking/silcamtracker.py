@@ -1,25 +1,14 @@
 import os
-import imageio as imo
 import numpy as np
-import matplotlib.pyplot as plt
-from skimage.feature import match_template, peak_local_max
-from skimage.morphology import label, remove_small_objects, binary_dilation
+from skimage.feature import match_template
+from skimage.morphology import label, binary_dilation
 from skimage.measure import regionprops
-import matplotlib.animation as manimation
 import pandas as pd
-import pysilcam.postprocess as scpp
 from tqdm import tqdm
 import pysilcam.process as scpr
-from pysilcam.acquisition import Acquire
 from pysilcam.background import backgrounder
 from pysilcam.fakepymba import silcam_load
-import pickle
-import glob as glob
-from skimage.transform import rotate
-from pysilcam.postprocess import explode_contrast
-import xarray as xr
 import h5py
-import glob
 import names
 
 class Tracker:
@@ -35,10 +24,8 @@ class Tracker:
         self.GOOD_FIT = 0.2
         self.PIX_SIZE = 27.532679738562095
         self.ecd_tollerance = 0
-        self.FPS = 15
         self.path = ''
         self.DATAFILE = ''
-        self.vidname=self.DATAFILE + '.mp4'
         self.files = None
 
 
@@ -50,19 +37,7 @@ class Tracker:
         print('  File list obtained:')
         print(len(self.files), 'files found')
 
-        # imbg = np.float64(imo.imread(self.files[0]))
-        # print('Background averaging....')
-        # for i in tqdm(range(self.av_window - 1)):
-            # self.imbg += np.float64(load_image(self.files[i]))
-        # self.imbg /= self.av_window
-        # print('  done.')
-        # self.imy, self.imx = np.shape(imbg)
-
-        # aq = Acquire(USE_PYMBA=False)
-        # aq.get_generator = self.get_generator_tracker
         self.aqgen = self.generator_tracker()
-
-        # print(self.aqgen.pymba)
 
         #Get number of images to use for background correction from config
         print('* Initializing background image handler')
@@ -71,11 +46,8 @@ class Tracker:
                 real_time_stats=False)
 
     def generator_tracker(self, datapath=None):
-        # i = 0
         for f in tqdm(self.files):
-            # try:
-            # img = imo.imread(f)
-            # img = img[250:1750,:]
+
             img = silcam_load(f)
 
             if np.ndim(img)==3:
@@ -86,27 +58,11 @@ class Tracker:
             imc[:,:,1] = img
             imc[:,:,2] = img
             timestamp = pd.to_datetime(os.path.splitext(os.path.split(f)[-1])[0][1:])
-            # i += 1
             yield timestamp, imc
 
 
-    def process_with_video(self):
-        FFMpegWriter = manimation.writers['ffmpeg']
-        metadata = dict(title='Lab Floc Test', artist='Emlyn Davies',
-                        comment='Test!')
-
-        writer = FFMpegWriter(fps=self.FPS, metadata=metadata, codec='mpeg4')
-
-        fig = plt.figure()
-        with writer.saving(fig, self.vidname, 600):
-            self.process(writer=writer)
-
-
-    def process(self, writer=None):
-        files = self.files
-        # imbg = self.imbg
+    def process(self):
         PIX_SIZE = self.PIX_SIZE
-        MIN_SPEED = self.MIN_SPEED
         MIN_LENGTH = self.MIN_LENGTH
         GOOD_FIT = self.GOOD_FIT
         DATAFILE = self.DATAFILE
@@ -124,35 +80,16 @@ class Tracker:
         HDF5File.create_group("Tracking")
         HDF5File.close()
 
-        N = len(files) - 1
-
-        # fig, a = plt.subplots(2, 2, figsize=(10, 10))
-        fig, a = plt.subplots(2, 2, figsize=(12, 12))
-
-        ecd_mm_ALL = []
-        length_mm_ALL = []
-        S_cms_ALL = []
-        Xs_cms_ALL = []
-
         tracks = pd.DataFrame()
         tracks.index.name = 'UPID'
         UPID = -1
 
-        cnames = ['Time', 'ECD [mm]', 'Length [mm]',
-                  'Width [mm]', 'Speed [cm/s]', 'Ws [cm/s]']
-
-        df = pd.DataFrame(columns=cnames)
-
         print('Processing....')
 
-
         img1, t1 = self.load_image()
-        imy, imx = np.shape(img1)
 
         i=0
-        c = 0
         while True:
-            # fname = files[i + 1]
 
             if not (i==0):
                 img1 = np.copy(img2)
@@ -164,45 +101,12 @@ class Tracker:
                 break
 
             i += 1
-            tname = str(t2)
-
-            # img2 = imcor(img2, imbg)
-
-            # img1 = load_image(files[i])
-            # img1 = imcor(img1, imbg)
-
-            # timestamp = pd.to_datetime(tname)
-
-            # t1 = timestamp
-            # t2 = pd.to_datetime(os.path.splitext(os.path.split(files[i])[-1])[0][1:])
-            dt = np.abs(t1 - t2)
-            # convert to a dt in decimal second with millisecond precision, assuming less
-            # than one minute separation
-            dt = dt.components.seconds + (dt.components.milliseconds / 1000)
-            dt = np.abs(dt)
-
-            # xlim = int((15 * 1000) / PIX_SIZE)
-
-            # X, Y, ecd, length, width, im_plot = get_vect(img1[:, :xlim], img2[:, :xlim],
-            #                                              PIX_SIZE, MIN_LENGTH, GOOD_FIT)
 
             try:
                 X, Y, ecd, length, width, im_plot = get_vect(img1, img2,
                                                             PIX_SIZE, MIN_LENGTH, GOOD_FIT,
                                                             thresh=self.THRESHOLD,
                                                             ecd_tollerance=self.ecd_tollerance)
-
-                # f, a = plt.subplots(2, 1, figsize=(20,20))
-                # plt.sca(a[0])
-                # plt.imshow(img2, cmap='gray')
-                # plt.plot(X, Y)
-                # plt.title(tname)
-                # plt.sca(a[1])
-                # plt.imshow(im_plot>0, cmap='gray')
-                # plt.savefig('/mnt/ARRAY/plastic_settling/figs/tmp.png')
-                # input()
-
-
             except ValueError:
                 print('  Error getting vectors')
                 continue
@@ -224,9 +128,6 @@ class Tracker:
                 tracks.loc[UPID,'width'] = width[p]
 
             tracks = match_last_pair(tracks)
-
-            tracks.to_csv(DATAFILE + '-TRACKS.csv')
-
             tracks.to_hdf(DATAFILE + '.h5', 'Tracking/data', mode='r+')
 
         print('Processing done.')
@@ -241,33 +142,15 @@ class Tracker:
     def load_image(self):
 
         timestamp, imc, imraw  = next(self.bggen)
-        # im = imo.imread(filename)1
         im = imc
         if len(np.shape(im))==3:
             im = np.min(im, axis=2)
-        # im = np.rot90(im)
         im = np.uint8(im)
         return im, timestamp
 
 
-def imcor(imraw, imbg):
-    imc = np.float64(imraw) - np.float64(imbg)
-
-    m = np.median(imc)
-    imc += 1.5 * ((255/2)-m + 20)
-
-    imc[imc>255] = 255
-    imc[imc<0] = 0
-
-    imc = np.uint8(imc)
-
-    return imc
-
-
 def imc2iml(imc, thresh=0.98):
-    # imbw = imc < 0.92 * np.median(imc)
     imbw = scpr.image2blackwhite_fast(imc, thresh)
-    # imbw = remove_small_objects(imbw > 0, min_size=12)
     imbw = scpr.clean_bw(imbw, 12)
     for i in range(2):
         imbw = binary_dilation(imbw)
@@ -315,7 +198,6 @@ def get_vect(img1, img2, PIX_SIZE, MIN_LENGTH, GOOD_FIT, thresh=0.98,
         bbox = el.bbox
         cr = el.centroid # cr[0] is y and cr[1] is x because centroid returns row, col
 
-        #roi = img1[bbox[0]:bbox[2], bbox[1]:bbox[3]] # roi of image 1
         roi = iml[bbox[0]:bbox[2], bbox[1]:bbox[3]] # roi of image 1
         roi = roi > 0
 
@@ -332,10 +214,7 @@ def get_vect(img1, img2, PIX_SIZE, MIN_LENGTH, GOOD_FIT, thresh=0.98,
             search_box[2] = min(r,bbox[2]+bbexp)
             search_box[3] = min(c,bbox[3]+bbexp)
 
-            # print('search_box',search_box)
-
             # extract the roi in which we expect to find a particle
-            #search_roi = img2[search_box[0]:search_box[2], search_box[1]:search_box[3]]
             search_roi = iml2[search_box[0]:search_box[2], search_box[1]:search_box[3]]
             search_roi = search_roi > 0
 
@@ -365,11 +244,6 @@ def get_vect(img1, img2, PIX_SIZE, MIN_LENGTH, GOOD_FIT, thresh=0.98,
 
             # if there is no particle here, then we need more analysis
             if idx == 0:
-                #plt.figure()
-                #plt.imshow(result)
-                #plt.plot(x_, y_,'ro')
-                #plt.show()
-
                 # get the labelled particles in the search box
                 search_iml2 = iml2[search_box[0]:search_box[2], search_box[1]:search_box[3]]
                 # and squash to an array of particle indicies from within the box
@@ -400,7 +274,6 @@ def get_vect(img1, img2, PIX_SIZE, MIN_LENGTH, GOOD_FIT, thresh=0.98,
                     else:
                         OK = False
                 else: # if there are no particles in the search box then forget it
-                    # print('not found')
                     continue
             else:
                 OK = True
@@ -427,162 +300,9 @@ def get_vect(img1, img2, PIX_SIZE, MIN_LENGTH, GOOD_FIT, thresh=0.98,
         length.append(el.major_axis_length)
         width.append(el.minor_axis_length)
 
-        #plt.figure()
-        #plt.imshow((img2+img1)/2, cmap='gray')
-        #plt.plot([search_box[1], search_box[1], search_box[3], search_box[3]],
-        #         [search_box[0], search_box[2], search_box[0], search_box[2]],
-        #         'rx')
-        #plt.plot([bbox[1], bbox[1], bbox[3], bbox[3]],
-        #         [bbox[0], bbox[2], bbox[0], bbox[2]],
-        #         'gx')
-        #plt.plot([cr2[1], cr[1]], [cr2[0], cr[0]] ,'r')
-        #plt.show()
-        # plt.savefig('/mnt/ARRAY/plastic_settling/figs/tmp.png')
-        # input()
-
     X = [x1,x] # horizontal vector
     Y = [y1,y] # vertical vector
     return X, Y, ecd, length, width, imbw_out
-
-
-def stuff2speed(X, Y, ecd, length, width, dt, PIX_SIZE):
-    Y_mm = np.array(Y)*PIX_SIZE*1e-3
-    X_mm = np.array(X)*PIX_SIZE*1e-3
-    dY_mm = Y_mm[1,:]-Y_mm[0,:]
-    dX_mm = X_mm[1,:]-X_mm[0,:]
-    dD_mm = np.sqrt(dY_mm**2 + dX_mm**2)
-    dD_m = dD_mm / 1000
-    S_ms = dD_m/dt
-    S_cms = S_ms * 100
-
-    Xs_mms = dX_mm/dt
-    Xs_cms = Xs_mms / 10
-
-    ecd_mm = np.array(ecd)*PIX_SIZE/1000
-    length_mm = np.array(length)*PIX_SIZE/1000
-    width_mm = np.array(width)*PIX_SIZE/1000
-
-    return ecd_mm, S_cms, length_mm, width_mm, Xs_cms
-
-
-def v_stokes(rop,rof,d,visc=1.002e-3,C1=18):
-    R = (rop-rof)/rof # submerged specific gravity
-    w = R*9.81*(d**2)/(C1*visc/rof)
-
-    return w
-    # d = np.linspace(100,2500,100) * 1e-6 # m
-    # rop = 1030
-    # wstokes_m_sec = np.zeros((2,len(d)),dtype=np.float64)
-    # wstokes_m_sec[0,:] = v_stokes(rop,rof,d,visc,C1) # m/s
-    # rop = 1100
-    # wstokes_m_sec[1,:] = v_stokes(rop,rof,d,visc,C1) # m/s
-    # wstokes_cm_sec = wstokes_m_sec * 100
-
-    # return w, wstokes_cm_sec
-
-
-def extract_roi(imc, bbox):
-    bbexp = 400
-
-    r, c = np.shape(imc)
-    search_box = np.zeros_like(bbox)
-    search_box[0] = max(0,bbox[0]-bbexp)
-    search_box[1] = max(0,bbox[1]-bbexp)
-    search_box[2] = min(r,bbox[2]+bbexp)
-    search_box[3] = min(c,bbox[3]+bbexp)
-
-    search_roi = imc[search_box[0]:search_box[2], search_box[1]:search_box[3],:]
-
-    return search_roi
-
-
-def update_dataframe(df, timestamp, ecd_mm, S_cms, W_cms, length_mm,
-        width_mm):
-
-    dat = [[timestamp, ecd_mm, length_mm, width_mm, S_cms, W_cms]]
-    dfnew = pd.DataFrame(columns=df.columns, data=dat)
-
-    df = df.append(dfnew)
-
-    return df
-
-
-def plot_image(img, PIX_SIZE, imx, imy):
-    plt.cla()
-    # a[0].imshow(np.uint8(img2),cmap='gray',vmin=0, vmax=255, extent=[0,(2448)*PIX_SIZE/1000,2048*PIX_SIZE/1000,0])
-    plt.imshow(np.uint8(img), cmap='gray', extent=[0, imx * PIX_SIZE / 1000, imy * PIX_SIZE / 1000, 0])
-    y = (imy * PIX_SIZE / 1000)
-    plt.ylim(y, 0)
-    plt.xlim((0, imx * PIX_SIZE / 1000))
-    plt.xlabel('[mm]')
-    plt.ylabel('[mm]')
-
-
-def plot_pair_vectors(X, Y, PIX_SIZE):
-    plt.plot(np.array(X) * PIX_SIZE / 1000, np.array(Y) * PIX_SIZE / 1000, 'r-')
-
-
-def plot_psd(dias, vd):
-    plt.cla()
-    plt.plot(dias, vd, 'k')
-    plt.xscale('log')
-    plt.xlabel('Equivalent circular diameter [um]')
-    plt.ylabel('Volume concentration [uL/L')
-
-
-def plot_mass_flux_timeseries(timestamp, mass_flux):
-    plt.plot(pd.to_datetime(timestamp), mass_flux, 'k.')
-    plt.ylabel('Mass flux [kg/s/m2]')
-    plt.xlabel('Time')
-
-
-def plot_all_vectors(PIX_SIZE, X, Y, imx, imy):
-    plt.plot(np.array(X) * PIX_SIZE / 1000, np.array(Y) * PIX_SIZE / 1000, 'r-', alpha=0.1)
-    plt.gca().set_aspect('equal')
-    plt.xlim(0, imx * PIX_SIZE / 1000)
-    plt.ylim(imy * PIX_SIZE / 1000, 0)
-    plt.xlabel('[mm]')
-    plt.ylabel('[mm]')
-
-
-def join_vectors(X_prev, Y_prev, t_prev, t2, X, Y, ecd, length, width):
-    match = match_vectors(X_prev, Y_prev, X, Y)
-
-    num_matches = len(match[match>-1])
-    x_j = np.zeros((4, num_matches), dtype=float) * np.nan
-    y_j = np.zeros((4, num_matches), dtype=float) * np.nan
-
-    j = -1
-    for i, m in enumerate(match):
-        if m==-1:
-            continue
-        j += 1
-
-        dt = np.abs(t2-t_prev)
-        dt = dt.components.seconds + (dt.components.milliseconds / 1000)
-        x_j[:, j] = [X_prev[0,i], X[1,m], dt, t_prev]
-        y_j[:, j] = [Y_prev[0,i], Y[1,m], dt, t_prev]
-
-    match = match[match>-1]
-    ecd = np.array(ecd)[match]
-    length = np.array(length)[match]
-    width = np.array(width)[match]
-
-    return x_j, y_j, ecd, length, width
-
-
-def match_vectors(x_0, y_0, x_1, y_1):
-    '''returns the indicies of matching vector'''
-    r, c = np.shape(x_0)
-
-    match = np.zeros(c, dtype=int) - 1
-    for i in range(c):
-        dxy = abs(x_0 - x_1) + abs(y_0 - y_1)
-        ind = np.argwhere(dxy < 1e-4)
-        if len(ind)==1:
-            match[i] = int(ind)
-
-    return match
 
 
 def match_last_pair(data):
@@ -596,7 +316,6 @@ def match_last_pair(data):
     y_start = data_2['y1'].values
 
     c = len(x_start)
-    match = np.zeros(c, dtype=int) - 1
     for i in range(c):
         dxy = abs(x_end - x_start[i]) + abs(y_end - y_start[i])
         ind = np.argwhere(dxy < 1e-4)
@@ -606,17 +325,9 @@ def match_last_pair(data):
     return data
 
 
-def extract_matches(data):
-    matched = data[~np.isnan(data['UPID-backward-match']) & ~np.isnan(data['UPID-forward-match'])]
-    return matched
-
-
 def calculate_speed_df(data, PIX_SIZE):
     X = np.array([data['x-arrival'], data['x-departure']])
     Y = np.array([data['y-arrival'], data['y-departure']])
-    ecd = np.nan
-    length = np.nan
-    width = np.nan
 
     dt = pd.Series(np.abs(pd.to_datetime(data['t-arrival']) -
                       pd.to_datetime(data['t-departure']))).dt.total_seconds()
@@ -639,47 +350,17 @@ def calculate_speed_df(data, PIX_SIZE):
     return data
 
 
-def calculate_speed(x_arr, x_dep, y_arr, y_dep, t_arr, t_dep, PIX_SIZE):
-    X = np.array([x_arr, x_dep])
-    Y = np.array([y_arr, y_dep])
-    ecd = np.nan
-    length = np.nan
-    width = np.nan
-
-    dt = pd.Series(np.abs(t_arr - t_dep)).dt.total_seconds()
-    dt = dt.values
-
-    Y_mm = Y*PIX_SIZE*1e-3
-    X_mm = X*PIX_SIZE*1e-3
-    dY_mm = np.diff(Y_mm, axis=0)
-    dX_mm = np.diff(X_mm, axis=0)
-    dD_mm = np.sqrt(dY_mm**2 + dX_mm**2)
-    dD_m = dD_mm / 1000
-    S_ms = dD_m/dt # speed in m/s
-    S_cms = S_ms * 100 # speed in cm/s
-
-    Xs_mms = dX_mm/dt
-    Xs_cms = Xs_mms / 10
-
-    return S_cms[0]
-
-
 def extract_continuous_tracks(tracks, max_starts=None):
     # find positions in the dataframe where there is a forward match but not a backward match
     # these are the first occurances of a particle  ('arrivals')
     starts = tracks[np.isnan(tracks['UPID-backward-match']) & ~np.isnan(tracks['UPID-forward-match'])].index
 
     print('starts', len(starts))
-    # if len(starts)==0:
-    #     return tracks[np.isnan(tracks['UPID-backward-match']) & ~np.isnan(tracks['UPID-forward-match'])]
 
     if not max_starts==None:
         starts = starts[0:min([max_starts, len(starts)])]
 
     for s in tqdm(starts):
-
-        # max_speed = 0
-        # min_speed = np.inf
 
         # initial start point
         # we know that this is not the last time due to forward match not being nan
@@ -708,237 +389,17 @@ def extract_continuous_tracks(tracks, max_starts=None):
             tracks.loc[new_loc, 't-departure'] = tracks.loc[new_loc, 't2']
             tracks.loc[new_loc, 'n-tracks'] = c
 
-            # calculate speed in pixels/sec
-            # speed_check = calculate_speed_df(tracks.loc[new_loc], 1)
-            # max_speed = np.max([max_speed, speed_check['S_cms']])
-            # min_speed = np.min([min_speed, speed_check['S_cms']])
-
-            # tracks.loc[new_loc, 'max_speed'] = max_speed
-            # tracks.loc[new_loc, 'min_speed'] = min_speed
-
             new_loc = tracks.loc[new_loc, 'UPID-forward-match']
-
-    # replace tracks so it only contains particle departures with backward matches
-    #tracks = tracks[np.isnan(tracks['UPID-forward-match']) & ~np.isnan(tracks['UPID-backward-match'])]
     return tracks
-
-
-def get_stokes(particle_density=1030):
-    diams = np.linspace(0.1, 10, 100)/1000 # in m
-
-    water_density = 1025
-    particle_density = particle_density+water_density # this means the input is density difference
-
-    w = []
-    for d in diams:
-        w.append(v_stokes(particle_density, water_density, d)*60*24)
-
-    w = np.array(w)
-
-    diams = diams[w<2000]
-    w = w[w<2000]
-    return diams*1000, w
-
-
-def plot_stokes(c='k-', particle_density=1030):
-    diams, w = get_stokes(particle_density=particle_density)
-    plt.plot(diams, w, c)
-    plt.annotate('  ' + str(particle_density),(diams[-2],w[-2]))
-
-
-def calculate_density(w, r):
-    mu = 1.3e-3
-    rho_w = 1025
-    rho_p = rho_w + (2*9.81*r**2)/(w*9*mu)
-    return rho_p
-
-
-def load_data(datapath, search_sring='output_s*'):
-    '''load and merge all data that matches the search string'''
-    files = glob.glob(datapath + '/' + search_sring + '.csv')
-    for c, f in enumerate(files):
-        print(f)
-
-        data = pd.read_csv(f)
-
-        if c==0:
-            data_all = data.copy()
-        else:
-            data_all = data_all.append(pd.read_csv(f))
-
-    return data_all
 
 
 def post_process(data, PIX_SIZE, track_length_limit=15, max_starts=None, minlength=0, maxlength=1000000000):
     data = data[(data['length'] * PIX_SIZE / 1000 > minlength) &
                 ((data['length'] * PIX_SIZE / 1000 < maxlength))]
     data = extract_continuous_tracks(data, max_starts=max_starts)
+    # replace tracks so it only contains particle departures with backward matches
+    data = data[np.isnan(data['UPID-forward-match']) & ~np.isnan(data['UPID-backward-match'])]
     data = data[data['n-tracks']>track_length_limit]
-
     data = calculate_speed_df(data, PIX_SIZE)
 
     return data
-
-
-def load_and_process(tracksfile, PIX_SIZE,
-                     minlength=0, maxlength=1e6, track_length_limit=15):
-    data = pd.read_hdf(tracksfile,'Tracking/data')
-    tracks = post_process(data, PIX_SIZE,
-            track_length_limit=track_length_limit,
-                          minlength=minlength, maxlength=maxlength)
-
-    return data, tracks
-
-
-def im_from_timestamp(timestamp, rawdatapath):
-    searchfilename = timestamp.strftime('D%Y%m%dT%H%M%S.%f')
-    hits = glob.glob(os.path.join(rawdatapath, searchfilename + '*'))
-    imagename = hits[0]
-    im = silcam_load(imagename)
-    return im
-
-
-def checkgroup(h5filename, groupstr):
-    '''check if a groupstr exists in the hdf5 file, h5filename
-    Args:
-        h5filename (str)        : hdf5 file name
-        groupstr (str)          : path to search for existence
-
-    Returns:
-        bool
-    '''
-    objs = []
-    with h5py.File(h5filename) as f:
-        f.visit(objs.append)
-        groups = [obj for obj in objs if isinstance(f[obj], h5py.Group)]
-    return groupstr in groups
-
-
-def make_output_files_for_giffing(data, rawdatapath, outputdir, PIX_SIZE, track_length_limit=15):
-    '''
-    # use 'convert -delay 12 -loop 0 *.png output.gif' to make a gif
-    :param data:
-    :param rawdatapath:
-    :param outputdir:
-    :param PIX_SIZE:
-    :param track_length_limit:
-    :return:
-    '''
-
-    print('* make_output_files_for_giffing')
-
-    #tracks = post_process(data, PIX_SIZE, track_length_limit=0)
-
-    os.makedirs(outputdir, exist_ok=True)
-
-    #u = np.unique(data[~np.isnan(data['ParticleName'])]['t2'])
-    u = np.unique(data['t2'])
-
-    for timestamp in u:
-        print('making tracks for', timestamp)
-        tmptracks = data[pd.to_datetime(data['t2']) == pd.to_datetime(timestamp)]
-        #     tmptracks = tracks_[pd.to_datetime(timestamp)==pd.to_datetime(tracks_['t2'])]
-        print('len(tmptracks)', len(tmptracks))
-        if len(tmptracks) == 0:
-            continue
-        #     tmptracks = tracks[pd.to_datetime(timestamp)==pd.to_datetime(tracks['t2'])]
-
-        try:
-            im = im_from_timestamp(pd.to_datetime(timestamp), rawdatapath)
-            im = np.uint8(np.min(im, axis=2))
-        except:
-            print('could not load image from:', str(tmptracks.iloc[0]['t2']))
-            continue
-
-        #         plt.close('all')
-        plt.figure(figsize=(7, 10))
-        r, c = np.shape(im)
-        plt.imshow(rotate(explode_contrast(np.uint8(im)),
-                          270, resize=True),
-                   cmap='gray',
-                   extent=[0, r * PIX_SIZE / 1000,
-                           0, c * PIX_SIZE / 1000])
-        plt.title(str(timestamp))
-
-        subset = data[data['t2'] <= pd.to_datetime(timestamp)]
-        #subset = subset[~np.isnan(subset['ParticleName'])]
-
-        for p in subset['ParticleName'].values:
-            this_particle = subset[subset['ParticleName'] == p]
-            if len(this_particle) == 0:
-                continue
-
-            t_arr = min(this_particle['t1'])
-            t_dep = max(this_particle['t2'])
-            x_arrival = this_particle[this_particle['t1'] == t_arr]['x1'].values[0]
-            x_departure = this_particle[this_particle['t2'] == t_dep]['x2'].values[0]
-            linex = np.float64([x_arrival, x_departure])
-            y_arrival = this_particle[this_particle['t1'] == t_arr]['y1'].values[0]
-            y_departure = this_particle[this_particle['t2'] == t_dep]['y2'].values[0]
-            liney = np.float64([y_arrival, y_departure])
-
-            speed = calculate_speed(x_arrival, x_departure, y_arrival, y_departure, t_arr, t_dep, PIX_SIZE)
-
-            linex *= PIX_SIZE / 1000
-            liney *= PIX_SIZE / 1000
-            linex = c * PIX_SIZE / 1000 - linex
-            liney = r * PIX_SIZE / 1000 - liney
-            n_tracks = len(this_particle)  # should be the same as max(this_particle['n-tracks'])
-            plot_color = 'r-'
-            if n_tracks > track_length_limit:
-                plot_color = 'g-'
-
-                plt.text(liney[0], linex[0], (p + '\n{:0.2f}mm {:0.2f}mm/s'.format(this_particle['length'].values[0] * PIX_SIZE / 1000,
-                                                                         speed * 10)),
-                        fontsize=4, color='g')
-
-            plt.plot(liney, linex, plot_color, linewidth=1)
-
-        plt.xlabel('mm')
-        plt.ylabel('mm')
-        plt.gca().invert_yaxis()
-
-        name = pd.to_datetime(timestamp).strftime('D%Y%m%dT%H%M%S.%f')
-        print('saving', os.path.join(outputdir, name + '-tr.png'))
-        plt.savefig(os.path.join(outputdir, name + '-tr.png'), dpi=300, bbox_inches='tight')
-
-
-
-def make_boxplot(dataset_names, tracks, PIX_SIZE, figurename):
-    ps = np.arange(0,len(dataset_names))
-    ls = dataset_names
-
-    f, a = plt.subplots(3,1,figsize=(6,12))
-
-    plt.sca(a[0])
-    box_data = [tracks[dataset_names[i]]['width']/
-                tracks[dataset_names[i]]['length']
-                for i in range(len(dataset_names))]
-    plt.boxplot(box_data, positions=ps, labels=ls)
-    plt.ylabel('Minor/Major axis')
-    plt.ylim(0, 1)
-    plt.gca().xaxis.tick_top()
-    plt.xticks(rotation=45, horizontalalignment='left')
-
-    plt.sca(a[1])
-    box_data = [tracks[dataset_names[i]]['length']*PIX_SIZE/1000
-                for i in range(len(dataset_names))]
-    plt.boxplot(box_data, positions=ps, labels=ls)
-    plt.ylabel('Maxjor Axis Length [mm]')
-    plt.xticks([])
-    plt.ylim(0, 12)
-
-    plt.sca(a[2])
-    box_data = [tracks[dataset_names[i]]['S_cms']*10
-                for i in range(len(dataset_names))]
-
-    plt.boxplot(box_data, positions=ps, labels=ls)
-    plt.ylabel('Net speed [mm/s]')
-    # plt.yscale('log')
-    plt.xticks(rotation=45, horizontalalignment='right')
-    plt.ylim(0, 2.5)
-
-    figurename = os.path.join(figurename + '.png')
-    print('  saving:', figurename)
-    plt.savefig(figurename,dpi=600, bbox_inches='tight')
-    print('  saved')
