@@ -176,17 +176,22 @@ def silctrack():
     if args['post-process']:
         print('* Load and process')
         data, tracks = load_and_process(args['<tracksfile>'], PIX_SIZE, track_length_limit=5)
-        tracks.to_hdf(args['<tracksfile>'], 'Tracking/tracks', mode='r+')
-        # @todo add track length limit used in processing to metadata
+
+        with pd.HDFStore(args['<tracksfile>']) as fh:
+            tracks.to_hdf(fh, 'Tracking/tracks', mode='r+')
+            # @todo add track length limit used in processing to metadata
+
+        unfiltered_tracks = extract_continuous_tracks(data)
+        with pd.HDFStore(args['<tracksfile>']) as fh:
+            unfiltered_tracks.to_hdf(fh, 'Tracking/unfiltered_tracks', mode='r+')
 
     if args['plotting']:
         if args['--gif']:
 
-
             if not checkgroup(args['<tracksfile>'], 'Tracking/unfiltered_tracks'):
                 print('* Extracting unfiltered tracks')
                 data = pd.read_hdf(args['<tracksfile>'], 'Tracking/data')
-                unfiltered_tracks = extract_continuous_tracks(data, max_starts=10)
+                unfiltered_tracks = extract_continuous_tracks(data)
                 with pd.HDFStore(args['<tracksfile>']) as fh:
                     unfiltered_tracks.to_hdf(fh, 'Tracking/unfiltered_tracks', mode='r+')
                 print('  OK.')
@@ -198,7 +203,6 @@ def silctrack():
 
             make_output_files_for_giffing(unfiltered_tracks, rawdatapath, outputdir, PIX_SIZE,
                                           track_length_limit = 5)
-            #make_output_files_for_giffing_old(rawdatapath, outputdir, data, PIX_SIZE)
 
         if args['--boxplot']:
             print('unfinished code')

@@ -36,3 +36,4 @@ dependencies:    # These are the conda packages
         - PyQt5==5.10
         - cmocean==1.2
         - pytest-error-for-skips==2.0.2
+        - names==0.3.0

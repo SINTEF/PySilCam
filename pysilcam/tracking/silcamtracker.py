@@ -815,6 +815,15 @@ def checkgroup(h5filename, groupstr):
 
 
 def make_output_files_for_giffing(data, rawdatapath, outputdir, PIX_SIZE, track_length_limit=15):
+    '''
+    # use 'convert -delay 12 -loop 0 *.png output.gif' to make a gif
+    :param data:
+    :param rawdatapath:
+    :param outputdir:
+    :param PIX_SIZE:
+    :param track_length_limit:
+    :return:
+    '''
 
     print('* make_output_files_for_giffing')
 
@@ -879,9 +888,9 @@ def make_output_files_for_giffing(data, rawdatapath, outputdir, PIX_SIZE, track_
             if n_tracks > track_length_limit:
                 plot_color = 'g-'
 
-                plt.text(liney[0], linex[0], (p + ' {:0.2f}mm {:0.2f}mm/s'.format(this_particle['length'].values[0] * PIX_SIZE / 1000,
+                plt.text(liney[0], linex[0], (p + '\n{:0.2f}mm {:0.2f}mm/s'.format(this_particle['length'].values[0] * PIX_SIZE / 1000,
                                                                          speed * 10)),
-                        fontsize=12, color='g')
+                        fontsize=4, color='g')
 
             plt.plot(liney, linex, plot_color, linewidth=1)
 
@@ -893,70 +902,6 @@ def make_output_files_for_giffing(data, rawdatapath, outputdir, PIX_SIZE, track_
         print('saving', os.path.join(outputdir, name + '-tr.png'))
         plt.savefig(os.path.join(outputdir, name + '-tr.png'), dpi=300, bbox_inches='tight')
 
-        continue
-
-
-        for m in tmptracks.index:
-            match3 = tmptracks.loc[m]
-            # match3 = calculate_speed_df(match3, PIX_SIZE)
-            linex = np.float64(
-                [match3['x1'], match3['x2']])
-            liney = np.float64(
-                [match3['y1'], match3['y2']])
-            linex *= PIX_SIZE / 1000
-            liney *= PIX_SIZE / 1000
-            linex = c * PIX_SIZE / 1000 - linex
-            liney = r * PIX_SIZE / 1000 - liney
-            plt.plot(liney, linex, 'b-', linewidth=1)
-
-        tmptracks_ = data[(data['n-tracks'] > 1) & (data['n-tracks'] <= track_length_limit)]
-        for m in tmptracks_.index:
-            match3 = tmptracks_.loc[m]
-            #match3 = calculate_speed_df(match3, PIX_SIZE)
-            linex = np.float64(
-                [match3['x-arrival'], match3['x-departure']])
-            liney = np.float64(
-                [match3['y-arrival'], match3['y-departure']])
-            linex *= PIX_SIZE / 1000
-            liney *= PIX_SIZE / 1000
-            linex = c * PIX_SIZE / 1000 - linex
-            liney = r * PIX_SIZE / 1000 - liney
-            plt.plot(liney, linex, 'r-', linewidth=1)
-
-            plt.text(liney[0], linex[0], ('{:0.2f}mm {:0.2f}mm/s'.format(match3['length'] * PIX_SIZE / 1000,
-                                                                         match3['S_cms'] * 10)),
-                     fontsize=12, color='r')
-
-        tmptracks = data[data['n-tracks'] > track_length_limit]
-        for m in tmptracks.index:
-            match3 = tmptracks.loc[m]
-            match3 = calculate_speed_df(match3, PIX_SIZE)
-            linex = np.float64(
-                [match3['x-arrival'], match3['x-departure']])
-            liney = np.float64(
-                [match3['y-arrival'], match3['y-departure']])
-            linex *= PIX_SIZE / 1000
-            liney *= PIX_SIZE / 1000
-            linex = c * PIX_SIZE / 1000 - linex
-            liney = r * PIX_SIZE / 1000 - liney
-            plt.plot(liney, linex, 'g-', linewidth=2)
-
-            plt.text(liney[0], linex[0], ('{:0.2f}mm {:0.2f}mm/s'.format(match3['length'] * PIX_SIZE / 1000,
-                                                                         match3['S_cms'] * 10)),
-                     fontsize=12, color='g')
-
-        #     except:
-        #         pass
-        # plt.axis('off')
-        plt.xlabel('mm')
-        plt.ylabel('mm')
-        plt.gca().invert_yaxis()
-
-        name = pd.to_datetime(timestamp).strftime('D%Y%m%dT%H%M%S.%f')
-        print('saving', os.path.join(outputdir, name + '-tr.png'))
-        plt.savefig(os.path.join(outputdir, name + '-tr.png'), dpi=300, bbox_inches='tight')
-
-    # use convert -delay 12 -loop 0 *.png output_ALL.gif to make a gif
 
 
 def make_boxplot(dataset_names, tracks, PIX_SIZE, figurename):
