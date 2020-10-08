@@ -5,6 +5,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class PathLength():
     '''
     Class for interacting with the path length actuator unit via RS232
@@ -63,7 +64,7 @@ class PathLength():
         sendstring = self.makepacket('X', 2, state)
         self.ser.write(bytes(sendstring, 'latin-1'))
         time.sleep(0.1)
-        readout1 = self.ser.read(1000)
+        self.ser.read(1000)
         sendstring = self.makepacket('p', 1, 0)
         self.ser.write(bytes(sendstring, 'latin-1'))
         time.sleep(0.1)
@@ -82,7 +83,7 @@ class PathLength():
         sendstring = self.makepacket('S', 5, newpos)
         self.ser.write(bytes(sendstring, 'latin-1'))
         time.sleep(0.1)
-        readout1 = self.ser.read(1000)
+        self.ser.read(1000)
         readpos = self.readpos()
         logger.info('Setpoint: %d', newpos)
         logger.info('Actual pos: %d', readpos)
