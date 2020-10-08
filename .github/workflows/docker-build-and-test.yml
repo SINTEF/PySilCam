@@ -37,4 +37,8 @@ jobs:
           unzip temp.zip
 
       - name: Run the tests
+        shell: bash
+        env:
+          UNITTEST_DATA_PATH: /testdata/unittest-data
+          SILCAM_MODEL_PATH: /testdata/tflmodel/particle-classifier.tfl
         run: docker run -v $PWD/pysilcam-testdata:/testdata ${IMAGE_NAME}:${IMAGE_TAG}
