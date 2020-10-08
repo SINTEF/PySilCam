@@ -8,6 +8,7 @@ from scipy import interpolate
 import matplotlib.pyplot as plt
 from skimage.transform import rotate
 from pysilcam.postprocess import explode_contrast
+from pysilcam.config import PySilcamSettings, settings_from_h5
 
 
 def make_output_path(datapath):
@@ -277,33 +278,25 @@ def silctrack():
     does tracking
 
     Usage:
-        silcam-track process <datapath> [--offset=<offset>]
+        silcam-track process <configfile> <datapath> [--offset=<offset>]
         silcam-track post-process <tracksfile>
         silcam-track plotting <tracksfile> [--gif=<outputdir>] [<rawdatapath>] [--boxplot]
     """
 
-    #@todo intended final usage: silcam-track <configfile> <datapath> [--offset=<offset>]
-
-    PIX_SIZE = 27.532679738562095
-    print('!! HARDCODED PIX_SIZE:', PIX_SIZE)
-
-    sctr = Tracker()
-
-    # @todo read these settings from a normal silcam config file, with an extra place for tracking specific settings.
-
-    sctr.av_window = 15
-    sctr.MIN_LENGTH = 200
-    sctr.MIN_SPEED = 0.000001  # cm/s
-    sctr.GOOD_FIT = 0.1
-    sctr.THRESHOLD = 0.95
-    sctr.ecd_tollerance = 5  # percent
-    sctr.PIX_SIZE = PIX_SIZE
-
-    print('!! HARDCODED SETTINGS')
-
     args = docopt(silctrack.__doc__)
 
     if args['process']:
+        settings = PySilcamSettings(args['<configfile>'])
+
+        sctr = Tracker()
+        sctr.av_window = settings.Background.num_images
+        sctr.MIN_LENGTH = settings.Tracking.min_length
+        sctr.MIN_SPEED = settings.Tracking.min_speed
+        sctr.GOOD_FIT = settings.Tracking.good_fit
+        sctr.THRESHOLD = settings.Process.threshold
+        sctr.ecd_tolerance = settings.Tracking.ecd_tolerance
+        sctr.PIX_SIZE = settings.PostProcess.pix_size
+
         datapath = args['<datapath>']
         offset = args['--offset']
         if offset is not None:
@@ -316,26 +309,41 @@ def silctrack():
             offset = 0
 
         sctr.path = datapath
-        sctr.DATAFILE = datapath
+        dataset_name = os.path.split(datapath)[-1] + '-TRACKS'
+        sctr.DATAFILE = os.path.join(settings.General.datafile, dataset_name)
+        sctr.track_length_limit = settings.Tracking.track_length_limit
         sctr.initialise()
         sctr.files = sctr.files[offset:]
 
-        print('sctr.DATAFILE',sctr.DATAFILE)
+        os.makedirs(settings.General.datafile, exist_ok=True)
+
+        # setup HDF5 file and metadata
+        with h5py.File(sctr.DATAFILE + '.h5', "a") as HDF5File:
+            meta = HDF5File.require_group('Meta')
+            meta.attrs['Modified'] = str(pd.datetime.now())
+            settings_dict = {s: dict(settings.config.items(s)) for s in settings.config.sections()}
+            meta.attrs['Settings'] = str(settings_dict)
+
         sctr.process()
 
     if args['post-process']:
         print('* Load and process')
-        data, tracks = load_and_process(args['<tracksfile>'], PIX_SIZE, track_length_limit=5)
+        settings = settings_from_h5(args['<tracksfile>'])
+
+        data, tracks = load_and_process(args['<tracksfile>'],
+                                        settings.PostProcess.pix_size,
+                                        track_length_limit=settings.Tracking.track_length_limit)
 
         with pd.HDFStore(args['<tracksfile>']) as fh:
             tracks.to_hdf(fh, 'Tracking/tracks', mode='r+')
-            # @todo add track length limit used in processing to metadata
 
         unfiltered_tracks = extract_continuous_tracks(data)
         with pd.HDFStore(args['<tracksfile>']) as fh:
             unfiltered_tracks.to_hdf(fh, 'Tracking/unfiltered_tracks', mode='r+')
 
     if args['plotting']:
+        settings = settings_from_h5(args['<tracksfile>'])
+
         if args['--gif']:
 
             if not checkgroup(args['<tracksfile>'], 'Tracking/unfiltered_tracks'):
@@ -351,7 +359,8 @@ def silctrack():
             outputdir = args['--gif']
             rawdatapath = args['<rawdatapath>']
 
-            make_output_files_for_giffing(unfiltered_tracks, rawdatapath, outputdir, PIX_SIZE,
+            make_output_files_for_giffing(unfiltered_tracks, rawdatapath, outputdir,
+                                          settings.PostProcess.pix_size,
                                           track_length_limit = 5)
 
         if args['--boxplot']:
@@ -373,5 +382,5 @@ def silctrack():
             print(dataset_names)
             print('WAITING FOR INPUT BEFORE PROCEEDING')
             input()
-            make_boxplot(dataset_names, tracks, PIX_SIZE,
+            make_boxplot(dataset_names, tracks, sctr.PIX_SIZE,
                          '/mnt/nasdrive/Miljoteknologi/PlasticSettling2020/proc/boxplot')

@@ -23,10 +23,11 @@ class Tracker:
         self.MIN_SPEED = 0.01 # cm/s
         self.GOOD_FIT = 0.2
         self.PIX_SIZE = 27.532679738562095
-        self.ecd_tollerance = 0
+        self.ecd_tolerance = 0
         self.path = ''
         self.DATAFILE = ''
         self.files = None
+        self.track_length_limit = 15
 
 
     def initialise(self):
@@ -66,6 +67,7 @@ class Tracker:
         MIN_LENGTH = self.MIN_LENGTH
         GOOD_FIT = self.GOOD_FIT
         DATAFILE = self.DATAFILE
+        track_length_limit = self.track_length_limit
 
         if DATAFILE == '':
             print('DATAFILE not specified')
@@ -73,12 +75,11 @@ class Tracker:
             return
 
         # setup HDF5 file and metadata
-        HDF5File = h5py.File(DATAFILE + '.h5', "w")
-        meta = HDF5File.create_group('Meta')
-        meta.attrs['Modified'] = str(pd.datetime.now())
-        meta.attrs['DatasetName'] = 'not implemented'
-        HDF5File.create_group("Tracking")
-        HDF5File.close()
+        with h5py.File(DATAFILE + '.h5', "a") as HDF5File:
+            meta = HDF5File.require_group('Meta')
+            meta.attrs['Modified'] = str(pd.datetime.now())
+            meta.attrs['DatasetName'] = 'not implemented'
+            HDF5File.create_group("Tracking")
 
         tracks = pd.DataFrame()
         tracks.index.name = 'UPID'
@@ -106,7 +107,7 @@ class Tracker:
                 X, Y, ecd, length, width, im_plot = get_vect(img1, img2,
                                                             PIX_SIZE, MIN_LENGTH, GOOD_FIT,
                                                             thresh=self.THRESHOLD,
-                                                            ecd_tollerance=self.ecd_tollerance)
+                                                            ecd_tolerance=self.ecd_tolerance)
             except ValueError:
                 print('  Error getting vectors')
                 continue
@@ -133,7 +134,9 @@ class Tracker:
         print('Processing done.')
 
         print('* Starting post-process')
-        continuous_tracks = post_process(tracks, PIX_SIZE, track_length_limit=15, max_starts=None)
+        continuous_tracks = post_process(tracks, PIX_SIZE,
+                                         track_length_limit=track_length_limit,
+                                         max_starts=None)
 
         continuous_tracks.to_hdf(DATAFILE + '.h5', 'Tracking/tracks', mode='r+')
         print('Post-processing done.')
@@ -159,7 +162,7 @@ def imc2iml(imc, thresh=0.98):
 
 
 def get_vect(img1, img2, PIX_SIZE, MIN_LENGTH, GOOD_FIT, thresh=0.98,
-             ecd_tollerance=0):
+             ecd_tolerance=0):
 
     # label image 2
     iml2 = imc2iml(img2, thresh)
@@ -263,7 +266,7 @@ def get_vect(img1, img2, PIX_SIZE, MIN_LENGTH, GOOD_FIT, thresh=0.98,
                     closest_ecd = np.min(np.abs(choice_ecd-ecd_lookup))
                     closest_ecd_pcent = closest_ecd/ecd_lookup *100
 
-                    if (closest_ecd_pcent<ecd_tollerance):
+                    if (closest_ecd_pcent<ecd_tolerance):
                         # print('closest_ecd_pcent', closest_ecd_pcent)
                         idx = (np.abs(choice_ecd-ecd_lookup)).argmin() # find the ecd that is closest
 
