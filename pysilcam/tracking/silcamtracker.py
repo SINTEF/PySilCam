@@ -36,7 +36,7 @@ class Tracker:
             self.files = [os.path.join(self.path, f)
                     for f in sorted(os.listdir(self.path)) if f.endswith('.bmp') or f.endswith('.silc') or f.endswith('.silc_mono')]
         print('  File list obtained:')
-        print(len(self.files), 'files found')
+        print('    ', len(self.files), 'files found')
 
         self.aqgen = self.generator_tracker()
 
@@ -85,7 +85,7 @@ class Tracker:
         tracks.index.name = 'UPID'
         UPID = -1
 
-        print('Processing....')
+        print('* Tracking....')
 
         img1, t1 = self.load_image()
 

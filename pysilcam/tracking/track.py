@@ -273,6 +273,38 @@ def load_and_process(tracksfile, PIX_SIZE,
     return data, tracks
 
 
+def track_process(configfile, datapath, offset=0):
+    settings = PySilcamSettings(configfile)
+
+    sctr = Tracker()
+    sctr.av_window = settings.Background.num_images
+    sctr.MIN_LENGTH = settings.Tracking.min_length
+    sctr.MIN_SPEED = settings.Tracking.min_speed
+    sctr.GOOD_FIT = settings.Tracking.good_fit
+    sctr.THRESHOLD = settings.Process.threshold
+    sctr.ecd_tolerance = settings.Tracking.ecd_tolerance
+    sctr.PIX_SIZE = settings.PostProcess.pix_size
+
+    sctr.path = datapath
+    dataset_name = os.path.split(datapath)[-1] + '-TRACKS'
+    sctr.DATAFILE = os.path.join(settings.General.datafile, dataset_name)
+    sctr.track_length_limit = settings.Tracking.track_length_limit
+    sctr.initialise()
+    sctr.files = sctr.files[offset:]
+
+    os.makedirs(settings.General.datafile, exist_ok=True)
+
+    # setup HDF5 file and metadata
+    print('* Setting up', sctr.DATAFILE + '.h5')
+    with h5py.File(sctr.DATAFILE + '.h5', "a") as HDF5File:
+        meta = HDF5File.require_group('Meta')
+        meta.attrs['Modified'] = str(pd.datetime.now())
+        settings_dict = {s: dict(settings.config.items(s)) for s in settings.config.sections()}
+        meta.attrs['Settings'] = str(settings_dict)
+
+    sctr.process()
+
+
 def silctrack():
     """
     does tracking
@@ -286,18 +318,6 @@ def silctrack():
     args = docopt(silctrack.__doc__)
 
     if args['process']:
-        settings = PySilcamSettings(args['<configfile>'])
-
-        sctr = Tracker()
-        sctr.av_window = settings.Background.num_images
-        sctr.MIN_LENGTH = settings.Tracking.min_length
-        sctr.MIN_SPEED = settings.Tracking.min_speed
-        sctr.GOOD_FIT = settings.Tracking.good_fit
-        sctr.THRESHOLD = settings.Process.threshold
-        sctr.ecd_tolerance = settings.Tracking.ecd_tolerance
-        sctr.PIX_SIZE = settings.PostProcess.pix_size
-
-        datapath = args['<datapath>']
         offset = args['--offset']
         if offset is not None:
             try:
@@ -308,23 +328,8 @@ def silctrack():
         else:
             offset = 0
 
-        sctr.path = datapath
-        dataset_name = os.path.split(datapath)[-1] + '-TRACKS'
-        sctr.DATAFILE = os.path.join(settings.General.datafile, dataset_name)
-        sctr.track_length_limit = settings.Tracking.track_length_limit
-        sctr.initialise()
-        sctr.files = sctr.files[offset:]
-
-        os.makedirs(settings.General.datafile, exist_ok=True)
-
-        # setup HDF5 file and metadata
-        with h5py.File(sctr.DATAFILE + '.h5', "a") as HDF5File:
-            meta = HDF5File.require_group('Meta')
-            meta.attrs['Modified'] = str(pd.datetime.now())
-            settings_dict = {s: dict(settings.config.items(s)) for s in settings.config.sections()}
-            meta.attrs['Settings'] = str(settings_dict)
-
-        sctr.process()
+        track_process(args['<configfile>'], args['<datapath>'],
+                    offset=offset)
 
     if args['post-process']:
         print('* Load and process')
