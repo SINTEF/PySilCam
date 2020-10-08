@@ -8,7 +8,7 @@ import ast
 from collections import namedtuple
 import logging
 import h5py
-from pysilcam.oilgas import PathLength
+from pysilcam.pathadjust import PathLength
 
 logger = logging.getLogger(__name__)
 
