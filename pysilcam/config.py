@@ -8,6 +8,7 @@ import ast
 from collections import namedtuple
 import logging
 import h5py
+from pysilcam.oilgas import PathLength
 
 logger = logging.getLogger(__name__)
 
@@ -168,7 +169,7 @@ def updatePathLength(settings, logger):
     '''
     try:
         logger.info('Updating path length')
-        pl = scog.PathLength(settings.PostProcess.com_port)
+        pl = PathLength(settings.PostProcess.com_port)
         pl.gap_to_mm(settings.PostProcess.path_length)
         pl.finish()
     except:
