@@ -4,7 +4,6 @@ import numpy as np
 import sys
 import glob
 import pandas as pd
-from scipy import interpolate
 import matplotlib.pyplot as plt
 from skimage.transform import rotate
 from pysilcam.postprocess import explode_contrast

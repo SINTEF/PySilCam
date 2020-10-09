@@ -93,14 +93,14 @@ class Tracker:
         i = 0
         while True:
 
-            try:
-                img2, t2 = self.load_image()
-            except: # pylint: disable=broad-except
-                break
-
             if not (i == 0):
                 img1 = np.copy(img2)
                 t1 = pd.to_datetime(str(np.copy(t2)))
+
+            try:
+                img2, t2 = self.load_image()
+            except:  # pylint: disable=broad-except
+                break
 
             i += 1
 
@@ -163,8 +163,7 @@ def imc2iml(imc, thresh=0.98):
     return iml
 
 
-def get_vect(img1, img2, PIX_SIZE, MIN_LENGTH, GOOD_FIT, thresh=0.98,
-             ecd_tolerance=0):
+def get_vect(img1, img2, PIX_SIZE, MIN_LENGTH, GOOD_FIT, thresh=0.98, ecd_tolerance=0):
     # label image 2
     iml2 = imc2iml(img2, thresh)
     imbw_out = np.copy(iml2)
@@ -360,7 +359,7 @@ def extract_continuous_tracks(tracks, max_starts=None):
 
     print('starts', len(starts))
 
-    if not max_starts is None:
+    if max_starts is not None:
         starts = starts[0:min([max_starts, len(starts)])]
 
     for s in tqdm(starts):
