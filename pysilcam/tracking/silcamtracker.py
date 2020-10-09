@@ -129,7 +129,8 @@ class Tracker:
                 tracks.loc[UPID,'width'] = width[p]
 
             tracks = match_last_pair(tracks)
-            tracks.to_hdf(DATAFILE + '.h5', 'Tracking/data', mode='r+')
+            with pd.HDFStore(DATAFILE + '.h5', "a") as fh:
+                tracks.to_hdf(fh, 'Tracking/data', mode='r+')
 
         print('Processing done.')
 
@@ -138,7 +139,8 @@ class Tracker:
                                          track_length_limit=track_length_limit,
                                          max_starts=None)
 
-        continuous_tracks.to_hdf(DATAFILE + '.h5', 'Tracking/tracks', mode='r+')
+        with pd.HDFStore(DATAFILE + '.h5', "a") as fh:
+            continuous_tracks.to_hdf(fh, 'Tracking/tracks', mode='r+')
         print('Post-processing done.')
 
 
