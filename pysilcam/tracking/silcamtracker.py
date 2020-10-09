@@ -1,4 +1,3 @@
-# pylint: disable=E0722
 import os
 import numpy as np
 from skimage.feature import match_template

@@ -1,4 +1,3 @@
-# pylint: disable=E722
 from multiprocessing import Process, Queue
 import matplotlib.pyplot as plt
 import os

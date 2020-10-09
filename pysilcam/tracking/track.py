@@ -1,4 +1,3 @@
-# pylint: disable=E0722
 from docopt import docopt
 import pysilcam.tracking.silcamtracker as sctracker
 import numpy as np
