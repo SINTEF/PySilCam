@@ -101,8 +101,7 @@ class Tracker:
 
             try:
                 img2, t2 = self.load_image()
-            except Exception as error:
-                print('')
+            except Exception:
                 break
 
             i += 1
