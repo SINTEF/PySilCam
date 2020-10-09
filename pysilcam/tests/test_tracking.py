@@ -6,6 +6,8 @@ import unittest
 
 
 ROOTPATH = os.environ.get('UNITTEST_DATA_PATH', None)
+
+
 @unittest.skipIf((ROOTPATH is None),
                  "test path not accessible")
 def test_track_process():
@@ -32,9 +34,8 @@ def test_track_process():
 
         settings = PySilcamSettings(conf_file_out)
 
-        data, tracks = sctr.load_and_process(tracksfile,
-                                        settings.PostProcess.pix_size,
-                                        track_length_limit=settings.Tracking.track_length_limit)
+        data, tracks = sctr.load_and_process(tracksfile, settings.PostProcess.pix_size,
+                                             track_length_limit=settings.Tracking.track_length_limit)
 
         print('    data', len(data))
         print('    tracks', len(tracks))

@@ -1,5 +1,5 @@
 from docopt import docopt
-from pysilcam.tracking.silcamtracker import *
+import pysilcam.tracking.silcamtracker as sctracker
 import numpy as np
 import sys
 import glob
@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 from skimage.transform import rotate
 from pysilcam.postprocess import explode_contrast
 from pysilcam.config import PySilcamSettings, settings_from_h5
+import os
+import h5py
 
 
 def make_output_path(datapath):
@@ -61,7 +63,7 @@ def im_from_timestamp(timestamp, rawdatapath):
     searchfilename = timestamp.strftime('D%Y%m%dT%H%M%S.%f')
     hits = glob.glob(os.path.join(rawdatapath, searchfilename + '*'))
     imagename = hits[0]
-    im = silcam_load(imagename)
+    im = sctracker.silcam_load(imagename)
     return im
 
 
@@ -269,7 +271,7 @@ def plot_single(datapath):
 def load_and_process(tracksfile, PIX_SIZE,
                      minlength=0, maxlength=1e6, track_length_limit=15):
     data = pd.read_hdf(tracksfile, 'Tracking/data')
-    tracks = post_process(data, PIX_SIZE,
+    tracks = sctracker.post_process(data, PIX_SIZE,
                           track_length_limit=track_length_limit,
                           minlength=minlength, maxlength=maxlength)
     return data, tracks
@@ -290,7 +292,7 @@ def track_process(configfile, datapath, offset=0):
     '''
     settings = PySilcamSettings(configfile)
 
-    sctr = Tracker()
+    sctr = sctracker.Tracker()
     sctr.av_window = settings.Background.num_images
     sctr.MIN_LENGTH = settings.Tracking.min_length
     sctr.MIN_SPEED = settings.Tracking.min_speed
@@ -382,7 +384,7 @@ def silctrack():
         with pd.HDFStore(args['<tracksfile>']) as fh:
             tracks.to_hdf(fh, 'Tracking/tracks', mode='r+')
 
-        unfiltered_tracks = extract_continuous_tracks(data)
+        unfiltered_tracks = sctracker.extract_continuous_tracks(data)
         with pd.HDFStore(args['<tracksfile>']) as fh:
             unfiltered_tracks.to_hdf(fh, 'Tracking/unfiltered_tracks', mode='r+')
 
@@ -394,7 +396,7 @@ def silctrack():
             if not checkgroup(args['<tracksfile>'], 'Tracking/unfiltered_tracks'):
                 print('* Extracting unfiltered tracks')
                 data = pd.read_hdf(args['<tracksfile>'], 'Tracking/data')
-                unfiltered_tracks = extract_continuous_tracks(data)
+                unfiltered_tracks = sctracker.extract_continuous_tracks(data)
                 with pd.HDFStore(args['<tracksfile>']) as fh:
                     unfiltered_tracks.to_hdf(fh, 'Tracking/unfiltered_tracks', mode='r+')
                 print('  OK.')

@@ -245,8 +245,7 @@ def annotate(datadir, filename):
 
 
 def silcview(datadir):
-    files = [os.path.join(datadir, f) for f in
-            sorted(os.listdir(datadir))
+    files = [os.path.join(datadir, f) for f in sorted(os.listdir(datadir))
             if f.endswith('.silc') or f.endswith('.bmp') or f.endswith('.silc_mono')]
     if len(files) == 0:
         return
