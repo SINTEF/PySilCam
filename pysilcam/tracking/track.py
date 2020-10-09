@@ -14,18 +14,18 @@ from pysilcam.config import PySilcamSettings, settings_from_h5
 def make_output_path(datapath):
     dataset_name = os.path.split(datapath)[1]
     outputpath = os.path.join(datapath, ('../output_' + dataset_name))
-    os.makedirs(outputpath,exist_ok=True)
+    os.makedirs(outputpath, exist_ok=True)
     return outputpath
 
 
 def plot_boxplot(dataset_names, tracks, PIX_SIZE, figurename):
-    ps = np.arange(0,len(dataset_names))
+    ps = np.arange(0, len(dataset_names))
     ls = dataset_names
 
-    f, a = plt.subplots(3,1,figsize=(6,12))
+    f, a = plt.subplots(3, 1, figsize=(6, 12))
 
     plt.sca(a[0])
-    box_data = [tracks[dataset_names[i]]['width']/
+    box_data = [tracks[dataset_names[i]]['width'] /
                 tracks[dataset_names[i]]['length']
                 for i in range(len(dataset_names))]
     plt.boxplot(box_data, positions=ps, labels=ls)
@@ -35,7 +35,7 @@ def plot_boxplot(dataset_names, tracks, PIX_SIZE, figurename):
     plt.xticks(rotation=45, horizontalalignment='left')
 
     plt.sca(a[1])
-    box_data = [tracks[dataset_names[i]]['length']*PIX_SIZE/1000
+    box_data = [tracks[dataset_names[i]]['length'] * PIX_SIZE / 1000
                 for i in range(len(dataset_names))]
     plt.boxplot(box_data, positions=ps, labels=ls)
     plt.ylabel('Maxjor Axis Length [mm]')
@@ -43,7 +43,7 @@ def plot_boxplot(dataset_names, tracks, PIX_SIZE, figurename):
     plt.ylim(0, 12)
 
     plt.sca(a[2])
-    box_data = [tracks[dataset_names[i]]['S_cms']*10
+    box_data = [tracks[dataset_names[i]]['S_cms'] * 10
                 for i in range(len(dataset_names))]
 
     plt.boxplot(box_data, positions=ps, labels=ls)
@@ -53,7 +53,7 @@ def plot_boxplot(dataset_names, tracks, PIX_SIZE, figurename):
 
     figurename = os.path.join(figurename + '.png')
     print('  saving:', figurename)
-    plt.savefig(figurename,dpi=600, bbox_inches='tight')
+    plt.savefig(figurename, dpi=600, bbox_inches='tight')
     print('  saved')
 
 
@@ -132,9 +132,10 @@ def make_output_files_for_giffing(data, rawdatapath, outputdir, PIX_SIZE, track_
             if n_tracks > track_length_limit:
                 plot_color = 'g-'
 
-                plt.text(liney[0], linex[0], (p + '\n{:0.2f}mm {:0.2f}mm/s'.format(this_particle['length'].values[0] * PIX_SIZE / 1000,
-                                                                         speed * 10)),
-                        fontsize=4, color='g')
+                plt.text(liney[0], linex[0],
+                         (p + '\n{:0.2f}mm {:0.2f}mm/s'.format(this_particle['length'].values[0] * PIX_SIZE / 1000,
+                                                               speed * 10)),
+                         fontsize=4, color='g')
 
             plt.plot(liney, linex, plot_color, linewidth=1)
 
@@ -154,14 +155,14 @@ def calculate_speed(x_arr, x_dep, y_arr, y_dep, t_arr, t_dep, PIX_SIZE):
     dt = pd.Series(np.abs(t_arr - t_dep)).dt.total_seconds()
     dt = dt.values
 
-    Y_mm = Y*PIX_SIZE*1e-3
-    X_mm = X*PIX_SIZE*1e-3
+    Y_mm = Y * PIX_SIZE * 1e-3
+    X_mm = X * PIX_SIZE * 1e-3
     dY_mm = np.diff(Y_mm, axis=0)
     dX_mm = np.diff(X_mm, axis=0)
-    dD_mm = np.sqrt(dY_mm**2 + dX_mm**2)
+    dD_mm = np.sqrt(dY_mm ** 2 + dX_mm ** 2)
     dD_m = dD_mm / 1000
-    S_ms = dD_m/dt # speed in m/s
-    S_cms = S_ms * 100 # speed in cm/s
+    S_ms = dD_m / dt  # speed in m/s
+    S_cms = S_ms * 100  # speed in cm/s
 
     return S_cms[0]
 
@@ -185,37 +186,38 @@ def checkgroup(h5filename, groupstr):
 def subsample_files(datapath, approx_files=2000, offset=int(0)):
     print('Subsampling files....')
 
-    files = [os.path.join(datapath, f) for f in sorted(os.listdir(datapath)) if f.endswith('.bmp') or f.endswith('.silc')
-            or f.endswith('.silc_mono')]
+    files = [os.path.join(datapath, f) for f in sorted(os.listdir(datapath)) if
+             f.endswith('.bmp') or f.endswith('.silc')
+             or f.endswith('.silc_mono')]
     files = files[int(offset):]
 
     try:
-        times = [f.replace(datapath + '/D','').replace('.bmp','') for f in files]
+        times = [f.replace(datapath + '/D', '').replace('.bmp', '') for f in files]
         times = pd.to_datetime(times)
     except:
         try:
-            times = [f.replace(datapath + '/D','').replace('.silc','') for f in files]
+            times = [f.replace(datapath + '/D', '').replace('.silc', '') for f in files]
             times = pd.to_datetime(times)
         except:
             try:
-                times = [f.replace(datapath + '/D','').replace('.silc_mono','') for f in files]
+                times = [f.replace(datapath + '/D', '').replace('.silc_mono', '') for f in files]
                 times = pd.to_datetime(times)
             except:
                 pass
 
-
     t1 = times[0]
 
-    dt = np.abs(times-t1)
+    dt = np.abs(times - t1)
 
-    secs = (dt.components.hours*3600) + (dt.components.minutes*60) + dt.components.seconds + (dt.components.milliseconds / 1000)
+    secs = (dt.components.hours * 3600) + (dt.components.minutes * 60) + dt.components.seconds + (
+            dt.components.milliseconds / 1000)
     image_number = np.arange(0, len(secs))
 
-    base=10
-    start=0
-    stop=max(secs)
-    sample_secs = np.logspace(start, np.log(stop)/np.log(base), num=approx_files, base=base)
-    sample_secs = sample_secs[sample_secs<max(secs)]
+    base = 10
+    start = 0
+    stop = max(secs)
+    sample_secs = np.logspace(start, np.log(stop) / np.log(base), num=approx_files, base=base)
+    sample_secs = sample_secs[sample_secs < max(secs)]
     f = interpolate.interp1d(secs, image_number, kind='nearest')
     sample_idx = f(sample_secs)
     sample_idx_ = []
@@ -228,7 +230,7 @@ def subsample_files(datapath, approx_files=2000, offset=int(0)):
     files = np.array(np.copy(files))
     resampled_files = sorted(list(files[sample_idx]))
 
-    print('  ', str(len(resampled_files)) ,'files from', str(len(files)))
+    print('  ', str(len(resampled_files)), 'files from', str(len(files)))
 
     return resampled_files
 
@@ -241,22 +243,22 @@ def plot_single(datapath):
     data = pd.read_csv(csv_file)
     print(data.columns)
 
-    f, a = plt.subplots(2,2,figsize=(12,12))
+    f, a = plt.subplots(2, 2, figsize=(12, 12))
 
-    plt.sca(a[0,0])
+    plt.sca(a[0, 0])
     plt.plot(pd.to_datetime(data['Time']), data['ECD [mm]'], '.', color='0.8', alpha=0.1)
     plt.ylabel('ECD [mm]')
 
-    plt.sca(a[1,0])
+    plt.sca(a[1, 0])
     plt.plot(pd.to_datetime(data['Time']), data['Speed [cm/s]'], '.', color='0.8', alpha=0.1)
     plt.ylabel('Speed [cm/s]')
 
-    plt.sca(a[0,1])
+    plt.sca(a[0, 1])
     plt.plot(data['ECD [mm]'], data['Ws [cm/s]'], '.', color='0.8', alpha=0.1)
     plt.xlabel('ECD [mm]')
     plt.ylabel('Ws [cm/s]')
 
-    plt.sca(a[1,1])
+    plt.sca(a[1, 1])
     plt.plot(data['ECD [mm]'], data['Speed [cm/s]'], '.', color='0.8', alpha=0.1)
     plt.xlabel('ECD [mm]')
     plt.ylabel('Speed [cm/s]')
@@ -266,9 +268,9 @@ def plot_single(datapath):
 
 def load_and_process(tracksfile, PIX_SIZE,
                      minlength=0, maxlength=1e6, track_length_limit=15):
-    data = pd.read_hdf(tracksfile,'Tracking/data')
+    data = pd.read_hdf(tracksfile, 'Tracking/data')
     tracks = post_process(data, PIX_SIZE,
-            track_length_limit=track_length_limit,
+                          track_length_limit=track_length_limit,
                           minlength=minlength, maxlength=maxlength)
     return data, tracks
 
@@ -315,6 +317,7 @@ def track_process(configfile, datapath, offset=0):
         meta.attrs['Settings'] = str(settings_dict)
 
     sctr.process()
+
 
 def make_boxplot(tracksfile):
     '''
@@ -366,7 +369,7 @@ def silctrack():
             offset = 0
 
         track_process(args['<configfile>'], args['<datapath>'],
-                    offset=offset)
+                      offset=offset)
 
     if args['post-process']:
         print('* Load and process')
@@ -403,7 +406,7 @@ def silctrack():
 
             make_output_files_for_giffing(unfiltered_tracks, rawdatapath, outputdir,
                                           settings.PostProcess.pix_size,
-                                          track_length_limit = 5)
+                                          track_length_limit=5)
             print('* output files finished.')
             print('use ''convert -delay 12 -loop 0 *.png output.gif'' to make a gif')
 
