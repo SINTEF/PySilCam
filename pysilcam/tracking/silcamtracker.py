@@ -93,14 +93,14 @@ class Tracker:
         i = 0
         while True:
 
+            try:
+                img2, t2 = self.load_image()
+            except: # pylint: disable=broad-except
+                break
+
             if not (i == 0):
                 img1 = np.copy(img2)
                 t1 = pd.to_datetime(str(np.copy(t2)))
-
-            try:
-                img2, t2 = self.load_image()
-            except:
-                break
 
             i += 1
 

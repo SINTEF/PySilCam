@@ -29,7 +29,7 @@ def silcam_load(filename):
         img_mono = np.load(filename, allow_pickle=False)
         r, c = np.shape(img_mono)
         img0 = np.zeros([r, c, 3], dtype=np.uint8)
-        img0[:,:, 0] = img_mono
+        img0[:, :, 0] = img_mono
         img0[:, :, 1] = img_mono
         img0[:, :, 2] = img_mono
     else:

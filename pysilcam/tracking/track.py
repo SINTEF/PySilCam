@@ -185,58 +185,6 @@ def checkgroup(h5filename, groupstr):
     return groupstr in groups
 
 
-def subsample_files(datapath, approx_files=2000, offset=int(0)):
-    print('Subsampling files....')
-
-    files = [os.path.join(datapath, f) for f in sorted(os.listdir(datapath)) if
-             f.endswith('.bmp') or f.endswith('.silc')
-             or f.endswith('.silc_mono')]
-    files = files[int(offset):]
-
-    try:
-        times = [f.replace(datapath + '/D', '').replace('.bmp', '') for f in files]
-        times = pd.to_datetime(times)
-    except:
-        try:
-            times = [f.replace(datapath + '/D', '').replace('.silc', '') for f in files]
-            times = pd.to_datetime(times)
-        except:
-            try:
-                times = [f.replace(datapath + '/D', '').replace('.silc_mono', '') for f in files]
-                times = pd.to_datetime(times)
-            except:
-                pass
-
-    t1 = times[0]
-
-    dt = np.abs(times - t1)
-
-    secs = (dt.components.hours * 3600) + (dt.components.minutes * 60) + dt.components.seconds + (
-            dt.components.milliseconds / 1000)
-    image_number = np.arange(0, len(secs))
-
-    base = 10
-    start = 0
-    stop = max(secs)
-    sample_secs = np.logspace(start, np.log(stop) / np.log(base), num=approx_files, base=base)
-    sample_secs = sample_secs[sample_secs < max(secs)]
-    f = interpolate.interp1d(secs, image_number, kind='nearest')
-    sample_idx = f(sample_secs)
-    sample_idx_ = []
-    for i in sample_idx:
-        sample_idx_.append(int(i))
-    sample_idx = np.unique(sample_idx_)
-
-    len(sample_idx)
-
-    files = np.array(np.copy(files))
-    resampled_files = sorted(list(files[sample_idx]))
-
-    print('  ', str(len(resampled_files)), 'files from', str(len(files)))
-
-    return resampled_files
-
-
 def plot_single(datapath):
     outputpath = make_output_path(datapath)
     csv_file = (outputpath + '.csv')
@@ -271,9 +219,8 @@ def plot_single(datapath):
 def load_and_process(tracksfile, PIX_SIZE,
                      minlength=0, maxlength=1e6, track_length_limit=15):
     data = pd.read_hdf(tracksfile, 'Tracking/data')
-    tracks = sctracker.post_process(data, PIX_SIZE,
-                          track_length_limit=track_length_limit,
-                          minlength=minlength, maxlength=maxlength)
+    tracks = sctracker.post_process(data, PIX_SIZE, track_length_limit=track_length_limit, minlength=minlength,
+                                    maxlength=maxlength)
     return data, tracks
 
 
