@@ -89,6 +89,8 @@ class Tracker:
         print('* Tracking....')
 
         img1, t1 = self.load_image()
+        img2 = []
+        t2 = []
 
         i = 0
         while True:
@@ -99,7 +101,7 @@ class Tracker:
 
             try:
                 img2, t2 = self.load_image()
-            except:  # pylint: disable=broad-except
+            except:  # pylint: disable=bare-except
                 break
 
             i += 1

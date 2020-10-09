@@ -18,7 +18,7 @@ import pygame.font
 def get_data(self):
     try:
         rts = self.q.get(timeout=0.1)
-    except:  # pylint: disable=broad-except
+    except:  # pylint: disable=bare-except
         rts = None
     return rts
 
