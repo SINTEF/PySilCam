@@ -1,3 +1,4 @@
+# pylint: disable=E0722
 from multiprocessing import Process, Queue
 import matplotlib.pyplot as plt
 import os
@@ -18,7 +19,7 @@ import pygame.font
 def get_data(self):
     try:
         rts = self.q.get(timeout=0.1)
-    except:  # pylint: disable=bare-except
+    except:
         rts = None
     return rts
 
