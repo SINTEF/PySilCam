@@ -1,3 +1,4 @@
+# pylint: disable=E0722
 from docopt import docopt
 import pysilcam.tracking.silcamtracker as sctracker
 import numpy as np
@@ -93,7 +94,7 @@ def make_output_files_for_giffing(data, rawdatapath, outputdir, PIX_SIZE, track_
         try:
             im = im_from_timestamp(pd.to_datetime(timestamp), rawdatapath)
             im = np.uint8(np.min(im, axis=2))
-        except:  # pylint: disable=bare-except
+        except:
             print('could not load image from:', str(tmptracks.iloc[0]['t2']))
             continue
 
