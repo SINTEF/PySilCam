@@ -18,7 +18,7 @@ def make_output_path(datapath):
     return outputpath
 
 
-def make_boxplot(dataset_names, tracks, PIX_SIZE, figurename):
+def plot_boxplot(dataset_names, tracks, PIX_SIZE, figurename):
     ps = np.arange(0,len(dataset_names))
     ls = dataset_names
 
@@ -274,6 +274,18 @@ def load_and_process(tracksfile, PIX_SIZE,
 
 
 def track_process(configfile, datapath, offset=0):
+    '''
+    This takes a silcam config file (and uses information within the [Tracking] section to track particles in images in
+    datapath. This will produce a -TRACKS.h5 file in the [General]datafile location (in a similar manner to normal
+    silcam processing).
+
+    Functions like pysilcam.tracking.track.make_boxplot can make plots with these -TRACK.h5 files.
+
+    :param configfile:
+    :param datapath:
+    :param offset:
+    :return:
+    '''
     settings = PySilcamSettings(configfile)
 
     sctr = Tracker()
@@ -303,6 +315,31 @@ def track_process(configfile, datapath, offset=0):
         meta.attrs['Settings'] = str(settings_dict)
 
     sctr.process()
+
+def make_boxplot(tracksfile):
+    '''
+    given the input tracksfile (-TRACKs.h5), this function will look for all the other -TRACKS.h5 files in the same
+    folder and use this to create summary boxplots of tracked data, which is saved to the General.datafile location
+    specified within the settings contained in the last -TRACKS.h5 file.
+
+    :param tracksfile:
+    :return:
+    '''
+    h5filedir = os.path.split(tracksfile)[0]
+    h5file_list = glob.glob(os.path.join(h5filedir, '*-TRACKS.h5'))
+    dataset_names = [os.path.split(k)[-1].replace('-TRACKS.h5', '') for k in h5file_list]
+
+    tracks = dict()
+    print('* Loading data:')
+    for f, k in zip(h5file_list, dataset_names):
+        print('  ', f)
+        tracks[k] = pd.read_hdf(f, 'Tracking/tracks')
+
+    settings = settings_from_h5(f)
+
+    fig_name = tracksfile.replace('-TRACKS.h5', '-boxplot')
+    plot_boxplot(dataset_names, tracks, settings.PostProcess.pix_size, fig_name)
+    print('* boxplotting finished.')
 
 
 def silctrack():
@@ -367,25 +404,11 @@ def silctrack():
             make_output_files_for_giffing(unfiltered_tracks, rawdatapath, outputdir,
                                           settings.PostProcess.pix_size,
                                           track_length_limit = 5)
+            print('* output files finished.')
+            print('use ''convert -delay 12 -loop 0 *.png output.gif'' to make a gif')
 
         if args['--boxplot']:
-            print('unfinished code')
-            return
-            # @todo This should look for a bunch of h5 files in a given directory and use these to make a dictionary of
-            #       tracks for the boxplotting
-            return
-            # do some glob search for h5 files
+            tracksfile = args['<tracksfile>']
+            make_boxplot(tracksfile)
 
-            # loop trough tracks files and add them to a dict
-            data = dict()
-            tracks = dict()
-            print('* Loading', tracksfile)
-            tracks = pd.read_hdf(tracksfile, 'Tracking/tracks')
-            print('  OK.')
-            dataset_names = list(tracks)
-            print('* Creating boxplot from:')
-            print(dataset_names)
-            print('WAITING FOR INPUT BEFORE PROCEEDING')
-            input()
-            make_boxplot(dataset_names, tracks, sctr.PIX_SIZE,
-                         '/mnt/nasdrive/Miljoteknologi/PlasticSettling2020/proc/boxplot')
+        print('* plotting finished.')

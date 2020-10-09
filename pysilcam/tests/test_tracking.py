@@ -39,4 +39,8 @@ def test_track_process():
         print('    data', len(data))
         print('    tracks', len(tracks))
 
+        print('* testing boxplotting from tracked data')
+        sctr.make_boxplot(tracksfile)
+        print('  boxplotting done')
+
         print('* test_track_process complete')
