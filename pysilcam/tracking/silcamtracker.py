@@ -294,7 +294,7 @@ def find_particle_idx(cross_correlation_threshold, roi, search_roi, ecd_toleranc
     :return:
     '''
     # use a Fast Normalized Cross-Correlation
-    cross_correlation = match_template(search_roi>0, roi)
+    cross_correlation = match_template(search_roi > 0, roi)
 
     idx = 0
     particle_found = False
