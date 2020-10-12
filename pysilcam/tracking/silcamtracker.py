@@ -204,16 +204,7 @@ def get_vect(img1, img2, PIX_SIZE, MIN_LENGTH, cross_correlation_threshold, thre
 
         for search_iteration in range(5):
 
-            bbexp = 10 * (search_iteration + 1)  # expansion by this many pixels in all directions
-
-            # establish a search box within image 2 by expanding the particle
-            # bounding box from image 1
-            r, c = np.shape(img2)
-            search_box = np.zeros_like(bbox)
-            search_box[0] = max(0, bbox[0] - bbexp)
-            search_box[1] = max(0, bbox[1] - bbexp)
-            search_box[2] = min(r, bbox[2] + bbexp)
-            search_box[3] = min(c, bbox[3] + bbexp)
+            search_box = get_search_box(bbox, img2, search_iteration)
 
             # extract the roi in which we expect to find a particle
             search_roi = iml2[search_box[0]:search_box[2], search_box[1]:search_box[3]]
@@ -246,6 +237,19 @@ def get_vect(img1, img2, PIX_SIZE, MIN_LENGTH, cross_correlation_threshold, thre
     X = [x1, x]  # horizontal vector
     Y = [y1, y]  # vertical vector
     return X, Y, ecd, length, width, imbw_out
+
+
+def get_search_box(bbox, img2, search_iteration):
+    bbexp = 10 * (search_iteration + 1)  # expansion by this many pixels in all directions
+    # establish a search box within image 2 by expanding the particle
+    # bounding box from image 1
+    r, c = np.shape(img2)
+    search_box = np.zeros_like(bbox)
+    search_box[0] = max(0, bbox[0] - bbexp)
+    search_box[1] = max(0, bbox[1] - bbexp)
+    search_box[2] = min(r, bbox[2] + bbexp)
+    search_box[3] = min(c, bbox[3] + bbexp)
+    return search_box
 
 
 def get_idx_from_search_box(ecd_tolerance, ecd_lookup, search_roi):
@@ -306,14 +310,6 @@ def find_particle_idx(cross_correlation_threshold, roi, search_roi, ecd_toleranc
         ij = np.unravel_index(np.argmax(cross_correlation), cross_correlation.shape)
         x_, y_ = ij[::-1]
         idx = int(search_roi[int(y_), int(x_)])
-
-        # convert position from inside the bounding box to a position within
-        # the original image
-        #x_ += ((bbox[3] - bbox[1]) / 2)
-        #y_ += ((bbox[2] - bbox[0]) / 2)
-        # get the labelled particle number at this location
-        #idx = iml2[int(y_ + search_box[0]), int(x_ + search_box[1])]
-        # idx = int(idx)  # make sure it is int
 
         # if there is no particle here, then we need more analysis
         # this is because cross_correlation was good but there is no particle
