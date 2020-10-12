@@ -23,7 +23,7 @@ class Tracker:
         self.THRESHOLD = 0.98
         self.MIN_LENGTH = 500  # microns
         self.MIN_SPEED = 0.01  # cm/s
-        self.GOOD_FIT = 0.2
+        self.cross_correlation_threshold = 0.2
         self.PIX_SIZE = 27.532679738562095
         self.ecd_tolerance = 0
         self.path = ''
@@ -66,7 +66,7 @@ class Tracker:
     def process(self):
         PIX_SIZE = self.PIX_SIZE
         MIN_LENGTH = self.MIN_LENGTH
-        GOOD_FIT = self.GOOD_FIT
+        GOOD_FIT = self.cross_correlation_threshold
         DATAFILE = self.DATAFILE
         track_length_limit = self.track_length_limit
 
@@ -89,15 +89,9 @@ class Tracker:
         print('* Tracking....')
 
         img1, t1 = self.load_image()
-        img2 = []
-        t2 = []
 
         i = 0
         while True:
-
-            if not (i == 0):
-                img1 = np.copy(img2)
-                t1 = pd.to_datetime(str(np.copy(t2)))
 
             try:
                 img2, t2 = self.load_image()
@@ -135,7 +129,9 @@ class Tracker:
             with pd.HDFStore(DATAFILE + '.h5', "a") as fh:
                 tracks.to_hdf(fh, 'Tracking/data', mode='r+')
 
-        print('Processing done.')
+            # get ready for next iteration
+            img1 = np.copy(img2)
+            t1 = pd.to_datetime(str(np.copy(t2)))
 
         print('* Starting post-process')
         continuous_tracks = post_process(tracks, PIX_SIZE,
@@ -165,7 +161,7 @@ def imc2iml(imc, thresh=0.98):
     return iml
 
 
-def get_vect(img1, img2, PIX_SIZE, MIN_LENGTH, GOOD_FIT, thresh=0.98, ecd_tolerance=0):
+def get_vect(img1, img2, PIX_SIZE, MIN_LENGTH, cross_correlation_threshold, thresh=0.98, ecd_tolerance=0):
     # label image 2
     iml2 = imc2iml(img2, thresh)
     imbw_out = np.copy(iml2)
@@ -206,9 +202,9 @@ def get_vect(img1, img2, PIX_SIZE, MIN_LENGTH, GOOD_FIT, thresh=0.98, ecd_tolera
         roi = iml[bbox[0]:bbox[2], bbox[1]:bbox[3]]  # roi of image 1
         roi = roi > 0
 
-        OK = False
-        for c in range(5):
-            bbexp = 10 * (c + 1)  # expansion by this many pixels in all directions
+        for search_iteration in range(5):
+
+            bbexp = 10 * (search_iteration + 1)  # expansion by this many pixels in all directions
 
             # establish a search box within image 2 by expanding the particle
             # bounding box from image 1
@@ -223,91 +219,92 @@ def get_vect(img1, img2, PIX_SIZE, MIN_LENGTH, GOOD_FIT, thresh=0.98, ecd_tolera
             search_roi = iml2[search_box[0]:search_box[2], search_box[1]:search_box[3]]
             search_roi = search_roi > 0
 
-            # use a Fast Normalized Cross-Correlation
-            result = match_template(search_roi, roi)
-            if np.max(result) < GOOD_FIT:
-                # if there is not a good enough match, then continue by
-                # expanding the search box until the number of search iterations
-                # run out, then forget searching
-                continue
+            idx, particle_found = find_particle_idx(cross_correlation_threshold, bbox, iml2, roi, search_box,
+                                                    search_roi, ecd_tolerance, el.equivalent_diameter)
 
-            # look for a peak in the cross-correlation regardless of how good it is
-            # and extract the location of the maximum
-            ij = np.unravel_index(np.argmax(result), result.shape)
-            x_, y_ = ij[::-1]
+            # if the particle is found, then stop searching
+            if particle_found:
+                # if there is a particle here, use its centroid location for the vector
+                # calculation
+                cr2 = props2[int(idx - 1)].centroid  # subtract 1 from idx because of zero-indexing
 
-            # convert position from inside the bounding box to a position within
-            # the original image
-            x_ += ((bbox[3] - bbox[1]) / 2)
-            y_ += ((bbox[2] - bbox[0]) / 2)
+                # remove this particle from future calculations
+                iml2[iml2 == int(idx)] = 0
 
-            # get the labelled particle number at this location
-            idx = iml2[int(y_ + search_box[0]), int(x_ + search_box[1])]
-            idx = int(idx)  # make sure it is int
+                x.append(cr2[1])  # col
+                y.append(cr2[0])  # row
 
-            # OK = True # I am not sure about this....?!
+                # and append the position of this particle from the image 1
+                y1.append(cr[0])  # row
+                x1.append(cr[1])  # col
 
-            # if there is no particle here, then we need more analysis
-            if idx == 0:
-                # get the labelled particles in the search box
-                search_iml2 = iml2[search_box[0]:search_box[2], search_box[1]:search_box[3]]
-                # and squash to an array of particle indicies from within the box
-                unp = np.unique(search_iml2)
-
-                # size the particles in the search_roi
-                if len(unp) > 1:  # len(unp) == 1 implies no particles
-                    props3 = regionprops(search_iml2, cache=True)
-                    ecd_lookup = el.equivalent_diameter
-
-                    # list all the choices of particle size within the search area
-                    choice_ecd = []
-                    for p3 in props3:
-                        choice_ecd.append(p3.equivalent_diameter)
-                    choice_ecd = np.array(choice_ecd)
-
-                    closest_ecd = np.min(np.abs(choice_ecd - ecd_lookup))
-                    closest_ecd_pcent = closest_ecd / ecd_lookup * 100
-
-                    if (closest_ecd_pcent < ecd_tolerance):
-                        # print('closest_ecd_pcent', closest_ecd_pcent)
-                        idx = (np.abs(choice_ecd - ecd_lookup)).argmin()  # find the ecd that is closest
-
-                        # get the labelled particle number at this location
-                        idx = int(unp[int(idx + 1)])
-                        OK = True
-                        break
-                    else:
-                        OK = False
-                else:  # if there are no particles in the search box then forget it
-                    continue
-            else:
-                OK = True
-
-        if not OK:
-            continue
-
-        # if there is a particle here, use its centroid location for the vector
-        # calculation
-        cr2 = props2[int(idx - 1)].centroid  # subtract 1 from idx because of zero-indexing
-
-        # remove this particle from future calculations
-        iml2[iml2 == int(idx)] = 0
-
-        x.append(cr2[1])  # col
-        y.append(cr2[0])  # row
-
-        # and append the position of this particle from the image 1
-        y1.append(cr[0])  # row
-        x1.append(cr[1])  # col
-
-        # if we get here then we also want the particle stats
-        ecd.append(el.equivalent_diameter)
-        length.append(el.major_axis_length)
-        width.append(el.minor_axis_length)
+                # if we get here then we also want the particle stats
+                ecd.append(el.equivalent_diameter)
+                length.append(el.major_axis_length)
+                width.append(el.minor_axis_length)
+                break
 
     X = [x1, x]  # horizontal vector
     Y = [y1, y]  # vertical vector
     return X, Y, ecd, length, width, imbw_out
+
+
+def get_idx_from_search_box(ecd_tolerance, ecd_lookup, iml2, search_box):
+    # we are still looking for a particle
+    particle_found = False
+    idx = 0
+
+    # get the labelled particles in the search box
+    search_iml2 = iml2[search_box[0]:search_box[2], search_box[1]:search_box[3]]
+    # and squash to an array of particle indicies from within the box
+    unp = np.unique(search_iml2)
+    # size the particles in the search_roi
+    if len(unp) > 1:  # len(unp) == 1 implies no particles
+        props = regionprops(search_iml2, cache=True)
+
+        # list all the choices of particle size within the search area
+        choice_ecd = np.array([p.equivalent_diameter for p in props])
+
+        # find the closest ecd
+        closest_ecd = np.min(np.abs(choice_ecd - ecd_lookup))
+        closest_ecd_pcent = closest_ecd / ecd_lookup * 100
+
+        if (closest_ecd_pcent < ecd_tolerance):
+            idx = (np.abs(choice_ecd - ecd_lookup)).argmin()  # find the ecd that is closest
+
+            # get the labelled particle number at this location
+            idx = int(unp[int(idx + 1)])
+            particle_found = True
+    return idx, particle_found
+
+
+def find_particle_idx(cross_correlation_threshold, bbox, iml2, roi, search_box, search_roi, ecd_tolerance, ecd_lookup):
+    # use a Fast Normalized Cross-Correlation
+    cross_correlation = match_template(search_roi, roi)
+
+    idx = 0
+    particle_found = False
+    if np.max(cross_correlation) > cross_correlation_threshold:
+        particle_found = True
+
+        # look for a peak in the cross-correlation regardless of how good it is
+        # and extract the location of the maximum
+        ij = np.unravel_index(np.argmax(cross_correlation), cross_correlation.shape)
+        x_, y_ = ij[::-1]
+        # convert position from inside the bounding box to a position within
+        # the original image
+        x_ += ((bbox[3] - bbox[1]) / 2)
+        y_ += ((bbox[2] - bbox[0]) / 2)
+        # get the labelled particle number at this location
+        idx = iml2[int(y_ + search_box[0]), int(x_ + search_box[1])]
+        idx = int(idx)  # make sure it is int
+
+        # if there is no particle here, then we need more analysis
+        # this is because cross_correlation was good but there is no particle
+        if idx == 0:
+            idx, particle_found = get_idx_from_search_box(ecd_tolerance, ecd_lookup, iml2, search_box)
+
+    return idx, particle_found
 
 
 def match_last_pair(data):
