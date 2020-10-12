@@ -217,10 +217,9 @@ def get_vect(img1, img2, PIX_SIZE, MIN_LENGTH, cross_correlation_threshold, thre
 
             # extract the roi in which we expect to find a particle
             search_roi = iml2[search_box[0]:search_box[2], search_box[1]:search_box[3]]
-            search_roi = search_roi > 0
 
-            idx, particle_found = find_particle_idx(cross_correlation_threshold, bbox, iml2, roi, search_box,
-                                                    search_roi, ecd_tolerance, el.equivalent_diameter)
+            idx, particle_found = find_particle_idx(cross_correlation_threshold, roi, search_roi, ecd_tolerance,
+                                                    el.equivalent_diameter)
 
             # if the particle is found, then stop searching
             if particle_found:
@@ -249,18 +248,23 @@ def get_vect(img1, img2, PIX_SIZE, MIN_LENGTH, cross_correlation_threshold, thre
     return X, Y, ecd, length, width, imbw_out
 
 
-def get_idx_from_search_box(ecd_tolerance, ecd_lookup, iml2, search_box):
+def get_idx_from_search_box(ecd_tolerance, ecd_lookup, search_roi):
+    '''
+
+    :param ecd_tolerance:
+    :param ecd_lookup:
+    :param search_roi:
+    :return:
+    '''
     # we are still looking for a particle
     particle_found = False
     idx = 0
 
-    # get the labelled particles in the search box
-    search_iml2 = iml2[search_box[0]:search_box[2], search_box[1]:search_box[3]]
     # and squash to an array of particle indicies from within the box
-    unp = np.unique(search_iml2)
+    unp = np.unique(search_roi)
     # size the particles in the search_roi
     if len(unp) > 1:  # len(unp) == 1 implies no particles
-        props = regionprops(search_iml2, cache=True)
+        props = regionprops(search_roi, cache=True)
 
         # list all the choices of particle size within the search area
         choice_ecd = np.array([p.equivalent_diameter for p in props])
@@ -278,9 +282,19 @@ def get_idx_from_search_box(ecd_tolerance, ecd_lookup, iml2, search_box):
     return idx, particle_found
 
 
-def find_particle_idx(cross_correlation_threshold, bbox, iml2, roi, search_box, search_roi, ecd_tolerance, ecd_lookup):
+def find_particle_idx(cross_correlation_threshold, roi, search_roi, ecd_tolerance, ecd_lookup):
+    '''
+
+    :param cross_correlation_threshold:
+    :param iml2:
+    :param roi:
+    :param search_roi:
+    :param ecd_tolerance:
+    :param ecd_lookup:
+    :return:
+    '''
     # use a Fast Normalized Cross-Correlation
-    cross_correlation = match_template(search_roi, roi)
+    cross_correlation = match_template(search_roi>0, roi)
 
     idx = 0
     particle_found = False
@@ -291,18 +305,20 @@ def find_particle_idx(cross_correlation_threshold, bbox, iml2, roi, search_box, 
         # and extract the location of the maximum
         ij = np.unravel_index(np.argmax(cross_correlation), cross_correlation.shape)
         x_, y_ = ij[::-1]
+        idx = int(search_roi[int(y_), int(x_)])
+
         # convert position from inside the bounding box to a position within
         # the original image
-        x_ += ((bbox[3] - bbox[1]) / 2)
-        y_ += ((bbox[2] - bbox[0]) / 2)
+        #x_ += ((bbox[3] - bbox[1]) / 2)
+        #y_ += ((bbox[2] - bbox[0]) / 2)
         # get the labelled particle number at this location
-        idx = iml2[int(y_ + search_box[0]), int(x_ + search_box[1])]
-        idx = int(idx)  # make sure it is int
+        #idx = iml2[int(y_ + search_box[0]), int(x_ + search_box[1])]
+        # idx = int(idx)  # make sure it is int
 
         # if there is no particle here, then we need more analysis
         # this is because cross_correlation was good but there is no particle
         if idx == 0:
-            idx, particle_found = get_idx_from_search_box(ecd_tolerance, ecd_lookup, iml2, search_box)
+            idx, particle_found = get_idx_from_search_box(ecd_tolerance, ecd_lookup, search_roi)
 
     return idx, particle_found
 
