@@ -21,12 +21,12 @@ from skimage.io import imsave
 import traceback
 
 '''
-module for processing SilCam data
+Module for processing SilCam data
 
 TODO: add tests for this module
 '''
 
-#Get module-level logger
+# Get module-level logger
 logger = logging.getLogger(__name__)
 
 
@@ -36,13 +36,14 @@ def image2blackwhite_accurate(imc, greythresh):
 
     Args:
         imc                         : background-corrected image
-        greythresh                  : threshold multiplier (greythresh is multiplied by 50th percentile of the image histogram)
+        greythresh                  : threshold multiplier (greythresh is multiplied by 50th percentile of the image
+                                      histogram)
 
     Returns:
         imbw                        : segmented image (binary image)
 
     '''
-    img = np.copy(imc) # create a copy of the input image (not sure why)
+    img = np.copy(imc)  # create a copy of the input image (not sure why)
 
     # obtain a semi-autimated treshold which can handle
     # some flicker in the illumination by tracking the 50th percentile of the
@@ -50,14 +51,13 @@ def image2blackwhite_accurate(imc, greythresh):
     thresh = np.uint8(greythresh * np.percentile(img, 50))
 
     # create a segmented image using the crude threshold
-    #imbw1 = np.invert(img > thresh)
     imbw1 = img < thresh
 
     # perform an adaptive historgram equalization to handle some
     # less-than-ideal lighting situations
     img_adapteq = skimage.exposure.equalize_adapthist(img,
-            clip_limit=(1-greythresh),
-            nbins=256)
+                                                      clip_limit=(1 - greythresh),
+                                                      nbins=256)
 
     # use the equalised image to estimate a second semi-automated threshold
     newthresh = np.percentile(img_adapteq, 0.75) * greythresh
@@ -78,7 +78,8 @@ def image2blackwhite_fast(imc, greythresh):
 
     Args:
         imc                         : background-corrected image
-        greythresh                  : threshold multiplier (greythresh is multiplied by 50th percentile of the image histogram)
+        greythresh                  : threshold multiplier (greythresh is multiplied by 50th percentile of the image
+                                      histogram)
 
     Returns:
         imbw                        : segmented image (binary image)
@@ -119,7 +120,7 @@ def clean_bw(imbw, min_area):
     return imbw
 
 
-def filter_bad_stats(stats,settings):
+def filter_bad_stats(stats, settings):
     ''' remove unacceptable particles from the stats
 
     Note that for oil and gas analysis, this filtering is handled by the functions in the pysilcam.oilgas module.
@@ -139,7 +140,7 @@ def filter_bad_stats(stats,settings):
 
     # remove particles that exceed the maximum dimention
     stats = stats[(stats['major_axis_length'] * settings.PostProcess.pix_size) <
-            settings.Process.max_length]
+                  settings.Process.max_length]
 
     return stats
 
@@ -162,7 +163,7 @@ def fancy_props(iml, imc, timestamp, settings, nnmodel, class_labels):
 
     region_properties = measure.regionprops(iml, cache=False, coordinates='xy')
     # build the stats and export to HDF5
-    stats = extract_particles(imc,timestamp,settings,nnmodel,class_labels, region_properties)
+    stats = extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_properties)
 
     return stats
 
@@ -177,7 +178,8 @@ def concentration_check(imbw, settings):
 
     Returns:
         sat_check                   : boolean on if the saturation is acceptable. True if the image is acceptable
-        saturation                  : percentage of maximum acceptable saturation defined in settings.Process.max_coverage
+        saturation                  : percentage of maximum acceptable saturation defined in
+                                      settings.Process.max_coverage
     '''
 
     # calcualte the area covered by particles in the binary image
@@ -230,7 +232,7 @@ def extract_roi(im, bbox):
     Returns:
         roi                 : image cropped to region of interest
     '''
-    roi = im[bbox[0]:bbox[2], bbox[1]:bbox[3]] # yep, that't it.
+    roi = im[bbox[0]:bbox[2], bbox[1]:bbox[3]]  # yep, that't it.
 
     return roi
 
@@ -250,9 +252,9 @@ def measure_particles(imbw, imc, settings, timestamp, nnmodel, class_labels):
     '''
     # check the converage of the image of particles is acceptable
     sat_check, saturation = concentration_check(imbw, settings)
-    if sat_check == False:
+    if (sat_check is False):
         logger.warning('....breached concentration limit! Skipping image.')
-        imbw *= 0 # this is not a good way to handle this condition
+        imbw *= 0  # this is not a good way to handle this condition
         # @todo handle situation when too many particles are found
 
     # label the segmented image
@@ -262,7 +264,7 @@ def measure_particles(imbw, imc, settings, timestamp, nnmodel, class_labels):
     # if there are too many particles then do no proceed with analysis
     if (iml.max() > settings.Process.max_particles):
         logger.warning('....that''s way too many particles! Skipping image.')
-        imbw *= 0 # this is not a good way to handle this condition
+        imbw *= 0  # this is not a good way to handle this condition
         # @todo handle situation when too many particles are found
 
     # calculate particle statistics
@@ -293,9 +295,9 @@ def statextract(imc, settings, timestamp, nnmodel, class_labels):
     img = np.uint8(np.min(imc, axis=2))
 
     if settings.Process.real_time_stats:
-        imbw = image2blackwhite_fast(img, settings.Process.threshold) # image2blackwhite_fast is less fancy but
+        imbw = image2blackwhite_fast(img, settings.Process.threshold)  # image2blackwhite_fast is less fancy but
     else:
-        imbw = image2blackwhite_accurate(img, settings.Process.threshold) # image2blackwhite_fast is less fancy but
+        imbw = image2blackwhite_accurate(img, settings.Process.threshold)  # image2blackwhite_fast is less fancy but
     # image2blackwhite_fast is faster than image2blackwhite_accurate but might cause problems when trying to
     # process images with bad lighting
 
@@ -315,6 +317,7 @@ def statextract(imc, settings, timestamp, nnmodel, class_labels):
 
     return stats, imbw, saturation
 
+
 def write_segmented_images(imbw, imc, settings, timestamp):
     '''writes binary images as bmp files to the same place as hdf5 files if loglevel is in DEBUG mode
     Useful for checking threshold and segmentation
@@ -326,14 +329,15 @@ def write_segmented_images(imbw, imc, settings, timestamp):
     '''
     if (settings.General.loglevel == 'DEBUG') and settings.ExportParticles.export_images:
         fname = os.path.join(settings.ExportParticles.outputpath, timestamp.strftime('D%Y%m%dT%H%M%S.%f-SEG.bmp'))
-        imbw_ = np.uint8(255*imbw)
+        imbw_ = np.uint8(255 * imbw)
         imsave(fname, imbw_)
         fname = os.path.join(settings.ExportParticles.outputpath, timestamp.strftime('D%Y%m%dT%H%M%S.%f-IMC.bmp'))
         imsave(fname, imc)
 
 
 def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_properties):
-    '''extracts the particles to build stats and export particle rois to HDF5 files writted to disc in the location of settings.ExportParticles.outputpath
+    '''extracts the particles to build stats and export particle rois to HDF5 files writted to disc in the location of
+       settings.ExportParticles.outputpath
 
     Args:
         imc                         : background-corrected image
@@ -341,7 +345,8 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
         settings                    : PySilCam settings
         nnmodel                     : loaded tensorflow model from silcam_classify
         class_labels                : lables of particle classes in tensorflow model
-        region_properties           : region properties object returned from regionprops (measure.regionprops(iml, cache=False))
+        region_properties           : region properties object returned from regionprops (measure.regionprops(iml,
+                                                                                                           cache=False))
 
     Returns:
         stats                       : (list of particle statistics for every particle, according to Partstats class)
@@ -352,8 +357,8 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
 
     # pre-allocation
     predictions = np.zeros((len(region_properties),
-         len(class_labels)),
-         dtype='float64')
+                            len(class_labels)),
+                           dtype='float64')
     predictions *= np.nan
 
     # obtain the original image filename from the timestamp
@@ -370,7 +375,8 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
         meta.attrs['Settings'] = str(settings_dict)
         meta.attrs['Timestamp'] = str(timestamp)
         meta.attrs['Raw image name'] = filename
-        #@todo include more useful information in this meta data, e.g. possibly raw image location and background stack file list.
+        # @todo include more useful information in this meta data, e.g. possibly raw image location and background
+        #  stack file list.
 
     # define the geometrical properties to be calculated from regionprops
     propnames = ['major_axis_length', 'minor_axis_length',
@@ -385,26 +391,27 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
         data[i, :] = [getattr(el, p) for p in propnames]
         bboxes[i, :] = el.bbox
 
-        # if operating in realtime mode, assume we only care about oil and gas and skip export of overly-derformed particles
-        if settings.Process.real_time_stats & (((data[i, 1]/data[i, 0])<0.3) | (data[i, 3]<0.95)):
+        # if operating in realtime mode, assume we only care about oil and gas and skip export of overly-derformed
+        # particles
+        if settings.Process.real_time_stats & (((data[i, 1] / data[i, 0]) < 0.3) | (data[i, 3] < 0.95)):
             continue
         # Find particles that match export criteria
-        if ((data[i, 0] > settings.ExportParticles.min_length) & #major_axis_length in pixels
-            (data[i, 1] > 2)): # minor length in pixels
+        if ((data[i, 0] > settings.ExportParticles.min_length) &  # major_axis_length in pixels
+                (data[i, 1] > 2)):  # minor length in pixels
 
             nb_extractable_part += 1
             # extract the region of interest from the corrected colour image
-            roi = extract_roi(imc,bboxes[i, :].astype(int))
+            roi = extract_roi(imc, bboxes[i, :].astype(int))
 
             # add the roi to the HDF5 file
             filenames[int(i)] = filename + '-PN' + str(i)
             if settings.ExportParticles.export_images:
-                dset = HDF5File.create_dataset('PN' + str(i), data = roi)
-                #@todo also include particle stats here too.
+                HDF5File.create_dataset('PN' + str(i), data=roi)
+                # @todo also include particle stats here too.
 
             # run a prediction on what type of particle this might be
             prediction = sccl.predict(roi, nnmodel)
-            predictions[int(i),:] = prediction[0]
+            predictions[int(i), :] = prediction[0]
 
     if settings.ExportParticles.export_images:
         # close the HDF5 file
@@ -422,8 +429,8 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
     logger.info('EXTRACTING {0} IMAGES from {1}'.format(nb_extractable_part, len(stats['major_axis_length'])))
 
     # add classification predictions to the particle statistics data
-    for n,c in enumerate(class_labels):
-       stats['probability_' + c] = predictions[:,n]
+    for n, c in enumerate(class_labels):
+        stats['probability_' + c] = predictions[:, n]
 
     # add the filenames of the HDF5 file and particle number tag to the
     # particle statistics data
@@ -442,7 +449,8 @@ def processImage(nnmodel, class_labels, image, settings, logger, gui):
         image  (tuple)                      :  tuple contianing (i, timestamp, imc)
                                                where i is an int referring to the image number
                                                timestamp is the image timestamp obtained from passing the filename
-                                               imc is the background-corrected image obtained using the backgrounder generator
+                                               imc is the background-corrected image obtained using the backgrounder
+                                               generator
         settings (PySilcamSettings)         :  Settings read from a .ini file
         logger (logger object)              :  logger object created using
                                                configure_logger()
@@ -504,7 +512,3 @@ def processImage(nnmodel, class_labels, image, settings, logger, gui):
         return None
 
     return stats_all
-
-
-if __name__=='__main__':
-    pass

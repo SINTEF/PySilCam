@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
-import os
 from pysilcam.__main__ import silcam_process
-import unittest
 from pysilcam.silcreport import silcam_report
 from pysilcam.config import load_config
 from pysilcam.postprocess import count_images_in_stats
-import pandas as pd
-import glob
 from pysilcam.config import PySilcamSettings
-
+import glob
+import os
+import unittest
+import pandas as pd
+import tempfile
 
 # Get user-defined path to unittest data folder
 ROOTPATH = os.environ.get('UNITTEST_DATA_PATH', None)
@@ -16,11 +16,48 @@ ROOTPATH = os.environ.get('UNITTEST_DATA_PATH', None)
 # Get user-defined tensorflow model path from environment variable
 MODEL_PATH = os.environ.get('SILCAM_MODEL_PATH', None)
 
-print('ROOTPATH',ROOTPATH)
-print('MODEL_PATH',MODEL_PATH)
+print('ROOTPATH', ROOTPATH)
+print('MODEL_PATH', MODEL_PATH)
+
 
 @unittest.skipIf((ROOTPATH is None),
-    "test path not accessible")
+                 "test path not accessible")
+def test_debug_files():
+    '''Testing that the debug images are created'''
+
+    # do this whole test using a temporary export directory
+    with tempfile.TemporaryDirectory() as tempdir:
+        print('tempdir:', tempdir, 'created')
+
+        conf_file = os.path.join(ROOTPATH, 'config.ini')
+        conf_file_out = os.path.join(ROOTPATH, 'config_generated.ini')
+        conf = load_config(conf_file)
+
+        data_file = os.path.join(ROOTPATH, 'STN04')
+        conf.set('General', 'loglevel', 'DEBUG')
+        conf.set('General', 'datafile', os.path.join(data_file, 'proc'))
+        conf.set('General', 'logfile', os.path.join(ROOTPATH, 'log.log'))
+        conf.set('ExportParticles', 'outputpath', tempdir)
+        if MODEL_PATH is not None:
+            conf.set('NNClassify', 'model_path', MODEL_PATH)
+        conf_file_hand = open(conf_file_out, 'w')
+        conf.write(conf_file_hand)
+        conf_file_hand.close()
+
+        num_test_ims = 5  # number of images to test
+
+        # call process function
+        silcam_process(conf_file_out, data_file, multiProcess=True, nbImages=num_test_ims)
+
+        imc_files = glob.glob(os.path.join(tempdir, '*-IMC*'))
+        assert len(imc_files) == num_test_ims, 'unexpected number of IMC files'
+
+        seg_files = glob.glob(os.path.join(tempdir, '*-SEG*'))
+        assert len(seg_files) == num_test_ims, 'unexpected number of SEG files'
+
+
+@unittest.skipIf((ROOTPATH is None),
+                 "test path not accessible")
 def test_output_files():
     '''Testing that the appropriate STATS.csv file is created'''
 
@@ -29,18 +66,20 @@ def test_output_files():
     conf = load_config(conf_file)
 
     data_file = os.path.join(ROOTPATH, 'STN04')
+    conf.set('General', 'loglevel', 'INFO')
     conf.set('General', 'datafile', os.path.join(data_file, 'proc'))
-    conf.set('General', 'logfile', os.path.join(ROOTPATH,'log.log'))
+    conf.set('General', 'logfile', os.path.join(ROOTPATH, 'log.log'))
     conf.set('ExportParticles', 'outputpath', os.path.join(data_file, 'export'))
     if MODEL_PATH is not None:
         conf.set('NNClassify', 'model_path', MODEL_PATH)
-    conf_file_hand = open(conf_file_out,'w')
+    conf_file_hand = open(conf_file_out, 'w')
     conf.write(conf_file_hand)
     conf_file_hand.close()
 
     stats_file = os.path.join(data_file, 'proc', 'STN04-STATS.csv')
+    # todo generate this hdf filename based on input data
     hdf_file = os.path.join(data_file, 'export/D20170509T172705.387171.h5')
-    report_figure = os.path.join(data_file,'proc', 'STN04-Summary_all.png')
+    report_figure = os.path.join(data_file, 'proc', 'STN04-Summary_all.png')
 
     # if csv file already exists, it has to be deleted
     if (os.path.isfile(stats_file)):
@@ -51,7 +90,7 @@ def test_output_files():
         os.remove(hdf_file)
 
     # call process function
-    silcam_process(conf_file_out, data_file, multiProcess=False)
+    silcam_process(conf_file_out, data_file, multiProcess=True)
 
     # check that csv file has been created
     assert os.path.isfile(stats_file), ('STATS csv file not created. should be here:' + stats_file)
@@ -60,12 +99,22 @@ def test_output_files():
     csvfile = open(stats_file)
     lines = csvfile.readlines()
     numline = len(lines)
-    assert numline > 1 , 'csv file empty'
+    assert numline > 1, 'csv file empty'
 
     # check the columns
-    assert lines[0] == 'particle index,major_axis_length,minor_axis_length,equivalent_diameter,solidity,minr,minc,maxr,maxc,'\
-            'probability_oil,probability_other,probability_bubble,probability_faecal_pellets,probability_copepod,'\
-            'probability_diatom_chain,probability_oily_gas,export name,timestamp,saturation\n', 'columns not properly built'
+    path, filename = os.path.split(MODEL_PATH)
+    header = pd.read_csv(os.path.join(path, 'header.tfl.txt'))
+    class_labels = header.columns
+
+    # construct expected column string
+    column_string = 'particle index,major_axis_length,minor_axis_length,equivalent_diameter,solidity,minr,minc,maxr,'\
+                    'maxc'
+    for c in class_labels:
+        column_string += ',probability_' + c
+    column_string += ',export name,timestamp,saturation\n'
+
+    # check that output STATS file contains expected columns
+    assert lines[0] == column_string
 
     # check the correct number of images have been processed
     stats = pd.read_csv(stats_file)
@@ -75,8 +124,8 @@ def test_output_files():
 
     files = glob.glob(os.path.join(data_file, '*.bmp'))
     expected_processed = len(files) - background_images
-    # assert (number_processed == expected_processed), 'number of images processed does not match the size of the dataset'
-
+    assert (number_processed == expected_processed), (str(number_processed) + ' images were processed. ' +
+                                                      'Expected ' + str(expected_processed))
 
     # check that hdf file has been created
     assert os.path.isfile(hdf_file), ('hdf file not created. should be here:' + hdf_file)
@@ -85,8 +134,8 @@ def test_output_files():
     show_h5_meta(hdf_file)
     from pysilcam.config import settings_from_h5
     Settings = settings_from_h5(hdf_file)
-    # test a an appropriate settting after reading it back from the hdf5 file
-    assert (Settings.ExportParticles.export_images == True), 'unexpected setting read from metadata in hdf5 file'
+    # test a an appropriate setting after reading it back from the hdf5 file
+    assert (Settings.ExportParticles.export_images is True), 'unexpected setting read from metadata in hdf5 file'
 
     # if report figure already exists, it has to be deleted
     if (os.path.isfile(report_figure)):
@@ -94,11 +143,3 @@ def test_output_files():
 
     silcam_report(stats_file, conf_file_out, dpi=10)
     assert os.path.isfile(report_figure), 'report figure file not created'
-
-    # # test synthesizer
-    #import pysilcam.tests.synthesizer as synth
-    #reportdir = os.path.join(path, '../../test-report')
-    #os.makedirs(reportdir, exist_ok=True)
-    #synth.generate_report(os.path.join(reportdir, 'imagesynth_report.pdf'), PIX_SIZE=28.758169934640524,
-    #                      PATH_LENGTH=10, d50=800, TotalVolumeConcentration=800,
-    #                      MinD=108)
