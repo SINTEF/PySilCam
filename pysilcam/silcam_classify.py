@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import h5py
 import numpy as np
 import pandas as pd
 import scipy
@@ -12,17 +13,25 @@ SilCam TensorFlow analysis for classification of particle types
 
 def check_model(model_path):
     '''
-    Raises errors if classification model is not found
+    Raises errors if classification model is not found, or if it is not a valid file.
 
     Args:
         model_path (str)        : path to particle-classifier e.g.
-                                  '/mnt/ARRAY/classifier/model/particle-classifier.tfl'
+                                  '/mnt/ARRAY/classifier/model/particle_classifier.h5'
                                   usually obtained from settings.NNClassify.model_path
 
     '''
     path, filename = os.path.split(model_path)
-    if os.path.exists(path) is False:
-        raise Exception(path + ' not found')
+    if not h5py.is_hdf5(model_path):
+        if os.path.exists(path) is False:
+            raise Exception(
+                path + ' not found. Please see '
+                + 'github.com/SINTEF/PySilCam/wiki/Installation,-setup-and-contributions '
+                + 'for help.')
+        else:
+            raise Exception(
+                model_path + ' is not valid hdf5 file. The predition model now '
+                + 'uses a tensorflow.keras .h5 file, not a .tfl file.')
 
     header_file = os.path.join(path, 'header.tfl.txt')
     if os.path.isfile(header_file) is False:
@@ -35,7 +44,7 @@ def get_class_labels(model_path):
 
     Args:
         model_path (str)        : path to particle-classifier e.g.
-                                  '/testdata/model_name/particle-classifier.tfl'
+                                  '/testdata/model_name/particle_classifier.h5'
                                   usually obtained from settings.NNClassify.model_path
 
     Returns:
@@ -53,7 +62,7 @@ def load_model(model_path):
 
     Args:
         model_path (str)        : path to particle-classifier e.g.
-                                  '/testdata/model_name/particle-classifier.tfl'
+                                  '/testdata/model_name/particle_classifier.h5'
 
     Returns:
         model (tf model object) : loaded tf.keras model from load_model()
