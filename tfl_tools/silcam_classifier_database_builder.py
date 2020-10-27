@@ -40,7 +40,7 @@ def particle_generator():
     while True:
 
 #        if np.random.choice([0,1]):
-        stats_ = scpp.extract_nth_largest(stats,n=index)
+        stats_ = scpp.extract_nth_largest(stats, n=index)
 #        else:
 #           stats_ = scpp.extract_nth_longest(stats,settings,n=index)
         print(stats_)
