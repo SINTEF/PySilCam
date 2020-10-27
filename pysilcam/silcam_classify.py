@@ -1,15 +1,10 @@
-  # -*- coding: utf-8 -*-
-import tflearn
-from tflearn.layers.core import input_data, dropout, fully_connected
-from tflearn.layers.conv import conv_2d, max_pool_2d
-from tflearn.layers.estimator import regression
-from tflearn.data_preprocessing import ImagePreprocessing
-from tflearn.data_augmentation import ImageAugmentation
-import tensorflow as tf
-import scipy
+# -*- coding: utf-8 -*-
+import os
+import h5py
 import numpy as np
 import pandas as pd
-import os
+import scipy
+import tensorflow.keras as keras
 
 '''
 SilCam TensorFlow analysis for classification of particle types
@@ -18,30 +13,38 @@ SilCam TensorFlow analysis for classification of particle types
 
 def check_model(model_path):
     '''
-    Raises errors if classification model is not found
+    Raises errors if classification model is not found, or if it is not a valid file.
 
     Args:
         model_path (str)        : path to particle-classifier e.g.
-                                  '/mnt/ARRAY/classifier/model/particle-classifier.tfl'
+                                  '/mnt/ARRAY/classifier/model/particle_classifier.h5'
                                   usually obtained from settings.NNClassify.model_path
 
     '''
     path, filename = os.path.split(model_path)
-    if os.path.exists(path) is False:
-        raise Exception(path + ' not found')
+    if not h5py.is_hdf5(model_path):
+        if not os.path.exists(path):
+            raise FileNotFoundError(
+                path + ' not found. Please see '
+                + 'github.com/SINTEF/PySilCam/wiki/Installation,-setup-and-contributions '
+                + 'for help.')
+        else:
+            raise TypeError(
+                model_path + ' is not valid hdf5 file. The predition model now '
+                + 'uses a tensorflow.keras .h5 file, not a .tfl file.')
 
     header_file = os.path.join(path, 'header.tfl.txt')
-    if os.path.isfile(header_file) is False:
-        raise Exception(header_file + ' not found')
+    if not os.path.isfile(header_file):
+        raise FileNotFoundError(header_file + ' not found')
 
 
-def get_class_labels(model_path='/mnt/ARRAY/classifier/model/particle-classifier.tfl'):
+def get_class_labels(model_path):
     '''
     Read the header file that defines the catagories of particles in the model
 
     Args:
         model_path (str)        : path to particle-classifier e.g.
-                                  '/mnt/ARRAY/classifier/model/particle-classifier.tfl'
+                                  '/testdata/model_name/particle_classifier.h5'
                                   usually obtained from settings.NNClassify.model_path
 
     Returns:
@@ -53,61 +56,30 @@ def get_class_labels(model_path='/mnt/ARRAY/classifier/model/particle-classifier
     return class_labels
 
 
-def load_model(model_path='/mnt/ARRAY/classifier/model/particle-classifier.tfl'):
+def load_model(model_path):
     '''
-    Load the trained tensorflow model
+    Load the trained tensorflow keras model
 
     Args:
         model_path (str)        : path to particle-classifier e.g.
-                                  '/mnt/ARRAY/classifier/model/particle-classifier.tfl'
+                                  '/testdata/model_name/particle_classifier.h5'
 
     Returns:
-        model (tf model object) : loaded tfl model from load_model()
+        model (tf model object) : loaded tf.keras model from load_model()
     '''
     path, filename = os.path.split(model_path)
     header = pd.read_csv(os.path.join(path, 'header.tfl.txt'))
-    OUTPUTS = len(header.columns)
     class_labels = header.columns
 
-    tf.reset_default_graph()
-
-    # Same network definition as in tfl_tools scripts
-    img_prep = ImagePreprocessing()
-    img_prep.add_featurewise_zero_center()
-    img_prep.add_featurewise_stdnorm()
-    img_aug = ImageAugmentation()
-    img_aug.add_random_flip_leftright()
-    img_aug.add_random_rotation(max_angle=25.)
-    img_aug.add_random_blur(sigma_max=3.)
-
-    network = input_data(shape=[None, 32, 32, 3],
-                         data_preprocessing=img_prep,
-                         data_augmentation=img_aug)
-    network = conv_2d(network, 32, 3, activation='relu')
-    network = max_pool_2d(network, 2)
-    network = conv_2d(network, 64, 3, activation='relu')
-    network = conv_2d(network, 64, 3, activation='relu')
-    network = conv_2d(network, 64, 3, activation='relu')
-    network = conv_2d(network, 64, 3, activation='relu')
-    network = conv_2d(network, 64, 3, activation='relu')
-    network = max_pool_2d(network, 2)
-    network = fully_connected(network, 512, activation='relu')
-    network = dropout(network, 0.75)
-    network = fully_connected(network, OUTPUTS, activation='softmax')
-    network = regression(network, optimizer='adam',
-                         loss='categorical_crossentropy',
-                         learning_rate=0.001)
-
-    model = tflearn.DNN(network, tensorboard_verbose=0,
-            checkpoint_path=model_path)
-    model.load(model_path)
+    model = keras.models.load_model(model_path)
 
     return model, class_labels
+
 
 def predict(img, model):
     '''
     Use tensorflow model to classify particles
-    
+
     Args:
         img (uint8)             : a particle ROI, corrected and treated with the silcam
                                   explode_contrast function
@@ -119,8 +91,9 @@ def predict(img, model):
 
     # Scale it to 32x32
     img = scipy.misc.imresize(img, (32, 32), interp="bicubic").astype(np.float32, casting='unsafe')
+    img = (img - 195.17760394934288) / 56.10742134506719  # Image preprocessing that matches the TFL model
 
     # Predict
-    prediction = model.predict([img])
+    prediction = model.predict(np.expand_dims(img, 0))
 
     return prediction

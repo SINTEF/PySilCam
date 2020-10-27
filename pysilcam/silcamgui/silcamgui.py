@@ -23,7 +23,7 @@ import pysilcam.oilgas as scog
 import pysilcam.silcamgui.guicalcs as gc
 from pysilcam.silcamgui.guicalcs import process_mode
 from pysilcam.config import PySilcamSettings
-from pysilcam.oilgas import PathLength
+from pysilcam.pathadjust import PathLength
 
 sns.set_style('ticks')
 sns.set_context(font_scale=2)
