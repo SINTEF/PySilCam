@@ -23,19 +23,19 @@ def check_model(model_path):
     '''
     path, filename = os.path.split(model_path)
     if not h5py.is_hdf5(model_path):
-        if os.path.exists(path) is False:
-            raise Exception(
+        if not os.path.exists(path):
+            raise FileNotFoundError(
                 path + ' not found. Please see '
                 + 'github.com/SINTEF/PySilCam/wiki/Installation,-setup-and-contributions '
                 + 'for help.')
         else:
-            raise Exception(
+            raise TypeError(
                 model_path + ' is not valid hdf5 file. The predition model now '
                 + 'uses a tensorflow.keras .h5 file, not a .tfl file.')
 
     header_file = os.path.join(path, 'header.tfl.txt')
-    if os.path.isfile(header_file) is False:
-        raise Exception(header_file + ' not found')
+    if not os.path.isfile(header_file):
+        raise FileNotFoundError(header_file + ' not found')
 
 
 def get_class_labels(model_path):
