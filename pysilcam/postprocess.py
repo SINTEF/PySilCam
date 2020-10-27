@@ -574,7 +574,7 @@ def count_images_in_stats(stats):
     return n_images
 
 
-def extract_nth_largest(stats,settings,n=0):
+def extract_nth_largest(stats, n=0):
     ''' return statistics of the nth largest particle
     '''
     stats_sorted = stats.sort_values(by=['equivalent_diameter'], ascending=False, inplace=False)
@@ -582,7 +582,7 @@ def extract_nth_largest(stats,settings,n=0):
     return stats_sorted
 
 
-def extract_nth_longest(stats,settings,n=0):
+def extract_nth_longest(stats, n=0):
     ''' return statistics of the nth longest particle
     '''
     stats_sorted = stats.sort_values(by=['major_axis_length'], ascending=False, inplace=False)
