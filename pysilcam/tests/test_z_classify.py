@@ -24,16 +24,11 @@ def test_classify():
 
     @todo include more advanced testing of the classification feks. assert values in a confusion matrix.
     '''
-    import tensorflow as tf
 
     # location of the training data
     database_path = os.path.join(ROOTPATH, 'silcam_classification_database')
 
     check_model(MODEL_PATH)
-
-    # a tensorflow session must be started on each process in order to function reliably in multiprocess.
-    # This also includes the import of tensorflow on each process
-    sess = tf.Session()
 
     # Load the trained tensorflow model and class names
     model, class_labels = load_model(MODEL_PATH)
@@ -71,9 +66,6 @@ def test_classify():
         success = 100 - (failed / len(files)) * 100
         return success
 
-    # close of the tensorflow session when everything is finished.
-    # unsure of behaviour if things crash or are stoppped before reaching this point
-    sess.close()
 
     # loop through each category and calculate the success percentage
     for cat in classes:
