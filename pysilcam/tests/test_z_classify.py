@@ -4,7 +4,6 @@ import glob
 import os
 import numpy as np
 import unittest
-import tensorflow as tf
 
 # Get user-defined path to unittest data folder
 ROOTPATH = os.environ.get('UNITTEST_DATA_PATH', None)
@@ -25,6 +24,7 @@ def test_classify():
 
     @todo include more advanced testing of the classification feks. assert values in a confusion matrix.
     '''
+    import tensorflow as tf
 
     # location of the training data
     database_path = os.path.join(ROOTPATH, 'silcam_classification_database')
