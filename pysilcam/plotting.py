@@ -217,8 +217,11 @@ def montage_plot(montage, pixel_size):
         pixel_size (float) : the pixel size of the SilCam used, obtained from settings.PostProcess.pix_size in the
                              config ini file
     '''
-    msize = np.shape(montage[:, 0, 0])
+    print('!! Montage shape:', np.shape(montage))
+    msize = np.shape(montage)[0]
+    print('!! msize:', msize)
     ex = pixel_size * np.float64(msize) / 1000.
+    print('!! ex:', ex)
 
     ax = plt.gca()
     ax.imshow(montage, extent=[0, ex, 0, ex])
