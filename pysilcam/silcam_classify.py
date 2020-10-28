@@ -3,7 +3,7 @@ import os
 import h5py
 import numpy as np
 import pandas as pd
-import skimage
+from PIL import Image
 
 '''
 SilCam TensorFlow analysis for classification of particle types
@@ -91,7 +91,9 @@ def predict(img, model):
     '''
 
     # Scale it to 32x32
-    img = skimage.transform.resize(np.float64(img), (32, 32, 3), mode='reflect', preserve_range=True)
+    img = Image.fromarray(img)
+    img = img.resize((32, 32), Image.BICUBIC)
+    img = np.array(img)
     img = (img - 195.17760394934288) / 56.10742134506719  # Image preprocessing that matches the TFL model
 
     # Predict
