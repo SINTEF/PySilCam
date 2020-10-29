@@ -66,7 +66,7 @@ def load_model(model_path):
     Returns:
         model (tf model object) : loaded tf.keras model from load_model()
     '''
-    import tensorflow.keras as keras
+    import keras
 
     path, filename = os.path.split(model_path)
     header = pd.read_csv(os.path.join(path, 'header.tfl.txt'))
