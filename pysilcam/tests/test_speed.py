@@ -1,13 +1,9 @@
-import glob
 import os
 import unittest
 import pandas as pd
 import tempfile
 from pysilcam.__main__ import silcam_process
-from pysilcam.silcreport import silcam_report
 from pysilcam.config import load_config
-from pysilcam.postprocess import count_images_in_stats
-from pysilcam.config import PySilcamSettings
 
 # Get user-defined path to unittest data folder
 ROOTPATH = os.environ.get('UNITTEST_DATA_PATH', None)
