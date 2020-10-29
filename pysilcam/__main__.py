@@ -508,7 +508,6 @@ def loop(config_filename, inputQueue, outputQueue, gui=None):
     logger = logging.getLogger(__name__ + '.silcam_process')
 
     # load the model for particle classification and keep it for later
-
     nnmodel = []
     nnmodel, class_labels = sccl.load_model(model_path=settings.NNClassify.model_path)
 
@@ -523,7 +522,6 @@ def loop(config_filename, inputQueue, outputQueue, gui=None):
             outputQueue.put(stats_all)
         else:
             logger.info('No stats found.')
-
     return
 
 
