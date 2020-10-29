@@ -45,12 +45,3 @@ def test_speed():
         t2 = pd.Timestamp.now()
         td = t2 - t1
         assert td < pd.to_timedelta('00:00:45'), 'Processing time too long.'
-
-
-
-
-
-
-
-
-
