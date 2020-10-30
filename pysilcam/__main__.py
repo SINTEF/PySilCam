@@ -354,6 +354,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
         logger.debug('All data collected')
 
         for p in proc_list:
+            p.terminate()
             p.join()
             logger.info('%s.exitcode = %s' % (p.name, p.exitcode))
 
