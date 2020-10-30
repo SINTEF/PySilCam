@@ -4,7 +4,6 @@ import glob
 import os
 import numpy as np
 import unittest
-import tensorflow as tf
 
 # Get user-defined path to unittest data folder
 ROOTPATH = os.environ.get('UNITTEST_DATA_PATH', None)
@@ -66,6 +65,7 @@ def test_classify():
         # turn failed count into a success percent
         success = 100 - (failed / len(files)) * 100
         return success
+
 
     # loop through each category and calculate the success percentage
     for cat in classes:
