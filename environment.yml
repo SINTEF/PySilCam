@@ -19,6 +19,7 @@ dependencies:    # These are the conda packages
     - pytest=6.1.1
     - PyQt=5.9.2
     - pip: # The following packages are installed with pip
+        - tensorflow==2.3.1
         - keras==2.4.3
         - pygame==2.0.0.dev22
         - xlrd==1.2.0
