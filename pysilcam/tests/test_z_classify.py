@@ -70,8 +70,6 @@ def test_classify():
 
         t2 = pd.Timestamp.now()
         td = t2 - t1
-        print(td)
-        input()
         assert td < pd.to_timedelta(time_limit), 'Processing time too long.'
 
         return success
