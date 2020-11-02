@@ -522,7 +522,6 @@ def loop(config_filename, inputQueue, outputQueue, gui=None):
             outputQueue.put(stats_all)
         else:
             logger.info('No stats found.')
-
     return
 
 
