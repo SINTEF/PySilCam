@@ -259,6 +259,4 @@ def test_analysis(img, PIX_SIZE, PATH_LENGTH, config_file=''):
     sv = scpp.get_sample_volume(settings.PostProcess.pix_size, path_length=settings.PostProcess.path_length)
     vd /= sv
 
-    del nnmodel
-
     return dias, vd, imbw, stat_extract_time

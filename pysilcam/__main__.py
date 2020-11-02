@@ -399,9 +399,6 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
                 gui.put_nowait((timestamp, imc, imraw, rtdict))
                 logger.debug('GUI queue updated')
 
-        print('del nnmodel')
-        del nnmodel
-
     print('PROCESSING COMPLETE.')
 
     # ---- END ----
@@ -526,7 +523,6 @@ def loop(config_filename, inputQueue, outputQueue, gui=None):
         else:
             logger.info('No stats found.')
 
-    del nnmodel
     return
 
 
