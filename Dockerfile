@@ -36,4 +36,4 @@ WORKDIR /silcam
 RUN python setup.py develop
 
 # Run the PySilCam tests as default entrypoint
-CMD ["python", "setup.py", "test_noskip"]
+CMD ["PYTEST_ADDOPTS='-s --full-trace --durations=0' ","python", "setup.py", "test_noskip"]
