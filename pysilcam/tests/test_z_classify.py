@@ -4,7 +4,7 @@ import glob
 import os
 import numpy as np
 import unittest
-import tensorflow as tf
+import pandas as pd
 
 # Get user-defined path to unittest data folder
 ROOTPATH = os.environ.get('UNITTEST_DATA_PATH', None)
@@ -49,6 +49,8 @@ def test_classify():
 
         # start a counter of incorrectly classified images
         failed = 0
+        time_limit = len(files) * 0.03
+        t1 = pd.Timestamp.now()
 
         # loop through the database images
         for file in files:
@@ -65,6 +67,13 @@ def test_classify():
 
         # turn failed count into a success percent
         success = 100 - (failed / len(files)) * 100
+
+        t2 = pd.Timestamp.now()
+        td = t2 - t1
+        print(td)
+        input()
+        assert td < pd.to_timedelta(time_limit), 'Processing time too long.'
+
         return success
 
     # loop through each category and calculate the success percentage
