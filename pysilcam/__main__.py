@@ -354,7 +354,6 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
         logger.debug('All data collected')
 
         for p in proc_list:
-            p.terminate()
             p.join()
             logger.info('%s.exitcode = %s' % (p.name, p.exitcode))
 
@@ -399,6 +398,9 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
                           'saturation': rts.saturation}
                 gui.put_nowait((timestamp, imc, imraw, rtdict))
                 logger.debug('GUI queue updated')
+
+        print('del nnmodel')
+        del nnmodel
 
     print('PROCESSING COMPLETE.')
 
@@ -523,6 +525,8 @@ def loop(config_filename, inputQueue, outputQueue, gui=None):
             outputQueue.put(stats_all)
         else:
             logger.info('No stats found.')
+
+    del nnmodel
     return
 
 
