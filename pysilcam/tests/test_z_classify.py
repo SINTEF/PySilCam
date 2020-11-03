@@ -47,6 +47,8 @@ def test_classify():
         # list the files in this category of the training data
         files = glob.glob(os.path.join(database_path, category, '*.tiff'))
 
+        assert len(files) > 50, 'less then 50 files in test data.'
+
         # start a counter of incorrectly classified images
         failed = 0
         time_limit = len(files) * 0.05
