@@ -51,7 +51,7 @@ def test_classify():
 
         # start a counter of incorrectly classified images
         failed = 0
-        time_limit = len(files) * 0.005
+        time_limit = len(files) * 0.001
         t1 = pd.Timestamp.now()
 
         # loop through the database images
