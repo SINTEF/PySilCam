@@ -4,6 +4,7 @@ import h5py
 import numpy as np
 import pandas as pd
 from PIL import Image
+import tensorflow as tf
 
 '''
 SilCam TensorFlow analysis for classification of particle types
@@ -90,7 +91,6 @@ def predict(img, model):
     Returns:
         prediction (array)      : the probability of the roi belonging to each class
     '''
-
     # Scale it to 32x32
     img = Image.fromarray(img)
     img = img.resize((32, 32), Image.BICUBIC)
@@ -98,6 +98,6 @@ def predict(img, model):
     img = (img - 195.17760394934288) / 56.10742134506719  # Image preprocessing that matches the TFL model
 
     # Predict
-    prediction = model.predict(np.expand_dims(img, 0))
+    prediction = model(np.expand_dims(img, 0))
 
     return prediction
