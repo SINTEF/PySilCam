@@ -621,7 +621,7 @@ def writeCSV(datafilename, stats_all):
     # because data will be duplicated (and concentrations would therefore
     # double) GUI promts user regarding this - directly-run functions are more dangerous.
     with pd.HDFStore(datafilename + '-STATS.h5', 'a') as fh:
-        stats_all.to_hdf(fh, 'ParticleStats/stats', append=True, mode='r+', format='t')
+        stats_all.to_hdf(fh, 'ParticleStats/stats', append=True, mode='r+', format='t', data_columns=True)
 
 
 def check_path(filename):

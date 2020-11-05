@@ -22,7 +22,6 @@ print('MODEL_PATH', MODEL_PATH)
 
 @unittest.skipIf((ROOTPATH is None),
                  "test path not accessible")
-@unittest.skipIf(True,'none')
 def test_debug_files():
     '''Testing that the debug images are created'''
 
@@ -91,7 +90,7 @@ def test_output_files():
         os.remove(hdf_file)
 
     # call process function
-    silcam_process(conf_file_out, data_file, multiProcess=True, nbImages=5)
+    silcam_process(conf_file_out, data_file, multiProcess=True)
 
     # check that csv file has been created
     assert os.path.isfile(stats_file), ('STATS csv file not created. should be here:' + stats_file)
@@ -107,17 +106,25 @@ def test_output_files():
     class_labels = header.columns
 
     # construct expected column string
-    column_string = 'particle index,major_axis_length,minor_axis_length,equivalent_diameter,solidity,minr,minc,maxr,'\
-                    'maxc'
+    column_string = ['particle index',
+                     'major_axis_length',
+                     'minor_axis_length',
+                     'equivalent_diameter',
+                     'solidity',
+                     'minr',
+                     'minc',
+                     'maxr',
+                     'maxc',
+                     'export name',
+                     'timestamp',
+                     'saturation']
     for c in class_labels:
-        column_string += ',probability_' + c
-    column_string += ',export name,timestamp,saturation\n'
+        column_string.append('probability_' + c)
 
     # check that output STATS file contains expected columns
-    assert (stats.columns == column_string).all(), 'output STATS file contains unexpected columns'
+    assert (stats.columns.tolist() == column_string).all(), 'output STATS file contains unexpected columns'
 
     # check the correct number of images have been processed
-    stats = pd.read_hdf(stats_file, 'ParticleStats/stats')
     settings = PySilcamSettings(conf_file_out)
     background_images = settings.Background.num_images
     number_processed = count_images_in_stats(stats)
