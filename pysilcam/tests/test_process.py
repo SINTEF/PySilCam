@@ -117,7 +117,7 @@ def test_output_files():
     assert lines[0] == column_string
 
     # check the correct number of images have been processed
-    stats = pd.read_csv(stats_file)
+    stats = pd.read_hdf(stats_file, 'ParticleStats/stats')
     settings = PySilcamSettings(conf_file_out)
     background_images = settings.Background.num_images
     number_processed = count_images_in_stats(stats)

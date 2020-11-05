@@ -445,13 +445,13 @@ def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
     return montageplot
 
 
-def make_montage(stats_csv_file, pixel_size, roidir,
+def make_montage(stats_file, pixel_size, roidir,
         auto_scaler=500, msize=1024, maxlength=100000,
         oilgas=outputPartType.all):
     ''' wrapper function for montage_maker
 
     Args:
-        stats_csv_file              : location of the stats_csv file that comes from silcam process
+        stats_file              : location of the stats_csv file that comes from silcam process
         pixel_size                  : pixel size of system defined by settings.PostProcess.pix_size
         roidir                      : location of roifiles usually defined by settings.ExportParticles.outputpath
         auto_scaler=500             : approximate number of particle that are attempted to be pack into montage
@@ -464,7 +464,7 @@ def make_montage(stats_csv_file, pixel_size, roidir,
     '''
 
     # obtain particle statistics from the csv file
-    stats = pd.read_csv(stats_csv_file)
+    stats = pd.read_hdf(stats_file, 'ParticleStats/stats')
 
     # remove nans because concentrations are not important here
     stats = stats[~np.isnan(stats['major_axis_length'])]
@@ -903,23 +903,23 @@ def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
     return df
 
 
-def trim_stats(stats_csv_file, start_time, end_time, write_new=False, stats=[]):
+def trim_stats(stats_file, start_time, end_time, write_new=False, stats=[]):
     '''Chops a STATS.csv file given a start and end time
 
     Args:
-        stats_csv_file              : filename of stats file
+        stats_file              : filename of stats file
         start_time                  : start time of interesting window
         end_time                    : end time of interesting window
         write_new=False             : boolean if True will write a new stats csv file to disc
-        stats=[]                    : pass stats DataFrame into here if you don't want to load the data from the stats_csv_file given.
-                                      In this case the stats_csv_file string is only used for creating the new output datafilename.
+        stats=[]                    : pass stats DataFrame into here if you don't want to load the data from the stats_file given.
+                                      In this case the stats_file string is only used for creating the new output datafilename.
 
     Returns:
         trimmed_stats       : pandas DataFram of particle statistics
         outname             : name of new stats csv file written to disc
     '''
     if len(stats)==0:
-        stats = pd.read_csv(stats_csv_file)
+        stats = pd.read_hdf(stats_file, 'ParticleStats/stats')
 
     start_time = pd.to_datetime(start_time)
     end_time = pd.to_datetime(end_time)
@@ -935,7 +935,7 @@ def trim_stats(stats_csv_file, start_time, end_time, write_new=False, stats=[]):
     actual_start = pd.to_datetime(trimmed_stats['timestamp'].min()).strftime('D%Y%m%dT%H%M%S.%f')
     actual_end = pd.to_datetime(trimmed_stats['timestamp'].max()).strftime('D%Y%m%dT%H%M%S.%f')
 
-    path, name = os.path.split(stats_csv_file)
+    path, name = os.path.split(stats_file)
 
     outname = os.path.join(path, name.replace('-STATS.csv','')) + '-Start' + str(actual_start) + '-End' + str(
         actual_end) + '-STATS.csv'

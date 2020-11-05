@@ -47,7 +47,7 @@ def export_timeseries(configfile, statsfile):
     settings = PySilcamSettings(configfile)
 
     print('Loading STATS data: ', statsfile)
-    stats = pd.read_csv(statsfile)
+    stats = pd.read_hdf(statsfile, 'ParticleStats/stats')
 
     stats['timestamp'] = pd.to_datetime(stats['timestamp'])
 

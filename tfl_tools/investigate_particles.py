@@ -31,7 +31,7 @@ def particle_generator():
     maxdepth = 70
 
     config_file = '/mnt/ARRAY/ENTICE/Data/configs/config.ini'
-    stats_csv_file = '/mnt/ARRAY/ENTICE/Data/proc/' + stn + '-STATS.csv'
+    stats_file = '/mnt/ARRAY/ENTICE/Data/proc/' + stn + '-STATS.csv'
 
     time = ctd_all['Date_Time']
     depth = ctd_all['Depth']
@@ -39,7 +39,7 @@ def particle_generator():
     conf = load_config(config_file)
     settings = PySilcamSettings(conf)
 
-    stats = pd.read_csv(stats_csv_file)
+    stats = pd.read_hdf(stats_file, 'ParticleStats/stats')
 
     stats = scpp.add_depth_to_stats(stats, time, depth)
     print('all stats:', len(stats))
