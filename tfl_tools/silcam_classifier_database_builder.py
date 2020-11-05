@@ -19,7 +19,7 @@ from shutil import copyfile
 
 DATABASE_PATH = '/mnt/ARRAY/silcam_classification_database'
 config_file = '/mnt/ARRAY/ENTICE/Data/configs/config.ini'
-stats_file = '/mnt/ARRAY/ENTICE/Data/proc/STN10-STATS.csv'
+stats_file = '/mnt/ARRAY/ENTICE/Data/proc/STN10-STATS.h5'
 filepath = '/mnt/ARRAY/ENTICE/Data/export/'
 
 def find_classes(d=DATABASE_PATH):

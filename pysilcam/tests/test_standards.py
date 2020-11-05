@@ -32,7 +32,7 @@ def test_big_standards():
     conf.write(conf_file_hand)
     conf_file_hand.close()
 
-    stats_file = os.path.join(ROOTPATH, 'STANDARDS/proc/StandardsBig-STATS.csv')
+    stats_file = os.path.join(ROOTPATH, 'STANDARDS/proc/StandardsBig-STATS.h5')
 
     # if csv file already exists, it has to be deleted
     if (os.path.isfile(stats_file)):
@@ -75,7 +75,7 @@ def test_small_standards():
     conf.write(conf_file_hand)
     conf_file_hand.close()
 
-    stats_file = os.path.join(ROOTPATH, 'STANDARDS/proc/StandardsSmall-STATS.csv')
+    stats_file = os.path.join(ROOTPATH, 'STANDARDS/proc/StandardsSmall-STATS.h5')
 
     # if csv file already exists, it has to be deleted
     if (os.path.isfile(stats_file)):

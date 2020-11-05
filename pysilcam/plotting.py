@@ -235,7 +235,7 @@ def summarise_fancy_stats(stats_file, config_file, monitor=False,
     the volume distribution, number distribution and a montage of randomly selected particles
     
     Args:
-        stats_file (str)            : path of the *-STATS.csv file created by silcam process
+        stats_file (str)            : path of the *-STATS.h5 file created by silcam process
         config_file (str)               : path of the config ini file associated with the data
         monitor=False (Bool)            : if True then this function will run forever, continuously reading the
                                           stats_file and plotting the data

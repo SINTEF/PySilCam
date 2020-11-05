@@ -103,7 +103,7 @@ class stats_trim_dlg(QMainWindow):
         if reply == QMessageBox.Save:
             self.trimmed_stats, self.output_filename = scpp.trim_stats(self.stats_filename, start_time, end_time,
                                                                   write_new=True, stats=self.stats)
-            print('New STATS.csv file written as:', self.output_filename)
+            print('New STATS.h5 file written as:', self.output_filename)
 
     def plot_trimmed_stats(self):
         start_time = pd.to_datetime(self.ui.dateTimeStart.dateTime().toPyDateTime())
@@ -445,7 +445,7 @@ def main():
                     return
 
             self.stats_filename = ''
-            self.status_update('Asking user for *-STATS.csv file')
+            self.status_update('Asking user for *-STATS.h5 file')
             self.load_stats_filename()
             if self.stats_filename == '':
                 self.status_update('Did not get STATS file')
@@ -457,7 +457,7 @@ def main():
             scplt.summarise_fancy_stats(self.stats_filename,
                     self.configfile, monitor=False)
             self.status_update('Saving summary figure (all)....')
-            plt.savefig(self.stats_filename.replace('-STATS.csv','') + '-Summary.png',
+            plt.savefig(self.stats_filename.replace('-STATS.h5','') + '-Summary.png',
                     dpi=600, bbox_inches='tight')
 
             plt.figure(figsize=(20,12))
@@ -465,7 +465,7 @@ def main():
             scplt.summarise_fancy_stats(self.stats_filename,
                     self.configfile, monitor=False, oilgas=scpp.outputPartType.oil)
             self.status_update('Saving summary figure (oil)....')
-            plt.savefig(self.stats_filename.replace('-STATS.csv','') + '-Summary_oil.png',
+            plt.savefig(self.stats_filename.replace('-STATS.h5','') + '-Summary_oil.png',
                     dpi=600, bbox_inches='tight')
 
             plt.figure(figsize=(20,12))
@@ -473,7 +473,7 @@ def main():
             scplt.summarise_fancy_stats(self.stats_filename,
                     self.configfile, monitor=False, oilgas=scpp.outputPartType.gas)
             self.status_update('Saving summary figure (gas)....')
-            plt.savefig(self.stats_filename.replace('-STATS.csv','') + '-Summary_gas.png',
+            plt.savefig(self.stats_filename.replace('-STATS.h5','') + '-Summary_gas.png',
                     dpi=600, bbox_inches='tight')
 
             self.status_update('Summary figure done.')
@@ -490,7 +490,7 @@ def main():
                     return
 
             self.stats_filename = ''
-            self.status_update('Asking user for *-STATS.csv file')
+            self.status_update('Asking user for *-STATS.h5 file')
             self.load_stats_filename()
             if self.stats_filename == '':
                 self.status_update('Did not get STATS file')
@@ -513,7 +513,7 @@ def main():
             settings = PySilcamSettings(self.configfile)
 
             self.stats_filename = ''
-            self.status_update('Asking user for *-STATS.csv file')
+            self.status_update('Asking user for *-STATS.h5 file')
             self.load_stats_filename()
             if self.stats_filename == '':
                 self.status_update('Did not get STATS file')
@@ -555,7 +555,7 @@ def main():
             labs = [l.get_label() for l in lns]
             plt.legend(lns, labs)
 
-            plt.savefig(self.stats_filename.replace('-STATS.csv','') +
+            plt.savefig(self.stats_filename.replace('-STATS.h5','') +
                     '-d50_TimeSeries.png', dpi=600, bbox_inches='tight')
 
             self.status_update('Export finished.')
@@ -781,10 +781,10 @@ def main():
                 procfoldername = os.path.split(self.datadir)[-1]
                 datafilename = os.path.join(settings.General.datafile, procfoldername)
 
-                if (os.path.isfile(datafilename + '-STATS.csv')):
+                if (os.path.isfile(datafilename + '-STATS.h5')):
                     msgBox = QMessageBox()
                     msgBox.setText(
-                        'The STATS file ' + procfoldername + '-STATS.csv' + ' already exists in the output repository.')
+                        'The STATS file ' + procfoldername + '-STATS.h5' + ' already exists in the output repository.')
                     msgBox.setIcon(QMessageBox.Question)
                     msgBox.setWindowTitle('STATS file already exists')
                     overwriteButton = msgBox.addButton('Overwrite', QMessageBox.ActionRole)
@@ -822,9 +822,9 @@ def main():
 
         def load_stats_filename(self):
             self.stats_filename = QFileDialog.getOpenFileName(self,
-                    caption = 'Load a *-STATS.csv file',
+                    caption = 'Load a *-STATS.h5 file',
                     directory = self.datadir,
-                    filter = (('*-STATS.csv'))
+                    filter = (('*-STATS.h5'))
                     )[0]
             if self.stats_filename == '':
                 return
@@ -839,7 +839,7 @@ def main():
                     return
 
             self.stats_filename = ''
-            self.status_update('Asking user for *-STATS.csv file')
+            self.status_update('Asking user for *-STATS.h5 file')
             self.load_stats_filename()
             if self.stats_filename == '':
                 self.status_update('Did not get STATS file')

@@ -31,7 +31,7 @@ def particle_generator():
     maxdepth = 70
 
     config_file = '/mnt/ARRAY/ENTICE/Data/configs/config.ini'
-    stats_file = '/mnt/ARRAY/ENTICE/Data/proc/' + stn + '-STATS.csv'
+    stats_file = '/mnt/ARRAY/ENTICE/Data/proc/' + stn + '-STATS.h5'
 
     time = ctd_all['Date_Time']
     depth = ctd_all['Depth']

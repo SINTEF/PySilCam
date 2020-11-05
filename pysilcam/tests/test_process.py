@@ -59,7 +59,7 @@ def test_debug_files():
 @unittest.skipIf((ROOTPATH is None),
                  "test path not accessible")
 def test_output_files():
-    '''Testing that the appropriate STATS.csv file is created'''
+    '''Testing that the appropriate STATS.h5 file is created'''
 
     conf_file = os.path.join(ROOTPATH, 'config.ini')
     conf_file_out = os.path.join(ROOTPATH, 'config_generated.ini')
@@ -76,7 +76,7 @@ def test_output_files():
     conf.write(conf_file_hand)
     conf_file_hand.close()
 
-    stats_file = os.path.join(data_file, 'proc', 'STN04-STATS.csv')
+    stats_file = os.path.join(data_file, 'proc', 'STN04-STATS.h5')
     # todo generate this hdf filename based on input data
     hdf_file = os.path.join(data_file, 'export/D20170509T172705.387171.h5')
     report_figure = os.path.join(data_file, 'proc', 'STN04-Summary_all.png')
