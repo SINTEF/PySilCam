@@ -44,12 +44,6 @@ def test_big_standards():
     # check that csv file has been created
     assert os.path.isfile(stats_file), 'stats_file not created'
 
-    # check that csv file has been properly built
-    csvfile = open(stats_file)
-    lines = csvfile.readlines()
-    numline = len(lines)
-    assert numline > 1 , 'csv file empty'
-
     settings = PySilcamSettings(conf_file_out)
     stats = pd.read_hdf(stats_file, 'ParticleStats/stats')
     d50 = scpp.d50_from_stats(stats, settings.PostProcess)
@@ -86,12 +80,6 @@ def test_small_standards():
 
     # check that csv file has been created
     assert os.path.isfile(stats_file), 'stats_file not created'
-
-    # check that csv file has been properly built
-    csvfile = open(stats_file)
-    lines = csvfile.readlines()
-    numline = len(lines)
-    assert numline > 1 , 'csv file empty'
 
     settings = PySilcamSettings(conf_file_out)
     stats = pd.read_hdf(stats_file, 'ParticleStats/stats')
