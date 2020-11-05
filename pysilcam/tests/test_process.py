@@ -91,15 +91,15 @@ def test_output_files():
         os.remove(hdf_file)
 
     # call process function
-    silcam_process(conf_file_out, data_file, multiProcess=True)
+    silcam_process(conf_file_out, data_file, multiProcess=True, nbImages=5)
 
     # check that csv file has been created
     assert os.path.isfile(stats_file), ('STATS csv file not created. should be here:' + stats_file)
 
     # check that csv file has been properly built
     stats = pd.read_hdf(stats_file, 'ParticleStats/stats')
-    numline = stats.count
-    assert numline > 1, 'csv file empty'
+    numline = stats.shape[0]
+    assert numline > 1, 'stats empty'
 
     # check the columns
     path, filename = os.path.split(MODEL_PATH)
@@ -114,7 +114,7 @@ def test_output_files():
     column_string += ',export name,timestamp,saturation\n'
 
     # check that output STATS file contains expected columns
-    assert lines[0] == column_string
+    assert (stats.columns == column_string).all(), 'output STATS file contains unexpected columns'
 
     # check the correct number of images have been processed
     stats = pd.read_hdf(stats_file, 'ParticleStats/stats')
