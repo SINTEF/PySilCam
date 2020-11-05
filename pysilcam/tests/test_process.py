@@ -106,8 +106,7 @@ def test_output_files():
     class_labels = header.columns
 
     # construct expected column string
-    column_string = ['particle index',
-                     'major_axis_length',
+    column_string = ['major_axis_length',
                      'minor_axis_length',
                      'equivalent_diameter',
                      'solidity',
@@ -121,8 +120,12 @@ def test_output_files():
     for c in class_labels:
         column_string.append('probability_' + c)
 
+    matching_elements = list(
+            set(column_string) &
+            set(stats.columns.tolist()))
+
     # check that output STATS file contains expected columns
-    assert (stats.columns.tolist() == column_string).all(), 'output STATS file contains unexpected columns'
+    assert len(matching_elements) == len(stats.columns.tolist()) == len(column_string), 'output STATS file contains unexpected columns'
 
     # check the correct number of images have been processed
     settings = PySilcamSettings(conf_file_out)
