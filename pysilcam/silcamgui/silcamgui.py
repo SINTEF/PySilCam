@@ -260,7 +260,7 @@ class ConfigEditor(QDialog):
 
         self.ui.window_sizeEdit.setText(str(self.settings.PostProcess.window_size))
 
-        if self.settings.ExportParticles.export_images == True:
+        if self.settings.ExportParticles.export_images is True:
             self.ui.export_imagesEdit.setCurrentIndex(1)
         else:
             self.ui.export_imagesEdit.setCurrentIndex(0)
