@@ -560,7 +560,7 @@ class PlotView(QtWidgets.QWidget):
 
         if save:
             timestring = pd.to_datetime(psd_start[0]).strftime('D%Y%m%dT%H%M%S')
-            outputname = self.stats_filename.replace('-STATS.h5','-PSD-' + timestring)
+            outputname = self.stats_filename.replace('-STATS.h5', '-PSD-' + timestring)
             outputname = QFileDialog.getSaveFileName(self,
                                                    "Select file to Save", outputname,
                                                    ".xlsx")

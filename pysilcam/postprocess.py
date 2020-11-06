@@ -2,10 +2,7 @@ import pandas as pd
 import numpy as np
 import os
 import imageio as imo
-import matplotlib.pyplot as plt
-from skimage.filters.rank import median
 from skimage.morphology import disk
-import skimage
 from scipy import ndimage as ndi
 import skimage
 from skimage.exposure import rescale_intensity
@@ -57,7 +54,7 @@ def d50_from_vd(vd,dias):
         d50 (float)                 : the 50th percentile of the cumulative sum of the volume distributon, in microns
     '''
 
-    # calcualte cumulative sum of the volume distribution
+    # calculate cumulative sum of the volume distribution
     csvd = np.cumsum(vd/np.sum(vd))
 
     # find the 50th percentile and interpolate if necessary
