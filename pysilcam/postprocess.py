@@ -878,7 +878,7 @@ def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
 
     df = make_timeseries_vd(stats, settings)
 
-    df.to_excel(stats_filename.replace('-STATS.h5','') +
+    df.to_excel(stats_filename.replace('-STATS.h5', '') +
             '-TIMESERIES' + oilgasTxt + '.xlsx')
     
     sample_volume = get_sample_volume(settings.PostProcess.pix_size, path_length=settings.PostProcess.path_length)
@@ -897,7 +897,7 @@ def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
     timestamp = np.min(pd.to_datetime(df['Time']))
     dfa['Time'] = timestamp
     
-    dfa.to_excel(stats_filename.replace('-STATS.h5','') +
+    dfa.to_excel(stats_filename.replace('-STATS.h5', '') +
             '-AVERAGE' + oilgasTxt + '.xlsx')
 
     return df
@@ -937,7 +937,7 @@ def trim_stats(stats_file, start_time, end_time, write_new=False, stats=[]):
 
     path, name = os.path.split(stats_file)
 
-    outname = os.path.join(path, name.replace('-STATS.h5','')) + '-Start' + str(actual_start) + '-End' + str(
+    outname = os.path.join(path, name.replace('-STATS.h5', '')) + '-Start' + str(actual_start) + '-End' + str(
         actual_end) + '-STATS.h5'
 
     if write_new:

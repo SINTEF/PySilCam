@@ -822,10 +822,10 @@ def main():
 
         def load_stats_filename(self):
             self.stats_filename = QFileDialog.getOpenFileName(self,
-                    caption = 'Load a *-STATS.h5 file',
-                    directory = self.datadir,
-                    filter = (('*-STATS.h5'))
-                    )[0]
+                                                              caption='Load a *-STATS.h5 file',
+                                                              directory=self.datadir,
+                                                              filter='*-STATS.h5'
+                                                              )[0]
             if self.stats_filename == '':
                 return
 

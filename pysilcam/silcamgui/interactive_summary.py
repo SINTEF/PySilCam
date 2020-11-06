@@ -342,7 +342,7 @@ class PlotView(QtWidgets.QWidget):
 
     def load_from_stats(self):
         '''loads stats data and converts to timeseries without saving'''
-        stats= pd.read_hdf(self.stats_filename, 'ParticleStats/stats')
+        stats = pd.read_hdf(self.stats_filename, 'ParticleStats/stats')
         stats['timestamp'] = pd.to_datetime(stats['timestamp'])
 
         u = stats['timestamp'].unique()

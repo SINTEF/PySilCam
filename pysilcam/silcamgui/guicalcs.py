@@ -118,7 +118,7 @@ def export_timeseries(configfile, statsfile):
         gor.append(np.sum(vdts_av_gas)/np.sum(vdts_av_oil))
 
     outpath, outfile = os.path.split(statsfile)
-    outfile = outfile.replace('-STATS.h5','')
+    outfile = outfile.replace('-STATS.h5', '')
     outfile = os.path.join(outpath, outfile)
 
     time_series = pd.DataFrame(data=np.squeeze(vdts_all), columns=dias)

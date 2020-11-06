@@ -125,7 +125,9 @@ def test_output_files():
             set(stats.columns.tolist()))
 
     # check that output STATS file contains expected columns
-    assert len(matching_elements) == len(stats.columns.tolist()) == len(column_string), 'output STATS file contains unexpected columns'
+    assert len(matching_elements) ==\
+           len(stats.columns.tolist()) ==\
+           len(column_string), 'output STATS file contains unexpected columns'
 
     # check the correct number of images have been processed
     settings = PySilcamSettings(conf_file_out)
