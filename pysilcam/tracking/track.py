@@ -41,7 +41,7 @@ def plot_boxplot(dataset_names, tracks, PIX_SIZE, figurename):
     plt.boxplot(box_data, positions=ps, labels=ls)
     plt.ylabel('Maxjor Axis Length [mm]')
     plt.xticks([])
-    plt.ylim(0, 12)
+    #plt.ylim(0, 12)
 
     plt.sca(a[2])
     box_data = [tracks[dataset_names[i]]['S_cms'] * 10
@@ -50,7 +50,7 @@ def plot_boxplot(dataset_names, tracks, PIX_SIZE, figurename):
     plt.boxplot(box_data, positions=ps, labels=ls)
     plt.ylabel('Net speed [mm/s]')
     plt.xticks(rotation=45, horizontalalignment='right')
-    plt.ylim(0, 2.5)
+    #plt.ylim(0, 2.5)
 
     figurename = os.path.join(figurename + '.png')
     print('  saving:', figurename)
