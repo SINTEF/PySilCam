@@ -266,8 +266,7 @@ def track_process(configfile, datapath, offset=0):
 
     sctr.process()
 
-
-def make_boxplot(tracksfile):
+def make_boxplot(tracksfile, plotfilename):
     '''
     given the input tracksfile (-TRACKs.h5), this function will look for all the other -TRACKS.h5 files in the same
     folder and use this to create summary boxplots of tracked data, which is saved to the General.datafile location
@@ -284,12 +283,23 @@ def make_boxplot(tracksfile):
     print('* Loading data:')
     for f, k in zip(h5file_list, dataset_names):
         print('  ', f)
-        tracks[k] = pd.read_hdf(f, 'Tracking/tracks')
+        try:
+            tracks[k] = pd.read_hdf(f, 'Tracking/tracks')
+        except KeyError:
+            settings_tmp = settings_from_h5(f)
+            data, tracks_tmp = load_and_process(f,
+                                            settings_tmp.PostProcess.pix_size,
+                                            track_length_limit=settings_tmp.Tracking.track_length_limit)
+
+            with pd.HDFStore(f) as fh:
+                tracks_tmp.to_hdf(fh, 'Tracking/tracks', mode='r+')
+
+            tracks[k] = pd.read_hdf(f, 'Tracking/tracks')
+
 
     settings = settings_from_h5(f)
 
-    fig_name = tracksfile.replace('-TRACKS.h5', '-boxplot')
-    plot_boxplot(dataset_names, tracks, settings.PostProcess.pix_size, fig_name)
+    plot_boxplot(dataset_names, tracks, settings.PostProcess.pix_size, plotfilename)
     print('* boxplotting finished.')
 
 
@@ -300,7 +310,7 @@ def silctrack():
     Usage:
         silcam-track process <configfile> <datapath> [--offset=<offset>]
         silcam-track post-process <tracksfile>
-        silcam-track plotting <tracksfile> [--gif=<outputdir>] [<rawdatapath>] [--boxplot]
+        silcam-track plotting <tracksfile> <plotfilename> [--gif=<outputdir>] [<rawdatapath>] [--boxplot]
     """
 
     args = docopt(silctrack.__doc__)
@@ -360,6 +370,6 @@ def silctrack():
 
         if args['--boxplot']:
             tracksfile = args['<tracksfile>']
-            make_boxplot(tracksfile)
+            make_boxplot(tracksfile, args['<plotfilename>'])
 
         print('* plotting finished.')
