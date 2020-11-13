@@ -12,6 +12,8 @@ block_cipher = None
 # will be raised
 site_packages_path = Path(get_python_lib())
 
+cmocean = site_packages_path / "cmocean" / "rgb" / "thermal-rgb.txt"
+
 def get_pandas_path():
     """Helper function to get the path the pandas lib."""
     import pandas
@@ -25,7 +27,7 @@ a = Analysis(
     pathex=[],
     binaries=[],
     # path to file, where to put it in final app
-    datas=[],
+    datas=[(str(cmocean), "thermal-rgb.txt")],
     hiddenimports=["scipy._lib.messagestream"],
     hookspath=[],
     runtime_hooks=[],

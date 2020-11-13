@@ -30,3 +30,5 @@ call python setup.py develop
 cd windows_installer
 rem run pyinstaller. The exe file generated is located in corecalculator/dist
 call pyinstaller -F silcamgui.spec --log-level=ERROR
+
+pause
