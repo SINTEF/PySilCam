@@ -6,12 +6,18 @@ import unittest
 import pandas as pd
 from pysilcam.config import PySilcamSettings
 from pysilcam.config import load_config
+from sys import platform
 
 # Get user-defined path to unittest data folder
 ROOTPATH = os.environ.get('UNITTEST_DATA_PATH', None)
 
 # Get user-defined tensorflow model path from environment variable
 MODEL_PATH = os.environ.get('SILCAM_MODEL_PATH', None)
+
+# pytest on windows can't deal with multiprocessing, so switch it off if windows patform detected
+multiProcess = True
+if platform == "win32":
+    multiProcess = False
 
 @unittest.skipIf((ROOTPATH is None),
     "test path not accessible")
@@ -39,7 +45,7 @@ def test_big_standards():
         os.remove(stats_file)
 
     # call process function
-    silcam_process(conf_file_out, data_file, multiProcess=True, nbImages=10)
+    silcam_process(conf_file_out, data_file, multiProcess=multiProcess, nbImages=10)
 
     # check that csv file has been created
     assert os.path.isfile(stats_file), 'stats_file not created'
@@ -82,7 +88,7 @@ def test_small_standards():
         os.remove(stats_file)
 
     # call process function
-    silcam_process(conf_file_out, data_file, multiProcess=True, nbImages=10)
+    silcam_process(conf_file_out, data_file, multiProcess=multiProcess, nbImages=10)
 
     # check that csv file has been created
     assert os.path.isfile(stats_file), 'stats_file not created'
