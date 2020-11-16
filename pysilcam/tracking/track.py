@@ -215,10 +215,10 @@ def plot_single(datapath):
     plt.show()
 
 
-def load_and_process(tracksfile, PIX_SIZE,
+def load_and_process(tracksfile, PIX_SIZE, max_starts=None,
                      minlength=0, maxlength=1e6, track_length_limit=15):
     data = pd.read_hdf(tracksfile, 'Tracking/data')
-    tracks = sctracker.post_process(data, PIX_SIZE, track_length_limit=track_length_limit, minlength=minlength,
+    tracks = sctracker.post_process(data, PIX_SIZE, track_length_limit=track_length_limit, max_starts=max_starts, minlength=minlength,
                                     maxlength=maxlength)
     return data, tracks
 
