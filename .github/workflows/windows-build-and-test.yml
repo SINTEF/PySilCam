@@ -34,6 +34,5 @@ jobs:
           target: temp.zip
 
       - name: Unzip test data
-        uses: montudor/action-zip@v0.1.1
-        with:
-          args: unzip -qq temp.zip -d testdata
+        shell: powershell
+        run: 7z x temp.zip -otestdata
