@@ -40,7 +40,7 @@ jobs:
 
       - name: Unzip test data
         shell: powershell
-        run: 7z x temp.zip -o testdata
+        run: 7z x temp.zip -otestdata
 
       - name: Setup test
         shell: cmd /C CALL {0}
