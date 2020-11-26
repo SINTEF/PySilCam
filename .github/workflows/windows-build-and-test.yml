@@ -45,6 +45,7 @@ jobs:
       - name: Setup test
         shell: cmd /C CALL {0}
         run: >-
+          activate silcam &&
           set UNITTEST_DATA_PATH='testdata\pysilcam-testdata\unittest-data' &&
           set SILCAM_MODEL_PATH='testdata\pysilcam-testdata\keras_model.h5 &&
           python setup.py test_noskip
