@@ -1,6 +1,6 @@
 name: Run linting on the Python codebase
 
-on: [pull_request] # Lintly runs only on Pull Requests
+on: [push, pull_request] # Lintly runs only on Pull Requests
 
 jobs:
   lint:
