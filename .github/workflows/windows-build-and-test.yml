@@ -1,4 +1,4 @@
-name: Docker build and test
+name: Windows build and test
 
 on: [push, pull_request]
 
@@ -24,4 +24,21 @@ jobs:
           conda info
           conda list
 
+      - name: Download test data
+        shell: bash
+        env:
+          AZURE_TEST_DATA_ACCESS_TOKEN: ${{ secrets.AZURE_TEST_DATA_ACCESS_TOKEN }}
+        run: |
+          wget -nv https://pysilcam.blob.core.windows.net/test-data/pysilcam-testdata.zip?${AZURE_TEST_DATA_ACCESS_TOKEN} -O temp.zip
+          unzip temp.zip
 
+      - name: Download test data
+        uses: suisei-cn/actions-download-file@v1
+        with:
+          url: "https://pysilcam.blob.core.windows.net/test-data/pysilcam-testdata.zip"
+          target: temp.zip
+
+      - name: Unzip test data
+        uses: montudor/action-zip@v0.1.1
+        with:
+          args: unzip -qq temp.zip -d testdata
