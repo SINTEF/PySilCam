@@ -22,10 +22,15 @@ jobs:
           environment-file: environment.yml
 
       - name: Check silcam environment
-        shell: powershell
-        run: |
-          conda info
-          conda list
+        shell: cmd /C CALL {0}
+        run: >-
+          conda info && conda list
+
+      - name: Setup develop
+        shell: cmd /C CALL {0}
+        run: >-
+          activate silcam
+          python setup.py develop
 
       - name: Download test data
         uses: suisei-cn/actions-download-file@v1
