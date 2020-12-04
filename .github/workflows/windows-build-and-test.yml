@@ -40,12 +40,12 @@ jobs:
 
       - name: Unzip test data
         shell: powershell
-        run: 7z x temp.zip -otestdata
+        run: .\7z x temp.zip -otestdata
 
       - name: Setup test
         shell: cmd /C CALL {0}
         run: >-
           activate silcam &&
-          set UNITTEST_DATA_PATH='testdata\pysilcam-testdata\pysilcam-testdata\unittest-data' &&
-          set SILCAM_MODEL_PATH='testdata\pysilcam-testdata\pysilcam-testdata\keras_model.h5 &&
+          set UNITTEST_DATA_PATH='testdata\pysilcam-testdata\unittest-data' &&
+          set SILCAM_MODEL_PATH='testdata\pysilcam-testdata\keras_model.h5 &&
           python setup.py test_noskip
