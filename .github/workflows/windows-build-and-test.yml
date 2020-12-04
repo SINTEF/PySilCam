@@ -15,23 +15,6 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v2
 
-      - name: Install silcam environment
-        uses: conda-incubator/setup-miniconda@v2
-        with:
-          activate-environment: anaconda-client-env
-          environment-file: environment.yml
-
-      - name: Check silcam environment
-        shell: cmd /C CALL {0}
-        run: >-
-          conda info && conda list
-
-      - name: Setup develop
-        shell: cmd /C CALL {0}
-        run: >-
-          activate silcam &&
-          python setup.py develop
-
       - name: Download test data
         uses: suisei-cn/actions-download-file@v1
         with:
@@ -45,8 +28,4 @@ jobs:
       - name: Setup test
         shell: cmd /C CALL {0}
         run: >-
-          dir
-          activate silcam &&
-          set UNITTEST_DATA_PATH='testdata/pysilcam-testdata/unittest-data' &&
-          set SILCAM_MODEL_PATH='testdata/pysilcam-testdata/keras_model.h5 &&
-          python setup.py test_noskip
+          dir &&
