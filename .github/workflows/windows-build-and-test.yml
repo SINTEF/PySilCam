@@ -29,3 +29,4 @@ jobs:
         shell: cmd /C CALL {0}
         run: >-
           dir &&
+          dir testdata\pysilcam-testdata\unittest-data &&
