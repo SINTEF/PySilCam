@@ -28,7 +28,7 @@ def test_big_standards():
     conf_file_out = os.path.join(ROOTPATH, 'STANDARDS', 'config_glass_standards_generated.ini')
     conf = load_config(conf_file)
 
-    data_file = os.path.join(ROOTPATH, 'STANDARDS/StandardsBig')
+    data_file = os.path.join(ROOTPATH, 'STANDARDS', 'StandardsBig')
     conf.set('General', 'loglevel', 'INFO')
     conf.set('General', 'datafile', os.path.join(ROOTPATH, 'STANDARDS', 'proc'))
     conf.set('General', 'logfile', os.path.join(ROOTPATH, 'STANDARDS', 'log.log'))
@@ -38,7 +38,7 @@ def test_big_standards():
     conf.write(conf_file_hand)
     conf_file_hand.close()
 
-    stats_file = os.path.join(ROOTPATH, 'STANDARDS/proc/StandardsBig-STATS.csv')
+    stats_file = os.path.join(ROOTPATH, 'STANDARDS', 'proc', 'StandardsBig-STATS.csv')
 
     # if csv file already exists, it has to be deleted
     if (os.path.isfile(stats_file)):
@@ -72,7 +72,7 @@ def test_small_standards():
     conf_file_out = os.path.join(ROOTPATH, 'STANDARDS', 'config_glass_standards_generated.ini')
     conf = load_config(conf_file)
 
-    data_file = os.path.join(ROOTPATH, 'STANDARDS/StandardsSmall')
+    data_file = os.path.join(ROOTPATH, 'STANDARDS', 'StandardsSmall')
     conf.set('General', 'datafile', os.path.join(ROOTPATH, 'STANDARDS', 'proc'))
     conf.set('General', 'logfile', os.path.join(ROOTPATH, 'STANDARDS', 'log.log'))
     if MODEL_PATH is not None:
@@ -81,7 +81,7 @@ def test_small_standards():
     conf.write(conf_file_hand)
     conf_file_hand.close()
 
-    stats_file = os.path.join(ROOTPATH, 'STANDARDS/proc/StandardsSmall-STATS.csv')
+    stats_file = os.path.join(ROOTPATH, 'STANDARDS', 'proc', 'StandardsSmall-STATS.csv')
 
     # if csv file already exists, it has to be deleted
     if (os.path.isfile(stats_file)):
