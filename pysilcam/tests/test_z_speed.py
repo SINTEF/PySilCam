@@ -35,9 +35,8 @@ def test_speed():
         conf.set('ExportParticles', 'outputpath', tempdir)
         if MODEL_PATH is not None:
             conf.set('NNClassify', 'model_path', MODEL_PATH)
-        conf_file_hand = open(conf_file_out, 'w')
-        conf.write(conf_file_hand)
-        conf_file_hand.close()
+        with open(conf_file_out, 'w') as conf_file_hand:
+            conf.write(conf_file_hand)
 
         t1 = pd.Timestamp.now()
         # call process function
