@@ -40,9 +40,8 @@ def test_debug_files():
         conf.set('ExportParticles', 'outputpath', tempdir)
         if MODEL_PATH is not None:
             conf.set('NNClassify', 'model_path', MODEL_PATH)
-        conf_file_hand = open(conf_file_out, 'w')
-        conf.write(conf_file_hand)
-        conf_file_hand.close()
+        with open(conf_file_out, 'w') as conf_file_hand:
+            conf.write(conf_file_hand)
 
         num_test_ims = 5  # number of images to test
 
@@ -72,9 +71,8 @@ def test_output_files():
     conf.set('ExportParticles', 'outputpath', os.path.join(data_file, 'export'))
     if MODEL_PATH is not None:
         conf.set('NNClassify', 'model_path', MODEL_PATH)
-    conf_file_hand = open(conf_file_out, 'w')
-    conf.write(conf_file_hand)
-    conf_file_hand.close()
+    with open(conf_file_out, 'w') as conf_file_hand:
+        conf.write(conf_file_hand)
 
     stats_file = os.path.join(data_file, 'proc', 'STN04-STATS.csv')
     # todo generate this hdf filename based on input data
@@ -96,8 +94,8 @@ def test_output_files():
     assert os.path.isfile(stats_file), ('STATS csv file not created. should be here:' + stats_file)
 
     # check that csv file has been properly built
-    csvfile = open(stats_file)
-    lines = csvfile.readlines()
+    with open(stats_file) as csvfile:
+        lines = csvfile.readlines()
     numline = len(lines)
     assert numline > 1, 'csv file empty'
 
