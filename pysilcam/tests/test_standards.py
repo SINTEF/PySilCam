@@ -34,9 +34,8 @@ def test_big_standards():
     conf.set('General', 'logfile', os.path.join(ROOTPATH, 'STANDARDS', 'log.log'))
     if MODEL_PATH is not None:
         conf.set('NNClassify', 'model_path', MODEL_PATH)
-    conf_file_hand = open(conf_file_out,'w')
-    conf.write(conf_file_hand)
-    conf_file_hand.close()
+    with open(conf_file_out, 'w') as conf_file_hand:
+        conf.write(conf_file_hand)
 
     stats_file = os.path.join(ROOTPATH, 'STANDARDS', 'proc', 'StandardsBig-STATS.csv')
 
@@ -51,10 +50,10 @@ def test_big_standards():
     assert os.path.isfile(stats_file), 'stats_file not created'
 
     # check that csv file has been properly built
-    csvfile = open(stats_file)
-    lines = csvfile.readlines()
+    with open(stats_file) as csvfile:
+        lines = csvfile.readlines()
     numline = len(lines)
-    assert numline > 1 , 'csv file empty'
+    assert numline > 1, 'csv file empty'
 
     settings = PySilcamSettings(conf_file_out)
     stats = pd.read_csv(stats_file)
@@ -77,9 +76,8 @@ def test_small_standards():
     conf.set('General', 'logfile', os.path.join(ROOTPATH, 'STANDARDS', 'log.log'))
     if MODEL_PATH is not None:
         conf.set('NNClassify', 'model_path', MODEL_PATH)
-    conf_file_hand = open(conf_file_out,'w')
-    conf.write(conf_file_hand)
-    conf_file_hand.close()
+    with open(conf_file_out, 'w') as conf_file_hand:
+        conf.write(conf_file_hand)
 
     stats_file = os.path.join(ROOTPATH, 'STANDARDS', 'proc', 'StandardsSmall-STATS.csv')
 
@@ -94,10 +92,10 @@ def test_small_standards():
     assert os.path.isfile(stats_file), 'stats_file not created'
 
     # check that csv file has been properly built
-    csvfile = open(stats_file)
-    lines = csvfile.readlines()
+    with open(stats_file) as csvfile:
+        lines = csvfile.readlines()
     numline = len(lines)
-    assert numline > 1 , 'csv file empty'
+    assert numline > 1, 'csv file empty'
 
     settings = PySilcamSettings(conf_file_out)
     stats = pd.read_csv(stats_file)
