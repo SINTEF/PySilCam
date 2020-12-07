@@ -35,7 +35,5 @@ WORKDIR /silcam
 # Install PySilcam dependencies
 RUN python setup.py develop
 
-ENV PYTEST_ADDOPTS '--full-trace --durations=0'
-
 # Run the PySilCam tests as default entrypoint
 CMD ["python", "setup.py", "test_noskip"]
