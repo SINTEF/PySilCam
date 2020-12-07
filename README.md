@@ -72,8 +72,7 @@ Jupyter notebook setup
 After installing, activate the silcam conda environment. Then run:
 
 '''bash
-conda install -c anaconda ipykernel
-python -m ipykernel install --user --name=silcam
+conda install -c anaconda ipykernel jupyter
 '''
 
 Then you should be able to see silcam as an available kernel after starting a Jupyter notebook
