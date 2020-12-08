@@ -51,17 +51,13 @@ def test_classify():
 
         # start a counter of incorrectly classified images
         failed = 0
-        time_limit = len(files) * 0.007
-        td = pd.to_timedelta(0, 's')
+        time_limit = len(files) * 0.008
+        t1 = pd.Timestamp.now()
 
         # loop through the database images
         for file in files:
 
-            img = imread(file)  # load ROI
-            t1 = pd.Timestamp.now()
             prediction = predict(img, model)  # run prediction from silcam_classify
-            t2 = pd.Timestamp.now()
-            td += t2 - t1
 
             ind = np.argmax(prediction)  # find the highest score
 
@@ -73,6 +69,8 @@ def test_classify():
         # turn failed count into a success percent
         success = 100 - (failed / len(files)) * 100
 
+        t2 = pd.Timestamp.now()
+        td = t2 - t1
         assert td < pd.to_timedelta(time_limit, 's'), 'Processing time too long.'
 
         return success
