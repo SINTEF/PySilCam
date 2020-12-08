@@ -26,6 +26,8 @@ pip install git+https://github.com/mabl/pymba@python3
 Installing
 ----------
 
+If you are using windows, you need Microsoft Visual C++ Redistributable, which can be downloaded [here](https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads)
+
 Install [Anaconda Python 3.6 or later](https://www.anaconda.com/download/)
 
 Anaconda Prompt may be used for the following
@@ -36,10 +38,10 @@ Create a virtual environment using the environment.yml (will create an environme
 conda env create -f environment.yml
 ```
 
-to update:
+to update, we recommend a forced re-install:
 
 ```bash
-conda env update --file environment.yml --prune
+conda env create -f environment.yml --force
 ```
 
 to activate:
