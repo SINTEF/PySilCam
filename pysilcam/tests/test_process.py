@@ -9,12 +9,18 @@ import os
 import unittest
 import pandas as pd
 import tempfile
+from sys import platform
 
 # Get user-defined path to unittest data folder
 ROOTPATH = os.environ.get('UNITTEST_DATA_PATH', None)
 
 # Get user-defined tensorflow model path from environment variable
 MODEL_PATH = os.environ.get('SILCAM_MODEL_PATH', None)
+
+# pytest on windows can't deal with multiprocessing, so switch it off if windows patform detected
+multiProcess = True
+if platform == "win32":
+    multiProcess = False
 
 print('ROOTPATH', ROOTPATH)
 print('MODEL_PATH', MODEL_PATH)
@@ -46,7 +52,7 @@ def test_debug_files():
         num_test_ims = 5  # number of images to test
 
         # call process function
-        silcam_process(conf_file_out, data_file, multiProcess=True, nbImages=num_test_ims)
+        silcam_process(conf_file_out, data_file, multiProcess=multiProcess, nbImages=num_test_ims)
 
         imc_files = glob.glob(os.path.join(tempdir, '*-IMC*'))
         assert len(imc_files) == num_test_ims, 'unexpected number of IMC files'
@@ -88,7 +94,7 @@ def test_output_files():
         os.remove(hdf_file)
 
     # call process function
-    silcam_process(conf_file_out, data_file, multiProcess=True)
+    silcam_process(conf_file_out, data_file, multiProcess=multiProcess)
 
     # check that csv file has been created
     assert os.path.isfile(stats_file), ('STATS csv file not created. should be here:' + stats_file)
