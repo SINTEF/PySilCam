@@ -161,7 +161,7 @@ def fancy_props(iml, imc, timestamp, settings, nnmodel, class_labels):
 
     '''
 
-    region_properties = measure.regionprops(iml, cache=False, coordinates='xy')
+    region_properties = measure.regionprops(iml, cache=False)
     # build the stats and export to HDF5
     stats = extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_properties)
 
@@ -232,7 +232,8 @@ def extract_roi(im, bbox):
     Returns:
         roi                 : image cropped to region of interest
     '''
-    roi = im[bbox[0]:bbox[2], bbox[1]:bbox[3]]  # yep, that't it.
+    # refer to skimage regionprops documentation on how bbox is structured
+    roi = im[bbox[0]:bbox[2], bbox[1]:bbox[3]]
 
     return roi
 

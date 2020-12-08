@@ -1,0 +1,53 @@
+name: Windows build and test
+
+on: [push, pull_request]
+
+env:
+  IMAGE_NAME: sintef/pysilcam
+  IMAGE_TAG: github-ci
+
+jobs:
+  build:
+    runs-on: windows-2019
+    timeout-minutes: 60
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Install silcam environment
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          activate-environment: anaconda-client-env
+          environment-file: environment.yml
+
+      - name: Check silcam environment
+        shell: cmd /C CALL {0}
+        run: >-
+          conda info && conda list
+
+      - name: Setup develop
+        shell: cmd /C CALL {0}
+        run: >-
+          activate silcam &&
+          python setup.py develop
+
+      - name: Download test data
+        uses: suisei-cn/actions-download-file@v1
+        with:
+          url: "https://pysilcam.blob.core.windows.net/test-data/pysilcam-testdata.zip"
+          target: temp.zip
+
+      - name: Unzip test data
+        shell: powershell
+        run: 7z x temp.zip -otestdata
+
+      - name: Setup test
+        shell: cmd /C CALL {0}
+        run: >-
+          dir &&
+          dir .\testdata\pysilcam-testdata\unittest-data &&
+          activate silcam &&
+          set "UNITTEST_DATA_PATH=%CD%\testdata\pysilcam-testdata\unittest-data" &&
+          set "SILCAM_MODEL_PATH=%CD%\testdata\pysilcam-testdata\keras_model\keras_model.h5" &&
+          python setup.py test_noskip
