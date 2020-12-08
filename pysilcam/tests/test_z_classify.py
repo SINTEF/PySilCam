@@ -56,7 +56,7 @@ def test_classify():
 
         # loop through the database images
         for file in files:
-
+            img = imread(file)  # load ROI
             prediction = predict(img, model)  # run prediction from silcam_classify
 
             ind = np.argmax(prediction)  # find the highest score
