@@ -82,7 +82,7 @@ def test_output_files():
 
     stats_file = os.path.join(data_file, 'proc', 'STN04-STATS.h5')
     # todo generate this hdf filename based on input data
-    hdf_file = os.path.join(data_file, 'export/D20170509T172705.387171.h5')
+    hdf_file = os.path.join(data_file, 'export', 'D20170509T172705.387171.h5')
     report_figure = os.path.join(data_file, 'proc', 'STN04-Summary_all.png')
 
     # if csv file already exists, it has to be deleted
@@ -100,7 +100,7 @@ def test_output_files():
     assert os.path.isfile(stats_file), ('STATS csv file not created. should be here:' + stats_file)
 
     # check that csv file has been properly built
-    stats = pd.read_hdf(stats_file, 'ParticleStats/stats')
+    stats = pd.read_hdf(stats_file, 'ParticleStats', 'stats')
     numline = stats.shape[0]
     assert numline > 1, 'stats empty'
 

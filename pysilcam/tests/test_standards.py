@@ -37,7 +37,7 @@ def test_big_standards():
     with open(conf_file_out, 'w') as conf_file_hand:
         conf.write(conf_file_hand)
 
-    stats_file = os.path.join(ROOTPATH, 'STANDARDS/proc/StandardsBig-STATS.h5')
+    stats_file = os.path.join(ROOTPATH, 'STANDARDS', 'proc', 'StandardsBig-STATS.h5')
 
     # if csv file already exists, it has to be deleted
     if (os.path.isfile(stats_file)):
@@ -50,7 +50,7 @@ def test_big_standards():
     assert os.path.isfile(stats_file), 'stats_file not created'
 
     settings = PySilcamSettings(conf_file_out)
-    stats = pd.read_hdf(stats_file, 'ParticleStats/stats')
+    stats = pd.read_hdf(stats_file, 'ParticleStats', 'stats')
     d50 = scpp.d50_from_stats(stats, settings.PostProcess)
     print('Large d50:', d50)
     assert (d50 > 310 and d50 < 330), 'incorrect d50'
@@ -73,7 +73,7 @@ def test_small_standards():
     with open(conf_file_out, 'w') as conf_file_hand:
         conf.write(conf_file_hand)
 
-    stats_file = os.path.join(ROOTPATH, 'STANDARDS/proc/StandardsSmall-STATS.h5')
+    stats_file = os.path.join(ROOTPATH, 'STANDARDS', 'proc', 'StandardsSmall-STATS.h5')
 
     # if csv file already exists, it has to be deleted
     if (os.path.isfile(stats_file)):
@@ -86,7 +86,7 @@ def test_small_standards():
     assert os.path.isfile(stats_file), 'stats_file not created'
 
     settings = PySilcamSettings(conf_file_out)
-    stats = pd.read_hdf(stats_file, 'ParticleStats/stats')
+    stats = pd.read_hdf(stats_file, 'ParticleStats', 'stats')
     d50 = scpp.d50_from_stats(stats, settings.PostProcess)
     print('Small d50:', d50)
     assert (d50 > 70 and d50 < 90), 'incorrect d50'
