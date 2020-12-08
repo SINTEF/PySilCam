@@ -68,6 +68,17 @@ python setup.py build_sphinx
 
 See the [wiki](https://github.com/SINTEF/PySilCam/wiki) for more details on running PySilCam.
 
+Jupyter notebook setup
+------
+
+After installing, activate the silcam conda environment. Then run:
+
+'''bash
+conda install -c anaconda ipykernel jupyter
+'''
+
+Then you should be able to see silcam as an available kernel after starting a Jupyter notebook
+
 Docker
 ------
 
