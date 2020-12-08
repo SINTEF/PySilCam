@@ -100,7 +100,7 @@ def test_output_files():
     assert os.path.isfile(stats_file), ('STATS csv file not created. should be here:' + stats_file)
 
     # check that csv file has been properly built
-    stats = pd.read_hdf(stats_file, 'ParticleStats', 'stats')
+    stats = pd.read_hdf(stats_file, 'ParticleStats/stats')
     numline = stats.shape[0]
     assert numline > 1, 'stats empty'
 

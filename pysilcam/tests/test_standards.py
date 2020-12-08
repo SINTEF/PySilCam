@@ -86,7 +86,7 @@ def test_small_standards():
     assert os.path.isfile(stats_file), 'stats_file not created'
 
     settings = PySilcamSettings(conf_file_out)
-    stats = pd.read_hdf(stats_file, 'ParticleStats', 'stats')
+    stats = pd.read_hdf(stats_file, 'ParticleStats/stats')
     d50 = scpp.d50_from_stats(stats, settings.PostProcess)
     print('Small d50:', d50)
     assert (d50 > 70 and d50 < 90), 'incorrect d50'
