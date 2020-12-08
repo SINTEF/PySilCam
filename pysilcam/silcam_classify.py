@@ -66,7 +66,7 @@ def load_model(model_path):
     Returns:
         model (tf model object) : loaded tf.keras model from load_model()
     '''
-    import keras
+    from tensorflow import keras
     keras.backend.clear_session()
 
     path, filename = os.path.split(model_path)
