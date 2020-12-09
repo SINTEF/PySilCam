@@ -37,7 +37,7 @@ def test_big_standards():
     with open(conf_file_out, 'w') as conf_file_hand:
         conf.write(conf_file_hand)
 
-    stats_file = os.path.join(ROOTPATH, 'STANDARDS', 'proc', 'StandardsBig-STATS.csv')
+    stats_file = os.path.join(ROOTPATH, 'STANDARDS', 'proc', 'StandardsBig-STATS.h5')
 
     # if csv file already exists, it has to be deleted
     if (os.path.isfile(stats_file)):
@@ -49,14 +49,8 @@ def test_big_standards():
     # check that csv file has been created
     assert os.path.isfile(stats_file), 'stats_file not created'
 
-    # check that csv file has been properly built
-    with open(stats_file) as csvfile:
-        lines = csvfile.readlines()
-    numline = len(lines)
-    assert numline > 1, 'csv file empty'
-
     settings = PySilcamSettings(conf_file_out)
-    stats = pd.read_csv(stats_file)
+    stats = pd.read_hdf(stats_file, 'ParticleStats/stats')
     d50 = scpp.d50_from_stats(stats, settings.PostProcess)
     print('Large d50:', d50)
     assert (d50 > 310 and d50 < 330), 'incorrect d50'
@@ -79,7 +73,7 @@ def test_small_standards():
     with open(conf_file_out, 'w') as conf_file_hand:
         conf.write(conf_file_hand)
 
-    stats_file = os.path.join(ROOTPATH, 'STANDARDS', 'proc', 'StandardsSmall-STATS.csv')
+    stats_file = os.path.join(ROOTPATH, 'STANDARDS', 'proc', 'StandardsSmall-STATS.h5')
 
     # if csv file already exists, it has to be deleted
     if (os.path.isfile(stats_file)):
@@ -91,14 +85,8 @@ def test_small_standards():
     # check that csv file has been created
     assert os.path.isfile(stats_file), 'stats_file not created'
 
-    # check that csv file has been properly built
-    with open(stats_file) as csvfile:
-        lines = csvfile.readlines()
-    numline = len(lines)
-    assert numline > 1, 'csv file empty'
-
     settings = PySilcamSettings(conf_file_out)
-    stats = pd.read_csv(stats_file)
+    stats = pd.read_hdf(stats_file, 'ParticleStats/stats')
     d50 = scpp.d50_from_stats(stats, settings.PostProcess)
     print('Small d50:', d50)
     assert (d50 > 70 and d50 < 90), 'incorrect d50'

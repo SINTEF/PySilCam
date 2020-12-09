@@ -64,7 +64,7 @@ def test_debug_files():
 @unittest.skipIf((ROOTPATH is None),
                  "test path not accessible")
 def test_output_files():
-    '''Testing that the appropriate STATS.csv file is created'''
+    '''Testing that the appropriate STATS.h5 file is created'''
 
     conf_file = os.path.join(ROOTPATH, 'config.ini')
     conf_file_out = os.path.join(ROOTPATH, 'config_generated.ini')
@@ -80,9 +80,9 @@ def test_output_files():
     with open(conf_file_out, 'w') as conf_file_hand:
         conf.write(conf_file_hand)
 
-    stats_file = os.path.join(data_file, 'proc', 'STN04-STATS.csv')
+    stats_file = os.path.join(data_file, 'proc', 'STN04-STATS.h5')
     # todo generate this hdf filename based on input data
-    hdf_file = os.path.join(data_file, 'export/D20170509T172705.387171.h5')
+    hdf_file = os.path.join(data_file, 'export', 'D20170509T172705.387171.h5')
     report_figure = os.path.join(data_file, 'proc', 'STN04-Summary_all.png')
 
     # if csv file already exists, it has to be deleted
@@ -100,10 +100,9 @@ def test_output_files():
     assert os.path.isfile(stats_file), ('STATS csv file not created. should be here:' + stats_file)
 
     # check that csv file has been properly built
-    with open(stats_file) as csvfile:
-        lines = csvfile.readlines()
-    numline = len(lines)
-    assert numline > 1, 'csv file empty'
+    stats = pd.read_hdf(stats_file, 'ParticleStats/stats')
+    numline = stats.shape[0]
+    assert numline > 1, 'stats empty'
 
     # check the columns
     path, filename = os.path.split(MODEL_PATH)
@@ -111,17 +110,30 @@ def test_output_files():
     class_labels = header.columns
 
     # construct expected column string
-    column_string = 'particle index,major_axis_length,minor_axis_length,equivalent_diameter,solidity,minr,minc,maxr,'\
-                    'maxc'
+    column_string = ['major_axis_length',
+                     'minor_axis_length',
+                     'equivalent_diameter',
+                     'solidity',
+                     'minr',
+                     'minc',
+                     'maxr',
+                     'maxc',
+                     'export name',
+                     'timestamp',
+                     'saturation']
     for c in class_labels:
-        column_string += ',probability_' + c
-    column_string += ',export name,timestamp,saturation\n'
+        column_string.append('probability_' + c)
+
+    matching_elements = list(
+            set(column_string) &
+            set(stats.columns.tolist()))
 
     # check that output STATS file contains expected columns
-    assert lines[0] == column_string
+    assert len(matching_elements) ==\
+           len(stats.columns.tolist()) ==\
+           len(column_string), 'output STATS file contains unexpected columns'
 
     # check the correct number of images have been processed
-    stats = pd.read_csv(stats_file)
     settings = PySilcamSettings(conf_file_out)
     background_images = settings.Background.num_images
     number_processed = count_images_in_stats(stats)
