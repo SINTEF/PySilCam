@@ -246,14 +246,32 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
 
     sccl.check_model(settings.NNClassify.model_path)
 
-    adminSTATS(logger, settings, overwriteSTATS, datafilename, datapath)
+    fakepymba_offset = 0
+    datafile_hdf = datafilename + '-STATS.h5'
+    if os.path.isfile(datafile_hdf):
+        # Remove old STATS file if it exists
+        if overwriteSTATS:
+            logger.info('removing: ' + datafile_hdf)
+            print('Overwriting ' + datafile_hdf)
+            os.remove(datafile_hdf)
+        else:
+            # If we are starting from an existings stats file, update the
+            # PYILSCAM_OFFSET environment variable
+            fakepymba_offset = update_pysilcam_offset(logger, settings, datafilename, datapath)
+
+    # Create new HDF store and write PySilcam version and
+    # current datetime as root attribute metadata
+    if not os.path.isfile(datafile_hdf):
+        with pd.HDFStore(datafile_hdf, 'w') as fh:
+            fh.root._v_attrs.timestamp = str(datetime.datetime.now())
+            fh.root._v_attrs.pysilcam_version = str(__version__)
 
     # Initialize the image acquisition generator
     if 'REALTIME_DISC' in os.environ.keys():
         print('acq = Acquire(USE_PYMBA=False)')
         aq = Acquire(USE_PYMBA=False)
     else:
-        aq = Acquire(USE_PYMBA=realtime)
+        aq = Acquire(USE_PYMBA=realtime, FAKE_PYMBA_OFFSET=fakepymba_offset)
     aqgen = aq.get_generator(datapath, writeToDisk=discWrite,
                              camera_config_file=config_filename)
 
@@ -374,8 +392,8 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
             stats_all = processImage(nnmodel, class_labels, image, settings, logger, gui)
 
             if stats_all is not None:  # if frame processed
-                # write the image into the csv file
-                writeCSV(datafilename, stats_all)
+                # write the image statistics to file
+                write_stats(datafilename, stats_all)
                 if 'REALTIME_DISC' in os.environ.keys():
                     scog.realtime_summary(datafilename + '-STATS.h5', config_filename)
 
@@ -578,7 +596,7 @@ def collector(inputQueue, outputQueue, datafilename, proc_list, testInputQueue,
                 break
             continue
 
-        writeCSV(datafilename, task)
+        write_stats(datafilename, task)
         collect_rts(settings, rts, task)
 
 
@@ -605,7 +623,7 @@ def collect_rts(settings, rts, stats_all):
         rts.to_csv(filename)
 
 
-def writeCSV(datafilename, stats_all):
+def write_stats(datafilename, stats_all):
     '''
     Writes particle stats into the csv ouput file
 
@@ -657,9 +675,9 @@ def configure_logger(settings):
         logging.basicConfig(level=getattr(logging, settings.loglevel))
 
 
-def adminSTATS(logger, settings, overwriteSTATS, datafilename, datapath):
+def update_pysilcam_offset(logger, settings, datafilename, datapath):
     '''
-    Administration of the -STATS.h5 file
+    Set the PYSILCAM_OFFSET based on stats file.
 
     Args:
         logger          (logger object) : logger object created using configure_logger()
@@ -667,37 +685,36 @@ def adminSTATS(logger, settings, overwriteSTATS, datafilename, datapath):
         datapath        (str)           : name of the path containing the data
 
     '''
-    if os.path.isfile(datafilename + '-STATS.h5'):
-        if overwriteSTATS:
-            logger.info('removing: ' + datafilename + '-STATS.h5')
-            print('Overwriting ' + datafilename + '-STATS.h5')
-            os.remove(datafilename + '-STATS.h5')
-        else:
-            logger.info('Loading old data from: ' + datafilename + '-STATS.h5')
-            print('Loading old data from: ' + datafilename + '-STATS.h5')
-            oldstats = pd.read_hdf(datafilename + '-STATS.h5', 'ParticleStats/stats')
-            logger.info('  OK.')
-            print('  OK.')
-            last_time = pd.to_datetime(oldstats['timestamp'].max())
 
-            logger.info('Calculating spooling offset')
-            print('Calculating spooling offset')
+    datafile_hdf = datafilename + '-STATS.h5'
+    add_metadata = False
+    logger.info('Loading old data from: ' + datafile_hdf)
+    print('Loading old data from: ' + datafile_hdf)
+    oldstats = pd.read_hdf(datafile_hdf, 'ParticleStats/stats')
+    logger.info('  OK.')
+    print('  OK.')
+    last_time = pd.to_datetime(oldstats['timestamp'].max())
 
-            # TODO: move this import to the top
-            from pysilcam.fakepymba import silcam_name2time
-            files = [f for f in sorted(os.listdir(datapath))
-                     if f.endswith('.silc' or f.endswith('.bmp'))]
-            offsetcalc = pd.DataFrame(columns=['files', 'times'])
-            offsetcalc['files'] = files
-            for i, f in enumerate(files):
-                offsetcalc['times'].iloc[i] = silcam_name2time(f)
-            offset = int(min(np.argwhere(offsetcalc['times'] > last_time)))
-            # subtract the number of background images, so we get data from the correct start point
-            offset -= settings.Background.num_images
-            # and check offset is still positive
-            if offset < 0:
-                offset = 0
-            offset = str(offset)
-            os.environ['PYSILCAM_OFFSET'] = offset
-            logger.info('PYSILCAM_OFFSET set to: ' + offset)
-            print('PYSILCAM_OFFSET set to: ' + offset)
+    logger.info('Calculating spooling offset')
+    print('Calculating spooling offset')
+
+    # TODO: move this import to the top
+    from pysilcam.fakepymba import silcam_name2time
+    files = [f for f in sorted(os.listdir(datapath))
+                if f.endswith('.silc' or f.endswith('.bmp'))]
+    offsetcalc = pd.DataFrame(columns=['files', 'times'])
+    offsetcalc['files'] = files
+    for i, f in enumerate(files):
+        offsetcalc['times'].iloc[i] = silcam_name2time(f)
+    offset = int(min(np.argwhere(offsetcalc['times'] > last_time)))
+    # subtract the number of background images, so we get data from the correct start point
+    offset -= settings.Background.num_images
+    # and check offset is still positive
+    if offset < 0:
+        offset = 0
+    offset = str(offset)
+    os.environ['PYSILCAM_OFFSET'] = offset
+    logger.info('PYSILCAM_OFFSET set to: ' + offset)
+    print('PYSILCAM_OFFSET set to: ' + offset)
+    
+    return offset
