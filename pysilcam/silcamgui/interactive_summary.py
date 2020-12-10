@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 from PyQt5 import QtCore
 from PyQt5 import QtWidgets
-from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import sys
 import os
 from pysilcam.silcamgui.guicalcs import export_timeseries
