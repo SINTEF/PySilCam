@@ -687,7 +687,6 @@ def update_pysilcam_offset(logger, settings, datafilename, datapath):
     '''
 
     datafile_hdf = datafilename + '-STATS.h5'
-    add_metadata = False
     logger.info('Loading old data from: ' + datafile_hdf)
     print('Loading old data from: ' + datafile_hdf)
     oldstats = pd.read_hdf(datafile_hdf, 'ParticleStats/stats')
@@ -701,7 +700,7 @@ def update_pysilcam_offset(logger, settings, datafilename, datapath):
     # TODO: move this import to the top
     from pysilcam.fakepymba import silcam_name2time
     files = [f for f in sorted(os.listdir(datapath))
-                if f.endswith('.silc' or f.endswith('.bmp'))]
+             if f.endswith('.silc' or f.endswith('.bmp'))]
     offsetcalc = pd.DataFrame(columns=['files', 'times'])
     offsetcalc['files'] = files
     for i, f in enumerate(files):
