@@ -696,5 +696,5 @@ def update_pysilcam_offset(logger, settings, datafilename, datapath):
     os.environ['PYSILCAM_OFFSET'] = offset
     logger.info('PYSILCAM_OFFSET set to: ' + offset)
     print('PYSILCAM_OFFSET set to: ' + offset)
-    
+
     return offset
