@@ -105,7 +105,7 @@ class InteractivePlotter(QMainWindow):
 
         self.statusBar = QStatusBar()
         self.setStatusBar(self.statusBar)
-        self.statusBar.showMessage('Hello. Load a -STATS.h5 file to start', 1e12)
+        self.statusBar.showMessage('Hello. Load a -STATS file to start', 1e12)
 
     def callLoadData(self):
         self.statusBar.showMessage('Loading data. PLEASE WAIT', 1e12)
@@ -257,9 +257,9 @@ class PlotView(QtWidgets.QWidget):
         self.stats_filename = ''
         self.stats = []
         self.stats_filename = QFileDialog.getOpenFileName(self,
-                                                          caption='Load a *-STATS.h5 file',
+                                                          caption='Load a *-STATS file',
                                                           directory=self.datadir,
-                                                          filter=(('*-STATS.h5'))
+                                                          filter='STATS (*-STATS.h5 *-STATS.csv)'
                                                           )[0]
         if self.stats_filename == '':
             self.stats_filename = stats_filename_original
@@ -314,7 +314,6 @@ class PlotView(QtWidgets.QWidget):
 
         self.mid_time = min(self.u) + (max(self.u) - min(self.u)) / 2
         self.setup_figure()
-
 
 
     def load_from_timeseries(self):
