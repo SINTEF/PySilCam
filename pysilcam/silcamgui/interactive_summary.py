@@ -266,7 +266,7 @@ class PlotView(QtWidgets.QWidget):
             self.stats = stats_original
             return
 
-        timeseriesgas_file = self.stats_filename.replace('-STATS.h5', '-TIMESERIESgas.xlsx')
+        timeseriesgas_file = self.stats_filename.replace('-STATS.*', '-TIMESERIESgas.xlsx')
 
         if os.path.isfile(timeseriesgas_file):
             ws = waitsplash()
