@@ -318,15 +318,16 @@ class PlotView(QtWidgets.QWidget):
 
     def load_from_timeseries(self):
         '''uses timeseries xls sheets assuming they are available'''
-        timeseriesgas_file = self.stats_filename.replace('-STATS.h5', '-TIMESERIESgas.xlsx')
-        timeseriesoil_file = self.stats_filename.replace('-STATS.h5', '-TIMESERIESoil.xlsx')
+        filename_base = os.path.splitext(self.stats_filename)[0]
+        timeseriesgas_file = filename_base.replace('-STATS', '-TIMESERIESgas.xlsx')
+        timeseriesoil_file = filename_base.replace('-STATS', '-TIMESERIESoil.xlsx')
 
         gas = pd.read_excel(timeseriesgas_file, parse_dates=['Time'])
         oil = pd.read_excel(timeseriesoil_file, parse_dates=['Time'])
 
-        self.dias = np.array(oil.columns[0:52], dtype=float)
-        self.vd_oil = oil.as_matrix(columns=oil.columns[0:52])
-        self.vd_gas = gas.as_matrix(columns=gas.columns[0:52])
+        self.dias = np.array(oil.columns[1:53], dtype=float)
+        self.vd_oil = oil.iloc[:,1:53].to_numpy(dtype=float)
+        self.vd_gas = gas.iloc[:,1:53].to_numpy(dtype=float)
         self.vd_total = self.vd_oil + self.vd_gas
         self.u = pd.to_datetime(oil['Time'].values).tz_localize('UTC')
         self.d50_gas = gas['D50']
@@ -341,6 +342,14 @@ class PlotView(QtWidgets.QWidget):
 
     def load_from_stats(self):
         '''loads stats data and converts to timeseries without saving'''
+
+        if not os.path.isfile(os.path.splitext(self.stats_filename)[0] + '.h5'):
+            print('convert csv to hdf')
+            statscsv_to_statshdf(self.stats_filename)
+            print('hdf conversion done')
+
+        self.stats_filename = os.path.splitext(self.stats_filename)[0] + '.h5'
+
         stats = pd.read_hdf(self.stats_filename, 'ParticleStats/stats')
         stats['timestamp'] = pd.to_datetime(stats['timestamp'])
 
