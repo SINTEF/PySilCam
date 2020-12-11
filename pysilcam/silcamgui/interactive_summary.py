@@ -404,38 +404,38 @@ class PlotView(QtWidgets.QWidget):
 
     def setup_figure(self):
         '''sets up the plotting figure'''
-        plt.sca(self.axisconstant)
-        plt.cla()
+        #plt.sca(self.axisconstant)
+        self.axisconstant.clear()
         if self.plot_pcolor==0:
-            plt.pcolormesh(self.u, self.dias, np.log(self.vd_total.T), cmap=cmocean.cm.matter)
-            plt.plot(self.u, self.d50_total, 'kx', markersize=5, alpha=0.25)
-            plt.plot(self.u, self.d50_gas, 'bx', markersize=5, alpha=0.25)
-            plt.yscale('log')
-            plt.ylabel('ECD [um]')
-            plt.ylim(10, 12000)
+            self.axisconstant.pcolormesh(self.u, self.dias, np.log(self.vd_total.T), cmap=cmocean.cm.matter)
+            self.axisconstant.plot(self.u, self.d50_total, 'kx', markersize=5, alpha=0.25)
+            self.axisconstant.plot(self.u, self.d50_gas, 'bx', markersize=5, alpha=0.25)
+            self.axisconstant.set_yscale('log')
+            self.axisconstant.set_ylabel('ECD [um]')
+            self.axisconstant.set_ylim(10, 12000)
             self.yrange = [1, 12000]
         elif self.plot_pcolor==1:
-            plt.plot(self.u, np.sum(self.vd_total,axis=1),'k.', alpha=0.2)
-            plt.plot(self.u, np.sum(self.vd_oil, axis=1), '.', color=[0.7, 0.4, 0], alpha=0.2)
-            plt.plot(self.u, np.sum(self.vd_gas, axis=1), 'b.', alpha=0.2)
+            self.axisconstant.plot(self.u, np.sum(self.vd_total,axis=1),'k.', alpha=0.2)
+            self.axisconstant.plot(self.u, np.sum(self.vd_oil, axis=1), '.', color=[0.7, 0.4, 0], alpha=0.2)
+            self.axisconstant.plot(self.u, np.sum(self.vd_gas, axis=1), 'b.', alpha=0.2)
             self.yrange = [0, max(np.sum(self.vd_total,axis=1))]
-            plt.ylabel('Volume concentration [uL/L]')
-            plt.yscale('log')
-            plt.ylim(min([min(np.sum(self.vd_total,axis=1)),
+            self.axisconstant.set_ylabel('Volume concentration [uL/L]')
+            self.axisconstant.set_yscale('log')
+            self.axisconstant.set_ylim(min([min(np.sum(self.vd_total,axis=1)),
                           min(np.sum(self.vd_oil,axis=1)),
                           min(np.sum(self.vd_gas,axis=1))]),
-                     max(np.sum(self.vd_total,axis=1)))
+                          max(np.sum(self.vd_total,axis=1)))
         else:
-            plt.plot(self.u, self.cos, 'k.', alpha=0.2)
+            self.axisconstant.plot(self.u, self.cos, 'k.', alpha=0.2)
             self.yrange = [0, 1]
-            plt.ylabel('Cosine similarity with log-normal')
-            plt.ylim(self.yrange)
+            self.axisconstant.set_ylabel('Cosine similarity with log-normal')
+            self.axisconstant.set_ylim(self.yrange)
 
 
         self.start_time = min(self.u)
         self.end_time = max(self.u)
-        self.line1 = plt.vlines(self.start_time, self.yrange[0], self.yrange[1], 'r')
-        self.line2 = plt.vlines(self.end_time, self.yrange[0], self.yrange[1], 'r')
+        self.line1 = self.axisconstant.vlines(self.start_time, self.yrange[0], self.yrange[1], 'r')
+        self.line2 = self.axisconstant.vlines(self.end_time, self.yrange[0], self.yrange[1], 'r')
 
         self.fig.canvas.callbacks.connect('button_press_event', self.on_click)
 
@@ -468,10 +468,10 @@ class PlotView(QtWidgets.QWidget):
 
         psd_nims = len(timeind)
         if psd_nims < 1:
-            plt.sca(self.axispsd)
-            plt.cla()
+            #plt.sca(self.axispsd)
+            self.axispsd.clear()
 
-            plt.sca(self.axistext)
+            #plt.sca(self.axistext)
 
             string = ''
             string += '\n Num images: {:0.0f}'.format(psd_nims)
@@ -479,13 +479,13 @@ class PlotView(QtWidgets.QWidget):
             string += '\n End: ' + str(end_time.tz_convert(None))
             string += '\n Window [sec.]: {:0.3f}'.format((end_time - start_time).total_seconds())
 
-            plt.title(string, verticalalignment='top', horizontalalignment='right', loc='right')
+            self.axistext.set_title(string, verticalalignment='top', horizontalalignment='right', loc='right')
 
-            plt.sca(self.axisconstant)
+            #plt.sca(self.axisconstant)
             self.line1.remove()
             self.line2.remove()
-            self.line1 = plt.vlines(start_time, self.yrange[0], self.yrange[1], 'r', linestyle='--')
-            self.line2 = plt.vlines(end_time, self.yrange[0], self.yrange[1], 'r', linestyle='--')
+            self.line1 = self.axisconstant.vlines(start_time, self.yrange[0], self.yrange[1], 'r', linestyle='--')
+            self.line2 = self.axisconstant.vlines(end_time, self.yrange[0], self.yrange[1], 'r', linestyle='--')
             self.canvas.draw()
             return
 
@@ -510,27 +510,27 @@ class PlotView(QtWidgets.QWidget):
 
         psd_gor = sum(psd_gas) / (sum(psd_oil) + sum(psd_gas)) * 100
 
-        plt.sca(self.axispsd)
-        plt.cla()
-        plt.plot(self.dias, psd_total, 'k', linewidth=5, label='Total')
-        plt.plot(self.dias, psd_oil, color=[0.7, 0.4, 0], label='Oil')
-        plt.plot(self.dias, psd_gas, 'b', label='Gas')
+        #plt.sca(self.axispsd)
+        self.axispsd.clear()
+        self.axispsd.plot(self.dias, psd_total, 'k', linewidth=5, label='Total')
+        self.axispsd.plot(self.dias, psd_oil, color=[0.7, 0.4, 0], label='Oil')
+        self.axispsd.plot(self.dias, psd_gas, 'b', label='Gas')
 
-        plt.vlines(psd_d50_total, 0, max(psd_total), 'k', linestyle='--', linewidth=1, label='Total d50: {:0.0f}um'.format(psd_d50_total))
-        plt.vlines(psd_d50_oil, 0, max(psd_oil), color=[0.7, 0.4, 0], linestyle='--', linewidth=1, label='Oil d50: {:0.0f}um'.format(psd_d50_oil))
-        plt.vlines(psd_d50_gas, 0, max(psd_gas), 'b', linestyle='--', linewidth=1, label='Gas d50: {:0.0f}um'.format(psd_d50_gas))
+        self.axispsd.vlines(psd_d50_total, 0, max(psd_total), 'k', linestyle='--', linewidth=1, label='Total d50: {:0.0f}um'.format(psd_d50_total))
+        self.axispsd.vlines(psd_d50_oil, 0, max(psd_oil), color=[0.7, 0.4, 0], linestyle='--', linewidth=1, label='Oil d50: {:0.0f}um'.format(psd_d50_oil))
+        self.axispsd.vlines(psd_d50_gas, 0, max(psd_gas), 'b', linestyle='--', linewidth=1, label='Gas d50: {:0.0f}um'.format(psd_d50_gas))
 
-        plt.vlines(psd_peak_total, 0, max(psd_total), 'k', linestyle=':', linewidth=1, label='Total peak: {:0.0f}um'.format(psd_peak_total))
-        plt.vlines(psd_peak_oil, 0, max(psd_oil), color=[0.7, 0.4, 0], linestyle=':', linewidth=1, label='Oil peak: {:0.0f}um'.format(psd_peak_oil))
-        plt.vlines(psd_peak_gas, 0, max(psd_gas), 'b', linestyle=':', linewidth=1, label='Gas peak d50: {:0.0f}um'.format(psd_peak_gas))
+        self.axispsd.vlines(psd_peak_total, 0, max(psd_total), 'k', linestyle=':', linewidth=1, label='Total peak: {:0.0f}um'.format(psd_peak_total))
+        self.axispsd.vlines(psd_peak_oil, 0, max(psd_oil), color=[0.7, 0.4, 0], linestyle=':', linewidth=1, label='Oil peak: {:0.0f}um'.format(psd_peak_oil))
+        self.axispsd.vlines(psd_peak_gas, 0, max(psd_gas), 'b', linestyle=':', linewidth=1, label='Gas peak d50: {:0.0f}um'.format(psd_peak_gas))
 
-        plt.xlabel('ECD [um]')
-        plt.ylabel('VD [uL/L]')
-        plt.xscale('log')
-        plt.xlim(10, 12000)
-        plt.legend(loc='upper left')
+        self.axispsd.set_xlabel('ECD [um]')
+        self.axispsd.set_ylabel('VD [uL/L]')
+        self.axispsd.set_xscale('log')
+        self.axispsd.set_xlim(10, 12000)
+        self.axispsd.legend(loc='upper left')
 
-        plt.sca(self.axistext)
+        #plt.sca(self.axistext)
 
         string = ''
         string += 'GOR [%]: {:0.01f}'.format(psd_gor)
@@ -549,13 +549,13 @@ class PlotView(QtWidgets.QWidget):
         string += '\n Window [sec.] {:0.3f}:'.format(pd.to_timedelta(psd_end[0]-psd_start[0]).total_seconds())
         string += '\n\n mid-time: ' + str(pd.to_datetime(self.mid_time))
 
-        plt.title(string, verticalalignment='top', horizontalalignment='right', loc='right')
+        self.axistext.set_title(string, verticalalignment='top', horizontalalignment='right', loc='right')
 
-        plt.sca(self.axisconstant)
+        #plt.sca(self.axisconstant)
         self.line1.remove()
         self.line2.remove()
-        self.line1 = plt.vlines(pd.to_datetime(psd_start[0]), self.yrange[0], self.yrange[1], 'r')
-        self.line2 = plt.vlines(pd.to_datetime(psd_end[0]), self.yrange[0], self.yrange[1], 'r')
+        self.line1 = self.axisconstant.vlines(pd.to_datetime(psd_start[0]), self.yrange[0], self.yrange[1], 'r')
+        self.line2 = self.axisconstant.vlines(pd.to_datetime(psd_end[0]), self.yrange[0], self.yrange[1], 'r')
         self.canvas.draw()
 
         if save:
