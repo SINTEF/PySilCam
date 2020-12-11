@@ -900,6 +900,18 @@ def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
     return df
 
 
+def statscsv_to_statshdf(stats_file):
+    '''Convert old STATS.csv file to a STATS.h5 file
+
+    Args:
+        stats_file              : filename of stats file
+    '''
+    stats = pd.read_csv(stats_file)
+    new_stats_file = stats_file.replace('-STATS.csv', '-STATS.h5')
+    stats.to_hdf(new_stats_file, 'ParticleStats/stats', mode='r+', format='t',
+                      data_columns=True)
+
+
 def trim_stats(stats_file, start_time, end_time, write_new=False, stats=[]):
     '''Chops a STATS.h5 file given a start and end time
 
