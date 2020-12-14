@@ -261,10 +261,9 @@ def summarise_fancy_stats(stats_file, config_file, monitor=False,
 
     while True:
         try:
-<<<<<<< HEAD
             if crop_stats:
                 montage = sc_pp.make_montage(
-                    stats_csv_file,
+                    stats_file,
                     settings.PostProcess.pix_size,
                     roidir=settings.ExportParticles.outputpath,
                     auto_scaler=msize * 2, msize=msize,
@@ -273,21 +272,13 @@ def summarise_fancy_stats(stats_file, config_file, monitor=False,
                     crop_stats_bounds=settings.PostProcess.img_crop)
             else:
                 montage = sc_pp.make_montage(
-                    stats_csv_file,
+                    stats_file,
                     settings.PostProcess.pix_size,
                     roidir=settings.ExportParticles.outputpath,
                     auto_scaler=msize * 2, msize=msize,
                     maxlength=maxlength,
                     oilgas=oilgas,
                     crop_stats_bounds=None)
-=======
-            montage = sc_pp.make_montage(stats_file,
-                                         settings.PostProcess.pix_size,
-                                         roidir=settings.ExportParticles.outputpath,
-                                         auto_scaler=msize * 2, msize=msize,
-                                         maxlength=maxlength,
-                                         oilgas=oilgas)
->>>>>>> master
         except:
             montage = np.zeros((msize, msize, 3), dtype=np.uint8) + 255
             logger.warning(
