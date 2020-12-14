@@ -2,13 +2,11 @@ import sys
 import numpy as np
 import pandas as pd
 import os
-from PyQt5.QtWidgets import (QMainWindow, QApplication, QPushButton, QWidget, QDialog,
-QAction, QTabWidget,QVBoxLayout, QFileDialog, QMessageBox)
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtWidgets import (QMainWindow, QApplication, QDialog, QVBoxLayout, QFileDialog, QMessageBox)
+from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSlot
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
-import matplotlib
 import skimage.io
 from pysilcam.silcamgui.SilCam import Ui_SilCam
 from pysilcam.silcamgui.SilCamController import Ui_SilCamController
@@ -30,6 +28,7 @@ sns.set_context(font_scale=2)
 DATADIR = os.getcwd()
 IP = '192.168.1.2'
 DEFAULT_CONFIG = os.path.join(os.path.dirname(__file__), '../config_example.ini')
+
 
 def names_to_times(names):
     times = []
@@ -103,7 +102,7 @@ class stats_trim_dlg(QMainWindow):
         if reply == QMessageBox.Save:
             self.trimmed_stats, self.output_filename = scpp.trim_stats(self.stats_filename, start_time, end_time,
                                                                   write_new=True, stats=self.stats)
-            print('New STATS.csv file written as:', self.output_filename)
+            print('New STATS.h5 file written as:', self.output_filename)
 
     def plot_trimmed_stats(self):
         start_time = pd.to_datetime(self.ui.dateTimeStart.dateTime().toPyDateTime())
@@ -124,7 +123,7 @@ class stats_trim_dlg(QMainWindow):
         stats_gas = scog.extract_gas(self.trimmed_stats)
 
         sample_volume = scpp.get_sample_volume(settings.PostProcess.pix_size,
-                                                path_length=settings.PostProcess.path_length)
+                                               path_length=settings.PostProcess.path_length)
 
         nims = scpp.count_images_in_stats(self.trimmed_stats)
         dias, vd = scpp.vd_from_stats(self.trimmed_stats, settings.PostProcess)
@@ -136,7 +135,7 @@ class stats_trim_dlg(QMainWindow):
         vd_oil /= sv
         vd_gas /= sv
 
-        plt.plot(dias, vd_oil+vd_gas ,'k', label='TOTAL')
+        plt.plot(dias, vd_oil+vd_gas, 'k', label='TOTAL')
         plt.plot(dias, vd_oil, 'r', label='OIL')
         plt.plot(dias, vd_gas, 'b', label='GAS')
         plt.xscale('log')
@@ -146,7 +145,6 @@ class stats_trim_dlg(QMainWindow):
         plt.legend()
 
         self.canvas.draw()
-
 
     def closeEvent(self, event):
         pass
@@ -257,12 +255,12 @@ class ConfigEditor(QDialog):
         self.ui.com_portEdit.setCurrentIndex(0)
 
         for port in listPortCom:
-            if (port != self.settings.PostProcess.com_port):
+            if port != self.settings.PostProcess.com_port:
                 self.ui.com_portEdit.addItem(port)
 
         self.ui.window_sizeEdit.setText(str(self.settings.PostProcess.window_size))
 
-        if (self.settings.ExportParticles.export_images == True):
+        if self.settings.ExportParticles.export_images is True:
             self.ui.export_imagesEdit.setCurrentIndex(1)
         else:
             self.ui.export_imagesEdit.setCurrentIndex(0)
@@ -274,8 +272,8 @@ class ConfigEditor(QDialog):
 
 
     def browseDataPath(self):
-        dataPath = QFileDialog.getExistingDirectory(self,'Select output data folder',
-                    DATADIR,QFileDialog.ShowDirsOnly)
+        dataPath = QFileDialog.getExistingDirectory(self, 'Select output data folder',
+                                                    DATADIR, QFileDialog.ShowDirsOnly)
         if dataPath == '':
             return
 
@@ -445,7 +443,7 @@ def main():
                     return
 
             self.stats_filename = ''
-            self.status_update('Asking user for *-STATS.csv file')
+            self.status_update('Asking user for *-STATS.h5 file')
             self.load_stats_filename()
             if self.stats_filename == '':
                 self.status_update('Did not get STATS file')
@@ -457,24 +455,24 @@ def main():
             scplt.summarise_fancy_stats(self.stats_filename,
                     self.configfile, monitor=False)
             self.status_update('Saving summary figure (all)....')
-            plt.savefig(self.stats_filename.replace('-STATS.csv','') + '-Summary.png',
-                    dpi=600, bbox_inches='tight')
+            plt.savefig(self.stats_filename.replace('-STATS.h5', '') + '-Summary.png',
+                        dpi=600, bbox_inches='tight')
 
             plt.figure(figsize=(20,12))
             self.status_update('Creating summary figure (oil)....')
             scplt.summarise_fancy_stats(self.stats_filename,
                     self.configfile, monitor=False, oilgas=scpp.outputPartType.oil)
             self.status_update('Saving summary figure (oil)....')
-            plt.savefig(self.stats_filename.replace('-STATS.csv','') + '-Summary_oil.png',
-                    dpi=600, bbox_inches='tight')
+            plt.savefig(self.stats_filename.replace('-STATS.h5', '') + '-Summary_oil.png',
+                        dpi=600, bbox_inches='tight')
 
             plt.figure(figsize=(20,12))
             self.status_update('Creating summary figure (gas)....')
             scplt.summarise_fancy_stats(self.stats_filename,
                     self.configfile, monitor=False, oilgas=scpp.outputPartType.gas)
             self.status_update('Saving summary figure (gas)....')
-            plt.savefig(self.stats_filename.replace('-STATS.csv','') + '-Summary_gas.png',
-                    dpi=600, bbox_inches='tight')
+            plt.savefig(self.stats_filename.replace('-STATS.h5', '') + '-Summary_gas.png',
+                        dpi=600, bbox_inches='tight')
 
             self.status_update('Summary figure done.')
 
@@ -490,7 +488,7 @@ def main():
                     return
 
             self.stats_filename = ''
-            self.status_update('Asking user for *-STATS.csv file')
+            self.status_update('Asking user for *-STATS.h5 file')
             self.load_stats_filename()
             if self.stats_filename == '':
                 self.status_update('Did not get STATS file')
@@ -513,7 +511,7 @@ def main():
             settings = PySilcamSettings(self.configfile)
 
             self.stats_filename = ''
-            self.status_update('Asking user for *-STATS.csv file')
+            self.status_update('Asking user for *-STATS.h5 file')
             self.load_stats_filename()
             if self.stats_filename == '':
                 self.status_update('Did not get STATS file')
@@ -555,8 +553,8 @@ def main():
             labs = [l.get_label() for l in lns]
             plt.legend(lns, labs)
 
-            plt.savefig(self.stats_filename.replace('-STATS.csv','') +
-                    '-d50_TimeSeries.png', dpi=600, bbox_inches='tight')
+            plt.savefig(self.stats_filename.replace('-STATS.h5', '') +
+                        '-d50_TimeSeries.png', dpi=600, bbox_inches='tight')
 
             self.status_update('Export finished.')
 
@@ -781,10 +779,10 @@ def main():
                 procfoldername = os.path.split(self.datadir)[-1]
                 datafilename = os.path.join(settings.General.datafile, procfoldername)
 
-                if (os.path.isfile(datafilename + '-STATS.csv')):
+                if (os.path.isfile(datafilename + '-STATS.h5')):
                     msgBox = QMessageBox()
                     msgBox.setText(
-                        'The STATS file ' + procfoldername + '-STATS.csv' + ' already exists in the output repository.')
+                        'The STATS file ' + procfoldername + '-STATS.h5' + ' already exists in the output repository.')
                     msgBox.setIcon(QMessageBox.Question)
                     msgBox.setWindowTitle('STATS file already exists')
                     overwriteButton = msgBox.addButton('Overwrite', QMessageBox.ActionRole)
@@ -822,10 +820,10 @@ def main():
 
         def load_stats_filename(self):
             self.stats_filename = QFileDialog.getOpenFileName(self,
-                    caption = 'Load a *-STATS.csv file',
-                    directory = self.datadir,
-                    filter = (('*-STATS.csv'))
-                    )[0]
+                                                              caption='Load a *-STATS.h5 file',
+                                                              directory=self.datadir,
+                                                              filter='*-STATS.h5'
+                                                              )[0]
             if self.stats_filename == '':
                 return
 
@@ -839,7 +837,7 @@ def main():
                     return
 
             self.stats_filename = ''
-            self.status_update('Asking user for *-STATS.csv file')
+            self.status_update('Asking user for *-STATS.h5 file')
             self.load_stats_filename()
             if self.stats_filename == '':
                 self.status_update('Did not get STATS file')

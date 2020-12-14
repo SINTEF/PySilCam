@@ -74,7 +74,7 @@ class InteractivePlotter(QMainWindow):
         fileMenu.addAction(avwinButton)
 
         self.trimButton = QAction('Trim STATS', self)
-        self.trimButton.setStatusTip('Make a STATS.csv file from the selected region')
+        self.trimButton.setStatusTip('Make a STATS.h5 file from the selected region')
         self.trimButton.setShortcut("Ctrl+c")
         self.trimButton.triggered.connect(self.trim_stats)
         fileMenu.addAction(self.trimButton)
@@ -105,7 +105,7 @@ class InteractivePlotter(QMainWindow):
 
         self.statusBar = QStatusBar()
         self.setStatusBar(self.statusBar)
-        self.statusBar.showMessage('Hello. Load a -STATS.csv file to start', 1e12)
+        self.statusBar.showMessage('Hello. Load a -STATS.h5 file to start', 1e12)
 
     def callLoadData(self):
         self.statusBar.showMessage('Loading data. PLEASE WAIT', 1e12)
@@ -257,16 +257,16 @@ class PlotView(QtWidgets.QWidget):
         self.stats_filename = ''
         self.stats = []
         self.stats_filename = QFileDialog.getOpenFileName(self,
-                                                          caption='Load a *-STATS.csv file',
+                                                          caption='Load a *-STATS.h5 file',
                                                           directory=self.datadir,
-                                                          filter=(('*-STATS.csv'))
+                                                          filter=(('*-STATS.h5'))
                                                           )[0]
         if self.stats_filename == '':
             self.stats_filename = stats_filename_original
             self.stats = stats_original
             return
 
-        timeseriesgas_file = self.stats_filename.replace('-STATS.csv', '-TIMESERIESgas.xlsx')
+        timeseriesgas_file = self.stats_filename.replace('-STATS.h5', '-TIMESERIESgas.xlsx')
 
         if os.path.isfile(timeseriesgas_file):
             ws = waitsplash()
@@ -319,8 +319,8 @@ class PlotView(QtWidgets.QWidget):
 
     def load_from_timeseries(self):
         '''uses timeseries xls sheets assuming they are available'''
-        timeseriesgas_file = self.stats_filename.replace('-STATS.csv', '-TIMESERIESgas.xlsx')
-        timeseriesoil_file = self.stats_filename.replace('-STATS.csv', '-TIMESERIESoil.xlsx')
+        timeseriesgas_file = self.stats_filename.replace('-STATS.h5', '-TIMESERIESgas.xlsx')
+        timeseriesoil_file = self.stats_filename.replace('-STATS.h5', '-TIMESERIESoil.xlsx')
 
         gas = pd.read_excel(timeseriesgas_file, parse_dates=['Time'])
         oil = pd.read_excel(timeseriesoil_file, parse_dates=['Time'])
@@ -342,7 +342,8 @@ class PlotView(QtWidgets.QWidget):
 
     def load_from_stats(self):
         '''loads stats data and converts to timeseries without saving'''
-        stats = pd.read_csv(self.stats_filename, parse_dates=['timestamp'])
+        stats = pd.read_hdf(self.stats_filename, 'ParticleStats/stats')
+        stats['timestamp'] = pd.to_datetime(stats['timestamp'])
 
         u = stats['timestamp'].unique()
         u = pd.to_datetime(u)
@@ -559,7 +560,7 @@ class PlotView(QtWidgets.QWidget):
 
         if save:
             timestring = pd.to_datetime(psd_start[0]).strftime('D%Y%m%dT%H%M%S')
-            outputname = self.stats_filename.replace('-STATS.csv','-PSD-' + timestring)
+            outputname = self.stats_filename.replace('-STATS.h5', '-PSD-' + timestring)
             outputname = QFileDialog.getSaveFileName(self,
                                                    "Select file to Save", outputname,
                                                    ".xlsx")
@@ -655,7 +656,7 @@ class PlotView(QtWidgets.QWidget):
             self.trimmed_stats, self.output_filename = scpp.trim_stats(self.stats_filename, start_time, end_time,
                                                                        write_new=True, stats=self.stats)
             ws.close()
-            print('New STATS.csv file written as:', self.output_filename)
+            print('New STATS.h5 file written as:', self.output_filename)
 
 
 class waitsplash():

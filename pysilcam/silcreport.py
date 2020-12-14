@@ -21,7 +21,7 @@ def silcreport():
 
     Arguments:
         configfile:  The config filename associated with the data
-        statsfile:   The -STATS.csv filename associated with the data
+        statsfile:   The -STATS.h5 filename associated with the data
 
     Options:
         --type=<particle_type>  The particle type to summarise. Can be: 'all',
@@ -70,7 +70,7 @@ def silcam_report(statsfile, configfile, particle_type=scpp.outputPartType.all,
                                 monitor=monitor, oilgas=particle_type)
 
     logger.info('  Saving to disc....')
-    plt.savefig(statsfile.strip('-STATS.csv') + '-Summary_' +
+    plt.savefig(statsfile.strip('-STATS.h5') + '-Summary_' +
                 particle_type_str + '.png',
                 dpi=dpi, bbox_inches='tight')
     logger.info('Done.')

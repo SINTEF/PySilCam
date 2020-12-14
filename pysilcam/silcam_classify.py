@@ -3,8 +3,7 @@ import os
 import h5py
 import numpy as np
 import pandas as pd
-import scipy
-import tensorflow.keras as keras
+from PIL import Image
 
 '''
 SilCam TensorFlow analysis for classification of particle types
@@ -67,6 +66,9 @@ def load_model(model_path):
     Returns:
         model (tf model object) : loaded tf.keras model from load_model()
     '''
+    from tensorflow import keras
+    keras.backend.clear_session()
+
     path, filename = os.path.split(model_path)
     header = pd.read_csv(os.path.join(path, 'header.tfl.txt'))
     class_labels = header.columns
@@ -88,12 +90,13 @@ def predict(img, model):
     Returns:
         prediction (array)      : the probability of the roi belonging to each class
     '''
-
     # Scale it to 32x32
-    img = scipy.misc.imresize(img, (32, 32), interp="bicubic").astype(np.float32, casting='unsafe')
+    img = Image.fromarray(img)
+    img = img.resize((32, 32), Image.BICUBIC)
+    img = np.array(img)
     img = (img - 195.17760394934288) / 56.10742134506719  # Image preprocessing that matches the TFL model
 
     # Predict
-    prediction = model.predict(np.expand_dims(img, 0))
+    prediction = model(np.expand_dims(img, 0))
 
     return prediction
