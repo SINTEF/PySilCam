@@ -21,7 +21,7 @@ ENV PYTHONDONTWRITEBYTECODE FALSE
 
 # Assume that test data is mounted into the testdata path
 ENV UNITTEST_DATA_PATH /testdata/unittest-data
-ENV SILCAM_MODEL_PATH /testdata/tflmodel/particle-classifier.tfl
+ENV SILCAM_MODEL_PATH /testdata/keras_model/keras_model.h5
 
 # Supress the usage of a display for unit tests
 ENV MPLBACKEND Agg

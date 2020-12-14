@@ -57,7 +57,7 @@ def silcam():
       --nbimages=<number of images>     Number of images to process.
       --discwrite                       Write images to disc.
       --nomultiproc                     Deactivate multiprocessing.
-      --appendstats                     Appends data to output STATS.csv file. If not specified, the STATS.csv file will
+      --appendstats                     Appends data to output STATS.h5 file. If not specified, the STATS.h5 file will
                                         be overwritten!
       -h --help                         Show this screen.
       --version                         Show version.
@@ -339,7 +339,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
                 logger.debug('GUI queue updated')
 
             if 'REALTIME_DISC' in os.environ.keys():
-                scog.realtime_summary(datafilename + '-STATS.csv', config_filename)
+                scog.realtime_summary(datafilename + '-STATS.h5', config_filename)
 
         logger.debug('Acquisition loop completed')
         if not realtime:
@@ -377,7 +377,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
                 # write the image into the csv file
                 writeCSV(datafilename, stats_all)
                 if 'REALTIME_DISC' in os.environ.keys():
-                    scog.realtime_summary(datafilename + '-STATS.csv', config_filename)
+                    scog.realtime_summary(datafilename + '-STATS.h5', config_filename)
 
             if gui is not None:
                 collect_rts(settings, rts, stats_all)
@@ -508,14 +508,6 @@ def loop(config_filename, inputQueue, outputQueue, gui=None):
     logger = logging.getLogger(__name__ + '.silcam_process')
 
     # load the model for particle classification and keep it for later
-
-    # a tensorflow session must be started on each process in order to function reliably in multiprocess.
-    # This also includes the import of tensorflow on each process
-    # @todo the loading of the model and prediction functions should be within a class that is initialized by starting a
-    #  tensorflow session, then this will be cleaner.
-    import tensorflow as tf
-    sess = tf.Session()
-
     nnmodel = []
     nnmodel, class_labels = sccl.load_model(model_path=settings.NNClassify.model_path)
 
@@ -530,10 +522,6 @@ def loop(config_filename, inputQueue, outputQueue, gui=None):
             outputQueue.put(stats_all)
         else:
             logger.info('No stats found.')
-
-    # close of the tensorflow session when everything is finished.
-    # unsure of behaviour if things crash or are stoppped before reaching this point
-    sess.close()
     return
 
 
@@ -561,7 +549,7 @@ def distributor(inputQueue, outputQueue, config_filename, proc_list, gui=None):
 def collector(inputQueue, outputQueue, datafilename, proc_list, testInputQueue,
               settings, rts=None):
     '''
-    collects all the results and write them into the stats.csv file
+    collects all the results and write them into the stats.h5 file
 
     Args:
         inputQueue  ()              : queue where the images are added for processing
@@ -622,7 +610,7 @@ def writeCSV(datafilename, stats_all):
     Writes particle stats into the csv ouput file
 
     Args:
-        datafilename (str):     filame prefix for -STATS.csv file that may or may not include a path
+        datafilename (str):     filame prefix for -STATS.h5 file that may or may not include a path
         stats_all (DataFrame):  stats dataframe returned from processImage()
     '''
 
@@ -632,12 +620,8 @@ def writeCSV(datafilename, stats_all):
     # @todo accidentally appending to an existing file could be dangerous
     # because data will be duplicated (and concentrations would therefore
     # double) GUI promts user regarding this - directly-run functions are more dangerous.
-    if not os.path.isfile(datafilename + '-STATS.csv'):
-        stats_all.to_csv(datafilename +
-                         '-STATS.csv', index_label='particle index')
-    else:
-        stats_all.to_csv(datafilename + '-STATS.csv',
-                         mode='a', header=False)
+    with pd.HDFStore(datafilename + '-STATS.h5', 'a') as fh:
+        stats_all.to_hdf(fh, 'ParticleStats/stats', append=True, mode='r+', format='t', data_columns=True)
 
 
 def check_path(filename):
@@ -675,23 +659,23 @@ def configure_logger(settings):
 
 def adminSTATS(logger, settings, overwriteSTATS, datafilename, datapath):
     '''
-    Administration of the -STATS.csv file
+    Administration of the -STATS.h5 file
 
     Args:
         logger          (logger object) : logger object created using configure_logger()
-        datafilename    (str)           : name of the folder containing the -STATS.csv
+        datafilename    (str)           : name of the folder containing the -STATS.h5
         datapath        (str)           : name of the path containing the data
 
     '''
-    if os.path.isfile(datafilename + '-STATS.csv'):
+    if os.path.isfile(datafilename + '-STATS.h5'):
         if overwriteSTATS:
-            logger.info('removing: ' + datafilename + '-STATS.csv')
-            print('Overwriting ' + datafilename + '-STATS.csv')
-            os.remove(datafilename + '-STATS.csv')
+            logger.info('removing: ' + datafilename + '-STATS.h5')
+            print('Overwriting ' + datafilename + '-STATS.h5')
+            os.remove(datafilename + '-STATS.h5')
         else:
-            logger.info('Loading old data from: ' + datafilename + '-STATS.csv')
-            print('Loading old data from: ' + datafilename + '-STATS.csv')
-            oldstats = pd.read_csv(datafilename + '-STATS.csv')
+            logger.info('Loading old data from: ' + datafilename + '-STATS.h5')
+            print('Loading old data from: ' + datafilename + '-STATS.h5')
+            oldstats = pd.read_hdf(datafilename + '-STATS.h5', 'ParticleStats/stats')
             logger.info('  OK.')
             print('  OK.')
             last_time = pd.to_datetime(oldstats['timestamp'].max())

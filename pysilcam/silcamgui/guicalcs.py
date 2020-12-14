@@ -47,7 +47,7 @@ def export_timeseries(configfile, statsfile):
     settings = PySilcamSettings(configfile)
 
     print('Loading STATS data: ', statsfile)
-    stats = pd.read_csv(statsfile)
+    stats = pd.read_hdf(statsfile, 'ParticleStats/stats')
 
     stats['timestamp'] = pd.to_datetime(stats['timestamp'])
 
@@ -118,7 +118,7 @@ def export_timeseries(configfile, statsfile):
         gor.append(np.sum(vdts_av_gas)/np.sum(vdts_av_oil))
 
     outpath, outfile = os.path.split(statsfile)
-    outfile = outfile.replace('-STATS.csv','')
+    outfile = outfile.replace('-STATS.h5', '')
     outfile = os.path.join(outpath, outfile)
 
     time_series = pd.DataFrame(data=np.squeeze(vdts_all), columns=dias)
@@ -186,7 +186,7 @@ def export_timeseries(configfile, statsfile):
     dfa['d50'] = d50
     timestamp = np.min(pd.to_datetime(stats['timestamp']))
     dfa['Time'] = timestamp
-    dfa.to_excel(statsfile.replace('-STATS.csv', '') +
+    dfa.to_excel(statsfile.replace('-STATS.h5', '') +
                  '-AVERAGE' + '' + '.xlsx')
 
     #average oil
@@ -198,7 +198,7 @@ def export_timeseries(configfile, statsfile):
     dfa['d50'] = d50
     timestamp = np.min(pd.to_datetime(stats['timestamp'])) # still use total stats for this time
     dfa['Time'] = timestamp
-    dfa.to_excel(statsfile.replace('-STATS.csv', '') +
+    dfa.to_excel(statsfile.replace('-STATS.h5', '') +
                  '-AVERAGE' + 'oil' + '.xlsx')
 
     #average gas
@@ -210,7 +210,7 @@ def export_timeseries(configfile, statsfile):
     dfa['d50'] = d50
     timestamp = np.min(pd.to_datetime(stats['timestamp'])) # still use total stats for this time
     dfa['Time'] = timestamp
-    dfa.to_excel(statsfile.replace('-STATS.csv', '') +
+    dfa.to_excel(statsfile.replace('-STATS.h5', '') +
                  '-AVERAGE' + 'gas' + '.xlsx')
 
     print('Export done: ', outfile)

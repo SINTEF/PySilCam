@@ -9,7 +9,7 @@ from shutil import copyfile
 
 DATABASE_PATH = '/mnt/ARRAY/silcam_classification_database'
 config_file = '/mnt/nasdrive/Miljoteknologi/MK102013220_SILCAM_IPR_EJD/RUNDE_June2017/LowMag/config_LowRes.ini'
-stats_csv_file = '/mnt/nasdrive/Miljoteknologi/MK102013220_SILCAM_IPR_EJD/RUNDE_June2017/LowMag/proc/STN05-STATS.csv'
+stats_file = '/mnt/nasdrive/Miljoteknologi/MK102013220_SILCAM_IPR_EJD/RUNDE_June2017/LowMag/proc/STN05-STATS.h5'
 filepath = '/mnt/nasdrive/Miljoteknologi/MK102013220_SILCAM_IPR_EJD/RUNDE_June2017/LowMag/export'
 model_path = '/mnt/ARRAY/classifier/model/'
 
@@ -26,7 +26,7 @@ print(confidence_threshold)
 for cl in class_labels:
     os.makedirs(os.path.join(DATABASE_selftaught_PATH,cl),exist_ok=True)
 
-stats = pd.read_csv(stats_csv_file)
+stats = pd.read_hdf(stats_file, 'ParticleStats/stats')
 
 #choice, confidence = sccl.choise_from_stats(stats)
 

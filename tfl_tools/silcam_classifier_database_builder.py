@@ -19,7 +19,7 @@ from shutil import copyfile
 
 DATABASE_PATH = '/mnt/ARRAY/silcam_classification_database'
 config_file = '/mnt/ARRAY/ENTICE/Data/configs/config.ini'
-stats_csv_file = '/mnt/ARRAY/ENTICE/Data/proc/STN10-STATS.csv'
+stats_file = '/mnt/ARRAY/ENTICE/Data/proc/STN10-STATS.h5'
 filepath = '/mnt/ARRAY/ENTICE/Data/export/'
 
 def find_classes(d=DATABASE_PATH):
@@ -31,7 +31,7 @@ def particle_generator():
     conf = load_config(config_file)
     settings = PySilcamSettings(conf)
 
-    stats = pd.read_csv(stats_csv_file)
+    stats = pd.read_hdf(stats_file, 'ParticleStats/stats')
 
     print('all stats:', len(stats))
 
@@ -40,7 +40,7 @@ def particle_generator():
     while True:
 
 #        if np.random.choice([0,1]):
-        stats_ = scpp.extract_nth_largest(stats,settings,n=index)
+        stats_ = scpp.extract_nth_largest(stats, n=index)
 #        else:
 #           stats_ = scpp.extract_nth_longest(stats,settings,n=index)
         print(stats_)

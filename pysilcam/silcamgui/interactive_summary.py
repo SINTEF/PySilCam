@@ -73,6 +73,13 @@ class InteractivePlotter(QMainWindow):
         avwinButton.triggered.connect(self.modify_av_wind)
         fileMenu.addAction(avwinButton)
 
+        self.trimButton = QAction('Trim STATS', self)
+        self.trimButton.setStatusTip('Make a STATS.h5 file from the selected region')
+        self.trimButton.setShortcut("Ctrl+c")
+        self.trimButton.triggered.connect(self.trim_stats)
+        fileMenu.addAction(self.trimButton)
+        self.trimButton.setEnabled(False)
+
         exitButton = QAction('Exit', self)
         exitButton.setStatusTip('Close')
         exitButton.triggered.connect(self.close)
@@ -98,7 +105,7 @@ class InteractivePlotter(QMainWindow):
 
         self.statusBar = QStatusBar()
         self.setStatusBar(self.statusBar)
-        self.statusBar.showMessage('Hello. Load a -STATS.csv file to start', 1e12)
+        self.statusBar.showMessage('Hello. Load a -STATS.h5 file to start', 1e12)
 
     def callLoadData(self):
         self.statusBar.showMessage('Loading data. PLEASE WAIT', 1e12)
@@ -109,6 +116,7 @@ class InteractivePlotter(QMainWindow):
         self.rawButton.setEnabled(True)
         self.imcButton.setEnabled(True)
         self.toggleButton.setEnabled(True)
+        self.trimButton.setEnabled(True)
         self.statusBar.clearMessage()
         self.setWindowTitle("SummaryExplorer: " + self.plot_fame.graph_view.stats_filename)
 
@@ -208,6 +216,9 @@ class InteractivePlotter(QMainWindow):
             if not self.plot_fame.graph_view.stats_filename == '':
                 self.plot_fame.graph_view.update_plot()
 
+    def trim_stats(self):
+        self.plot_fame.graph_view.save_trimmed_stats()
+
 
 class PlotView(QtWidgets.QWidget):
     '''class for plotting plots'''
@@ -230,6 +241,7 @@ class PlotView(QtWidgets.QWidget):
 
         self.configfile = ''
         self.stats_filename = ''
+        self.stats = []
         self.av_window = pd.Timedelta(seconds=30)
         self.plot_pcolor = 0
         self.datadir = os.getcwd()
@@ -240,16 +252,21 @@ class PlotView(QtWidgets.QWidget):
         '''handles loading of data, depending on what is available'''
         self.datadir = os.path.split(self.configfile)[0]
 
+        stats_filename_original = self.stats_filename
+        stats_original = self.stats
         self.stats_filename = ''
+        self.stats = []
         self.stats_filename = QFileDialog.getOpenFileName(self,
-                                                          caption='Load a *-STATS.csv file',
+                                                          caption='Load a *-STATS.h5 file',
                                                           directory=self.datadir,
-                                                          filter=(('*-STATS.csv'))
+                                                          filter=(('*-STATS.h5'))
                                                           )[0]
         if self.stats_filename == '':
+            self.stats_filename = stats_filename_original
+            self.stats = stats_original
             return
 
-        timeseriesgas_file = self.stats_filename.replace('-STATS.csv', '-TIMESERIESgas.xlsx')
+        timeseriesgas_file = self.stats_filename.replace('-STATS.h5', '-TIMESERIESgas.xlsx')
 
         if os.path.isfile(timeseriesgas_file):
             ws = waitsplash()
@@ -302,8 +319,8 @@ class PlotView(QtWidgets.QWidget):
 
     def load_from_timeseries(self):
         '''uses timeseries xls sheets assuming they are available'''
-        timeseriesgas_file = self.stats_filename.replace('-STATS.csv', '-TIMESERIESgas.xlsx')
-        timeseriesoil_file = self.stats_filename.replace('-STATS.csv', '-TIMESERIESoil.xlsx')
+        timeseriesgas_file = self.stats_filename.replace('-STATS.h5', '-TIMESERIESgas.xlsx')
+        timeseriesoil_file = self.stats_filename.replace('-STATS.h5', '-TIMESERIESoil.xlsx')
 
         gas = pd.read_excel(timeseriesgas_file, parse_dates=['Time'])
         oil = pd.read_excel(timeseriesoil_file, parse_dates=['Time'])
@@ -325,7 +342,8 @@ class PlotView(QtWidgets.QWidget):
 
     def load_from_stats(self):
         '''loads stats data and converts to timeseries without saving'''
-        stats = pd.read_csv(self.stats_filename, parse_dates=['timestamp'])
+        stats = pd.read_hdf(self.stats_filename, 'ParticleStats/stats')
+        stats['timestamp'] = pd.to_datetime(stats['timestamp'])
 
         u = stats['timestamp'].unique()
         u = pd.to_datetime(u)
@@ -381,6 +399,7 @@ class PlotView(QtWidgets.QWidget):
         self.d50_gas = d50_gas
         self.u = u.tz_localize('UTC')
         self.dias = dias
+        self.stats = stats
 
 
     def setup_figure(self):
@@ -541,7 +560,7 @@ class PlotView(QtWidgets.QWidget):
 
         if save:
             timestring = pd.to_datetime(psd_start[0]).strftime('D%Y%m%dT%H%M%S')
-            outputname = self.stats_filename.replace('-STATS.csv','-PSD-' + timestring)
+            outputname = self.stats_filename.replace('-STATS.h5', '-PSD-' + timestring)
             outputname = QFileDialog.getSaveFileName(self,
                                                    "Select file to Save", outputname,
                                                    ".xlsx")
@@ -598,6 +617,46 @@ class PlotView(QtWidgets.QWidget):
     def save_data(self):
         '''call the update_plot function with option to save'''
         self.update_plot(save=True)
+
+    def save_trimmed_stats(self):
+        start_time = self.mid_time - self.av_window / 2
+        end_time = self.mid_time + self.av_window / 2
+
+        if len(self.stats) == 0:
+            reply = QMessageBox.question(self, "STATS file has not been loaded.",
+                                         'Would you like to load the STATS file?\n' +
+                                         '(It might take some time)\n\n' +
+                                         self.stats_filename,
+                                         QMessageBox.Ok | QMessageBox.Cancel)
+            if reply == QMessageBox.Cancel:
+                return
+
+            print('loading ' + self.stats_filename)
+            ws = waitsplash()
+            self.stats = pd.read_csv(self.stats_filename, parse_dates=['timestamp'])
+            ws.close()
+            print('loaded ' + self.stats_filename)
+
+        self.trimmed_stats, self.output_filename = scpp.trim_stats(self.stats_filename, start_time, end_time,
+                                                                   write_new=False, stats=self.stats)
+
+        if np.isnan(self.trimmed_stats.equivalent_diameter.max()) or len(self.trimmed_stats) == 0:
+            QMessageBox.warning(self, "No data in this segment!",
+                                'No data was found within the specified time range.',
+                                QMessageBox.Ok)
+            return
+
+        reply = QMessageBox.question(self, "Save Trimmed STATS file?",
+                                     'Would you like to save this file?\n\n' +
+                                     self.output_filename,
+                                     QMessageBox.Save | QMessageBox.Cancel)
+        if reply == QMessageBox.Save:
+            print('Saving ' + self.output_filename)
+            ws = waitsplash()
+            self.trimmed_stats, self.output_filename = scpp.trim_stats(self.stats_filename, start_time, end_time,
+                                                                       write_new=True, stats=self.stats)
+            ws.close()
+            print('New STATS.h5 file written as:', self.output_filename)
 
 
 class waitsplash():

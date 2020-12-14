@@ -4,7 +4,7 @@ import glob
 import os
 import numpy as np
 import unittest
-import tensorflow as tf
+import pandas as pd
 
 # Get user-defined path to unittest data folder
 ROOTPATH = os.environ.get('UNITTEST_DATA_PATH', None)
@@ -31,10 +31,6 @@ def test_classify():
 
     check_model(MODEL_PATH)
 
-    # a tensorflow session must be started on each process in order to function reliably in multiprocess.
-    # This also includes the import of tensorflow on each process
-    sess = tf.Session()
-
     # Load the trained tensorflow model and class names
     model, class_labels = load_model(MODEL_PATH)
 
@@ -51,12 +47,15 @@ def test_classify():
         # list the files in this category of the training data
         files = glob.glob(os.path.join(database_path, category, '*.tiff'))
 
+        assert len(files) > 50, 'less then 50 files in test data.'
+
         # start a counter of incorrectly classified images
         failed = 0
+        time_limit = len(files) * 0.008
+        t1 = pd.Timestamp.now()
 
         # loop through the database images
         for file in files:
-
             img = imread(file)  # load ROI
             prediction = predict(img, model)  # run prediction from silcam_classify
 
@@ -69,11 +68,12 @@ def test_classify():
 
         # turn failed count into a success percent
         success = 100 - (failed / len(files)) * 100
-        return success
 
-    # close of the tensorflow session when everything is finished.
-    # unsure of behaviour if things crash or are stoppped before reaching this point
-    sess.close()
+        t2 = pd.Timestamp.now()
+        td = t2 - t1
+        assert td < pd.to_timedelta(time_limit, 's'), 'Processing time too long.'
+
+        return success
 
     # loop through each category and calculate the success percentage
     for cat in classes:
