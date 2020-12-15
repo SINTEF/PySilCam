@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 import os
 import imageio as imo
-from skimage.morphology import disk
 from scipy import ndimage as ndi
 import skimage
 from skimage.exposure import rescale_intensity
@@ -80,9 +79,9 @@ def get_size_bins():
     bin_limits_um[0] = 2.72 * 0.91
 
     # loop through 53 size classes and calculate the bin limits
-    for I in np.arange(1, 53, 1):
+    for i in np.arange(1, 53, 1):
         # each bin is 1.18 * larger than the previous
-        bin_limits_um[I] = bin_limits_um[I - 1] * 1.180
+        bin_limits_um[i] = bin_limits_um[i - 1] * 1.180
 
     # pre-allocate
     bin_mids_um = np.zeros((52), dtype=np.float64)
@@ -91,9 +90,9 @@ def get_size_bins():
     bin_mids_um[0] = 2.72
 
     # loop through 53 size classes and calculate the bin mid-points
-    for I in np.arange(1, 52, 1):
+    for i in np.arange(1, 52, 1):
         # each bin is 1.18 * larger than the previous
-        bin_mids_um[I] = bin_mids_um[I - 1] * 1.180
+        bin_mids_um[i] = bin_mids_um[i - 1] * 1.180
 
     return bin_mids_um, bin_limits_um
 
@@ -433,7 +432,7 @@ def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
         # of the particle area. If not tightpack, then the fitting will be done
         # based on bounding boxes instead
         if tightpack:
-            imbw = scpr.image2blackwhite_accurate(np.uint8(particle_image[:,:,0]), 0.95)
+            imbw = scpr.image2blackwhite_accurate(np.uint8(particle_image[:, :, 0]), 0.95)
             imbw = ndi.binary_fill_holes(imbw)
 
             for J in range(5):
@@ -516,7 +515,7 @@ def make_montage(stats_file, pixel_size, roidir,
     # remove nans because concentrations are not important here
     stats = stats[~np.isnan(stats['major_axis_length'])]
     stats = stats[(stats['major_axis_length'] *
-            pixel_size) < maxlength]
+                  pixel_size) < maxlength]
 
     # extract only wanted particle stats
     if oilgas == outputPartType.oil:
@@ -912,11 +911,11 @@ def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
     stats.sort_values(by='timestamp', inplace=True)
     oilgasTxt = ''
 
-    if oilgas==outputPartType.oil:
+    if oilgas == outputPartType.oil:
         from pysilcam.oilgas import extract_oil
         stats = extract_oil(stats)
         oilgasTxt = 'oil'
-    elif oilgas==outputPartType.gas:
+    elif oilgas == outputPartType.gas:
         from pysilcam.oilgas import extract_gas
         stats = extract_gas(stats)
         oilgasTxt = 'gas'
