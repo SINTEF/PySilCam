@@ -112,11 +112,7 @@ def extract_middle(stats, crop_bounds):
     r = np.array(((stats['maxr'] - stats['minr']) / 2) + stats['minr'])  # pixel row of middle of bounding box
     c = np.array(((stats['maxc'] - stats['minc']) / 2) + stats['minc'])  # pixel column of middle of bounding box
 
-    points = []
-    for i in range(len(c)):
-        points.append([(r[i], c[i])])
-
-    pts = np.array(points)
+    pts = np.array([[(r_, c_)] for r_, c_ in zip(r, c)])
     pts = pts.squeeze()
 
     ll = np.array(crop_bounds[:2])  # lower-left
