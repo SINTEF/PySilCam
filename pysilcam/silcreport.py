@@ -1,4 +1,5 @@
 # coding=utf-8
+import re
 import matplotlib
 
 matplotlib.use('Agg')
@@ -18,7 +19,7 @@ def silcreport():
 
     Usage:
         silcam-report <configfile> <statsfile> [--type=<particle_type>]
-                      [--dpi=<dpi>] [--monitor] [--extract-middle]
+                      [--dpi=<dpi>] [--monitor] [--filter-stats=<y1,x1,y2,x2>]
 
     Arguments:
         configfile:  The config filename associated with the data
@@ -29,9 +30,10 @@ def silcreport():
                                 'oil', or 'gas'
         --dpi=<dpi>             DPI resolution of figure (default is 600)
         --monitor               Enables continuous monitoring (requires display)
-        --extract-middle        Filters stats file to only include particle from
-                                the centre of the image. If used config.ini file
-                                must have PostProcess.img_crop: 4-tuple of coords
+        --filter-stats=<y1,x1,y2,x2> Filters stats file to only include particle
+                                from the specified coordinate rectangle. (y1,x1)
+                                are the lower-left corner, and (y2,x2) are the
+                                upper-right corner of the rectangle.
         -h --help               Show this screen.
 
     """
@@ -59,10 +61,17 @@ def silcreport():
         logger.info('    press ctrl+c to stop.')
         monitor = True
 
-    crop_stats = False
-    if args['--extract-middle']:
+    crop_stats = None
+    if args['--filter-stats']:
+        error_message = (
+            "If using --filter-stats, must give 4 comma seperated"
+            + " integers, e.g. '500,500,1750,1750'.\nThese are the"
+            + " coordinates of the lower left and upper right bounds"
+            + " of the filtering 'rectangle', given in pixels.")
+        assert re.search(r'[^0-9,]', args['--filter-stats']) is None, error_message
+        crop_stats = [int(i) for i in args['--filter-stats'].split(',')]
+        assert len(crop_stats) == 4, error_message
         logger.info('  Extract middle enabled. Crop area taken from config file.')
-        crop_stats = True
 
     silcam_report(args['<statsfile>'], args['<configfile>'],
                   particle_type=particle_type,
@@ -71,7 +80,7 @@ def silcreport():
 
 
 def silcam_report(statsfile, configfile, particle_type=scpp.outputPartType.all,
-                  particle_type_str='all', monitor=False, dpi=600, crop_stats=False):
+                  particle_type_str='all', monitor=False, dpi=600, crop_stats=None):
     """does reporting"""
 
     plt.figure(figsize=(20, 12))

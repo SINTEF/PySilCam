@@ -19,6 +19,7 @@ LOGS_PATH = "Neptus\\merge\\mra\\csv"  # Information on mission date used for lo
 FOLDER = 'proc\\test\\test'  # Output folder, with start output names
 INI_FILE = "config_crop_thresh97.ini"
 SILCAM_DATAFILE = "proc\\SilCam_thresh97-STATS.csv"
+CROP_STATS = (500, 500, 1750, 1750)  # The bounds of the cropping, if not being used give: None
 
 LOGS_PATH = os.path.join(common_path, LOGS_PATH)
 FOLDER = os.path.join(common_path, FOLDER)
@@ -251,7 +252,7 @@ if __name__ == "__main__":
 
         # Apply workaround cropping of stats due to small window
         print('Cropping stats')
-        stats = scpp.extract_middle(stats, settings.PostProcess.img_crop)
+        stats = scpp.extract_middle(stats, CROP_STATS)
 
         print('Adding position and ctd data to stats')
         stats = add_neptus_to_stats(stats, ctd)

@@ -478,7 +478,7 @@ def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
 
 def make_montage(stats_file, pixel_size, roidir,
                  auto_scaler=500, msize=1024, maxlength=100000,
-                 oilgas=outputPartType.all, crop_stats_bounds=None):
+                 oilgas=outputPartType.all, crop_stats=None):
     ''' wrapper function for montage_maker
 
     Args:
@@ -489,7 +489,7 @@ def make_montage(stats_file, pixel_size, roidir,
         msize=1024                  : size of canvas in pixels
         maxlength=100000            : maximum length in microns of particles to be included in montage
         oilgas=outputPartType.all   : enum defining which type of particle to be selected for use in the montage
-        crop_stats_bounds=None      : None or 4-tuple of lower-left then upper-right coord of crop
+        crop_stats=None             : None or 4-tuple of lower-left then upper-right coord of crop
 
     Returns:
         montage (uint8)             : a nicely-made montage in the form of an image, which can be plotted using plotting.montage_plot(montage, settings.PostProcess.pix_size)
@@ -498,8 +498,8 @@ def make_montage(stats_file, pixel_size, roidir,
     # obtain particle statistics from the csv file
     stats = pd.read_hdf(stats_file, 'ParticleStats/stats')
 
-    if crop_stats_bounds is not None:
-        stats = extract_middle(stats, crop_stats_bounds)
+    if crop_stats is not None:
+        stats = extract_middle(stats, crop_stats)
 
     # remove nans because concentrations are not important here
     stats = stats[~np.isnan(stats['major_axis_length'])]
