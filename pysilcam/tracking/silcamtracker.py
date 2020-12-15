@@ -170,7 +170,7 @@ def get_vect(img1, img2, PIX_SIZE, MIN_LENGTH, cross_correlation_threshold, thre
         raise ValueError('NoParticles')
 
     # calculate geometrical stats from image 2
-    props2 = regionprops(iml2, cache=False, coordinates='xy')
+    props2 = regionprops(iml2, cache=False)
 
     # label image 1
     iml = imc2iml(img1, thresh)
@@ -178,7 +178,7 @@ def get_vect(img1, img2, PIX_SIZE, MIN_LENGTH, cross_correlation_threshold, thre
         raise ValueError('NoParticles')
 
     # calculate geometrical stats from image 1
-    props = regionprops(iml, cache=False, coordinates='xy')
+    props = regionprops(iml, cache=False)
 
     # preallocate particle information to extract
     y1 = []
