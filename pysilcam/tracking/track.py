@@ -26,8 +26,8 @@ def plot_boxplot(dataset_names, tracks, PIX_SIZE, figurename):
     f, a = plt.subplots(3, 1, figsize=(6, 12))
 
     plt.sca(a[0])
-    box_data = [tracks[dataset_names[i]]['width'] /
-                tracks[dataset_names[i]]['length']
+    box_data = [tracks[dataset_names[i]]['width']
+                / tracks[dataset_names[i]]['length']
                 for i in range(len(dataset_names))]
     plt.boxplot(box_data, positions=ps, labels=ls)
     plt.ylabel('Minor/Major axis')
@@ -41,7 +41,7 @@ def plot_boxplot(dataset_names, tracks, PIX_SIZE, figurename):
     plt.boxplot(box_data, positions=ps, labels=ls)
     plt.ylabel('Maxjor Axis Length [mm]')
     plt.xticks([])
-    #plt.ylim(0, 12)
+    # plt.ylim(0, 12)
 
     plt.sca(a[2])
     box_data = [tracks[dataset_names[i]]['S_cms'] * 10
@@ -50,7 +50,7 @@ def plot_boxplot(dataset_names, tracks, PIX_SIZE, figurename):
     plt.boxplot(box_data, positions=ps, labels=ls)
     plt.ylabel('Net speed [mm/s]')
     plt.xticks(rotation=45, horizontalalignment='right')
-    #plt.ylim(0, 2.5)
+    # plt.ylim(0, 2.5)
 
     figurename = os.path.join(figurename + '.png')
     print('  saving:', figurename)
@@ -266,6 +266,7 @@ def track_process(configfile, datapath, offset=0):
 
     sctr.process()
 
+
 def make_boxplot(tracksfile, plotfilename):
     '''
     given the input tracksfile (-TRACKs.h5), this function will look for all the other -TRACKS.h5 files in the same
@@ -287,15 +288,14 @@ def make_boxplot(tracksfile, plotfilename):
             tracks[k] = pd.read_hdf(f, 'Tracking/tracks')
         except KeyError:
             settings_tmp = settings_from_h5(f)
-            data, tracks_tmp = load_and_process(f,
-                                            settings_tmp.PostProcess.pix_size,
-                                            track_length_limit=settings_tmp.Tracking.track_length_limit)
+            data, tracks_tmp = load_and_process(
+                f, settings_tmp.PostProcess.pix_size,
+                track_length_limit=settings_tmp.Tracking.track_length_limit)
 
             with pd.HDFStore(f) as fh:
                 tracks_tmp.to_hdf(fh, 'Tracking/tracks', mode='r+')
 
             tracks[k] = pd.read_hdf(f, 'Tracking/tracks')
-
 
     settings = settings_from_h5(f)
 
