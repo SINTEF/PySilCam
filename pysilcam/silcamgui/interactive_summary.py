@@ -20,6 +20,7 @@ import os
 from pysilcam.silcamgui.guicalcs import export_timeseries
 from openpyxl import Workbook
 from glob import glob
+import xarray as xr
 
 class FigFrame(QtWidgets.QFrame):
     '''class for the figure'''
@@ -266,7 +267,11 @@ class PlotView(QtWidgets.QWidget):
             self.stats = stats_original
             return
 
-        timeseriesgas_file = self.stats_filename.replace('-STATS.*', '-TIMESERIESgas.xlsx')
+        if self.stats_filename.endswith('.h5'):
+            timeseriesgas_file = self.stats_filename.replace('-STATS.h5', '-TIMESERIESgas.xlsx')
+        else:
+            timeseriesgas_file = self.stats_filename.replace('-STATS.csv', '-TIMESERIESgas.xlsx')
+        print('timeseriesgas_file',timeseriesgas_file)
 
         if os.path.isfile(timeseriesgas_file):
             ws = waitsplash()
@@ -276,34 +281,25 @@ class PlotView(QtWidgets.QWidget):
 
             msgBox = QMessageBox()
             msgBox.setText('The STATS data appear not to have been exported to TIMSERIES.xlsx' +
-                           '\n We can use the STATS file anyway (which might take a while)' +
-                           '\n or we can convert the data to TIMSERIES.xls now,'
-                           '\n which can be used quickly if you want to load these data another time.')
+                           '\n\nWe will now load the STATS file ' +
+                           'and convert the data to TIMSERIES.xls files (which might take a while).' +
+                           '\n\nThe next time you load this dataset the xls files will be detected and used for quicker loading.')
             msgBox.setIcon(QMessageBox.Question)
-            msgBox.setWindowTitle('What to do?')
-            load_stats_button = msgBox.addButton('Load stats anyway',
+            msgBox.setWindowTitle('Load STATS?')
+            load_stats_button = msgBox.addButton('OK',
                                                  QMessageBox.ActionRole)
-            convert_stats_button = msgBox.addButton('Convert and save timeseries',
-                                                    QMessageBox.ActionRole)
             msgBox.addButton(QMessageBox.Cancel)
             msgBox.exec_()
-            if self.configfile == '':
-                self.configfile = QFileDialog.getOpenFileName(self,
+            
+            if (msgBox.clickedButton() == load_stats_button):
+                if self.configfile == '':
+                    self.configfile = QFileDialog.getOpenFileName(self,
                                                                   caption='Load config ini file',
                                                                   directory=self.datadir,
                                                                   filter=(('*.ini'))
                                                                   )[0]
                 if self.configfile == '':
                     return
-            if (msgBox.clickedButton() == load_stats_button):
-                self.settings = PySilcamSettings(self.configfile)
-                self.av_window = pd.Timedelta(seconds=self.settings.PostProcess.window_size)
-
-                ws = waitsplash()
-                self.load_from_stats()
-                ws.close()
-
-            elif (msgBox.clickedButton() == convert_stats_button):
                 ws = waitsplash()
                 export_timeseries(self.configfile, self.stats_filename)
 
@@ -329,7 +325,7 @@ class PlotView(QtWidgets.QWidget):
         self.vd_oil = oil.iloc[:,1:53].to_numpy(dtype=float)
         self.vd_gas = gas.iloc[:,1:53].to_numpy(dtype=float)
         self.vd_total = self.vd_oil + self.vd_gas
-        self.u = pd.to_datetime(oil['Time'].values).tz_localize('UTC')
+        self.u = pd.to_datetime(oil['Time'].values)
         self.d50_gas = gas['D50']
         self.d50_oil = oil['D50']
 
@@ -345,7 +341,7 @@ class PlotView(QtWidgets.QWidget):
 
         if not os.path.isfile(os.path.splitext(self.stats_filename)[0] + '.h5'):
             print('convert csv to hdf')
-            statscsv_to_statshdf(self.stats_filename)
+            scpp.statscsv_to_statshdf(self.stats_filename)
             print('hdf conversion done')
 
         self.stats_filename = os.path.splitext(self.stats_filename)[0] + '.h5'
@@ -405,7 +401,7 @@ class PlotView(QtWidgets.QWidget):
         self.d50_total = d50_total
         self.d50_oil = d50_oil
         self.d50_gas = d50_gas
-        self.u = u.tz_localize('UTC')
+        self.u = u.tz_convert(None)
         self.dias = dias
         self.stats = stats
 
@@ -452,6 +448,9 @@ class PlotView(QtWidgets.QWidget):
     def on_click(self, event):
         '''if you click the correct place, update the plot based on where you click'''
         if event.inaxes is not None:
+            self.mid_time = pd.to_datetime(matplotlib.dates.num2date(event.xdata)).tz_convert(None)
+            self.update_plot()
+            return
             try:
                 self.mid_time = pd.to_datetime(matplotlib.dates.num2date(event.xdata)).tz_convert(None)
                 self.update_plot()
@@ -469,13 +468,23 @@ class PlotView(QtWidgets.QWidget):
 
     def update_plot(self, save=False):
         '''update the plots and save to excel is save=True'''
+
+        vd_total = xr.DataArray(data=self.vd_total, dims=['time', 'particle_size'], coords=[self.u, self.dias])
+        vd_gas = xr.DataArray(data=self.vd_gas, dims=['time', 'particle_size'], coords=[self.u, self.dias])
+        vd_oil = xr.DataArray(data=self.vd_oil, dims=['time', 'particle_size'], coords=[self.u, self.dias])
+
+        ds = xr.Dataset()
+        ds['vd_total'] = vd_total
+        ds['vd_gas'] = vd_gas
+        ds['vd_oil'] = vd_oil
+
         start_time = self.mid_time - self.av_window / 2
         end_time = self.mid_time + self.av_window / 2
-        u = pd.to_datetime(self.u)
-        timeind = np.argwhere((u >= start_time) & (u < end_time))
-
-        psd_nims = len(timeind)
+        
+        ds_slice = ds.sel(time=slice(start_time, end_time))
+        psd_nims = ds_slice.time.size
         if psd_nims < 1:
+            psd = ds_slice.mean(dim='time')
             #plt.sca(self.axispsd)
             self.axispsd.clear()
 
@@ -483,8 +492,8 @@ class PlotView(QtWidgets.QWidget):
 
             string = ''
             string += '\n Num images: {:0.0f}'.format(psd_nims)
-            string += '\n Start: ' + str(start_time.tz_convert(None))
-            string += '\n End: ' + str(end_time.tz_convert(None))
+            string += '\n Start: ' + str(start_time)
+            string += '\n End: ' + str(end_time)
             string += '\n Window [sec.]: {:0.3f}'.format((end_time - start_time).total_seconds())
 
             self.axistext.set_title(string, verticalalignment='top', horizontalalignment='right', loc='right')
@@ -497,40 +506,40 @@ class PlotView(QtWidgets.QWidget):
             self.canvas.draw()
             return
 
-        psd_start = min(u[timeind])
-        psd_end = max(u[timeind])
+        ds_psd = ds.sel(time=slice(start_time, end_time)).mean(dim='time')
 
-        psd_total = np.mean(self.vd_total[timeind, :], axis=0)[0]
-        psd_oil = np.mean(self.vd_oil[timeind, :], axis=0)[0]
-        psd_gas = np.mean(self.vd_gas[timeind, :], axis=0)[0]
+        psd_start = min(ds_slice['time'].values)
+        psd_end = max(ds_slice['time'].values)
 
-        psd_vc_total = np.sum(psd_total)
-        psd_vc_oil = np.sum(psd_oil)
-        psd_vc_gas = np.sum(psd_gas)
+        psd_vc_total = np.sum(ds_psd['vd_total'].values)
+        psd_vc_oil = np.sum(ds_psd['vd_oil'].values)
+        psd_vc_gas = np.sum(ds_psd['vd_gas'].values)
 
-        psd_peak_total = self.dias[np.argwhere(psd_total == max(psd_total))][0][0]
-        psd_peak_oil = self.dias[np.argwhere(psd_oil == max(psd_oil))][0][0]
-        psd_peak_gas = self.dias[np.argwhere(psd_gas == max(psd_gas))][0][0]
+        # Use xarray idxmax function to find coordinate label (e.g. size bin) of maximum PSD value
+        psd_peak = ds_psd.idxmax()
+        psd_peak_total = psd_peak['vd_total'].values
+        psd_peak_oil = psd_peak['vd_oil'].values
+        psd_peak_gas = psd_peak['vd_gas'].values
 
-        psd_d50_total = scpp.d50_from_vd(psd_total, self.dias)
-        psd_d50_oil = scpp.d50_from_vd(psd_oil, self.dias)
-        psd_d50_gas = scpp.d50_from_vd(psd_gas, self.dias)
+        psd_d50_total = scpp.d50_from_vd(ds_psd['vd_total'], self.dias)
+        psd_d50_oil = scpp.d50_from_vd(ds_psd['vd_oil'], self.dias)
+        psd_d50_gas = scpp.d50_from_vd(ds_psd['vd_gas'], self.dias)
 
-        psd_gor = sum(psd_gas) / (sum(psd_oil) + sum(psd_gas)) * 100
+        psd_gor = sum(ds_psd['vd_gas'].values) / (sum(ds_psd['vd_oil'].values) + sum(ds_psd['vd_gas'].values)) * 100
 
         #plt.sca(self.axispsd)
         self.axispsd.clear()
-        self.axispsd.plot(self.dias, psd_total, 'k', linewidth=5, label='Total')
-        self.axispsd.plot(self.dias, psd_oil, color=[0.7, 0.4, 0], label='Oil')
-        self.axispsd.plot(self.dias, psd_gas, 'b', label='Gas')
+        self.axispsd.plot(self.dias, ds_psd['vd_total'], 'k', linewidth=5, label='Total')
+        self.axispsd.plot(self.dias, ds_psd['vd_oil'], color=[0.7, 0.4, 0], label='Oil')
+        self.axispsd.plot(self.dias, ds_psd['vd_gas'], 'b', label='Gas')
 
-        self.axispsd.vlines(psd_d50_total, 0, max(psd_total), 'k', linestyle='--', linewidth=1, label='Total d50: {:0.0f}um'.format(psd_d50_total))
-        self.axispsd.vlines(psd_d50_oil, 0, max(psd_oil), color=[0.7, 0.4, 0], linestyle='--', linewidth=1, label='Oil d50: {:0.0f}um'.format(psd_d50_oil))
-        self.axispsd.vlines(psd_d50_gas, 0, max(psd_gas), 'b', linestyle='--', linewidth=1, label='Gas d50: {:0.0f}um'.format(psd_d50_gas))
+        self.axispsd.vlines(psd_d50_total, 0, max(ds_psd['vd_total']), 'k', linestyle='--', linewidth=1, label='Total d50: {:0.0f}um'.format(psd_d50_total))
+        self.axispsd.vlines(psd_d50_oil, 0, max(ds_psd['vd_oil']), color=[0.7, 0.4, 0], linestyle='--', linewidth=1, label='Oil d50: {:0.0f}um'.format(psd_d50_oil))
+        self.axispsd.vlines(psd_d50_gas, 0, max(ds_psd['vd_gas']), 'b', linestyle='--', linewidth=1, label='Gas d50: {:0.0f}um'.format(psd_d50_gas))
 
-        self.axispsd.vlines(psd_peak_total, 0, max(psd_total), 'k', linestyle=':', linewidth=1, label='Total peak: {:0.0f}um'.format(psd_peak_total))
-        self.axispsd.vlines(psd_peak_oil, 0, max(psd_oil), color=[0.7, 0.4, 0], linestyle=':', linewidth=1, label='Oil peak: {:0.0f}um'.format(psd_peak_oil))
-        self.axispsd.vlines(psd_peak_gas, 0, max(psd_gas), 'b', linestyle=':', linewidth=1, label='Gas peak d50: {:0.0f}um'.format(psd_peak_gas))
+        self.axispsd.vlines(psd_peak_total, 0, max(ds_psd['vd_total']), 'k', linestyle=':', linewidth=1, label='Total peak: {:0.0f}um'.format(psd_peak_total))
+        self.axispsd.vlines(psd_peak_oil, 0, max(ds_psd['vd_oil']), color=[0.7, 0.4, 0], linestyle=':', linewidth=1, label='Oil peak: {:0.0f}um'.format(psd_peak_oil))
+        self.axispsd.vlines(psd_peak_gas, 0, max(ds_psd['vd_gas']), 'b', linestyle=':', linewidth=1, label='Gas peak d50: {:0.0f}um'.format(psd_peak_gas))
 
         self.axispsd.set_xlabel('ECD [um]')
         self.axispsd.set_ylabel('VD [uL/L]')
@@ -552,9 +561,9 @@ class PlotView(QtWidgets.QWidget):
         string += '\n VC oil [uL/L]: {:0.0f}'.format(psd_vc_oil)
         string += '\n VC gas [uL/L]: {:0.0f}'.format(psd_vc_gas)
         string += '\n\n Num images: {:0.0f}'.format(psd_nims)
-        string += '\n\n Start: ' + str(pd.to_datetime(psd_start[0]))
-        string += '\n End: ' + str(pd.to_datetime(psd_end[0]))
-        string += '\n Window [sec.] {:0.3f}:'.format(pd.to_timedelta(psd_end[0]-psd_start[0]).total_seconds())
+        string += '\n\n Start: ' + str(psd_start)
+        string += '\n End: ' + str(psd_end)
+        string += '\n Window [sec.] {:0.3f}:'.format(pd.to_timedelta(psd_end-psd_start).total_seconds())
         string += '\n\n mid-time: ' + str(pd.to_datetime(self.mid_time))
 
         self.axistext.set_title(string, verticalalignment='top', horizontalalignment='right', loc='right')
@@ -562,12 +571,12 @@ class PlotView(QtWidgets.QWidget):
         #plt.sca(self.axisconstant)
         self.line1.remove()
         self.line2.remove()
-        self.line1 = self.axisconstant.vlines(pd.to_datetime(psd_start[0]), self.yrange[0], self.yrange[1], 'r')
-        self.line2 = self.axisconstant.vlines(pd.to_datetime(psd_end[0]), self.yrange[0], self.yrange[1], 'r')
+        self.line1 = self.axisconstant.vlines(pd.to_datetime(psd_start), self.yrange[0], self.yrange[1], 'r')
+        self.line2 = self.axisconstant.vlines(pd.to_datetime(psd_end), self.yrange[0], self.yrange[1], 'r')
         self.canvas.draw()
 
         if save:
-            timestring = pd.to_datetime(psd_start[0]).strftime('D%Y%m%dT%H%M%S')
+            timestring = pd.to_datetime(psd_start).strftime('D%Y%m%dT%H%M%S')
             outputname = self.stats_filename.replace('-STATS.h5', '-PSD-' + timestring)
             outputname = QFileDialog.getSaveFileName(self,
                                                    "Select file to Save", outputname,
@@ -579,11 +588,11 @@ class PlotView(QtWidgets.QWidget):
             wb = Workbook()
             ws = wb.active
             ws['A1'] = 'Start:'
-            ws['B1'] = pd.to_datetime(psd_start[0])
+            ws['B1'] = pd.to_datetime(psd_start)
             ws['A2'] = 'Mid:'
             ws['B2'] = self.mid_time
             ws['A3'] = 'End:'
-            ws['B3'] = pd.to_datetime(psd_end[0])
+            ws['B3'] = pd.to_datetime(psd_end)
 
             ws['A5'] = 'Number of images:'
             ws['B5'] = psd_nims
@@ -615,9 +624,9 @@ class PlotView(QtWidgets.QWidget):
             # d = ws.cells(row='8')
             for c in range(len(self.dias)):
                 ws.cell(row=8, column=c + 2, value=self.dias[c])
-                ws.cell(row=9, column=c + 2, value=psd_total[c])
-                ws.cell(row=16, column=c + 2, value=psd_oil[c])
-                ws.cell(row=24, column=c + 2, value=psd_gas[c])
+                ws.cell(row=9, column=c + 2, value=ds_psd['vd_total'][c])
+                ws.cell(row=16, column=c + 2, value=ds_psd['vd_oil'][c])
+                ws.cell(row=24, column=c + 2, value=ds_psd['vd_gas'][c])
 
             wb.save(outputname)
             print('Saved:', outputname)
