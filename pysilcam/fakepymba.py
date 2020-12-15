@@ -85,7 +85,8 @@ class Frame:
         #If the environment variable PYSILCAM_TESTDATA is defined, read images
         #from that location.
         if 'PYSILCAM_TESTDATA' in os.environ.keys():
-            offset = int(os.environ.get('PYSILCAM_OFFSET', 0))
+            # offset = int(os.environ.get('PYSILCAM_OFFSET', 0))
+            offset = getattr(Frame, 'PYSILCAM_OFFSET', 0)
             path = os.environ['PYSILCAM_TESTDATA']
             path = path.replace('\ ',' ') # handle spaces (not sure on windows behaviour)
             self.path = path
