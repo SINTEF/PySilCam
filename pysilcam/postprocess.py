@@ -80,9 +80,9 @@ def get_size_bins():
     bin_limits_um[0] = 2.72 * 0.91
 
     # loop through 53 size classes and calculate the bin limits
-    for I in np.arange(1, 53, 1):
+    for bin_number in np.arange(1, 53, 1):
         # each bin is 1.18 * larger than the previous
-        bin_limits_um[I] = bin_limits_um[I - 1] * 1.180
+        bin_limits_um[bin_number] = bin_limits_um[bin_number - 1] * 1.180
 
     # pre-allocate
     bin_mids_um = np.zeros((52), dtype=np.float64)
@@ -91,9 +91,9 @@ def get_size_bins():
     bin_mids_um[0] = 2.72
 
     # loop through 53 size classes and calculate the bin mid-points
-    for I in np.arange(1, 52, 1):
+    for bin_number in np.arange(1, 52, 1):
         # each bin is 1.18 * larger than the previous
-        bin_mids_um[I] = bin_mids_um[I - 1] * 1.180
+        bin_mids_um[bin_number] = bin_mids_um[bin_number - 1] * 1.180
 
     return bin_mids_um, bin_limits_um
 
