@@ -109,7 +109,6 @@ def extract_middle(stats, crop_bounds):
         stats (df)    : cropped silcam stats file
     '''
 
-    # print('initial stats length:', len(stats))
     r = np.array(((stats['maxr'] - stats['minr']) / 2) + stats['minr'])  # pixel row of middle of bounding box
     c = np.array(((stats['maxc'] - stats['minc']) / 2) + stats['minc'])  # pixel column of middle of bounding box
 
@@ -120,21 +119,11 @@ def extract_middle(stats, crop_bounds):
     pts = np.array(points)
     pts = pts.squeeze()
 
-    # plt.plot(pts[:, 0], pts[:, 1], 'k.')
-    # plt.axis('equal')
-
     ll = np.array(crop_bounds[:2])  # lower-left
     ur = np.array(crop_bounds[2:])  # upper-right
 
     inidx = np.all(np.logical_and(ll <= pts, pts <= ur), axis=1)
     stats = stats[inidx]
-
-    # inbox = pts[inidx]
-    # print('inbox shape:', inbox.shape)
-    # plt.plot(inbox[:,0], inbox[:,1], 'r.')
-    # plt.axis('equal')
-
-    # print('len stats', len(stats))
 
     return stats
 
