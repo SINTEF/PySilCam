@@ -230,8 +230,8 @@ class PlotView(QtWidgets.QWidget):
         self.axisconstant = plt.subplot(221)
         self.axispsd = plt.subplot(122)
         self.axistext = plt.subplot(223)
-        plt.sca(self.axistext)
-        plt.axis('off')
+        #plt.sca(self.axistext)
+        #plt.axis('off')
         self.canvas = FigureCanvas(self.fig)
         self.canvas.setParent(self)
 
@@ -377,14 +377,6 @@ class PlotView(QtWidgets.QWidget):
 
     def load_from_stats(self):
         '''loads stats data and converts to timeseries without saving'''
-
-        if not os.path.isfile(os.path.splitext(self.stats_filename)[0] + '.h5'):
-            print('convert csv to hdf')
-            scpp.statscsv_to_statshdf(self.stats_filename)
-            print('hdf conversion done')
-
-        self.stats_filename = os.path.splitext(self.stats_filename)[0] + '.h5'
-
         stats = pd.read_hdf(self.stats_filename, 'ParticleStats/stats')
         stats['timestamp'] = pd.to_datetime(stats['timestamp'])
 
@@ -641,17 +633,17 @@ class PlotView(QtWidgets.QWidget):
             ws['A6'] = 'Number of particles:'
             ws['B6'] = 'NOT IMPLEMENTED'
             ws['D6'] = 'peak || modal size class (microns):'
-            ws['E6'] = psd_peak_total
+            ws['E6'] = psd_peak_total.squeeze()[()]
 
             ws['D13'] = 'd50(microns):'
             ws['E13'] = psd_d50_oil
             ws['D14'] = 'peak || modal size class (microns):'
-            ws['E14'] = psd_peak_oil
+            ws['E14'] = psd_peak_oil.squeeze()[()]
 
             ws['D21'] = 'd50(microns):'
             ws['E21'] = psd_d50_gas
             ws['D22'] = 'peak || modal size class (microns):'
-            ws['E22'] = psd_peak_gas
+            ws['E22'] = psd_peak_gas.squeeze()[()]
 
 
             ws['A8'] = 'Bin mid-sizes (microns):'
@@ -663,9 +655,9 @@ class PlotView(QtWidgets.QWidget):
             # d = ws.cells(row='8')
             for c in range(len(self.dias)):
                 ws.cell(row=8, column=c + 2, value=self.dias[c])
-                ws.cell(row=9, column=c + 2, value=ds_psd['vd_total'][c])
-                ws.cell(row=16, column=c + 2, value=ds_psd['vd_oil'][c])
-                ws.cell(row=24, column=c + 2, value=ds_psd['vd_gas'][c])
+                ws.cell(row=9, column=c + 2, value=ds_psd['vd_total'].values[c])
+                ws.cell(row=16, column=c + 2, value=ds_psd['vd_oil'].values[c])
+                ws.cell(row=24, column=c + 2, value=ds_psd['vd_gas'].values[c])
 
             wb.save(outputname)
             print('Saved:', outputname)
