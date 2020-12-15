@@ -232,6 +232,7 @@ class PlotView(QtWidgets.QWidget):
         self.axistext = plt.subplot(223)
         #plt.sca(self.axistext)
         #plt.axis('off')
+        self.axistext.axis('off')
         self.canvas = FigureCanvas(self.fig)
         self.canvas.setParent(self)
 
@@ -442,7 +443,7 @@ class PlotView(QtWidgets.QWidget):
         #plt.sca(self.axisconstant)
         self.axisconstant.clear()
         if self.plot_pcolor==0:
-            self.axisconstant.pcolormesh(self.u, self.dias, np.log(self.vd_total.T), cmap=cmocean.cm.matter)
+            self.axisconstant.pcolormesh(self.u, self.dias, np.log(self.vd_total.T), cmap=cmocean.cm.matter, shading='nearest')
             self.axisconstant.plot(self.u, self.d50_total, 'kx', markersize=5, alpha=0.25)
             self.axisconstant.plot(self.u, self.d50_gas, 'bx', markersize=5, alpha=0.25)
             self.axisconstant.set_yscale('log')
@@ -527,7 +528,9 @@ class PlotView(QtWidgets.QWidget):
             string += '\n End: ' + str(end_time)
             string += '\n Window [sec.]: {:0.3f}'.format((end_time - start_time).total_seconds())
 
-            self.axistext.set_title(string, verticalalignment='top', horizontalalignment='right', loc='right')
+            self.axistext.clear()
+            self.axistext.text(1, 1, string, va='top', ha='right', transform=self.axistext.transAxes)
+            self.axistext.axis('off')
 
             #plt.sca(self.axisconstant)
             self.line1.remove()
@@ -597,7 +600,9 @@ class PlotView(QtWidgets.QWidget):
         string += '\n Window [sec.] {:0.3f}:'.format(pd.to_timedelta(psd_end-psd_start).total_seconds())
         string += '\n\n mid-time: ' + str(pd.to_datetime(self.mid_time))
 
-        self.axistext.set_title(string, verticalalignment='top', horizontalalignment='right', loc='right')
+        self.axistext.clear()
+        self.axistext.text(1, 1, string, va='top', ha='right', transform=self.axistext.transAxes)
+        self.axistext.axis('off')
 
         #plt.sca(self.axisconstant)
         self.line1.remove()
