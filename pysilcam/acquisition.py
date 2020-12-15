@@ -105,13 +105,14 @@ class Acquire():
     '''
     Class used to acquire images from camera or disc
     '''
-    def __init__(self, USE_PYMBA=False):
+    def __init__(self, USE_PYMBA=False, FAKE_PYMBA_OFFSET=0):
         if USE_PYMBA:
             self.pymba = pymba
             self.pymba.get_time_stamp = lambda x: pd.Timestamp.now()
             logger.info('Pymba imported')
             self.get_generator = self.get_generator_camera
         else:
+            fakepymba.Frame.PYSILCAM_OFFSET = FAKE_PYMBA_OFFSET
             self.pymba = fakepymba
             logger.info('using fakepymba')
             self.get_generator = self.get_generator_disc
