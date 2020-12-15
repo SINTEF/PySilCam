@@ -249,6 +249,42 @@ class PlotView(QtWidgets.QWidget):
         self.canvas.draw()
 
 
+    def old_data_check(self):
+        '''
+        checks fo HDF5 STATS and asks user to convert if needed.
+        will rename self.stats_filename for future use if needed.
+
+        returns bool which is True on success
+        '''
+        if not self.stats_filename.endswith('.csv'):
+            return True
+
+        h5_file = self.stats_filename.replace('.csv','.h5')
+        if os.path.isfile(h5_file):
+            self.stats_filename = h5_file
+            return True
+
+        msgBox = QMessageBox()
+        msgBox.setText('The STATS data appears to be out-dated csv file.' +
+                        '\n\nWe will now load the STATS file ' +
+                        'and convert the data to HDF5 files (which might take a while).')
+        msgBox.setIcon(QMessageBox.Question)
+        msgBox.setWindowTitle('Convert data?')
+        load_stats_button = msgBox.addButton('OK',
+                                                QMessageBox.ActionRole)
+        msgBox.addButton(QMessageBox.Cancel)
+        msgBox.exec_()
+
+        if (msgBox.clickedButton() == QMessageBox.Cancel):
+            return False
+
+        ws = waitsplash()
+        scpp.statscsv_to_statshdf(self.stats_filename)
+        self.stats_filename = h5_file
+        ws.close()
+        return True
+                
+
     def load_data(self):
         '''handles loading of data, depending on what is available'''
         self.datadir = os.path.split(self.configfile)[0]
@@ -278,6 +314,9 @@ class PlotView(QtWidgets.QWidget):
             self.load_from_timeseries()
             ws.close()
         else:
+
+            if not self.old_data_check():
+                return
 
             msgBox = QMessageBox()
             msgBox.setText('The STATS data appear not to have been exported to TIMSERIES.xlsx' +
