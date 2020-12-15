@@ -1,18 +1,18 @@
 # -*- coding: utf-8 -*-
 import os
-import sys
 from datetime import datetime, timedelta
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
-pysiclam_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-sys.path.prepend(pysiclam_dir)
-
 import pysilcam.postprocess as scpp
 from pysilcam.config import PySilcamSettings
 
+
+# This file can be run as a stand-alone file after having run
+# python setup.py develop
+# from the base directory of the silcam repository.
 
 common_path = 'Z:\\302004868_COAP_Phase1\\Data\\Thor\\20200528'  # Path to folder containing merged NEPTUS logs
 LOGS_PATH = "Neptus\\merge\\mra\\csv"  # Information on mission date used for locating files and understanding times
