@@ -230,8 +230,6 @@ class PlotView(QtWidgets.QWidget):
         self.axisconstant = plt.subplot(221)
         self.axispsd = plt.subplot(122)
         self.axistext = plt.subplot(223)
-        #plt.sca(self.axistext)
-        #plt.axis('off')
         self.axistext.axis('off')
         self.canvas = FigureCanvas(self.fig)
         self.canvas.setParent(self)
@@ -440,7 +438,7 @@ class PlotView(QtWidgets.QWidget):
 
     def setup_figure(self):
         '''sets up the plotting figure'''
-        #plt.sca(self.axisconstant)
+
         self.axisconstant.clear()
         if self.plot_pcolor==0:
             self.axisconstant.pcolormesh(self.u, self.dias, np.log(self.vd_total.T), cmap=cmocean.cm.matter, shading='nearest')
@@ -517,10 +515,7 @@ class PlotView(QtWidgets.QWidget):
         psd_nims = ds_slice.time.size
         if psd_nims < 1:
             psd = ds_slice.mean(dim='time')
-            #plt.sca(self.axispsd)
             self.axispsd.clear()
-
-            #plt.sca(self.axistext)
 
             string = ''
             string += '\n Num images: {:0.0f}'.format(psd_nims)
@@ -532,7 +527,6 @@ class PlotView(QtWidgets.QWidget):
             self.axistext.text(1, 1, string, va='top', ha='right', transform=self.axistext.transAxes)
             self.axistext.axis('off')
 
-            #plt.sca(self.axisconstant)
             self.line1.remove()
             self.line2.remove()
             self.line1 = self.axisconstant.vlines(start_time, self.yrange[0], self.yrange[1], 'r', linestyle='--')
@@ -561,27 +555,30 @@ class PlotView(QtWidgets.QWidget):
 
         psd_gor = sum(ds_psd['vd_gas'].values) / (sum(ds_psd['vd_oil'].values) + sum(ds_psd['vd_gas'].values)) * 100
 
-        #plt.sca(self.axispsd)
         self.axispsd.clear()
         self.axispsd.plot(self.dias, ds_psd['vd_total'], 'k', linewidth=5, label='Total')
         self.axispsd.plot(self.dias, ds_psd['vd_oil'], color=[0.7, 0.4, 0], label='Oil')
         self.axispsd.plot(self.dias, ds_psd['vd_gas'], 'b', label='Gas')
 
-        self.axispsd.vlines(psd_d50_total, 0, max(ds_psd['vd_total']), 'k', linestyle='--', linewidth=1, label='Total d50: {:0.0f}um'.format(psd_d50_total))
-        self.axispsd.vlines(psd_d50_oil, 0, max(ds_psd['vd_oil']), color=[0.7, 0.4, 0], linestyle='--', linewidth=1, label='Oil d50: {:0.0f}um'.format(psd_d50_oil))
-        self.axispsd.vlines(psd_d50_gas, 0, max(ds_psd['vd_gas']), 'b', linestyle='--', linewidth=1, label='Gas d50: {:0.0f}um'.format(psd_d50_gas))
+        self.axispsd.vlines(psd_d50_total, 0, max(ds_psd['vd_total']), 'k', linestyle='--', linewidth=1,
+                            label='Total d50: {:0.0f}um'.format(psd_d50_total))
+        self.axispsd.vlines(psd_d50_oil, 0, max(ds_psd['vd_oil']), color=[0.7, 0.4, 0], linestyle='--', linewidth=1,
+                            label='Oil d50: {:0.0f}um'.format(psd_d50_oil))
+        self.axispsd.vlines(psd_d50_gas, 0, max(ds_psd['vd_gas']), 'b', linestyle='--', linewidth=1,
+                            label='Gas d50: {:0.0f}um'.format(psd_d50_gas))
 
-        self.axispsd.vlines(psd_peak_total, 0, max(ds_psd['vd_total']), 'k', linestyle=':', linewidth=1, label='Total peak: {:0.0f}um'.format(psd_peak_total))
-        self.axispsd.vlines(psd_peak_oil, 0, max(ds_psd['vd_oil']), color=[0.7, 0.4, 0], linestyle=':', linewidth=1, label='Oil peak: {:0.0f}um'.format(psd_peak_oil))
-        self.axispsd.vlines(psd_peak_gas, 0, max(ds_psd['vd_gas']), 'b', linestyle=':', linewidth=1, label='Gas peak d50: {:0.0f}um'.format(psd_peak_gas))
+        self.axispsd.vlines(psd_peak_total, 0, max(ds_psd['vd_total']), 'k', linestyle=':', linewidth=1,
+                            label='Total peak: {:0.0f}um'.format(psd_peak_total))
+        self.axispsd.vlines(psd_peak_oil, 0, max(ds_psd['vd_oil']), color=[0.7, 0.4, 0], linestyle=':', linewidth=1,
+                            label='Oil peak: {:0.0f}um'.format(psd_peak_oil))
+        self.axispsd.vlines(psd_peak_gas, 0, max(ds_psd['vd_gas']), 'b', linestyle=':', linewidth=1,
+                            label='Gas peak d50: {:0.0f}um'.format(psd_peak_gas))
 
         self.axispsd.set_xlabel('ECD [um]')
         self.axispsd.set_ylabel('VD [uL/L]')
         self.axispsd.set_xscale('log')
         self.axispsd.set_xlim(10, 12000)
         self.axispsd.legend(loc='upper left')
-
-        #plt.sca(self.axistext)
 
         string = ''
         string += 'GOR [%]: {:0.01f}'.format(psd_gor)
@@ -604,7 +601,6 @@ class PlotView(QtWidgets.QWidget):
         self.axistext.text(1, 1, string, va='top', ha='right', transform=self.axistext.transAxes)
         self.axistext.axis('off')
 
-        #plt.sca(self.axisconstant)
         self.line1.remove()
         self.line2.remove()
         self.line1 = self.axisconstant.vlines(pd.to_datetime(psd_start), self.yrange[0], self.yrange[1], 'r')
@@ -657,7 +653,6 @@ class PlotView(QtWidgets.QWidget):
             ws['A24'] = 'Vol. Conc. / bin (uL/L):'
             ws['A12'] = 'OIL Info'
             ws['A20'] = 'GAS Info'
-            # d = ws.cells(row='8')
             for c in range(len(self.dias)):
                 ws.cell(row=8, column=c + 2, value=self.dias[c])
                 ws.cell(row=9, column=c + 2, value=ds_psd['vd_total'].values[c])
@@ -717,7 +712,7 @@ class waitsplash():
         path_here = os.path.realpath(__file__)
         imfile = os.path.join(os.path.split(path_here)[0], 'loading.png')
         splash_pix = QPixmap(imfile)
-        self.splash = QSplashScreen(splash_pix)#, Qt.WindowStaysOnTopHint)
+        self.splash = QSplashScreen(splash_pix)
         self.splash.setMask(splash_pix.mask())
         self.splash.show()
         QApplication.processEvents()
