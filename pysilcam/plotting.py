@@ -280,7 +280,7 @@ def summarise_fancy_stats(stats_file, config_file, monitor=False,
         stats = stats[(stats['major_axis_length'] *
                        settings.PostProcess.pix_size) < maxlength]
         if crop_stats is not None:
-            stats = sc_pp.extract_middle(stats, crop_stats)
+            stats = sc_pp.filter_stats(stats, crop_stats)
 
         # average numer and volume concentrations
         nc, vc, sv_total, junge = sc_pp.nc_vc_from_stats(stats,

@@ -252,7 +252,7 @@ if __name__ == "__main__":
 
         # Apply workaround cropping of stats due to small window
         print('Cropping stats')
-        stats = scpp.extract_middle(stats, CROP_STATS)
+        stats = scpp.filter_stats(stats, CROP_STATS)
 
         print('Adding position and ctd data to stats')
         stats = add_neptus_to_stats(stats, ctd)

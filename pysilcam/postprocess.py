@@ -97,7 +97,7 @@ def get_size_bins():
     return bin_mids_um, bin_limits_um
 
 
-def extract_middle(stats, crop_stats):
+def filter_stats(stats, crop_stats):
     '''
     Filters stats file based on whether the particles are
     within a rectangle specified by crop_stats.
@@ -497,7 +497,7 @@ def make_montage(stats_file, pixel_size, roidir,
     stats = pd.read_hdf(stats_file, 'ParticleStats/stats')
 
     if crop_stats is not None:
-        stats = extract_middle(stats, crop_stats)
+        stats = filter_stats(stats, crop_stats)
 
     # remove nans because concentrations are not important here
     stats = stats[~np.isnan(stats['major_axis_length'])]
