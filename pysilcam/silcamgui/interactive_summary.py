@@ -4,7 +4,6 @@ from PyQt5.QtWidgets import QMainWindow, QApplication, QAction, QStatusBar, QFil
     QSplashScreen
 import pysilcam.postprocess as scpp
 import pysilcam.oilgas as scog
-from pysilcam.config import PySilcamSettings
 from pysilcam.background import correct_im_fast
 from pysilcam.fakepymba import silcam_load
 from tqdm import tqdm
@@ -21,6 +20,7 @@ from pysilcam.silcamgui.guicalcs import export_timeseries
 from openpyxl import Workbook
 from glob import glob
 import xarray as xr
+
 
 class FigFrame(QtWidgets.QFrame):
     '''class for the figure'''
@@ -53,7 +53,6 @@ class InteractivePlotter(QMainWindow):
         mainMenu = self.menuBar()
         fileMenu = mainMenu.addMenu('File')
         imageMenu = mainMenu.addMenu('Images')
-
 
         loadButton = QAction('Load', self)
         loadButton.setStatusTip('Load data')
@@ -156,8 +155,8 @@ class InteractivePlotter(QMainWindow):
         ws = waitsplash()
         self.statusBar.showMessage('Creating background from ' + str(len(midtimeidx)) + ' images', 1e12)
         imbg = np.float64(silcam_load(self.raw_files[midtimeidx[0][0]]))
-        for i in range(len(midtimeidx)-1):
-            imbg += np.float64(silcam_load(self.raw_files[midtimeidx[i+1][0]]))
+        for i in range(len(midtimeidx) - 1):
+            imbg += np.float64(silcam_load(self.raw_files[midtimeidx[i + 1][0]]))
         imbg /= len(midtimeidx)
         imraw = np.float64(silcam_load(self.filename))
         imc = correct_im_fast(imbg, imraw)
@@ -190,11 +189,10 @@ class InteractivePlotter(QMainWindow):
 
         midtimeidx = np.argwhere(self.plot_fame.graph_view.u > self.plot_fame.graph_view.mid_time)[0]
         search_time = self.plot_fame.graph_view.u[midtimeidx].to_pydatetime()[0]
-        print('search_time',search_time)
         estimate_filename = os.path.join(self.raw_path,
                                          search_time.strftime('D%Y%m%dT%H%M%S.*.*'))
         filename = glob(estimate_filename)
-        if len(filename)==0:
+        if len(filename) == 0:
             print('can''t find this:', estimate_filename)
             return
         self.filename = filename[0]
@@ -210,7 +208,7 @@ class InteractivePlotter(QMainWindow):
     def modify_av_wind(self):
         '''allow the user to modify the averaging period of interest'''
         window_seconds = self.plot_fame.graph_view.av_window.seconds
-        input_value, okPressed = QInputDialog.getInt(self, "Get integer", "Average window:", window_seconds, 0, 60*60, 1)
+        input_value, okPressed = QInputDialog.getInt(self, "Get integer", "Average window:", window_seconds, 0, 60 * 60, 1)
 
         if okPressed:
             self.plot_fame.graph_view.av_window = pd.Timedelta(seconds=input_value)
@@ -268,7 +266,7 @@ class PlotView(QtWidgets.QWidget):
                        'and convert the data to HDF5 files (which might take a while).')
         msgBox.setIcon(QMessageBox.Question)
         msgBox.setWindowTitle('Convert data?')
-        load_stats_button = msgBox.addButton('OK', QMessageBox.ActionRole)
+        msgBox.addButton('OK', QMessageBox.ActionRole)
         msgBox.addButton(QMessageBox.Cancel)
         msgBox.exec_()
 
@@ -345,7 +343,6 @@ class PlotView(QtWidgets.QWidget):
         self.mid_time = min(self.u) + (max(self.u) - min(self.u)) / 2
         self.setup_figure()
 
-
     def load_from_timeseries(self):
         '''uses timeseries xls sheets assuming they are available'''
         filename_base = os.path.splitext(self.stats_filename)[0]
@@ -367,8 +364,7 @@ class PlotView(QtWidgets.QWidget):
         self.cos = np.zeros_like(self.d50_total)
         for i, vd in enumerate(self.vd_total):
             self.d50_total[i] = scpp.d50_from_vd(vd, self.dias)
-            self.cos[i] = scog.cos_check(self.dias, self.vd_total[i,:])
-
+            self.cos[i] = scog.cos_check(self.dias, self.vd_total[i, :])
 
     def load_from_stats(self):
         '''loads stats data and converts to timeseries without saving'''
@@ -431,12 +427,11 @@ class PlotView(QtWidgets.QWidget):
         self.dias = dias
         self.stats = stats
 
-
     def setup_figure(self):
         '''sets up the plotting figure'''
 
         self.axisconstant.clear()
-        if self.plot_pcolor==0:
+        if self.plot_pcolor == 0:
             self.axisconstant.pcolormesh(self.u, self.dias, np.log(self.vd_total.T), cmap=cmocean.cm.matter, shading='nearest')
             self.axisconstant.plot(self.u, self.d50_total, 'kx', markersize=5, alpha=0.25)
             self.axisconstant.plot(self.u, self.d50_gas, 'bx', markersize=5, alpha=0.25)
@@ -444,23 +439,22 @@ class PlotView(QtWidgets.QWidget):
             self.axisconstant.set_ylabel('ECD [um]')
             self.axisconstant.set_ylim(10, 12000)
             self.yrange = [1, 12000]
-        elif self.plot_pcolor==1:
-            self.axisconstant.plot(self.u, np.sum(self.vd_total, axis=1),'k.', alpha=0.2)
+        elif self.plot_pcolor == 1:
+            self.axisconstant.plot(self.u, np.sum(self.vd_total, axis=1), 'k.', alpha=0.2)
             self.axisconstant.plot(self.u, np.sum(self.vd_oil, axis=1), '.', color=[0.7, 0.4, 0], alpha=0.2)
             self.axisconstant.plot(self.u, np.sum(self.vd_gas, axis=1), 'b.', alpha=0.2)
-            self.yrange = [0, max(np.sum(self.vd_total,axis=1))]
+            self.yrange = [0, max(np.sum(self.vd_total, axis=1))]
             self.axisconstant.set_ylabel('Volume concentration [uL/L]')
             self.axisconstant.set_yscale('log')
-            self.axisconstant.set_ylim(min([min(np.sum(self.vd_total,axis=1)),
-                          min(np.sum(self.vd_oil,axis=1)),
-                          min(np.sum(self.vd_gas,axis=1))]),
-                          max(np.sum(self.vd_total,axis=1)))
+            self.axisconstant.set_ylim(min([min(np.sum(self.vd_total, axis=1)),
+                                       min(np.sum(self.vd_oil, axis=1)),
+                                       min(np.sum(self.vd_gas, axis=1))]),
+                                       max(np.sum(self.vd_total, axis=1)))
         else:
             self.axisconstant.plot(self.u, self.cos, 'k.', alpha=0.2)
             self.yrange = [0, 1]
             self.axisconstant.set_ylabel('Cosine similarity with log-normal')
             self.axisconstant.set_ylim(self.yrange)
-
 
         self.start_time = min(self.u)
         self.end_time = max(self.u)
@@ -474,9 +468,6 @@ class PlotView(QtWidgets.QWidget):
     def on_click(self, event):
         '''if you click the correct place, update the plot based on where you click'''
         if event.inaxes is not None:
-            self.mid_time = pd.to_datetime(matplotlib.dates.num2date(event.xdata)).tz_convert(None)
-            self.update_plot()
-            return
             try:
                 self.mid_time = pd.to_datetime(matplotlib.dates.num2date(event.xdata)).tz_convert(None)
                 self.update_plot()
@@ -487,10 +478,9 @@ class PlotView(QtWidgets.QWidget):
 
     def toggle_plot(self):
         self.plot_pcolor += 1
-        if self.plot_pcolor==3:
-            self.plot_pcolor=0
+        if self.plot_pcolor == 3:
+            self.plot_pcolor = 0
         self.setup_figure()
-
 
     def update_plot(self, save=False):
         '''update the plots and save to excel is save=True'''
@@ -510,7 +500,6 @@ class PlotView(QtWidgets.QWidget):
         ds_slice = ds.sel(time=slice(start_time, end_time))
         psd_nims = ds_slice.time.size
         if psd_nims < 1:
-            psd = ds_slice.mean(dim='time')
             self.axispsd.clear()
 
             string = ''
@@ -590,7 +579,7 @@ class PlotView(QtWidgets.QWidget):
         string += '\n\n Num images: {:0.0f}'.format(psd_nims)
         string += '\n\n Start: ' + str(psd_start)
         string += '\n End: ' + str(psd_end)
-        string += '\n Window [sec.] {:0.3f}:'.format(pd.to_timedelta(psd_end-psd_start).total_seconds())
+        string += '\n Window [sec.] {:0.3f}:'.format(pd.to_timedelta(psd_end - psd_start).total_seconds())
         string += '\n\n mid-time: ' + str(pd.to_datetime(self.mid_time))
 
         self.axistext.clear()
@@ -607,9 +596,9 @@ class PlotView(QtWidgets.QWidget):
             timestring = pd.to_datetime(psd_start).strftime('D%Y%m%dT%H%M%S')
             outputname = self.stats_filename.replace('-STATS.h5', '-PSD-' + timestring)
             outputname = QFileDialog.getSaveFileName(self,
-                                                   "Select file to Save", outputname,
-                                                   ".xlsx")
-            if outputname[1]=='':
+                                                     "Select file to Save", outputname,
+                                                     ".xlsx")
+            if outputname[1] == '':
                 return
             outputname = outputname[0] + outputname[1]
 
@@ -641,7 +630,6 @@ class PlotView(QtWidgets.QWidget):
             ws['E21'] = psd_d50_gas
             ws['D22'] = 'peak || modal size class (microns):'
             ws['E22'] = psd_peak_gas.squeeze()[()]
-
 
             ws['A8'] = 'Bin mid-sizes (microns):'
             ws['A9'] = 'Vol. Conc. / bin (uL/L):'
@@ -722,6 +710,7 @@ def main():
     window = InteractivePlotter()
     window.show()
     app.exec_()
+
 
 if __name__ == "__main__":
     main()
