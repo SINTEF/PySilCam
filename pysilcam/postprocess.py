@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 import os
 import imageio as imo
-from skimage.morphology import disk
 from scipy import ndimage as ndi
 import skimage
 from skimage.exposure import rescale_intensity
@@ -47,12 +46,12 @@ def d50_from_stats(stats, settings):
 def d50_from_vd(vd, dias):
     '''
     Calculate d50 from a volume distribution
-    
+
     Args:
         vd            : particle volume distribution calculated from vd_from_stats()
         dias          : mid-points in the size classes corresponding the the volume distribution,
                                returned from get_size_bins()
-        
+
     Returns:
         d50 (float)                 : the 50th percentile of the cumulative sum of the volume distributon, in microns
     '''
@@ -68,7 +67,7 @@ def d50_from_vd(vd, dias):
 def get_size_bins():
     '''
     Retrieve size bins for PSD analysis
-    
+
     Returns:
         bin_mids_um (array)     : mid-points of size bins
         bin_limits_um (array)   : limits of size bins
@@ -80,9 +79,9 @@ def get_size_bins():
     bin_limits_um[0] = 2.72 * 0.91
 
     # loop through 53 size classes and calculate the bin limits
-    for I in np.arange(1, 53, 1):
+    for bin_number in np.arange(1, 53, 1):
         # each bin is 1.18 * larger than the previous
-        bin_limits_um[I] = bin_limits_um[I - 1] * 1.180
+        bin_limits_um[bin_number] = bin_limits_um[bin_number - 1] * 1.180
 
     # pre-allocate
     bin_mids_um = np.zeros((52), dtype=np.float64)
@@ -91,11 +90,40 @@ def get_size_bins():
     bin_mids_um[0] = 2.72
 
     # loop through 53 size classes and calculate the bin mid-points
-    for I in np.arange(1, 52, 1):
+    for bin_number in np.arange(1, 52, 1):
         # each bin is 1.18 * larger than the previous
-        bin_mids_um[I] = bin_mids_um[I - 1] * 1.180
+        bin_mids_um[bin_number] = bin_mids_um[bin_number - 1] * 1.180
 
     return bin_mids_um, bin_limits_um
+
+
+def filter_stats(stats, crop_stats):
+    '''
+    Filters stats file based on whether the particles are
+    within a rectangle specified by crop_stats.
+    A temporary cropping solution due to small window in AUV
+
+    Args:
+        stats (df)    : silcam stats file
+        crop_stats (tuple) : 4-tuple of lower-left (row, column) then upper-right (row, column) coord of crop
+
+    Returns:
+        stats (df)    : cropped silcam stats file
+    '''
+
+    r = np.array(((stats['maxr'] - stats['minr']) / 2) + stats['minr'])  # pixel row of middle of bounding box
+    c = np.array(((stats['maxc'] - stats['minc']) / 2) + stats['minc'])  # pixel column of middle of bounding box
+
+    pts = np.array([[(r_, c_)] for r_, c_ in zip(r, c)])
+    pts = pts.squeeze()
+
+    ll = np.array(crop_stats[:2])  # lower-left
+    ur = np.array(crop_stats[2:])  # upper-right
+
+    inidx = np.all(np.logical_and(ll <= pts, pts <= ur), axis=1)
+    stats = stats[inidx]
+
+    return stats
 
 
 def vd_from_nd(count, psize, sv=1):
@@ -107,19 +135,19 @@ def vd_from_nd(count, psize, sv=1):
     e.g:
     sample_vol_size=25*1e-3*(1200*4.4e-6*1600*4.4e-6); %size of sample volume in m^3
     sv=sample_vol_size*1e3; %size of sample volume in litres
-    
+
     Args:
         count (array) : particle number distribution
         psize (float) : pixel size of the SilCam contained in settings.PostProcess.pix_size from the config ini file
         sv=1 (float)  : the volume of the sample which should be used for scaling concentrations
-        
+
     Returns:
         vd (array)    : the particle volume distribution
     '''
 
     psize = psize * 1e-6  # convert to m
 
-    pvol = 4 / 3 * np.pi * (psize / 2) ** 3  # volume in m^3
+    pvol = 4 / 3 * np.pi * (psize / 2)**3  # volume in m^3
 
     tpvol = pvol * count * 1e9  # volume in micro-litres
 
@@ -129,13 +157,13 @@ def vd_from_nd(count, psize, sv=1):
 
 
 def nc_from_nd(count, sv):
-    ''' 
+    '''
     Calculate the number concentration from the count and sample volume
-    
+
     Args:
         count (array) : particle number distribution
         sv=1 (float)  : the volume of the sample which should be used for scaling concentrations
-        
+
     Returns:
         nc (float)    : the total number concentration in #/L
     '''
@@ -146,12 +174,12 @@ def nc_from_nd(count, sv):
 def nc_vc_from_stats(stats, settings, oilgas=outputPartType.all):
     '''
     Calculates important summary statistics from a stats DataFrame
-    
+
     Args:
         stats (DataFrame)           : particle statistics from silcam process
         settings (PySilcamSettings) : settings associated with the data, loaded with PySilcamSettings
         oilgas=oc_pp.outputPartType.all : the oilgas enum if you want to just make the figure for oil, or just gas (defaults to all particles)
-    
+
     Returns:
         nc (float)            : the total number concentration in #/L
         vc (float)            : the total volume concentration in uL/L
@@ -449,7 +477,7 @@ def montage_maker(roifiles, roidir, pixel_size, msize=2048, brightness=255,
 
 def make_montage(stats_file, pixel_size, roidir,
                  auto_scaler=500, msize=1024, maxlength=100000,
-                 oilgas=outputPartType.all):
+                 oilgas=outputPartType.all, crop_stats=None):
     ''' wrapper function for montage_maker
 
     Args:
@@ -460,6 +488,7 @@ def make_montage(stats_file, pixel_size, roidir,
         msize=1024                  : size of canvas in pixels
         maxlength=100000            : maximum length in microns of particles to be included in montage
         oilgas=outputPartType.all   : enum defining which type of particle to be selected for use in the montage
+        crop_stats=None             : None or 4-tuple of lower-left then upper-right coord of crop
 
     Returns:
         montage (uint8)             : a nicely-made montage in the form of an image, which can be plotted using plotting.montage_plot(montage, settings.PostProcess.pix_size)
@@ -468,10 +497,13 @@ def make_montage(stats_file, pixel_size, roidir,
     # obtain particle statistics from the csv file
     stats = pd.read_hdf(stats_file, 'ParticleStats/stats')
 
+    if crop_stats is not None:
+        stats = filter_stats(stats, crop_stats)
+
     # remove nans because concentrations are not important here
     stats = stats[~np.isnan(stats['major_axis_length'])]
     stats = stats[(stats['major_axis_length'] *
-                   pixel_size) < maxlength]
+                  pixel_size) < maxlength]
 
     # extract only wanted particle stats
     if oilgas == outputPartType.oil:
@@ -506,8 +538,7 @@ def gen_roifiles(stats, auto_scaler=500):
         roifiles                    : a selection of filenames that can be passed to montage_maker() for making nice montages
     '''
 
-    roifiles = stats['export name'][stats['export name'] !=
-                                    'not_exported'].values
+    roifiles = stats['export name'][stats['export name'] != 'not_exported'].values
 
     # subsample the particles if necessary
     logger.info('rofiles: {0}'.format(len(roifiles)))
@@ -617,8 +648,7 @@ def d50_timeseries(stats, settings):
 
     for t in tqdm(u):
         dt = pd.to_datetime(t)
-        stats_ = stats[
-            (pd.to_datetime(stats['timestamp']) < (dt + td)) & (pd.to_datetime(stats['timestamp']) > (dt - td))]
+        stats_ = stats[(pd.to_datetime(stats['timestamp']) < (dt + td)) & (pd.to_datetime(stats['timestamp']) > (dt - td))]
         d50.append(d50_from_stats(stats_, settings))
         time.append(t)
 
@@ -899,8 +929,7 @@ def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
     timestamp = np.min(pd.to_datetime(df['Time']))
     dfa['Time'] = timestamp
 
-    dfa.to_excel(stats_filename.replace('-STATS.h5', '') +
-                 '-AVERAGE' + oilgasTxt + '.xlsx')
+    dfa.to_excel(stats_filename.replace('-STATS.h5', '') + '-AVERAGE' + oilgasTxt + '.xlsx')
 
     return df
 
@@ -914,7 +943,7 @@ def statscsv_to_statshdf(stats_file):
     stats = pd.read_csv(stats_file, index_col=False)
     new_stats_file = stats_file.replace('-STATS.csv', '-STATS.h5')
     with pd.HDFStore(new_stats_file, 'a') as fh:
-        stats.to_hdf(fh, 'ParticleStats/stats', mode='a', format='t', data_columns=True)
+        stats.to_hdf(fh, 'ParticleStats/stats', format='t', data_columns=True)
 
 
 def trim_stats(stats_file, start_time, end_time, write_new=False, stats=[]):
@@ -964,10 +993,10 @@ def add_best_guesses_to_stats(stats):
     '''
     Calculates the most likely tensorflow classification and adds best guesses
     to stats dataframe.
-    
+
     Args:
         stats (DataFrame)           : particle statistics from silcam process
-        
+
     Returns:
         stats (DataFrame)           : particle statistics from silcam process
                                       with new columns for best guess and best guess value
@@ -983,8 +1012,7 @@ def add_best_guesses_to_stats(stats):
 
     parray = np.array(stats.iloc[:, pinds[:]])
 
-    stats['best guess'] = cols[pinds.min() + np.argmax(parray,
-                                                       axis=1)]
+    stats['best guess'] = cols[pinds.min() + np.argmax(parray, axis=1)]
     stats['best guess value'] = np.max(parray, axis=1)
 
     return stats
