@@ -6,7 +6,6 @@ import pysilcam.postprocess as scpp
 import pysilcam.oilgas as scog
 from pysilcam.background import correct_im_fast
 from pysilcam.fakepymba import silcam_load
-from tqdm import tqdm
 import numpy as np
 import cmocean
 import matplotlib.pyplot as plt
