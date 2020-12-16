@@ -322,7 +322,7 @@ class PlotView(QtWidgets.QWidget):
                                                  QMessageBox.ActionRole)
             msgBox.addButton(QMessageBox.Cancel)
             msgBox.exec_()
-            
+
             if (msgBox.clickedButton() == load_stats_button):
                 if self.configfile == '':
                     self.configfile = QFileDialog.getOpenFileName(self,
@@ -334,12 +334,12 @@ class PlotView(QtWidgets.QWidget):
                     return
                 ws = waitsplash()
                 export_timeseries(self.configfile, self.stats_filename)
-                
+
                 self.load_from_timeseries()
                 ws.close()
             else:
                 return
-        
+
         self.mid_time = min(self.u) + (max(self.u) - min(self.u)) / 2
         self.setup_figure()
 
@@ -496,7 +496,7 @@ class PlotView(QtWidgets.QWidget):
 
         start_time = self.mid_time - self.av_window / 2
         end_time = self.mid_time + self.av_window / 2
-        
+
         ds_slice = ds.sel(time=slice(start_time, end_time))
         psd_nims = ds_slice.time.size
         if psd_nims < 1:
