@@ -79,9 +79,9 @@ def get_size_bins():
     bin_limits_um[0] = 2.72 * 0.91
 
     # loop through 53 size classes and calculate the bin limits
-    for i in np.arange(1, 53, 1):
+    for bin_number in np.arange(1, 53, 1):
         # each bin is 1.18 * larger than the previous
-        bin_limits_um[i] = bin_limits_um[i - 1] * 1.180
+        bin_limits_um[bin_number] = bin_limits_um[bin_number - 1] * 1.180
 
     # pre-allocate
     bin_mids_um = np.zeros((52), dtype=np.float64)
@@ -90,9 +90,9 @@ def get_size_bins():
     bin_mids_um[0] = 2.72
 
     # loop through 53 size classes and calculate the bin mid-points
-    for i in np.arange(1, 52, 1):
+    for bin_number in np.arange(1, 52, 1):
         # each bin is 1.18 * larger than the previous
-        bin_mids_um[i] = bin_mids_um[i - 1] * 1.180
+        bin_mids_um[bin_number] = bin_mids_um[bin_number - 1] * 1.180
 
     return bin_mids_um, bin_limits_um
 
@@ -331,6 +331,7 @@ class TimeIntegratedVolumeDist:
 
     @todo - re-implement this later
     '''
+
     def __init__(self, settings):
         self.settings = settings
         self.window_size = settings.window_size
@@ -809,7 +810,7 @@ def silc_to_bmp(directory):
 
     '''
     files = [s for s in os.listdir(directory) if s.endswith('.silc')]
-    
+
     for f in files:
         try:
             with open(os.path.join(directory, f), 'rb') as fh:
@@ -928,10 +929,21 @@ def stats_to_xls_png(config_file, stats_filename, oilgas=outputPartType.all):
     timestamp = np.min(pd.to_datetime(df['Time']))
     dfa['Time'] = timestamp
 
-    dfa.to_excel(stats_filename.replace('-STATS.h5', '') +
-                 '-AVERAGE' + oilgasTxt + '.xlsx')
+    dfa.to_excel(stats_filename.replace('-STATS.h5', '') + '-AVERAGE' + oilgasTxt + '.xlsx')
 
     return df
+
+
+def statscsv_to_statshdf(stats_file):
+    '''Convert old STATS.csv file to a STATS.h5 file
+
+    Args:
+        stats_file              : filename of stats file
+    '''
+    stats = pd.read_csv(stats_file, index_col=False)
+    new_stats_file = stats_file.replace('-STATS.csv', '-STATS.h5')
+    with pd.HDFStore(new_stats_file, 'a') as fh:
+        stats.to_hdf(fh, 'ParticleStats/stats', format='t', data_columns=True)
 
 
 def trim_stats(stats_file, start_time, end_time, write_new=False, stats=[]):
