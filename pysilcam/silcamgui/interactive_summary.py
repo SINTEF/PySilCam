@@ -366,67 +366,6 @@ class PlotView(QtWidgets.QWidget):
             self.d50_total[i] = scpp.d50_from_vd(vd, self.dias)
             self.cos[i] = scog.cos_check(self.dias, self.vd_total[i, :])
 
-    def load_from_stats(self):
-        '''loads stats data and converts to timeseries without saving'''
-        stats = pd.read_hdf(self.stats_filename, 'ParticleStats/stats')
-        stats['timestamp'] = pd.to_datetime(stats['timestamp'])
-
-        u = stats['timestamp'].unique()
-        u = pd.to_datetime(u)
-        sample_volume = scpp.get_sample_volume(self.settings.PostProcess.pix_size,
-                                               path_length=self.settings.PostProcess.path_length)
-
-        dias, bin_lims = scpp.get_size_bins()
-        vd_oil = np.zeros((len(u), len(dias)))
-        vd_gas = np.zeros_like(vd_oil)
-        vd_total = np.zeros_like(vd_oil)
-        d50_gas = np.zeros(len(u))
-        d50_oil = np.zeros_like(d50_gas)
-        d50_total = np.zeros_like(d50_gas)
-        self.cos = np.zeros_like(d50_total)
-        # @todo make this number of particles per image, and sum according to index later
-        nparticles_all = 0
-        nparticles_total = 0
-        nparticles_oil = 0
-        nparticles_gas = 0
-
-        for i, s in enumerate(tqdm(u)):
-            substats = stats[stats['timestamp'] == s]
-            nparticles_all += len(substats)
-
-            nims = scpp.count_images_in_stats(substats)
-            sv = sample_volume * nims
-
-            oil = scog.extract_oil(substats)
-            nparticles_oil += len(oil)
-            dias, vd_oil_ = scpp.vd_from_stats(oil, self.settings.PostProcess)
-            vd_oil_ /= sv
-            vd_oil[i, :] = vd_oil_
-
-            gas = scog.extract_gas(substats)
-            nparticles_gas += len(gas)
-            dias, vd_gas_ = scpp.vd_from_stats(gas, self.settings.PostProcess)
-            vd_gas_ /= sv
-            vd_gas[i, :] = vd_gas_
-            d50_gas[i] = scpp.d50_from_vd(vd_gas_, dias)
-
-            nparticles_total += len(oil) + len(gas)
-            vd_total_ = vd_oil_ + vd_gas_
-            d50_total[i] = scpp.d50_from_vd(vd_total_, dias)
-            vd_total[i, :] = vd_total_
-
-            self.cos[i] = scog.cos_check(dias, vd_total[i, :])
-
-        self.vd_total = vd_total
-        self.vd_gas = vd_gas
-        self.vd_oil = vd_oil
-        self.d50_total = d50_total
-        self.d50_oil = d50_oil
-        self.d50_gas = d50_gas
-        self.u = u.tz_convert(None)
-        self.dias = dias
-        self.stats = stats
-
     def setup_figure(self):
         '''sets up the plotting figure'''
 
