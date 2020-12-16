@@ -943,7 +943,7 @@ def statscsv_to_statshdf(stats_file):
     stats = pd.read_csv(stats_file, index_col=False)
     new_stats_file = stats_file.replace('-STATS.csv', '-STATS.h5')
     with pd.HDFStore(new_stats_file, 'a') as fh:
-        stats.to_hdf(fh, 'ParticleStats/stats', mode='a', format='t', data_columns=True)
+        stats.to_hdf(fh, 'ParticleStats/stats', format='t', data_columns=True)
 
 
 def trim_stats(stats_file, start_time, end_time, write_new=False, stats=[]):
