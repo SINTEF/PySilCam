@@ -71,7 +71,7 @@ def silcreport():
         assert re.search(r'[^0-9,]', args['--filter-stats']) is None, error_message
         crop_stats = [int(i) for i in args['--filter-stats'].split(',')]
         assert len(crop_stats) == 4, error_message
-        logger.info('  Extract middle enabled. Crop area taken from config file.')
+        logger.info('  --filter-stats enabled, cropping rectangle passed to silcreport().')
 
     silcam_report(args['<statsfile>'], args['<configfile>'],
                   particle_type=particle_type,
