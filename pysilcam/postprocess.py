@@ -97,13 +97,15 @@ def get_size_bins():
     return bin_mids_um, bin_limits_um
 
 
-def extract_middle(stats, crop_bounds):
+def extract_middle(stats, crop_stats):
     '''
-    Temporary cropping solution due to small window in AUV
+    Filters stats file based on whether the particles are
+    within a rectangle specified by crop_stats.
+    A temporary cropping solution due to small window in AUV
 
     Args:
         stats (df)    : silcam stats file
-        crop_bounds (tuple) : 4-tuple of lower-left (row, column) then upper-right (row, column) coord of crop
+        crop_stats (tuple) : 4-tuple of lower-left (row, column) then upper-right (row, column) coord of crop
 
     Returns:
         stats (df)    : cropped silcam stats file
@@ -115,8 +117,8 @@ def extract_middle(stats, crop_bounds):
     pts = np.array([[(r_, c_)] for r_, c_ in zip(r, c)])
     pts = pts.squeeze()
 
-    ll = np.array(crop_bounds[:2])  # lower-left
-    ur = np.array(crop_bounds[2:])  # upper-right
+    ll = np.array(crop_stats[:2])  # lower-left
+    ur = np.array(crop_stats[2:])  # upper-right
 
     inidx = np.all(np.logical_and(ll <= pts, pts <= ur), axis=1)
     stats = stats[inidx]
