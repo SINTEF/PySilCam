@@ -26,22 +26,18 @@ def test_track_process():
             conf.write(fh)
 
         sctr.track_process(conf_file_out, datapath)
-        print('* track_process completed')
+        print('track_process completed')
 
+        print('check output data')
         tracksfile = os.path.join(tempdir, 'Raw-TRACKS.h5')
-
-        print('* checking post-processing of ', tracksfile)
-
         settings = PySilcamSettings(conf_file_out)
 
         data, tracks = sctr.load_and_process(tracksfile, settings.PostProcess.pix_size,
                                              track_length_limit=settings.Tracking.track_length_limit)
 
-        print('    data', len(data))
-        print('    tracks', len(tracks))
+        assert len(data) == 517, 'incorrect number of detected particles'
+        assert len(tracks) == 67, 'incorrect number of extracted tracks'
 
-        print('* testing boxplotting from tracked data')
         sctr.make_boxplot(tracksfile, 'outputfigure')
-        print('  boxplotting done')
 
-        print('* test_track_process complete')
+        assert os.path.isfile('outputfigure.png'), 'outputfigure.png boxplot not found'
