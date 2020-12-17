@@ -1,3 +1,4 @@
+import numpy as np
 import pysilcam.tracking.track as sctr
 from pysilcam.config import load_config, PySilcamSettings
 import tempfile
@@ -35,7 +36,11 @@ def test_track_process():
         data, tracks = sctr.load_and_process(tracksfile, settings.PostProcess.pix_size,
                                              track_length_limit=settings.Tracking.track_length_limit)
 
-        assert len(data) == 517, 'incorrect number of detected particles'
+        print(len(tracks))
+
+        # Check number of particles found. This was observed to be slightly different on
+        # Windows and Linux, hence we allow for a small deviation
+        assert np.abs(len(data) - 518) < 2, 'incorrect number of detected particles'
         assert len(tracks) == 67, 'incorrect number of extracted tracks'
 
         sctr.make_boxplot(tracksfile, 'outputfigure')
