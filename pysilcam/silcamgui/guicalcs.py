@@ -1,7 +1,5 @@
 from multiprocessing import Process, Queue
 import matplotlib.pyplot as plt
-from PyQt5.QtWidgets import QMainWindow, QApplication, QPushButton, QWidget 
-from PyQt5.QtWidgets import QAction, QTabWidget,QVBoxLayout, QFileDialog
 import os
 from pysilcam.config import PySilcamSettings
 import pysilcam.oilgas as scog
@@ -10,9 +8,11 @@ import pysilcam.postprocess as sc_pp
 import pandas as pd
 from enum import Enum
 import pygame
-import time
 import psutil
 from tqdm import tqdm
+from pysilcam.fakepymba import silcam_load
+
+import pygame.font
 
 
 def get_data(self):
@@ -25,11 +25,11 @@ def get_data(self):
 
 def count_data(datadir):
     silcfiles = [os.path.join(datadir, f) for f in
-            sorted(os.listdir(datadir))
-            if f.endswith('.silc')]
+                 sorted(os.listdir(datadir))
+                 if f.endswith('.silc')]
     bmpfiles = [os.path.join(datadir, f) for f in
-            sorted(os.listdir(datadir))
-            if f.endswith('.bmp')]
+                sorted(os.listdir(datadir))
+                if f.endswith('.bmp')]
     silc = len(silcfiles)
     bmp = len(bmpfiles)
     return silc, bmp
@@ -43,7 +43,6 @@ def extract_stats_im(guidata):
 
 
 def export_timeseries(configfile, statsfile):
-
     settings = PySilcamSettings(configfile)
 
     print('Loading STATS data: ', statsfile)
@@ -80,11 +79,11 @@ def export_timeseries(configfile, statsfile):
         dt = pd.to_datetime(s)
 
         dias, vd_all = sc_pp.vd_from_stats(stats[stats['timestamp'] == s],
-                                 settings.PostProcess)
+                                           settings.PostProcess)
         dias, vd_oil = sc_pp.vd_from_stats(stats_oil[stats_oil['timestamp'] == s],
-                                 settings.PostProcess)
+                                           settings.PostProcess)
         dias, vd_gas = sc_pp.vd_from_stats(stats_gas[stats_gas['timestamp'] == s],
-                                 settings.PostProcess)
+                                           settings.PostProcess)
 
         nims = sc_pp.count_images_in_stats(stats[stats['timestamp'] == s])
         sv = sample_volume * nims
@@ -99,7 +98,7 @@ def export_timeseries(configfile, statsfile):
         vdts_oil.append(vd_oil)
         vdts_gas.append(vd_gas)
 
-        stats_av = stats[(stats['timestamp']<(dt+td)) & (stats['timestamp']>(dt-td))]
+        stats_av = stats[(stats['timestamp'] < (dt + td)) & (stats['timestamp'] > (dt - td))]
         stats_av_oil = scog.extract_oil(stats_av)
         stats_av_gas = scog.extract_gas(stats_av)
         d50_av_all.append(sc_pp.d50_from_stats(stats_av, settings.PostProcess))
@@ -115,7 +114,7 @@ def export_timeseries(configfile, statsfile):
         vdts_av_oil /= sv
         vdts_av_gas /= sv
 
-        gor.append(np.sum(vdts_av_gas)/np.sum(vdts_av_oil))
+        gor.append(np.sum(vdts_av_gas) / np.sum(vdts_av_oil))
 
     outpath, outfile = os.path.split(statsfile)
     outfile = outfile.replace('-STATS.h5', '')
@@ -125,19 +124,19 @@ def export_timeseries(configfile, statsfile):
     time_series['D50'] = d50_all
     time_series['Time'] = timestamp
     time_series.to_excel(outfile +
-            '-TIMESERIES' + '' + '.xlsx')
+                         '-TIMESERIES' + '' + '.xlsx')
 
     time_series = pd.DataFrame(data=np.squeeze(vdts_oil), columns=dias)
     time_series['D50'] = d50_oil
     time_series['Time'] = timestamp
     time_series.to_excel(outfile +
-            '-TIMESERIES' + 'oil' + '.xlsx')
+                         '-TIMESERIES' + 'oil' + '.xlsx')
 
     time_series = pd.DataFrame(data=np.squeeze(vdts_gas), columns=dias)
     time_series['D50'] = d50_gas
     time_series['Time'] = timestamp
     time_series.to_excel(outfile +
-            '-TIMESERIES' + 'gas' + '.xlsx')
+                         '-TIMESERIES' + 'gas' + '.xlsx')
 
     plt.figure(figsize=(20, 10))
 
@@ -165,11 +164,10 @@ def export_timeseries(configfile, statsfile):
     plt.ylim(0, max(plt.gca().get_ylim()))
 
     lns = lns1 + lns2 + lns3
-    labs = [l.get_label() for l in lns]
+    labs = [lab.get_label() for lab in lns]
     plt.legend(lns, labs)
 
-    plt.savefig(outfile +
-                '-d50_TimeSeries.png', dpi=600, bbox_inches='tight')
+    plt.savefig(outfile + '-d50_TimeSeries.png', dpi=600, bbox_inches='tight')
 
     plt.close()
     print('Export figure made. ')
@@ -177,7 +175,7 @@ def export_timeseries(configfile, statsfile):
 
     # average all
     dias, vd = sc_pp.vd_from_stats(stats,
-                             settings.PostProcess)
+                                   settings.PostProcess)
     nims = sc_pp.count_images_in_stats(stats)
     sv = sample_volume * nims
     vd /= sv
@@ -189,26 +187,26 @@ def export_timeseries(configfile, statsfile):
     dfa.to_excel(statsfile.replace('-STATS.h5', '') +
                  '-AVERAGE' + '' + '.xlsx')
 
-    #average oil
+    # average oil
     dias, vd = sc_pp.vd_from_stats(stats_oil,
-                             settings.PostProcess)
-    vd /= sv # sample volume remains the same as 'all'
+                                   settings.PostProcess)
+    vd /= sv  # sample volume remains the same as 'all'
     d50 = sc_pp.d50_from_vd(vd, dias)
     dfa = pd.DataFrame(data=[vd], columns=dias)
     dfa['d50'] = d50
-    timestamp = np.min(pd.to_datetime(stats['timestamp'])) # still use total stats for this time
+    timestamp = np.min(pd.to_datetime(stats['timestamp']))  # still use total stats for this time
     dfa['Time'] = timestamp
     dfa.to_excel(statsfile.replace('-STATS.h5', '') +
                  '-AVERAGE' + 'oil' + '.xlsx')
 
-    #average gas
+    # average gas
     dias, vd = sc_pp.vd_from_stats(stats_gas,
-                             settings.PostProcess)
-    vd /= sv # sample volume remains the same as 'all'
+                                   settings.PostProcess)
+    vd /= sv  # sample volume remains the same as 'all'
     d50 = sc_pp.d50_from_vd(vd, dias)
     dfa = pd.DataFrame(data=[vd], columns=dias)
     dfa['d50'] = d50
-    timestamp = np.min(pd.to_datetime(stats['timestamp'])) # still use total stats for this time
+    timestamp = np.min(pd.to_datetime(stats['timestamp']))  # still use total stats for this time
     dfa['Time'] = timestamp
     dfa.to_excel(statsfile.replace('-STATS.h5', '') +
                  '-AVERAGE' + 'gas' + '.xlsx')
@@ -217,15 +215,11 @@ def export_timeseries(configfile, statsfile):
 
 
 def load_image(filename, size):
-    if filename.endswith('.silc'):
-        with open(filename, 'rb') as fh:
-            im = np.load(fh, allow_pickle=False)
-        im = pygame.surfarray.make_surface(np.uint8(im))
-        im = pygame.transform.flip(im, False, True)
-        im = pygame.transform.rotate(im, -90)
-        im = pygame.transform.scale(im, size)
-    else:
-        im = pygame.image.load(filename).convert()
+    im = silcam_load(filename)
+    im = pygame.surfarray.make_surface(np.uint8(im))
+    im = pygame.transform.flip(im, False, True)
+    im = pygame.transform.rotate(im, -90)
+    im = pygame.transform.scale(im, size)
 
     return im
 
@@ -246,9 +240,8 @@ def annotate(datadir, filename):
 
 
 def silcview(datadir):
-    files = [os.path.join(datadir, f) for f in
-            sorted(os.listdir(datadir))
-            if f.endswith('.silc') or f.endswith('.bmp')]
+    files = [os.path.join(datadir, f) for f in sorted(os.listdir(datadir)) if f.endswith('.silc') or f.endswith('.bmp')
+             or f.endswith('.silc_mono')]
     if len(files) == 0:
         return
     pygame.init()
@@ -261,7 +254,7 @@ def silcview(datadir):
     zoom = False
     counter = -1
     annotate_counter = 0
-    direction = 1 # 1=forward 2=backward
+    direction = 1  # 1=forward 2=backward
     last_direction = direction
     pause = False
     pygame.event.set_blocked(pygame.MOUSEMOTION)
@@ -302,7 +295,7 @@ def silcview(datadir):
         counter += direction
         counter = np.max([counter, 0])
         counter = np.min([len(files) - 1, counter])
-        c.tick(15) # restrict to 15Hz
+        c.tick(15)  # restrict to 15Hz
         f = files[counter]
 
         if not (counter == 0 | counter == len(files) - 1):
@@ -326,19 +319,19 @@ def silcview(datadir):
         if pause and not ('AUSED' in dirtxt):
             dirtxt = 'AUSED ' + dirtxt
         label = font.render('DIRECTION [HOME|<-|->|END] [P]' + dirtxt, 1, font_colour)
-        screen.blit(label, (0, size[1]-40))
+        screen.blit(label, (0, size[1] - 40))
 
         if counter == 0:
             label = font.render('FIRST IMAGE', 1, font_colour)
             screen.blit(label, (0, size[1] - 60))
-        elif counter == len(files)-1:
+        elif counter == len(files) - 1:
             label = font.render('LAST IMAGE', 1, font_colour)
             screen.blit(label, (0, size[1] - 60))
 
         timestamp = pd.to_datetime(
-                os.path.splitext(os.path.split(f)[-1])[0][1:])
+            os.path.splitext(os.path.split(f)[-1])[0][1:])
 
-        pygame.display.set_caption('raw image replay:' + os.path.split(f)[0])#, icontitle=None)
+        pygame.display.set_caption('raw image replay:' + os.path.split(f)[0])  # , icontitle=None)
         label = font.render(str(timestamp), 20, font_colour)
         screen.blit(label, (0, 0))
         label = font.render('Frame: {0}/{1}'.format(counter, len(files) - 1), 1, font_colour)
@@ -404,12 +397,11 @@ class ProcThread(Process):
         self.overwriteSTATS = overwriteSTATS
         self.fighandle = fighandle
 
-
     def run(self):
         import pysilcam.__main__ as psc
         if (self.run_type == process_mode.process):
             psc.silcam_process(self.configfile, self.datadir, multiProcess=True, realtime=False,
-            gui=self.q, overwriteSTATS=self.overwriteSTATS)
+                               gui=self.q, overwriteSTATS=self.overwriteSTATS)
         elif (self.run_type == process_mode.aquire):
             psc.silcam_acquire(self.datadir, config_filename=self.configfile, writeToDisk=self.disc_write, gui=self.q)
         elif (self.run_type == process_mode.real_time):
@@ -420,12 +412,8 @@ class ProcThread(Process):
                 psc.silcam_process(self.configfile, self.datadir, multiProcess=True, realtime=True,
                                    discWrite=self.disc_write, gui=self.q, overwriteSTATS=self.overwriteSTATS)
 
-        #psc.silcam_sim(self.datadir, self.q)
-
-
     def go(self):
         self.start()
-
 
     def stop_silcam(self):
 
@@ -440,17 +428,14 @@ class ProcThread(Process):
         else:
             self.info = 'nothing to terminate'
 
-
     def plot(self):
         infostr = 'waiting to plot'
         if self.rts == '':
             self.rts = scog.rt_stats(self.settings)
 
-
         if self.is_alive():
             guidata = get_data(self)
-            if not guidata == None:
-                #stats, imc = extract_stats_im(guidata)
+            if guidata is not None:
                 timestamp = guidata[0]
                 imc = guidata[1]
                 imraw = guidata[2]
@@ -460,39 +445,37 @@ class ProcThread(Process):
                 oil_d50 = guidata[3]['oil_d50']
                 gas_d50 = guidata[3]['gas_d50']
                 saturation = guidata[3]['saturation']
-                gor = np.float64(np.sum(vd_gas)/np.sum(vd_oil))
+                gor = np.float64(np.sum(vd_gas) / np.sum(vd_oil))
 
-                #infostr = data['infostr']
                 infostr = 'got data'
 
                 plt.figure(self.fighandle)
                 plt.clf()
                 plt.cla()
 
-
-                plt.subplot(2,2,1)
+                plt.subplot(2, 2, 1)
                 plt.cla()
-                plt.plot(dias, vd_oil ,'r')
-                plt.plot(dias, vd_gas ,'b')
+                plt.plot(dias, vd_oil, 'r')
+                plt.plot(dias, vd_gas, 'b')
                 plt.xscale('log')
                 plt.xlim((50, 12000))
                 plt.ylabel('Volume Concentration [uL/L]')
                 plt.xlabel('Diameter [um]')
 
-                plt.subplot(2,2,3)
+                plt.subplot(2, 2, 3)
                 plt.cla()
                 ttlstr = (
                         'Oil d50: {:0.0f} [um]'.format(oil_d50) + '\n' +
                         'Gas d50: {:0.0f} [um]'.format(gas_d50) + '\n' +
                         'GOR: {:0.2f}'.format(gor) + ' ' + ' Saturation: {:0.0f} [%]'.format(saturation)
-                        )
+                )
                 plt.title(ttlstr)
                 plt.imshow(imraw)
                 plt.axis('off')
 
-                plt.subplot(1,2,2)
+                plt.subplot(1, 2, 2)
                 ttlstr = ('Image time: ' +
-                    str(timestamp))
+                          str(timestamp))
                 plt.cla()
                 plt.imshow(imc)
                 plt.axis('off')
@@ -501,7 +484,6 @@ class ProcThread(Process):
                 plt.tight_layout()
 
             self.info = infostr
-
 
     def load_settings(self, configfile):
         self.settings = PySilcamSettings(configfile)

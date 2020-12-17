@@ -81,6 +81,7 @@ setup(
         'console_scripts': [
             'silcam = pysilcam.__main__:silcam',
             'silcam-report = pysilcam.silcreport:silcreport',
+            'silcam-track = pysilcam.tracking.track:silctrack',
         ],
         'gui_scripts': [
             'silcam-gui = pysilcam.silcamgui.silcamgui:main',
