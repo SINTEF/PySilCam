@@ -30,7 +30,7 @@ a = Analysis(
     pathex=[],
     binaries=[],
     # path to file, where to put it in final app
-    datas=[(os.path.join(cmocean_data_path, f), os.path.join('cmocean', 'rgb', f)) for f in os.listdir(cmocean_data_path)],
+    datas=[(os.path.join(cmocean_data_path, f), os.path.join('cmocean', 'rgb')) for f in os.listdir(cmocean_data_path)],
     hiddenimports=["scipy._lib.messagestream"],
     hookspath=[],
     runtime_hooks=[],
