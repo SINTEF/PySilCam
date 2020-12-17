@@ -1,3 +1,5 @@
+rem run this script from the top pysilcam directory .\windows_installer\generate_exe.bet
+
 echo Generating executable for corecalculator
 
 rem C:\Users\emlynd\Anaconda3\Scripts\activate.bat
@@ -23,12 +25,12 @@ call pip install distutils
 
 rem install corecalculator
 
-cd C:\Users\emlynd\PySilCam
+rem C:\Users\emlynd\PySilCam
 
 call python setup.py develop
 
 cd windows_installer
 rem run pyinstaller. The exe file generated is located in corecalculator/dist
-call pyinstaller -F silcamgui.spec --log-level=ERROR
+call pyinstaller -F silcamgui.spec --log-level=DEBUG
 
 pause
