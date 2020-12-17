@@ -24,6 +24,14 @@ def silcam_load(filename):
     #Load the raw image from disc depending on filetype
     if filename.endswith('.silc'):
         img0 = np.load(filename, allow_pickle=False)
+    elif filename.endswith('.silc_mono'):
+        # this is a quick fix to load mono 8 bit images
+        img_mono = np.load(filename, allow_pickle=False)
+        r, c = np.shape(img_mono)
+        img0 = np.zeros([r, c, 3], dtype=np.uint8)
+        img0[:, :, 0] = img_mono
+        img0[:, :, 1] = img_mono
+        img0[:, :, 2] = img_mono
     else:
         img0 = imageio.imread(filename)
     return img0
@@ -77,7 +85,8 @@ class Frame:
         #If the environment variable PYSILCAM_TESTDATA is defined, read images
         #from that location.
         if 'PYSILCAM_TESTDATA' in os.environ.keys():
-            offset = int(os.environ.get('PYSILCAM_OFFSET', 0))
+            # offset = int(os.environ.get('PYSILCAM_OFFSET', 0))
+            offset = getattr(Frame, 'PYSILCAM_OFFSET', 0)
             path = os.environ['PYSILCAM_TESTDATA']
             path = path.replace('\ ',' ') # handle spaces (not sure on windows behaviour)
             self.path = path

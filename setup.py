@@ -63,13 +63,10 @@ def read(fname):
 
 setup(
     name='PySilCam',
-    version='0.1.0',
     description='A Python interface to the SilCam.',
     long_description=read('README.md'),
     author='Emlyn Davies',
     author_email='emlyn.davies@sintef.no',
-    # Use Python 3 branch on alternate repo for Pymba
-    # dependency_links=['git+https://github.com/mabl/pymba@python3'],
     zip_safe=False,
     keywords='silcam',
     classifiers=[
@@ -77,14 +74,14 @@ setup(
         'Intended Audience :: Developers',
         'Natural Language :: English',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.8',
     ],
     packages=['pysilcam'],
     entry_points={
         'console_scripts': [
             'silcam = pysilcam.__main__:silcam',
             'silcam-report = pysilcam.silcreport:silcreport',
+            'silcam-track = pysilcam.tracking.track:silctrack',
         ],
         'gui_scripts': [
             'silcam-gui = pysilcam.silcamgui.silcamgui:main',

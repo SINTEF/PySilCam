@@ -242,15 +242,15 @@ def cat_data_pj(timestamp, vd, d50, nparts):
     return data
 
 
-def convert_to_pj_format(stats_csv_file, config_file):
+def convert_to_pj_format(stats_file, config_file):
     '''converts stats files into a total, and gas-only time-series csvfile which can be read by the old matlab
     SummaryPlot exe'''
 
     settings = PySilcamSettings(config_file)
     logger.info('Loading stats....')
-    stats = pd.read_csv(stats_csv_file)
+    stats = pd.read_hdf(stats_file, 'ParticleStats/stats')
 
-    base_name = stats_csv_file.replace('-STATS.csv', '-PJ.csv')
+    base_name = stats_file.replace('-STATS.h5', '-PJ.csv')
     gas_name = base_name.replace('-PJ.csv', '-PJ-GAS.csv')
 
     ogdatafile = DataLogger(base_name, ogdataheader())
@@ -304,7 +304,7 @@ def realtime_summary(statsfile, config_file):
         return
     plt.ion()
 
-    stats = pd.read_csv(statsfile)
+    stats = pd.read_hdf(statsfile, 'ParticleStats/stats')
     settings = PySilcamSettings(config_file)
 
     nims = sc_pp.count_images_in_stats(stats)

@@ -217,7 +217,7 @@ def montage_plot(montage, pixel_size):
         pixel_size (float) : the pixel size of the SilCam used, obtained from settings.PostProcess.pix_size in the
                              config ini file
     '''
-    msize = np.shape(montage[:, 0, 0])
+    msize = np.shape(montage)[0]
     ex = pixel_size * np.float64(msize) / 1000.
 
     ax = plt.gca()
@@ -228,22 +228,24 @@ def montage_plot(montage, pixel_size):
     ax.xaxis.set_ticks_position('bottom')
 
 
-def summarise_fancy_stats(stats_csv_file, config_file, monitor=False,
-                          maxlength=100000, msize=2048, oilgas=sc_pp.outputPartType.all):
+def summarise_fancy_stats(stats_file, config_file, monitor=False,
+                          maxlength=100000, msize=2048, oilgas=sc_pp.outputPartType.all,
+                          crop_stats=None):
     '''
     Plots a summary figure of a dataset which shows
     the volume distribution, number distribution and a montage of randomly selected particles
-    
+
     Args:
-        stats_csv_file (str)            : path of the *-STATS.csv file created by silcam process
+        stats_file (str)            : path of the *-STATS.h5 file created by silcam process
         config_file (str)               : path of the config ini file associated with the data
         monitor=False (Bool)            : if True then this function will run forever, continuously reading the
-                                          stats_csv_file and plotting the data
+                                          stats_file and plotting the data
                                           might be useful in monitoring the progress of processing, for example
         maxlength=100000 (int)          : particles longer than this number will not be put in the montage
         msize=2048 (int)                : the montage created will have a canvas size of msize x msize pixels
         oilgas=oc_pp.outputPartType.all : the oilgas enum if you want to just make the figure for oil, or just gas
                                           (defulats to all particles)
+        crop_stats=None                 : None or 4-tuple of lower-left then upper-right coord of crop
     '''
     sns.set_style('ticks')
 
@@ -259,12 +261,14 @@ def summarise_fancy_stats(stats_csv_file, config_file, monitor=False,
 
     while True:
         try:
-            montage = sc_pp.make_montage(stats_csv_file,
-                                         settings.PostProcess.pix_size,
-                                         roidir=settings.ExportParticles.outputpath,
-                                         auto_scaler=msize * 2, msize=msize,
-                                         maxlength=maxlength,
-                                         oilgas=oilgas)
+            montage = sc_pp.make_montage(
+                stats_file,
+                settings.PostProcess.pix_size,
+                roidir=settings.ExportParticles.outputpath,
+                auto_scaler=msize * 2, msize=msize,
+                maxlength=maxlength,
+                oilgas=oilgas,
+                crop_stats=crop_stats)
         except:
             montage = np.zeros((msize, msize, 3), dtype=np.uint8) + 255
             logger.warning(
@@ -272,9 +276,11 @@ def summarise_fancy_stats(stats_csv_file, config_file, monitor=False,
             logger.warning(
                 '  in config file ExportParticles.export_images is {0}'.format(settings.ExportParticles.export_images))
 
-        stats = pd.read_csv(stats_csv_file)
+        stats = pd.read_hdf(stats_file, 'ParticleStats/stats')
         stats = stats[(stats['major_axis_length'] *
                        settings.PostProcess.pix_size) < maxlength]
+        if crop_stats is not None:
+            stats = sc_pp.filter_stats(stats, crop_stats)
 
         # average numer and volume concentrations
         nc, vc, sv_total, junge = sc_pp.nc_vc_from_stats(stats,

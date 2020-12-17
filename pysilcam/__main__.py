@@ -21,7 +21,7 @@ from pysilcam import __version__
 from pysilcam.acquisition import Acquire
 from pysilcam.background import backgrounder
 from pysilcam.config import PySilcamSettings, updatePathLength
-from pysilcam.process import processImage
+from pysilcam.process import processImage, write_stats
 
 if not sys.warnoptions:
     warnings.simplefilter("ignore")
@@ -57,7 +57,7 @@ def silcam():
       --nbimages=<number of images>     Number of images to process.
       --discwrite                       Write images to disc.
       --nomultiproc                     Deactivate multiprocessing.
-      --appendstats                     Appends data to output STATS.csv file. If not specified, the STATS.csv file will
+      --appendstats                     Appends data to output STATS.h5 file. If not specified, the STATS.h5 file will
                                         be overwritten!
       -h --help                         Show this screen.
       --version                         Show version.
@@ -246,14 +246,32 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
 
     sccl.check_model(settings.NNClassify.model_path)
 
-    adminSTATS(logger, settings, overwriteSTATS, datafilename, datapath)
+    fakepymba_offset = 0
+    datafile_hdf = datafilename + '-STATS.h5'
+    if os.path.isfile(datafile_hdf):
+        # Remove old STATS file if it exists
+        if overwriteSTATS:
+            logger.info('removing: ' + datafile_hdf)
+            print('Overwriting ' + datafile_hdf)
+            os.remove(datafile_hdf)
+        else:
+            # If we are starting from an existings stats file, update the
+            # PYILSCAM_OFFSET environment variable
+            fakepymba_offset = update_pysilcam_offset(logger, settings, datafilename, datapath)
+
+    # Create new HDF store and write PySilcam version and
+    # current datetime as root attribute metadata
+    if not os.path.isfile(datafile_hdf):
+        with pd.HDFStore(datafile_hdf, 'w') as fh:
+            fh.root._v_attrs.timestamp = str(datetime.datetime.now())
+            fh.root._v_attrs.pysilcam_version = str(__version__)
 
     # Initialize the image acquisition generator
     if 'REALTIME_DISC' in os.environ.keys():
         print('acq = Acquire(USE_PYMBA=False)')
         aq = Acquire(USE_PYMBA=False)
     else:
-        aq = Acquire(USE_PYMBA=realtime)
+        aq = Acquire(USE_PYMBA=realtime, FAKE_PYMBA_OFFSET=fakepymba_offset)
     aqgen = aq.get_generator(datapath, writeToDisk=discWrite,
                              camera_config_file=config_filename)
 
@@ -339,7 +357,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
                 logger.debug('GUI queue updated')
 
             if 'REALTIME_DISC' in os.environ.keys():
-                scog.realtime_summary(datafilename + '-STATS.csv', config_filename)
+                scog.realtime_summary(datafilename + '-STATS.h5', config_filename)
 
         logger.debug('Acquisition loop completed')
         if not realtime:
@@ -374,10 +392,10 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
             stats_all = processImage(nnmodel, class_labels, image, settings, logger, gui)
 
             if stats_all is not None:  # if frame processed
-                # write the image into the csv file
-                writeCSV(datafilename, stats_all)
+                # write the image statistics to file
+                write_stats(datafilename, stats_all)
                 if 'REALTIME_DISC' in os.environ.keys():
-                    scog.realtime_summary(datafilename + '-STATS.csv', config_filename)
+                    scog.realtime_summary(datafilename + '-STATS.h5', config_filename)
 
             if gui is not None:
                 collect_rts(settings, rts, stats_all)
@@ -549,7 +567,7 @@ def distributor(inputQueue, outputQueue, config_filename, proc_list, gui=None):
 def collector(inputQueue, outputQueue, datafilename, proc_list, testInputQueue,
               settings, rts=None):
     '''
-    collects all the results and write them into the stats.csv file
+    collects all the results and write them into the stats.h5 file
 
     Args:
         inputQueue  ()              : queue where the images are added for processing
@@ -578,7 +596,7 @@ def collector(inputQueue, outputQueue, datafilename, proc_list, testInputQueue,
                 break
             continue
 
-        writeCSV(datafilename, task)
+        write_stats(datafilename, task)
         collect_rts(settings, rts, task)
 
 
@@ -603,29 +621,6 @@ def collect_rts(settings, rts, stats_all):
         filename = os.path.join(settings.General.datafile,
                                 'OilGasd50.csv')
         rts.to_csv(filename)
-
-
-def writeCSV(datafilename, stats_all):
-    '''
-    Writes particle stats into the csv ouput file
-
-    Args:
-        datafilename (str):     filame prefix for -STATS.csv file that may or may not include a path
-        stats_all (DataFrame):  stats dataframe returned from processImage()
-    '''
-
-    # create or append particle statistics to output file
-    # if the output file does not already exist, create it
-    # otherwise data will be appended
-    # @todo accidentally appending to an existing file could be dangerous
-    # because data will be duplicated (and concentrations would therefore
-    # double) GUI promts user regarding this - directly-run functions are more dangerous.
-    if not os.path.isfile(datafilename + '-STATS.csv'):
-        stats_all.to_csv(datafilename +
-                         '-STATS.csv', index_label='particle index')
-    else:
-        stats_all.to_csv(datafilename + '-STATS.csv',
-                         mode='a', header=False)
 
 
 def check_path(filename):
@@ -661,47 +656,45 @@ def configure_logger(settings):
         logging.basicConfig(level=getattr(logging, settings.loglevel))
 
 
-def adminSTATS(logger, settings, overwriteSTATS, datafilename, datapath):
+def update_pysilcam_offset(logger, settings, datafilename, datapath):
     '''
-    Administration of the -STATS.csv file
+    Set the PYSILCAM_OFFSET based on stats file.
 
     Args:
         logger          (logger object) : logger object created using configure_logger()
-        datafilename    (str)           : name of the folder containing the -STATS.csv
+        datafilename    (str)           : name of the folder containing the -STATS.h5
         datapath        (str)           : name of the path containing the data
 
     '''
-    if os.path.isfile(datafilename + '-STATS.csv'):
-        if overwriteSTATS:
-            logger.info('removing: ' + datafilename + '-STATS.csv')
-            print('Overwriting ' + datafilename + '-STATS.csv')
-            os.remove(datafilename + '-STATS.csv')
-        else:
-            logger.info('Loading old data from: ' + datafilename + '-STATS.csv')
-            print('Loading old data from: ' + datafilename + '-STATS.csv')
-            oldstats = pd.read_csv(datafilename + '-STATS.csv')
-            logger.info('  OK.')
-            print('  OK.')
-            last_time = pd.to_datetime(oldstats['timestamp'].max())
 
-            logger.info('Calculating spooling offset')
-            print('Calculating spooling offset')
+    datafile_hdf = datafilename + '-STATS.h5'
+    logger.info('Loading old data from: ' + datafile_hdf)
+    print('Loading old data from: ' + datafile_hdf)
+    oldstats = pd.read_hdf(datafile_hdf, 'ParticleStats/stats')
+    logger.info('  OK.')
+    print('  OK.')
+    last_time = pd.to_datetime(oldstats['timestamp'].max())
 
-            # TODO: move this import to the top
-            from pysilcam.fakepymba import silcam_name2time
-            files = [f for f in sorted(os.listdir(datapath))
-                     if f.endswith('.silc' or f.endswith('.bmp'))]
-            offsetcalc = pd.DataFrame(columns=['files', 'times'])
-            offsetcalc['files'] = files
-            for i, f in enumerate(files):
-                offsetcalc['times'].iloc[i] = silcam_name2time(f)
-            offset = int(min(np.argwhere(offsetcalc['times'] > last_time)))
-            # subtract the number of background images, so we get data from the correct start point
-            offset -= settings.Background.num_images
-            # and check offset is still positive
-            if offset < 0:
-                offset = 0
-            offset = str(offset)
-            os.environ['PYSILCAM_OFFSET'] = offset
-            logger.info('PYSILCAM_OFFSET set to: ' + offset)
-            print('PYSILCAM_OFFSET set to: ' + offset)
+    logger.info('Calculating spooling offset')
+    print('Calculating spooling offset')
+
+    # TODO: move this import to the top
+    from pysilcam.fakepymba import silcam_name2time
+    files = [f for f in sorted(os.listdir(datapath))
+             if f.endswith('.silc' or f.endswith('.bmp'))]
+    offsetcalc = pd.DataFrame(columns=['files', 'times'])
+    offsetcalc['files'] = files
+    for i, f in enumerate(files):
+        offsetcalc['times'].iloc[i] = silcam_name2time(f)
+    offset = int(min(np.argwhere(offsetcalc['times'] > last_time)))
+    # subtract the number of background images, so we get data from the correct start point
+    offset -= settings.Background.num_images
+    # and check offset is still positive
+    if offset < 0:
+        offset = 0
+    offset = str(offset)
+    os.environ['PYSILCAM_OFFSET'] = offset
+    logger.info('PYSILCAM_OFFSET set to: ' + offset)
+    print('PYSILCAM_OFFSET set to: ' + offset)
+
+    return offset

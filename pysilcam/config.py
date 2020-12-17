@@ -147,8 +147,8 @@ def settings_from_h5(h5file):
     :param h5file: created by pysilcam export functionality
     :return: Settings
     '''
-    f = h5py.File(h5file, 'r')
-    settings_dict = f['Meta'].attrs['Settings']
+    with h5py.File(h5file, 'r') as f:
+        settings_dict = f['Meta'].attrs['Settings']
     cf = configparser.ConfigParser()
     cf.read_dict(ast.literal_eval(str(settings_dict)))
     Settings = PySilcamSettings(cf)

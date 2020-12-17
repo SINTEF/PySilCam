@@ -161,7 +161,7 @@ def fancy_props(iml, imc, timestamp, settings, nnmodel, class_labels):
 
     '''
 
-    region_properties = measure.regionprops(iml, cache=False, coordinates='xy')
+    region_properties = measure.regionprops(iml, cache=False)
     # build the stats and export to HDF5
     stats = extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_properties)
 
@@ -232,7 +232,8 @@ def extract_roi(im, bbox):
     Returns:
         roi                 : image cropped to region of interest
     '''
-    roi = im[bbox[0]:bbox[2], bbox[1]:bbox[3]]  # yep, that't it.
+    # refer to skimage regionprops documentation on how bbox is structured
+    roi = im[bbox[0]:bbox[2], bbox[1]:bbox[3]]
 
     return roi
 
@@ -512,3 +513,22 @@ def processImage(nnmodel, class_labels, image, settings, logger, gui):
         return None
 
     return stats_all
+
+
+def write_stats(datafilename, stats_all):
+    '''
+    Writes particle stats into the csv ouput file
+
+    Args:
+        datafilename (str):     filame prefix for -STATS.h5 file that may or may not include a path
+        stats_all (DataFrame):  stats dataframe returned from processImage()
+    '''
+
+    # create or append particle statistics to output file
+    # if the output file does not already exist, create it
+    # otherwise data will be appended
+    # @todo accidentally appending to an existing file could be dangerous
+    # because data will be duplicated (and concentrations would therefore
+    # double) GUI promts user regarding this - directly-run functions are more dangerous.
+    with pd.HDFStore(datafilename + '-STATS.h5', 'a') as fh:
+        stats_all.to_hdf(fh, 'ParticleStats/stats', append=True, format='t', data_columns=True)
