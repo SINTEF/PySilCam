@@ -2,6 +2,8 @@
 
 from pathlib import Path
 from distutils.sysconfig import get_python_lib
+import os
+import cmocean
 
 block_cipher = None
 
@@ -11,6 +13,7 @@ block_cipher = None
 # No such file or directory: 'C:\\Users\\jorgenk\\AppData\\Local\\Temp\\_MEI183602\\distributed\\config.yaml'
 # will be raised
 site_packages_path = Path(get_python_lib())
+cmocean_data_path = os.path.join(cmocean.__path__[0], 'rgb')
 
 cmocean = site_packages_path / "cmocean" / "rgb" / "thermal-rgb.txt"
 
@@ -27,7 +30,7 @@ a = Analysis(
     pathex=[],
     binaries=[],
     # path to file, where to put it in final app
-    datas=[(str(cmocean), "thermal-rgb.txt")],
+    datas=[(os.path.join(cmocean_data_path, f), f) for f in os.listdir(cmocean_data_path)],
     hiddenimports=["scipy._lib.messagestream"],
     hookspath=[],
     runtime_hooks=[],
