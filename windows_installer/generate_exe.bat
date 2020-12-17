@@ -1,15 +1,15 @@
 echo Generating executable for corecalculator
 
-call C:\Users\emlynd\Anaconda3\Scripts\activate.bat
+rem C:\Users\emlynd\Anaconda3\Scripts\activate.bat
 
-cd C:\Users\emlynd\PySilCam
+rem C:\Users\emlynd\PySilCam
 
 rem delete existing exe file (if it already exists)
 rem if exist "%CD%"\dist\ccrunner.exe del "%CD%"\dist\ccrunner.exe
 
 rem create conda environment and activate it.
 rem call conda env create --force -f environment.yml
-call C:\Users\emlynd\Anaconda3\Scripts\activate.bat  C:\Users\emlynd\Anaconda3\envs\silcam
+rem C:\Users\emlynd\Anaconda3\Scripts\activate.bat  C:\Users\emlynd\Anaconda3\envs\silcam
 call activate silcam
 rem If the conda environment cannot be set, there is no need to continue
 rem if %errorlevel% neq 0 exit /b %errorlevel%
