@@ -46,3 +46,5 @@ def test_track_process():
         sctr.make_boxplot(tracksfile, 'outputfigure')
 
         assert os.path.isfile('outputfigure.png'), 'outputfigure.png boxplot not found'
+
+        assert np.isclose(tracks.describe()['S_cms']['50%'], 0.131, atol=0.01)
