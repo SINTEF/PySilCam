@@ -305,7 +305,8 @@ def make_boxplot(tracksfile, plotfilename):
 
 def silctrack():
     """
-    does tracking
+    Tracks particles detected in a sequence of low frame-rate images, provided that particles can be seen mooving in several
+    images.
 
     Usage:
         silcam-track process <configfile> <datapath> [--offset=<offset>]

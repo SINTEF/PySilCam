@@ -127,7 +127,7 @@ class Tracker:
 
             tracks = match_last_pair(tracks)
             with pd.HDFStore(DATAFILE + '.h5', "a") as fh:
-                tracks.to_hdf(fh, 'Tracking/data', mode='r+')
+                tracks.to_hdf(fh, 'Tracking/data')
 
             # get ready for next iteration
             img1 = np.copy(img2)
@@ -139,7 +139,7 @@ class Tracker:
                                          max_starts=None)
 
         with pd.HDFStore(DATAFILE + '.h5', "a") as fh:
-            continuous_tracks.to_hdf(fh, 'Tracking/tracks', mode='r+')
+            continuous_tracks.to_hdf(fh, 'Tracking/tracks')
         print('Post-processing done.')
 
     def load_image(self):
