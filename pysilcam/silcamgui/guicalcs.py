@@ -412,8 +412,6 @@ class ProcThread(Process):
                 psc.silcam_process(self.configfile, self.datadir, multiProcess=True, realtime=True,
                                    discWrite=self.disc_write, gui=self.q, overwriteSTATS=self.overwriteSTATS)
 
-        # psc.silcam_sim(self.datadir, self.q)
-
     def go(self):
         self.start()
 
