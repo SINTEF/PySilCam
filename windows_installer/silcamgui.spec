@@ -4,18 +4,15 @@ from pathlib import Path
 from distutils.sysconfig import get_python_lib
 import os
 import cmocean
+import matplotlib as mpl
 
 block_cipher = None
 
-# Some files are required by some python packages but are not included in the package.
-# They need to be added manually.
-# If this is not included in the build, a
-# No such file or directory: 'C:\\Users\\jorgenk\\AppData\\Local\\Temp\\_MEI183602\\distributed\\config.yaml'
-# will be raised
-site_packages_path = Path(get_python_lib())
-cmocean_data_path = os.path.join(cmocean.__path__[0], 'rgb')
+# Manual specification of cmocean and matplotlib data dirs, add these to PyInstaller 'datas'
+cmocean_data_dir = os.path.join(cmocean.__path__[0], 'rgb')
+mpl_data_dir = os.path.join(mpl.__path__[0], 'mpl-data')
+datas = [(cmocean_data_dir, 'cmocean/rgb'), (mpl_data_dir, 'matplotlib/mpl-data')]
 
-cmocean = site_packages_path / "cmocean" / "rgb" / "thermal-rgb.txt"
 
 def get_pandas_path():
     """Helper function to get the path the pandas lib."""
@@ -30,7 +27,7 @@ a = Analysis(
     pathex=[],
     binaries=[],
     # path to file, where to put it in final app
-    datas=[(os.path.join(cmocean_data_path, f), os.path.join('cmocean', 'rgb')) for f in os.listdir(cmocean_data_path)],
+    datas=datas,
     hiddenimports=["scipy._lib.messagestream"],
     hookspath=[],
     runtime_hooks=[],
