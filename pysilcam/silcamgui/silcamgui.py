@@ -736,7 +736,8 @@ def main():
             if not (os.path.isfile(headerfile)):
                 QMessageBox.critical(self, "Config error!",
                                      'The path to the classification model cannot be found.\n\n' +
-                                     'Please edit the config file in a text editor and make settings.NNClassify.model_path point to the silcam model',
+                                     'Please edit the config file in a text editor and make settings.NNClassify.model_path ' +
+                                     'point to the silcam model',
                                      QMessageBox.Ok)
                 return False
             return True
@@ -876,5 +877,5 @@ if __name__ == "__main__":
     # Needed by PyInstaller to create workable .exe (https://github.com/pyinstaller/pyinstaller/wiki/Recipe-Multiprocessing)
     import multiprocessing
     multiprocessing.freeze_support()
-    
+
     main()
