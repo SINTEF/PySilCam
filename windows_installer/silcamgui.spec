@@ -26,7 +26,6 @@ a = Analysis(
     ["../pysilcam/silcamgui/silcamgui.py"],
     pathex=[],
     binaries=[],
-    # path to file, where to put it in final app
     datas=datas,
     hiddenimports=["scipy._lib.messagestream"],
     hookspath=[],
@@ -49,9 +48,10 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     name='windows_silcamgui',
+    bootloader_ignore_signals=False,
     debug=False,
     strip=False,
     upx=True,
     runtime_tmpdir=None,
-    console=True,
+    console=True
 )
