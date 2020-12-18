@@ -913,4 +913,8 @@ def main():
 
 
 if __name__ == "__main__":
+    # Needed by PyInstaller to create workable .exe (https://github.com/pyinstaller/pyinstaller/wiki/Recipe-Multiprocessing)
+    import multiprocessing
+    multiprocessing.freeze_support()
+    
     main()
