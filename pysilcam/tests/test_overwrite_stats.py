@@ -40,6 +40,7 @@ def test_overwrite_stats():
         conf.set('General', 'datafile', os.path.join(tempdir, 'proc'))
         conf.set('General', 'logfile', os.path.join(tempdir, 'log.log'))
         conf.set('ExportParticles', 'outputpath', os.path.join(tempdir, 'export'))
+        conf.set('Background', 'num_images', '5')
         if MODEL_PATH is not None:
             conf.set('NNClassify', 'model_path', MODEL_PATH)
         with open(conf_file_out, 'w') as conf_file_hand:
@@ -58,12 +59,11 @@ def test_overwrite_stats():
         num_images = count_images_in_stats(stats)
         assert num_images == requested_images, 'incorrect number of images processed'
 
-        # restart, asking for 20 images starting from where we got to before (by using overwriteSTATS=False)
-        requested_images = 20
+        # restart, asking for 10 additional images starting from where we got to before (by using overwriteSTATS=False)
         silcam_process(conf_file_out, data_file, multiProcess=multiProcess, overwriteSTATS=False, nbImages=requested_images)
         stats = pd.read_hdf(stats_file, 'ParticleStats/stats')
         num_images = count_images_in_stats(stats)
-        assert num_images == requested_images, 'incorrect number of images processed'
+        assert num_images == requested_images * 2, 'incorrect number of images processed'
 
         # process the rest of the dataset starting from where we stopped
         silcam_process(conf_file_out, data_file, multiProcess=multiProcess, overwriteSTATS=False)
