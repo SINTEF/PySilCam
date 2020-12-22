@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import glob
 from pysilcam.__main__ import silcam_process
 from pysilcam.config import load_config
 from pysilcam.postprocess import count_images_in_stats
@@ -7,6 +8,7 @@ import unittest
 import pandas as pd
 import tempfile
 from sys import platform
+from pysilcam.config import PySilcamSettings
 
 # Get user-defined path to unittest data folder
 ROOTPATH = os.environ.get('UNITTEST_DATA_PATH', None)
@@ -45,6 +47,7 @@ def test_overwrite_stats():
             conf.set('NNClassify', 'model_path', MODEL_PATH)
         with open(conf_file_out, 'w') as conf_file_hand:
             conf.write(conf_file_hand)
+        settings = PySilcamSettings(conf)
 
         stats_file = os.path.join(tempdir, 'proc', 'StandardsBig-STATS.h5')
 
@@ -67,6 +70,13 @@ def test_overwrite_stats():
 
         # process the rest of the dataset starting from where we stopped
         silcam_process(conf_file_out, data_file, multiProcess=multiProcess, overwriteSTATS=False)
+        stats = pd.read_hdf(stats_file, 'ParticleStats/stats')
+        num_images = count_images_in_stats(stats)
+        total_images = len(glob.glob(os.path.join(data_file, "*.bmp")))
+        assert num_images == (total_images - settings.Background.num_images), 'incorrect number of images processed'
 
         # attempt to process a fully-processed dataset
-        silcam_process(conf_file_out, data_file, multiProcess=multiProcess, overwriteSTATS=False)
+        silcam_process(conf_file_out, data_file, multiProcess=multiProcess, overwriteSTATS=True)
+        stats = pd.read_hdf(stats_file, 'ParticleStats/stats')
+        num_images = count_images_in_stats(stats)
+        assert num_images == (total_images - settings.Background.num_images), 'incorrect number of images processed'
