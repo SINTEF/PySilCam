@@ -76,7 +76,7 @@ def test_overwrite_stats():
         assert num_images == (total_images - settings.Background.num_images), 'incorrect number of images processed'
 
         # attempt to process a fully-processed dataset
-        silcam_process(conf_file_out, data_file, multiProcess=multiProcess, overwriteSTATS=True)
+        silcam_process(conf_file_out, data_file, multiProcess=multiProcess, overwriteSTATS=False)
         stats = pd.read_hdf(stats_file, 'ParticleStats/stats')
         num_images = count_images_in_stats(stats)
         assert num_images == (total_images - settings.Background.num_images), 'incorrect number of images processed'
