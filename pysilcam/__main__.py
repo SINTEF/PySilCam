@@ -22,11 +22,12 @@ from pysilcam.acquisition import Acquire
 from pysilcam.background import backgrounder
 from pysilcam.config import PySilcamSettings, updatePathLength
 from pysilcam.process import processImage, write_stats
+from pysilcam.fakepymba import silcam_name2time
 
 if not sys.warnoptions:
     warnings.simplefilter("ignore")
 
-title = '''
+title = r'''
  ____        ____  _ _  ____
 |  _ \ _   _/ ___|(_) |/ ___|__ _ _ __ ___
 | |_) | | | \___ \| | | |   / _` | '_ ` _ \
@@ -678,8 +679,6 @@ def update_pysilcam_offset(logger, settings, datafilename, datapath):
     logger.info('Calculating spooling offset')
     print('Calculating spooling offset')
 
-    # TODO: move this import to the top
-    from pysilcam.fakepymba import silcam_name2time
     files = [f for f in sorted(os.listdir(datapath))
              if f.endswith('.silc') or f.endswith('.bmp')]
     offsetcalc = pd.DataFrame(columns=['files', 'times'])
