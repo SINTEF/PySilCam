@@ -31,8 +31,8 @@ def test_overwrite_stats():
     with tempfile.TemporaryDirectory() as tempdir:
         print('tempdir:', tempdir, 'created')
 
-        conf_file = os.path.join(ROOTPATH, 'config.ini')
-        conf_file_out = os.path.join(ROOTPATH, 'config_generated.ini')
+        conf_file = os.path.join(ROOTPATH, 'STANDARDS', 'config_glass_standards.ini')
+        conf_file_out = os.path.join(ROOTPATH, 'STANDARDS', 'config_glass_standards_generated.ini')
         conf = load_config(conf_file)
 
         data_file = os.path.join(ROOTPATH, 'STANDARDS', 'StandardsBig')
@@ -61,7 +61,6 @@ def test_overwrite_stats():
         # restart, asking for 20 images starting from where we got to before (by using overwriteSTATS=False)
         requested_images = 20
         silcam_process(conf_file_out, data_file, multiProcess=multiProcess, overwriteSTATS=False, nbImages=requested_images)
-
         stats = pd.read_hdf(stats_file, 'ParticleStats/stats')
         num_images = count_images_in_stats(stats)
         assert num_images == requested_images, 'incorrect number of images processed'
