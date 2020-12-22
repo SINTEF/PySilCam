@@ -35,7 +35,7 @@ def test_output_files():
     conf_file_out = os.path.join(ROOTPATH, 'config_generated.ini')
     conf = load_config(conf_file)
 
-    data_file = os.path.join(ROOTPATH, 'STN04')
+    data_file = os.path.join(ROOTPATH, 'STANDARDS', 'StandardsBig')
     conf.set('General', 'loglevel', 'INFO')
     conf.set('General', 'datafile', os.path.join(data_file, 'proc'))
     conf.set('General', 'logfile', os.path.join(ROOTPATH, 'log.log'))
@@ -45,7 +45,7 @@ def test_output_files():
     with open(conf_file_out, 'w') as conf_file_hand:
         conf.write(conf_file_hand)
 
-    stats_file = os.path.join(data_file, 'proc', 'STN04-STATS.h5')
+    stats_file = os.path.join(data_file, 'proc', 'StandardsBig-STATS.h5')
 
     # if STATS file already exists, it has to be deleted
     if (os.path.isfile(stats_file)):
