@@ -28,43 +28,46 @@ print('MODEL_PATH', MODEL_PATH)
 def test_overwrite_stats():
     '''Testing silcam_process with different combinations of overwriteSTATS and checking for expected output'''
 
-    conf_file = os.path.join(ROOTPATH, 'config.ini')
-    conf_file_out = os.path.join(ROOTPATH, 'config_generated.ini')
-    conf = load_config(conf_file)
+    with tempfile.TemporaryDirectory() as tempdir:
+        print('tempdir:', tempdir, 'created')
 
-    data_file = os.path.join(ROOTPATH, 'STANDARDS', 'StandardsBig')
-    conf.set('General', 'loglevel', 'INFO')
-    conf.set('General', 'datafile', os.path.join(data_file, 'proc'))
-    conf.set('General', 'logfile', os.path.join(ROOTPATH, 'log.log'))
-    conf.set('ExportParticles', 'outputpath', os.path.join(data_file, 'export'))
-    if MODEL_PATH is not None:
-        conf.set('NNClassify', 'model_path', MODEL_PATH)
-    with open(conf_file_out, 'w') as conf_file_hand:
-        conf.write(conf_file_hand)
+        conf_file = os.path.join(ROOTPATH, 'config.ini')
+        conf_file_out = os.path.join(ROOTPATH, 'config_generated.ini')
+        conf = load_config(conf_file)
 
-    stats_file = os.path.join(data_file, 'proc', 'StandardsBig-STATS.h5')
+        data_file = os.path.join(ROOTPATH, 'STANDARDS', 'StandardsBig')
+        conf.set('General', 'loglevel', 'INFO')
+        conf.set('General', 'datafile', os.path.join(tempdir, 'proc'))
+        conf.set('General', 'logfile', os.path.join(tempdir, 'log.log'))
+        conf.set('ExportParticles', 'outputpath', os.path.join(tempdir, 'export'))
+        if MODEL_PATH is not None:
+            conf.set('NNClassify', 'model_path', MODEL_PATH)
+        with open(conf_file_out, 'w') as conf_file_hand:
+            conf.write(conf_file_hand)
 
-    # if STATS file already exists, it has to be deleted
-    if (os.path.isfile(stats_file)):
-        os.remove(stats_file)
+        stats_file = os.path.join(tempdir, 'proc', 'StandardsBig-STATS.h5')
 
-    # start by processing 10 images. overwriteSTATS can be True or False here without affecting the result
-    requested_images = 10
-    silcam_process(conf_file_out, data_file, multiProcess=multiProcess, overwriteSTATS=False, nbImages=requested_images)
-    stats = pd.read_hdf(stats_file, 'ParticleStats/stats')
-    num_images = count_images_in_stats(stats)
-    assert num_images == requested_images, 'incorrect number of images processed'
+        # if STATS file already exists, it has to be deleted
+        if (os.path.isfile(stats_file)):
+            os.remove(stats_file)
 
-    # restart, asking for 20 images starting from where we got to before (by using overwriteSTATS=False)
-    requested_images = 20
-    silcam_process(conf_file_out, data_file, multiProcess=multiProcess, overwriteSTATS=False, nbImages=requested_images)
+        # start by processing 10 images. overwriteSTATS can be True or False here without affecting the result
+        requested_images = 10
+        silcam_process(conf_file_out, data_file, multiProcess=multiProcess, overwriteSTATS=False, nbImages=requested_images)
+        stats = pd.read_hdf(stats_file, 'ParticleStats/stats')
+        num_images = count_images_in_stats(stats)
+        assert num_images == requested_images, 'incorrect number of images processed'
 
-    stats = pd.read_hdf(stats_file, 'ParticleStats/stats')
-    num_images = count_images_in_stats(stats)
-    assert num_images == requested_images, 'incorrect number of images processed'
+        # restart, asking for 20 images starting from where we got to before (by using overwriteSTATS=False)
+        requested_images = 20
+        silcam_process(conf_file_out, data_file, multiProcess=multiProcess, overwriteSTATS=False, nbImages=requested_images)
 
-    # process the rest of the dataset starting from where we stopped
-    silcam_process(conf_file_out, data_file, multiProcess=multiProcess, overwriteSTATS=False)
+        stats = pd.read_hdf(stats_file, 'ParticleStats/stats')
+        num_images = count_images_in_stats(stats)
+        assert num_images == requested_images, 'incorrect number of images processed'
 
-    # attempt to process a fully-processed dataset
-    silcam_process(conf_file_out, data_file, multiProcess=multiProcess, overwriteSTATS=False)
+        # process the rest of the dataset starting from where we stopped
+        silcam_process(conf_file_out, data_file, multiProcess=multiProcess, overwriteSTATS=False)
+
+        # attempt to process a fully-processed dataset
+        silcam_process(conf_file_out, data_file, multiProcess=multiProcess, overwriteSTATS=False)
