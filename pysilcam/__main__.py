@@ -686,7 +686,8 @@ def update_pysilcam_offset(logger, settings, datafilename, datapath):
     offsetcalc['files'] = files
     for i, f in enumerate(files):
         offsetcalc['times'].iloc[i] = silcam_name2time(f)
-    offset = int(min(np.argwhere(offsetcalc['times'] > last_time)))
+    # find the index of the first time in offsetcalc['times'] that is after last_time
+    offset = int(np.min(np.where(offsetcalc['times'] > last_time)))
     # subtract the number of background images, so we get data from the correct start point
     offset -= settings.Background.num_images
     # and check offset is still positive
