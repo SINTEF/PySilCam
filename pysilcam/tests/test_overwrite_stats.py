@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
 from pysilcam.__main__ import silcam_process
-from pysilcam.silcreport import silcam_report
 from pysilcam.config import load_config
 from pysilcam.postprocess import count_images_in_stats
-from pysilcam.config import PySilcamSettings
-import glob
 import os
 import unittest
 import pandas as pd
@@ -28,8 +25,8 @@ print('MODEL_PATH', MODEL_PATH)
 
 @unittest.skipIf((ROOTPATH is None),
                  "test path not accessible")
-def test_output_files():
-    '''Testing that the appropriate STATS.h5 file is created'''
+def test_overwrite_stats():
+    '''Testing silcam_process with different combinations of overwriteSTATS and checking for expected output'''
 
     conf_file = os.path.join(ROOTPATH, 'config.ini')
     conf_file_out = os.path.join(ROOTPATH, 'config_generated.ini')
