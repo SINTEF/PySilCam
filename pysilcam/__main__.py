@@ -26,7 +26,7 @@ from pysilcam.process import processImage, write_stats
 if not sys.warnoptions:
     warnings.simplefilter("ignore")
 
-title = r'''
+title = '''
  ____        ____  _ _  ____
 |  _ \ _   _/ ___|(_) |/ ___|__ _ _ __ ___
 | |_) | | | \___ \| | | |   / _` | '_ ` _ \
@@ -203,7 +203,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
                                                rts stats become active
       discWrite=False   (bool)              :  True will enable writing of raw data to disc
                                                False will disable writing of raw data to disc
-      nbImages=None     (int)               :  Number of images to skip
+      nbImages=None     (int)               :  Number of images to process
       gui=None          (Class object)      :  Queue used to pass information between process thread and GUI
                                                initialised in ProcThread within guicals.py
     '''
