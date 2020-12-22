@@ -85,7 +85,7 @@ def test_output_files():
     hdf_file = os.path.join(data_file, 'export', 'D20170509T172705.387171.h5')
     report_figure = os.path.join(data_file, 'proc', 'STN04-Summary_all.png')
 
-    # if csv file already exists, it has to be deleted
+    # if STATS file already exists, it has to be deleted
     if (os.path.isfile(stats_file)):
         os.remove(stats_file)
 
@@ -96,8 +96,8 @@ def test_output_files():
     # call process function
     silcam_process(conf_file_out, data_file, multiProcess=multiProcess)
 
-    # check that csv file has been created
-    assert os.path.isfile(stats_file), ('STATS csv file not created. should be here:' + stats_file)
+    # check that STATS file has been created
+    assert os.path.isfile(stats_file), ('STATS HDF file not created. should be here:' + stats_file)
 
     # check that csv file has been properly built
     stats = pd.read_hdf(stats_file, 'ParticleStats/stats')
