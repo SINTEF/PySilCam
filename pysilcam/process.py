@@ -517,7 +517,7 @@ def processImage(nnmodel, class_labels, image, settings, logger, gui):
 
 def write_stats(datafilename, stats_all):
     '''
-    Writes particle stats into the csv ouput file
+    Writes particle stats into the ouput file
 
     Args:
         datafilename (str):     filame prefix for -STATS.h5 file that may or may not include a path
