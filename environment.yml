@@ -1,6 +1,6 @@
 name: silcam
 channels:
-    - anaconda
+    - conda-forge
 dependencies:    # These are the conda packages
     - python=3.8
     - pip=20.2.4
