@@ -21,3 +21,7 @@ sphinx:
 #   version: 3.8
 #   install:
 #   - requirements: docs/requirements.txt
+
+# By default readthedocs does not checkout git submodules
+submodules:                                                                                                                          
+    include: all
