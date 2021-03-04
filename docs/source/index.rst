@@ -25,7 +25,7 @@ Processing and analysis is performed using the below functions.
 .. autofunction:: pysilcam.process.clean_bw
 .. autofunction:: pysilcam.process.measure_particles
 
-Calssification functions
+Classification functions
 =================================================
 
 .. automodule:: pysilcam.silcam_classify
