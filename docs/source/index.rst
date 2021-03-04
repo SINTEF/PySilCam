@@ -32,3 +32,10 @@ Classification functions
    :members:
    :undoc-members:
    :show-inheritance:
+
+PySilCam contents
+=================================================
+.. toctree::
+   :maxdepth: 10
+
+   pysilcam
