@@ -17,7 +17,7 @@ dependencies:    # These are the conda packages
     - pyserial=3.4
     - seaborn=0.11.0
     - pytest=6.1.1
-    - PyQt=5.9.2
+    - PyQt=5.12.3
     - xarray=0.16.2
     - pip: # The following packages are installed with pip
         - tensorflow-cpu==2.3.1
