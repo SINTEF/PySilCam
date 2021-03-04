@@ -33,9 +33,6 @@ sys.path.insert(0, os.path.abspath('./pysilcam'))
 # ones.
 extensions = ['sphinx.ext.autodoc', 'sphinxcontrib.napoleon']
 
-
-autodoc_mock_imports = ['pysilcam']
-
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
