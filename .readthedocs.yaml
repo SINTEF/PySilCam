@@ -20,7 +20,6 @@ sphinx:
 python:
    version: 3.8
    install:
-    - requirements: environment.yml
     - method: setuptools
 
 # By default readthedocs does not checkout git submodules
