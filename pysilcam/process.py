@@ -485,8 +485,8 @@ def processImage(nnmodel, class_labels, image, settings, logger, gui):
             stats_all.loc[0] = z
             # 'export name' should not be nan because then this column of the
             # DataFrame will contain multiple types, so label with string instead
-            if settings.ExportParticles.export_images:
-                stats_all['export name'] = 'not_exported'
+            # padding end of string required for HDF5 writing
+            stats_all['export name'] = 'not_exported' + (18 * ' ')
 
         # add timestamp to each row of particle statistics
         stats_all['timestamp'] = timestamp
@@ -511,6 +511,19 @@ def processImage(nnmodel, class_labels, image, settings, logger, gui):
         infostr = 'Failed to process frame {0}, skipping.'.format(i)
         logger.warning(infostr, exc_info=True)
         return None
+
+    #stats_all = stats_all.replace(r'^\s*$', np.nan, regex=True)
+    #stats_all.index = stats_all.index.astype('int64')
+    #stats_all.reset_index(inplace=True)
+    print('stats_all types:')
+    for d in stats_all.columns:
+        print(d, stats_all[d].dtype)
+    print('stats_all')
+    print(stats_all)
+    print('stats_all.index')
+    print(stats_all.index)
+    print('stats_all.index.values')
+    print(stats_all.index.values)
 
     return stats_all
 
