@@ -470,8 +470,7 @@ class ProcThread(Process):
             plt.axis('off')
 
             plt.subplot(1, 2, 2)
-            ttlstr = ('Image time: ' +
-                        str(timestamp))
+            ttlstr = ('Image time: ' + str(timestamp))
             plt.cla()
             plt.imshow(imc)
             plt.axis('off')
