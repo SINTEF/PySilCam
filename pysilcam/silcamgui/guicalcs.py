@@ -429,9 +429,9 @@ class ProcThread(Process):
 
             try:
                 guidata = self.q.get(timeout=0.1)
-            except:
+            except:  # noqa: E722
                 return
-            
+
             timestamp = guidata[0]
             imc = guidata[1]
             imraw = guidata[2]
