@@ -445,38 +445,35 @@ class ProcThread(Process):
 
             infostr = 'got data'
 
-            plt.figure(self.fighandle)
-            plt.clf()
-            plt.cla()
+            fig = plt.figure(self.fighandle)
+            axispsd = plt.subplot(2, 2, 1)
+            axispsd.clear()
+            axispsd.plot(dias, vd_oil, 'r')
+            axispsd.plot(dias, vd_gas, 'b')
+            axispsd.set_xscale('log')
+            axispsd.set_xlim((50, 12000))
+            axispsd.set_ylabel('Volume Concentration [uL/L]')
+            axispsd.set_xlabel('Diameter [um]')
 
-            plt.subplot(2, 2, 1)
-            plt.cla()
-            plt.plot(dias, vd_oil, 'r')
-            plt.plot(dias, vd_gas, 'b')
-            plt.xscale('log')
-            plt.xlim((50, 12000))
-            plt.ylabel('Volume Concentration [uL/L]')
-            plt.xlabel('Diameter [um]')
-
-            plt.subplot(2, 2, 3)
-            plt.cla()
+            axis_imraw = plt.subplot(2, 2, 3)
+            axis_imraw.clear()
             ttlstr = (
                     'Oil d50: {:0.0f} [um]'.format(oil_d50) + '\n' +
                     'Gas d50: {:0.0f} [um]'.format(gas_d50) + '\n' +
                     'GOR: {:0.2f}'.format(gor) + ' ' + ' Saturation: {:0.0f} [%]'.format(saturation)
             )
-            plt.title(ttlstr)
-            plt.imshow(imraw)
-            plt.axis('off')
+            axis_imraw.set_title(ttlstr)
+            axis_imraw.imshow(imraw)
+            axis_imraw.axis('off')
 
-            plt.subplot(1, 2, 2)
+            axis_imc = plt.subplot(1, 2, 2)
             ttlstr = ('Image time: ' + str(timestamp))
-            plt.cla()
-            plt.imshow(imc)
-            plt.axis('off')
-            plt.title(ttlstr)
+            axis_imc.clear()
+            axis_imc.imshow(imc)
+            axis_imc.axis('off')
+            axis_imc.set_title(ttlstr)
 
-            plt.tight_layout()
+            fig.tight_layout()
 
             self.info = infostr
 
