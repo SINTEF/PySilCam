@@ -5,6 +5,10 @@ PySilCam
 
 A Python interface to the SilCam.
 
+For user-level descriptions and guidance, please see the [wiki](https://github.com/SINTEF/PySilCam/wiki).
+
+Documentation for PySilCam code can be found here: https://pysilcam.readthedocs.io
+
 Features
 --------
 
@@ -66,7 +70,7 @@ Build the documentation
 python setup.py build_sphinx
 ```
 
-See the [wiki](https://github.com/SINTEF/PySilCam/wiki) for more details on running PySilCam.
+Auto-building of the documentation is performed by Read The Docs, with this project: https://readthedocs.org/projects/pysilcam/
 
 Jupyter notebook setup
 ------
