@@ -104,10 +104,10 @@ class InteractivePlotter(QMainWindow):
 
         self.statusBar = QStatusBar()
         self.setStatusBar(self.statusBar)
-        self.statusBar.showMessage('Hello. Load a -STATS file to start', 1e12)
+        self.statusBar.showMessage('Hello. Load a -STATS file to start', 2147483647)
 
     def callLoadData(self):
-        self.statusBar.showMessage('Loading data. PLEASE WAIT', 1e12)
+        self.statusBar.showMessage('Loading data. PLEASE WAIT', 2147483647)
         self.plot_fame.graph_view.load_data()
         self.raw_path = ''
         self.raw_files = ''
@@ -152,14 +152,14 @@ class InteractivePlotter(QMainWindow):
         u = pd.to_datetime(self.plot_fame.graph_view.u)
         midtimeidx = np.argwhere((u >= start_time) & (u < end_time))
         ws = waitsplash()
-        self.statusBar.showMessage('Creating background from ' + str(len(midtimeidx)) + ' images', 1e12)
+        self.statusBar.showMessage('Creating background from ' + str(len(midtimeidx)) + ' images', 2147483647)
         imbg = np.float64(silcam_load(self.raw_files[midtimeidx[0][0]]))
         for i in range(len(midtimeidx) - 1):
             imbg += np.float64(silcam_load(self.raw_files[midtimeidx[i + 1][0]]))
         imbg /= len(midtimeidx)
         imraw = np.float64(silcam_load(self.filename))
         imc = correct_im_fast(imbg, imraw)
-        self.statusBar.showMessage('Background done.', 1e12)
+        self.statusBar.showMessage('Background done.', 2147483647)
         ws.close()
         self.plot_image(imc)
 
@@ -182,7 +182,7 @@ class InteractivePlotter(QMainWindow):
                 self.raw_files = sorted(glob(os.path.join(self.raw_path,
                                                           '*.bmp')))
             if len(self.raw_files) == 0:
-                self.statusBar.showMessage('No data here: ' + self.raw_path, 1e12)
+                self.statusBar.showMessage('No data here: ' + self.raw_path, 2147483647)
                 self.raw_path = ''
                 return
 
