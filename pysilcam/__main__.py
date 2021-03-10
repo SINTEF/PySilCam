@@ -22,6 +22,7 @@ from pysilcam.acquisition import Acquire
 from pysilcam.background import backgrounder
 from pysilcam.config import PySilcamSettings, updatePathLength
 from pysilcam.process import processImage, write_stats
+from pysilcam.fakepymba import silcam_name2time
 
 if not sys.warnoptions:
     warnings.simplefilter("ignore")
@@ -203,7 +204,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
                                                rts stats become active
       discWrite=False   (bool)              :  True will enable writing of raw data to disc
                                                False will disable writing of raw data to disc
-      nbImages=None     (int)               :  Number of images to skip
+      nbImages=None     (int)               :  Number of images to process
       gui=None          (Class object)      :  Queue used to pass information between process thread and GUI
                                                initialised in ProcThread within guicals.py
     '''
@@ -678,15 +679,17 @@ def update_pysilcam_offset(logger, settings, datafilename, datapath):
     logger.info('Calculating spooling offset')
     print('Calculating spooling offset')
 
-    # TODO: move this import to the top
-    from pysilcam.fakepymba import silcam_name2time
     files = [f for f in sorted(os.listdir(datapath))
-             if f.endswith('.silc' or f.endswith('.bmp'))]
+             if f.endswith('.silc') or f.endswith('.bmp')]
     offsetcalc = pd.DataFrame(columns=['files', 'times'])
     offsetcalc['files'] = files
     for i, f in enumerate(files):
         offsetcalc['times'].iloc[i] = silcam_name2time(f)
-    offset = int(min(np.argwhere(offsetcalc['times'] > last_time)))
+    # find the index of the first time in offsetcalc[]'times'] that is after last_time
+    if last_time >= np.max(offsetcalc['times']):
+        offset = len(files)
+    else:
+        offset = int(np.min(np.where(offsetcalc['times'] > last_time)))
     # subtract the number of background images, so we get data from the correct start point
     offset -= settings.Background.num_images
     # and check offset is still positive
@@ -696,5 +699,6 @@ def update_pysilcam_offset(logger, settings, datafilename, datapath):
     os.environ['PYSILCAM_OFFSET'] = offset
     logger.info('PYSILCAM_OFFSET set to: ' + offset)
     print('PYSILCAM_OFFSET set to: ' + offset)
+    offset = int(offset)
 
     return offset
