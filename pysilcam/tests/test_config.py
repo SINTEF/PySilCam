@@ -9,7 +9,6 @@ def test_config_parser():
     conf = load_config(filename)
 
     assert 'General' in conf
-    assert conf['General']['version'] == '3'
     assert 'Background' in conf
     assert 'Process' in conf
     assert 'PostProcess' in conf
@@ -23,7 +22,6 @@ def test_settings():
     settings = PySilcamSettings(filename)
 
     assert hasattr(settings, 'General')
-    assert hasattr(settings.General, 'version')
     assert hasattr(settings, 'Background')
     assert hasattr(settings, 'Process')
     assert hasattr(settings, 'PostProcess')
