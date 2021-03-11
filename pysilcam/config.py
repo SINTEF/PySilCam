@@ -12,9 +12,6 @@ from pysilcam.pathadjust import PathLength
 
 logger = logging.getLogger(__name__)
 
-# This is the required version of the configuration file
-__configversion__ = 3
-
 def load_config(filename):
     '''Load config file and validate content
     
@@ -37,13 +34,6 @@ def load_config(filename):
     files_parsed = conf.read(filename)
     if filename not in files_parsed:
         raise RuntimeError('Could not parse config file {0}'.format(filename))
-
-    #Check that we got the correction version
-    fileversion = int(conf['General']['version'])
-    expectversion = __configversion__
-    if fileversion != expectversion:
-        errmsg = 'Wrong configuration file version, expected {0}, got {1}.'
-        raise RuntimeError(errmsg.format(fileversion, expectversion))
 
     return conf
 
