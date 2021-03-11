@@ -130,39 +130,6 @@ def export_timeseries(configfile, statsfile):
     time_series.to_excel(outfile +
                          '-TIMESERIES' + 'gas' + '.xlsx')
 
-    plt.figure(figsize=(20, 10))
-
-    if not np.min(np.isnan(d50_oil)):
-        plt.plot(timestamp, d50_oil, 'ro')
-    if not np.min(np.isnan(d50_av_oil)):
-        plt.plot(timestamp, d50_av_oil, 'r-')
-    lns1 = plt.plot(np.nan, np.nan, 'r-', label='OIL')
-
-    if not np.min(np.isnan(d50_gas)):
-        plt.plot(timestamp, d50_gas, 'bo')
-    if not np.min(np.isnan(d50_av_gas)):
-        plt.plot(timestamp, d50_av_gas, 'b-')
-    lns2 = plt.plot(np.nan, np.nan, 'b-', label='GAS')
-
-    plt.ylabel('d50 [um]')
-    plt.ylim(0, max(plt.gca().get_ylim()))
-
-    ax = plt.gca().twinx()
-    plt.sca(ax)
-    plt.ylabel('GOR')
-    if not np.min(np.isnan(gor)):
-        plt.plot(timestamp, gor, 'k')
-    lns3 = plt.plot(np.nan, np.nan, 'k', label='GOR')
-    plt.ylim(0, max(plt.gca().get_ylim()))
-
-    lns = lns1 + lns2 + lns3
-    labs = [lab.get_label() for lab in lns]
-    plt.legend(lns, labs)
-
-    plt.savefig(outfile + '-d50_TimeSeries.png', dpi=600, bbox_inches='tight')
-
-    plt.close()
-    print('Export figure made. ')
     print('Exporting averages... ')
 
     # average all
