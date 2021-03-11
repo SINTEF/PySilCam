@@ -486,7 +486,7 @@ def processImage(nnmodel, class_labels, image, settings, logger, gui):
             # 'export name' should not be nan because then this column of the
             # DataFrame will contain multiple types, so label with string instead
             # padding end of string required for HDF5 writing
-            stats_all['export name'] = 'not_exported' + (18 * ' ')
+            stats_all['export name'] = 'not_exported'
 
         # add timestamp to each row of particle statistics
         stats_all['timestamp'] = timestamp
@@ -512,29 +512,24 @@ def processImage(nnmodel, class_labels, image, settings, logger, gui):
         logger.warning(infostr, exc_info=True)
         return None
 
-    #stats_all = stats_all.replace(r'^\s*$', np.nan, regex=True)
-    #stats_all.index = stats_all.index.astype('int64')
-    #stats_all.reset_index(inplace=True)
-    print('stats_all types:')
-    for d in stats_all.columns:
-        print(d, stats_all[d].dtype)
-    print('stats_all')
-    print(stats_all)
-    print('stats_all.index')
-    print(stats_all.index)
-    print('stats_all.index.values')
-    print(stats_all.index.values)
-
     return stats_all
 
 
-def write_stats(datafilename, stats_all):
+def write_stats(
+        datafilename,
+        stats_all,
+        identifier_str='ParticleStats/stats',
+        append=True,
+        export_name_len=40):
     '''
     Writes particle stats into the ouput file
 
     Args:
         datafilename (str):     filame prefix for -STATS.h5 file that may or may not include a path
         stats_all (DataFrame):  stats dataframe returned from processImage()
+        identifier_str (str):   identifier for the group in the store
+        append (bool):          if to allow append
+        export_name_len (int):  max number of chars allowed for col 'export name'
     '''
 
     # create or append particle statistics to output file
@@ -543,5 +538,12 @@ def write_stats(datafilename, stats_all):
     # @todo accidentally appending to an existing file could be dangerous
     # because data will be duplicated (and concentrations would therefore
     # double) GUI promts user regarding this - directly-run functions are more dangerous.
+    if 'export name' in stats_all.columns:
+        min_itemsize = {'export name': export_name_len}
+    else:
+        min_itemsize = None
+
     with pd.HDFStore(datafilename + '-STATS.h5', 'a') as fh:
-        stats_all.to_hdf(fh, 'ParticleStats/stats', append=True, format='t', data_columns=True)
+        stats_all.to_hdf(
+            fh, identifier_str, append=append, format='t',
+            data_columns=True, min_itemsize=min_itemsize)
