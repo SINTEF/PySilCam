@@ -209,6 +209,14 @@ def nc_vc_from_stats(stats, settings, oilgas=outputPartType.all):
         from pysilcam.oilgas import extract_gas
         stats = extract_gas(stats)
 
+    # it is possible when in realtime mode and using multiprocess, to have data where there are no stats after extracting oil or
+    # gas. Here which check for this and return zero concentration and a nan junge slope (as the PSD is non-existent)
+    if len(stats) == 0:
+        nc = 0
+        vc = 0
+        junge = np.nan
+        return nc, vc, sample_volume, junge
+
     # calculate the number distribution
     dias, necd = nd_from_stats(stats, settings)
 
