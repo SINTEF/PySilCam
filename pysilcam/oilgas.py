@@ -120,6 +120,7 @@ class rt_stats():
         self.dias = []
         self.vd_oil = []
         self.vd_gas = []
+        self.gor = np.nan
         self.oil_d50 = np.nan
         self.gas_d50 = np.nan
         self.saturation = np.nan
@@ -142,10 +143,23 @@ class rt_stats():
         self.gas_d50 = sc_pp.d50_from_stats(self.gas_stats,
                                             self.settings.PostProcess)
 
+        # First calculate volume distributsion in units of volume concentration per sample volume
         self.dias, self.vd_oil = sc_pp.vd_from_stats(self.oil_stats,
                                                      self.settings.PostProcess)
         self.dias, self.vd_gas = sc_pp.vd_from_stats(self.gas_stats,
                                                      self.settings.PostProcess)
+
+        # Then calculate correct concentrations for re-scaling the volume distributions:
+        nc, volume_concentration_oil, sample_volume, junge = sc_pp.nc_vc_from_stats(self.stats, self.settings.PostProcess,
+                                                                                    oilgas=sc_pp.outputPartType.oil)
+        # re-scale the volume distribution to the correct oil concentraiton
+        self.vd_oil = (self.vd_oil / np.sum(self.vd_oil)) * volume_concentration_oil
+        nc, volume_concentration_gas, sample_volume, junge = sc_pp.nc_vc_from_stats(self.stats, self.settings.PostProcess,
+                                                                                    oilgas=sc_pp.outputPartType.gas)
+        # re-scale the volume distribution to the correct gas concentraiton
+        self.vd_gas = (self.vd_gas / np.sum(self.vd_gas)) * volume_concentration_gas
+
+        self.gor = np.float64(volume_concentration_gas / (volume_concentration_oil + volume_concentration_gas)) * 100
 
         self.saturation = np.max(self.stats.saturation)
 

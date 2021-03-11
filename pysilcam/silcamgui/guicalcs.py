@@ -15,14 +15,6 @@ from pysilcam.fakepymba import silcam_load
 import pygame.font
 
 
-def get_data(self):
-    try:
-        rts = self.q.get(timeout=0.1)
-    except:
-        rts = None
-    return rts
-
-
 def count_data(datadir):
     silcfiles = [os.path.join(datadir, f) for f in
                  sorted(os.listdir(datadir))
@@ -434,54 +426,57 @@ class ProcThread(Process):
             self.rts = scog.rt_stats(self.settings)
 
         if self.is_alive():
-            guidata = get_data(self)
-            if guidata is not None:
-                timestamp = guidata[0]
-                imc = guidata[1]
-                imraw = guidata[2]
-                dias = guidata[3]['dias']
-                vd_oil = guidata[3]['vd_oil']
-                vd_gas = guidata[3]['vd_gas']
-                oil_d50 = guidata[3]['oil_d50']
-                gas_d50 = guidata[3]['gas_d50']
-                saturation = guidata[3]['saturation']
-                gor = np.float64(np.sum(vd_gas) / np.sum(vd_oil))
 
-                infostr = 'got data'
+            try:
+                guidata = self.q.get(timeout=0.1)
+            except:  # noqa: E722
+                return
 
-                plt.figure(self.fighandle)
-                plt.clf()
-                plt.cla()
+            timestamp = guidata[0]
+            imc = guidata[1]
+            imraw = guidata[2]
+            dias = guidata[3]['dias']
+            vd_oil = guidata[3]['vd_oil']
+            vd_gas = guidata[3]['vd_gas']
+            gor = guidata[3]['gor']
+            oil_d50 = guidata[3]['oil_d50']
+            gas_d50 = guidata[3]['gas_d50']
+            saturation = guidata[3]['saturation']
 
-                plt.subplot(2, 2, 1)
-                plt.cla()
-                plt.plot(dias, vd_oil, 'r')
-                plt.plot(dias, vd_gas, 'b')
-                plt.xscale('log')
-                plt.xlim((50, 12000))
-                plt.ylabel('Volume Concentration [uL/L]')
-                plt.xlabel('Diameter [um]')
+            infostr = 'got data'
 
-                plt.subplot(2, 2, 3)
-                plt.cla()
-                ttlstr = (
-                        'Oil d50: {:0.0f} [um]'.format(oil_d50) + '\n' +
-                        'Gas d50: {:0.0f} [um]'.format(gas_d50) + '\n' +
-                        'GOR: {:0.2f}'.format(gor) + ' ' + ' Saturation: {:0.0f} [%]'.format(saturation)
-                )
-                plt.title(ttlstr)
-                plt.imshow(imraw)
-                plt.axis('off')
+            plt.figure(self.fighandle)
+            plt.clf()
+            plt.cla()
 
-                plt.subplot(1, 2, 2)
-                ttlstr = ('Image time: ' +
-                          str(timestamp))
-                plt.cla()
-                plt.imshow(imc)
-                plt.axis('off')
-                plt.title(ttlstr)
+            plt.subplot(2, 2, 1)
+            plt.cla()
+            plt.plot(dias, vd_oil, 'r')
+            plt.plot(dias, vd_gas, 'b')
+            plt.xscale('log')
+            plt.xlim((50, 12000))
+            plt.ylabel('Volume Concentration [uL/L]')
+            plt.xlabel('Diameter [um]')
 
-                plt.tight_layout()
+            plt.subplot(2, 2, 3)
+            plt.cla()
+            ttlstr = (
+                    'Oil d50: {:0.0f} [um]'.format(oil_d50) + '\n' +
+                    'Gas d50: {:0.0f} [um]'.format(gas_d50) + '\n' +
+                    'GOR: {:0.2f}'.format(gor) + ' ' + ' Saturation: {:0.0f} [%]'.format(saturation)
+            )
+            plt.title(ttlstr)
+            plt.imshow(imraw)
+            plt.axis('off')
+
+            plt.subplot(1, 2, 2)
+            ttlstr = ('Image time: ' + str(timestamp))
+            plt.cla()
+            plt.imshow(imc)
+            plt.axis('off')
+            plt.title(ttlstr)
+
+            plt.tight_layout()
 
             self.info = infostr
 
