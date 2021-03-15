@@ -19,7 +19,7 @@ jobs:
         id: main
         run: |
           check=$(git diff origin/master pysilcam/__init__.py | grep __version | wc -l) &&
-        echo "::set-output name=check::$check"
+          echo "::set-output name=check::$check"
 
       - name: Check
         if: steps.main.outputs.check != 2
