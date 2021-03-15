@@ -14,10 +14,8 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v2
-
-      - name: Fetch
-        run: |
-          git fetch
+        with:
+          fetch-depth: 5
 
       - name: Diff
         id: main
