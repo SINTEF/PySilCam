@@ -159,7 +159,10 @@ class rt_stats():
         # re-scale the volume distribution to the correct gas concentraiton
         self.vd_gas = (self.vd_gas / np.sum(self.vd_gas)) * volume_concentration_gas
 
-        self.gor = np.float64(volume_concentration_gas / (volume_concentration_oil + volume_concentration_gas)) * 100
+        if (volume_concentration_oil + volume_concentration_gas) == 0:
+            self.gor = np.nan
+        else:
+            self.gor = np.float64(volume_concentration_gas / (volume_concentration_oil + volume_concentration_gas)) * 100
 
         self.saturation = np.max(self.stats.saturation)
 
