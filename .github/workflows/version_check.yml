@@ -1,0 +1,40 @@
+name: Docker build and test
+
+on: [push, pull_request]
+
+env:
+  IMAGE_NAME: sintef/pysilcam
+  IMAGE_TAG: github-ci
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - uses: whoan/docker-build-with-cache-action@v4
+        with:
+          # The following needs to be commented out to use docker caching
+          # push_image_and_stages: true
+          push_image_and_stages: false
+          # username: <username>
+          # password: ${{ secrets.DOCKER_REGISTRY_ACCESS_TOKEN }}
+          # registry: <docker registry> (default: Docker Hub's registry).
+          image_name: ${{ env.IMAGE_NAME }}
+          image_tag: ${{ env.IMAGE_TAG }}
+          context: .
+          dockerfile: Dockerfile
+
+      - name: Download test data
+        shell: bash
+        env:
+          AZURE_TEST_DATA_ACCESS_TOKEN: ${{ secrets.AZURE_TEST_DATA_ACCESS_TOKEN }}
+        run: |
+          wget -nv https://pysilcam.blob.core.windows.net/test-data/pysilcam-testdata.zip?${AZURE_TEST_DATA_ACCESS_TOKEN} -O temp.zip
+          unzip temp.zip
+
+      - name: Run the tests
+        run: docker run -v $PWD/pysilcam-testdata:/testdata ${IMAGE_NAME}:${IMAGE_TAG}
