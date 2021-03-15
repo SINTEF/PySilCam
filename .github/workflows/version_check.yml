@@ -14,9 +14,15 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v2
+
+      - name: git diff
+        id: main
         run: |
           check=$(git diff origin/master pysilcam/__init__.py | grep __version | wc -l)
-        if: $check != 2
+        echo "::set-output name=check::$check"
+
+      - name: check init
+        if: steps.main.outputs.check != 2
         run: |
           exit 1
 
