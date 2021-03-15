@@ -18,4 +18,5 @@ jobs:
           check=$(git diff origin/master pysilcam/__init__.py | grep __version | wc -l)
           if: $check != 2 ; then
             exit 1
+          fi
 
