@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v2
         run: |
           check=$(git diff origin/master pysilcam/__init__.py | grep __version | wc -l)
-          if: $check != 2 ; then
-            exit 1
-          fi
+        if: $check != 2
+        run: |
+          exit 1
 
