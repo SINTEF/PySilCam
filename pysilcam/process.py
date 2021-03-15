@@ -485,8 +485,8 @@ def processImage(nnmodel, class_labels, image, settings, logger, gui):
             stats_all.loc[0] = z
             # 'export name' should not be nan because then this column of the
             # DataFrame will contain multiple types, so label with string instead
-            if settings.ExportParticles.export_images:
-                stats_all['export name'] = 'not_exported'
+            # padding end of string required for HDF5 writing
+            stats_all['export name'] = 'not_exported'
 
         # add timestamp to each row of particle statistics
         stats_all['timestamp'] = timestamp
@@ -515,13 +515,21 @@ def processImage(nnmodel, class_labels, image, settings, logger, gui):
     return stats_all
 
 
-def write_stats(datafilename, stats_all):
+def write_stats(
+        datafilename,
+        stats_all,
+        identifier_str='ParticleStats/stats',
+        append=True,
+        export_name_len=40):
     '''
     Writes particle stats into the ouput file
 
     Args:
         datafilename (str):     filame prefix for -STATS.h5 file that may or may not include a path
         stats_all (DataFrame):  stats dataframe returned from processImage()
+        identifier_str (str):   identifier for the group in the store
+        append (bool):          if to allow append
+        export_name_len (int):  max number of chars allowed for col 'export name'
     '''
 
     # create or append particle statistics to output file
@@ -530,5 +538,12 @@ def write_stats(datafilename, stats_all):
     # @todo accidentally appending to an existing file could be dangerous
     # because data will be duplicated (and concentrations would therefore
     # double) GUI promts user regarding this - directly-run functions are more dangerous.
+    if 'export name' in stats_all.columns:
+        min_itemsize = {'export name': export_name_len}
+    else:
+        min_itemsize = None
+
     with pd.HDFStore(datafilename + '-STATS.h5', 'a') as fh:
-        stats_all.to_hdf(fh, 'ParticleStats/stats', append=True, format='t', data_columns=True)
+        stats_all.to_hdf(
+            fh, identifier_str, append=append, format='t',
+            data_columns=True, min_itemsize=min_itemsize)

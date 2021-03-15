@@ -10,6 +10,7 @@ from pysilcam.config import PySilcamSettings
 from enum import Enum
 from tqdm import tqdm
 import logging
+from pysilcam.process import write_stats
 
 logger = logging.getLogger(__name__)
 
@@ -949,9 +950,8 @@ def statscsv_to_statshdf(stats_file):
         stats_file              : filename of stats file
     '''
     stats = pd.read_csv(stats_file, index_col=False)
-    new_stats_file = stats_file.replace('-STATS.csv', '-STATS.h5')
-    with pd.HDFStore(new_stats_file, 'a') as fh:
-        stats.to_hdf(fh, 'ParticleStats/stats', format='t', data_columns=True)
+    assert stats_file[-10:] == '-STATS.csv', f"Stats file {stats_file} should end in '-STATS.csv'."
+    write_stats(stats_file[:-10], stats, append=False)
 
 
 def trim_stats(stats_file, start_time, end_time, write_new=False, stats=[]):
