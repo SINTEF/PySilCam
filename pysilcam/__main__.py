@@ -247,17 +247,17 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
 
     sccl.check_model(settings.NNClassify.model_path)
 
-    print("overwriteSTATS:", overwriteSTATS)
     fakepymba_offset = 0
     datafile_hdf = datafilename + '-STATS.h5'
-    print("datafile_hdf:", datafile_hdf)
     if os.path.isfile(datafile_hdf):
+        with pd.HDFStore(datafile_hdf, 'r') as f:
+            datafile_keys = f.keys()
         # Remove old STATS file if it exists
         if overwriteSTATS:
             logger.info('removing: ' + datafile_hdf)
             print('Overwriting ' + datafile_hdf)
             os.remove(datafile_hdf)
-        elif 'ParticleStats/stats' not in pd.HDFStore(datafile_hdf):  # Could be check for empty
+        elif 'ParticleStats/stats' not in datafile_keys:
             print("HDF file never been written to")
             print("fakepymba_offset = 0")
         else:
@@ -679,7 +679,6 @@ def update_pysilcam_offset(logger, settings, datafilename, datapath):
     logger.info('Loading old data from: ' + datafile_hdf)
     print('Loading old data from: ' + datafile_hdf)
     oldstats = pd.read_hdf(datafile_hdf, 'ParticleStats/stats')
-    print(oldstats)
     logger.info('  OK.')
     print('  OK.')
     last_time = pd.to_datetime(oldstats['timestamp'].max())
