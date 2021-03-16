@@ -543,6 +543,7 @@ def write_stats(
     else:
         min_itemsize = None
 
+    print("We are writing to stats!!!")
     with pd.HDFStore(datafilename + '-STATS.h5', 'a') as fh:
         stats_all.to_hdf(
             fh, identifier_str, append=append, format='t',
