@@ -184,6 +184,7 @@ def silcam_acquire(datapath, config_filename, writeToDisk=True, gui=None):
             rtdict = {'dias': 0,
                       'vd_oil': 0,
                       'vd_gas': 0,
+                      'gor': np.nan,
                       'oil_d50': 0,
                       'gas_d50': 0,
                       'saturation': 0}
