@@ -257,7 +257,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
             logger.info('removing: ' + datafile_hdf)
             print('Overwriting ' + datafile_hdf)
             os.remove(datafile_hdf)
-        elif 'ParticleStats/stats' not in datafile_keys:
+        elif '/ParticleStats/stats' not in datafile_keys:
             print("HDF file never been written to")
             print("fakepymba_offset = 0")
         else:
