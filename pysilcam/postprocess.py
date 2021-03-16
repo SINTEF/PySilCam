@@ -503,7 +503,7 @@ def make_montage(stats_file, pixel_size, roidir,
         montage (uint8)             : a nicely-made montage in the form of an image, which can be plotted using plotting.montage_plot(montage, settings.PostProcess.pix_size)
     '''
 
-    # obtain particle statistics from the csv file
+    # obtain particle statistics from the stats file
     stats = pd.read_hdf(stats_file, 'ParticleStats/stats')
 
     if crop_stats is not None:

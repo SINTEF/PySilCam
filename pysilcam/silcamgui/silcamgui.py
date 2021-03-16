@@ -65,7 +65,7 @@ class stats_trim_dlg(QMainWindow):
 
         print('loading stats...')
         self.stats_filename = stats_filename
-        self.stats = pd.read_csv(stats_filename)
+        self.stats = pd.read_hdf(stats_filename, 'ParticleStats/stats')
         self.trimmed_stats = pd.DataFrame()
         print('  stats loaded.')
 
