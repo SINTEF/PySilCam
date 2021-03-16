@@ -251,11 +251,16 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     fakepymba_offset = 0
     datafile_hdf = datafilename + '-STATS.h5'
     if os.path.isfile(datafile_hdf):
+        with pd.HDFStore(datafile_hdf, 'r') as f:
+            datafile_keys = f.keys()
         # Remove old STATS file if it exists
         if overwriteSTATS:
             logger.info('removing: ' + datafile_hdf)
             print('Overwriting ' + datafile_hdf)
             os.remove(datafile_hdf)
+        elif '/ParticleStats/stats' not in datafile_keys:
+            logger.info('Stats file present, but no data written: fakepymba_offset = 0')
+            pass
         else:
             # If we are starting from an existings stats file, update the
             # PYILSCAM_OFFSET environment variable

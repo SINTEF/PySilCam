@@ -518,7 +518,6 @@ def processImage(nnmodel, class_labels, image, settings, logger, gui):
 def write_stats(
         datafilename,
         stats_all,
-        identifier_str='ParticleStats/stats',
         append=True,
         export_name_len=40):
     '''
@@ -527,7 +526,6 @@ def write_stats(
     Args:
         datafilename (str):     filame prefix for -STATS.h5 file that may or may not include a path
         stats_all (DataFrame):  stats dataframe returned from processImage()
-        identifier_str (str):   identifier for the group in the store
         append (bool):          if to allow append
         export_name_len (int):  max number of chars allowed for col 'export name'
     '''
@@ -545,5 +543,5 @@ def write_stats(
 
     with pd.HDFStore(datafilename + '-STATS.h5', 'a') as fh:
         stats_all.to_hdf(
-            fh, identifier_str, append=append, format='t',
+            fh, 'ParticleStats/stats', append=append, format='t',
             data_columns=True, min_itemsize=min_itemsize)
