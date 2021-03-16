@@ -259,8 +259,8 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
             print('Overwriting ' + datafile_hdf)
             os.remove(datafile_hdf)
         elif '/ParticleStats/stats' not in datafile_keys:
-            print("HDF file never been written to")
-            print("fakepymba_offset = 0")
+            logger.info('Stats file present, but no data written: fakepymba_offset = 0')
+            pass
         else:
             # If we are starting from an existings stats file, update the
             # PYILSCAM_OFFSET environment variable
