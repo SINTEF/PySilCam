@@ -69,8 +69,12 @@ def _configure_camera(camera, config_file=None):
     with camera:
         for k, v in config.items():
             print(k, v)
-            #logger.info('{0} = {1}'.format(k,v))
-            getattr(camera, k).set(v)
+            logger.info('{0} = {1}'.format(k,v))
+            # try to write settings to the camera
+            try:
+                getattr(camera, k).set(v)
+            except AttributeError: # if there is an element of the camera config that is not compatible, then continue to the next
+                continue
 
     return camera
 
