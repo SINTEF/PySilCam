@@ -21,12 +21,6 @@ Requirements
 
 * Python = 3.5
 
-* Pymba (camera acquisition) with Python 3 support. Install using
-
-```bash
-pip install git+https://github.com/mabl/pymba@python3
-```
-
 Installing
 ----------
 
@@ -71,6 +65,29 @@ python setup.py build_sphinx
 ```
 
 Auto-building of the documentation is performed by Read The Docs, with this project: https://readthedocs.org/projects/pysilcam/
+
+Camera setup
+------
+
+* VimbaPython is used for camera acquisition.
+
+Install Vimba using the instructions [here](https://www.alliedvision.com/en/products/software.html#c6444)
+
+First, install the pysilcam enviroment (instructions above)
+
+Navigate to the Allied Vision program files folder and to the subdirectory: Vimba_4.*/VimbaPython/Source
+
+Install VimbaPython:
+```bash
+# activate the silcam environment (just: 'activate silcam' on windows)
+conda activate silcam
+
+# uninstall existing version of VimbaPython if it already exists
+pip uninstall vimbapython
+
+# install vimbapython
+pip install .
+```
 
 Jupyter notebook setup
 ------
