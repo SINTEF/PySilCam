@@ -11,40 +11,34 @@ import sys
 logger = logging.getLogger(__name__)
 
 try:
-    import pymba
+    from vimba import Vimba
 except:
-    logger.debug('Pymba not available. Cannot use camera')
+    logger.debug('VimbaPython not available. Cannot use camera')
 
 
 def _init_camera(vimba):
     '''Initialize the camera system from vimba object
     Args:
-        vimba (vimba object)  :  for example pymba.Vimba()
+        vimba (vimba object)  :  for example Vimba.get_instance()
         
     Returns:
         camera       (Camera) : The camera without settings from the config
     '''
 
-    # get system object
-    system = vimba.getSystem()
+    # find available cameras
+    cameraIds = vimba.get_all_cameras()
 
-    # list available cameras (after enabling discovery for GigE cameras)
-    if system.GeVTLIsPresent:
-        system.runFeatureCommand("GeVDiscoveryAllOnce")
-        time.sleep(0.2)
-    cameraIds = vimba.getCameraIds()
     for cameraId in cameraIds:
         logger.debug('Camera ID: {0}'.format(cameraId))
 
     #Check that we found a camera, if not, raise an error
-    if len(cameraIds) == 0:
+    if not cameraIds:
         logger.debug('No cameras detected')
         raise RuntimeError('No cameras detected!')
         camera = None
     else:
-        # get and open a camera
-        camera = vimba.getCamera(cameraIds[0])
-        camera.openCamera()
+        # get and open the first camera on the list (multiple cameras should not be connected!)
+        camera = cameraIds[0]
 
     return camera
 
@@ -73,8 +67,9 @@ def _configure_camera(camera, config_file=None):
 
     #If a config is specified, override those values
     for k, v in config.items():
-        logger.info('{0} = {1}'.format(k,v))
-        setattr(camera, k, v)
+        print(k, v)
+        #logger.info('{0} = {1}'.format(k,v))
+        #setattr(camera, k, v)
 
     return camera
 
@@ -107,9 +102,9 @@ class Acquire():
     '''
     def __init__(self, USE_PYMBA=False, FAKE_PYMBA_OFFSET=0):
         if USE_PYMBA:
-            self.pymba = pymba
-            self.pymba.get_time_stamp = lambda x: pd.Timestamp.now()
-            logger.info('Pymba imported')
+            self.vimba = Vimba
+            self.vimba.get_time_stamp = lambda x: pd.Timestamp.now()
+            logger.info('Vimba imported')
             self.get_generator = self.get_generator_camera
         else:
             fakepymba.Frame.PYSILCAM_OFFSET = FAKE_PYMBA_OFFSET
@@ -179,7 +174,7 @@ class Acquire():
                 #Wait until camera wakes up
                 self.wait_for_camera()
 
-                with self.pymba.Vimba() as vimba:
+                with self.vimba.Vimba() as vimba:
                     camera = _init_camera(vimba)
 
                     #Configure camera
@@ -248,7 +243,7 @@ class Acquire():
         '''
         camera = None
         while not camera:
-            with self.pymba.Vimba() as vimba:
+            with Vimba.get_instance() as vimba:
                 try:
                     camera = _init_camera(vimba)
                 except RuntimeError:
