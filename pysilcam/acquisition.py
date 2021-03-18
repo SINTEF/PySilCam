@@ -66,10 +66,11 @@ def _configure_camera(camera, config_file=None):
     config = load_camera_config(config_file, config)
 
     #If a config is specified, override those values
-    for k, v in config.items():
-        print(k, v)
-        #logger.info('{0} = {1}'.format(k,v))
-        #setattr(camera, k, v)
+    with camera:
+        for k, v in config.items():
+            print(k, v)
+            #logger.info('{0} = {1}'.format(k,v))
+            getattr(camera, k).set(v)
 
     return camera
 
@@ -174,7 +175,7 @@ class Acquire():
                 #Wait until camera wakes up
                 self.wait_for_camera()
 
-                with self.vimba.Vimba() as vimba:
+                with self.vimba.get_instance() as vimba:
                     camera = _init_camera(vimba)
 
                     #Configure camera
