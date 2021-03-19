@@ -185,62 +185,37 @@ class Acquire():
                     #Configure camera
                     camera = _configure_camera(camera, camera_config_file)
 
-                    #Prepare for image acquisition and create a frame
-                    frame0 = camera.getFrame()
-                    frame0.announceFrame()
+                    camera.start_streaming(handler=self._acquire_frame, buffer_count=10)
 
+                    input()
                     #Aquire raw images and yield to calling context
-                    while True:
-                        timestamp, img = self._acquire_frame(camera, frame0)
-                        if writeToDisk:
-                            filename = os.path.join(datapath, timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc'))
-                            with open(filename, 'wb') as fh:
-                                np.save(fh, img, allow_pickle=False)
-                                fh.flush()
-                                os.fsync(fh.fileno())
-                                logger.info('Written {0}'.format(filename))
-                        yield timestamp, img
-            except pymba.vimbaexception.VimbaException:
-                logger.info('Camera error. Restarting')
+                    #while True:
+                    #    if writeToDisk:
+                    #        filename = os.path.join(datapath, timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc'))
+                    #        with open(filename, 'wb') as fh:
+                    #            np.save(fh, img, allow_pickle=False)
+                    #            fh.flush()
+                    #            os.fsync(fh.fileno())
+                    #            logger.info('Written {0}'.format(filename))
+                    #    yield timestamp, img
             except KeyboardInterrupt:
                 logger.info('User interrupt with ctrl+c, terminating PySilCam.')
                 sys.exit(0)
+            except
+                logger.info('Camera error. Restarting')
            
 
-    def _acquire_frame(self, camera, frame0):
-        '''Aquire a single frame
-        Args:
-            camera (Camera)         : The camera with settings from the config
-                                      obtained from _configure_camera()
-            frame0  (frame)         : camera frame obtained from camera.getFrame()
+    def _acquire_frame(self, camera, frame):
+        '''Aquire a single frame while streaming
         
-        Returns:
-            timestamp (timestamp)   : timestamp of image acquisition
-            output (uint8)          : raw image acquired
+        requires camera.start_streaming(handler=_acquire_frame, buffer_count=10)
+        
         '''
+        if frame.get_status() == FrameStatus.Complete:
+            self.timestamp = pd.Timestamp.now()
+            self.image = frame.as_numpy_ndarray()
+            camera.queue_frame(frame)
 
-        #Aquire single fram from camera
-        camera.startCapture()
-        frame0.queueFrameCapture()
-        camera.runFeatureCommand('AcquisitionStart')
-        camera.runFeatureCommand('AcquisitionStop')
-        frame0.waitFrameCapture()
-
-        #Copy frame data to numpy array (Bayer format)
-        #bayer_img = np.ndarray(buffer = frame0.getBufferByteData(),
-        #                       dtype = np.uint8,
-        #                       shape = (frame0.height, frame0.width, 3))
-        img = np.ndarray(buffer = frame0.getBufferByteData(),
-                        dtype = np.uint8,
-                        shape = (frame0.height, frame0.width, 3))
-
-        timestamp = self.pymba.get_time_stamp(frame0)
-
-        camera.endCapture()
-
-        output = img.copy()
-        
-        return timestamp, output
 
     def wait_for_camera(self):
         '''
