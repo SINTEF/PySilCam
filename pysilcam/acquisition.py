@@ -171,50 +171,47 @@ class Acquire():
             timestamp: timestamp of the acquired image.
             img: acquired image.
         '''
+        # proposed structure for frame handler, which would run either acquisition or processing
+        if realtime:
+            self.image_handler = realtime_processing
+        elif acquire:
+            self.image_handler = acquire_only
+
         if datapath != None:
             os.environ['PYSILCAM_TESTDATA'] = datapath
 
         while True:
             try:
-                #Wait until camera wakes up
+                # Wait until camera wakes up
                 self.wait_for_camera()
 
                 with self.vimba.get_instance() as vimba:
                     camera = _init_camera(vimba)
 
-                    #Configure camera
+                    # Configure camera
                     camera = _configure_camera(camera, camera_config_file)
 
-                    camera.start_streaming(handler=self._acquire_frame, buffer_count=10)
+                    camera.start_streaming(handler=self.image_handler, buffer_count=10)
 
-                    input()
-                    #Aquire raw images and yield to calling context
-                    #while True:
-                    #    if writeToDisk:
-                    #        filename = os.path.join(datapath, timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc'))
-                    #        with open(filename, 'wb') as fh:
-                    #            np.save(fh, img, allow_pickle=False)
-                    #            fh.flush()
-                    #            os.fsync(fh.fileno())
-                    #            logger.info('Written {0}'.format(filename))
-                    #    yield timestamp, img
             except KeyboardInterrupt:
                 logger.info('User interrupt with ctrl+c, terminating PySilCam.')
+                camera.stop_streaming()
                 sys.exit(0)
-            except
+            except:
                 logger.info('Camera error. Restarting')
-           
-
+                camera.stop_streaming()
+                
     def _acquire_frame(self, camera, frame):
         '''Aquire a single frame while streaming
         
         requires camera.start_streaming(handler=_acquire_frame, buffer_count=10)
         
         '''
+        print('_acquire_frame')
         if frame.get_status() == FrameStatus.Complete:
             self.timestamp = pd.Timestamp.now()
             self.image = frame.as_numpy_ndarray()
-            camera.queue_frame(frame)
+            cam.queue_frame(frame)
 
 
     def wait_for_camera(self):
