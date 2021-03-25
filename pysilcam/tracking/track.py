@@ -276,8 +276,17 @@ def make_boxplot(tracksfile, plotfilename):
     :param tracksfile:
     :return:
     '''
+
+    def has_tracking_data(f, verbose=True):
+        with pd.HDFStore(f, 'r') as f_handle:
+            data_present = '/Tracking/tracks' in f_handle.keys()
+        if verbose and not data_present:
+            print(f"File {f} has no data.")
+        return data_present
+
     h5filedir = os.path.split(tracksfile)[0]
     h5file_list = glob.glob(os.path.join(h5filedir, '*-TRACKS.h5'))
+    h5file_list = [f for f in h5file_list if has_tracking_data(f)]
     dataset_names = [os.path.split(k)[-1].replace('-TRACKS.h5', '') for k in h5file_list]
 
     tracks = dict()
