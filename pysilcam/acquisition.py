@@ -164,57 +164,52 @@ class Acquire():
                         break
 
     def image_handler(self, camera, frame):
-        if frame.get_status() == FrameStatus.Complete:
-            # get image
-            img = frame.as_numpy_ndarray()
+        print('image handler')
+        with camera:
+            if frame.get_status() == FrameStatus.Complete:
+                print('get image')
+                # get image
+                img = frame.as_numpy_ndarray()
 
-            timestamp = pd.Timestamp.now()
-            filename = os.path.join(self.datapath, timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc'))
+                timestamp = pd.Timestamp.now()
+                filename = os.path.join(self.datapath, timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc'))
+                print(filename)
 
-            # if write to disc
-            # write to disc
-            if self.writeToDisk:
-                with open(filename, 'wb') as fh:
-                    np.save(fh, img, allow_pickle=False)
-                    fh.flush()
-                    os.fsync(fh.filenp())
+                # if write to disc
+                # write to disc
+                if self.writeToDisk:
+                    with open(filename, 'wb') as fh:
+                        np.save(fh, img, allow_pickle=False)
+                        fh.flush()
+                        os.fsync(fh.fileno())
 
 
-            # previously we calculated acquisition frequency here
+                # previously we calculated acquisition frequency here
 
-            # gui data handling
-            # if self.gui is not None:
-            #    while (self.gui.qsize() > 0):
-            #        try:
-            #            self.gui.get_nowait()
-            #            time.sleep(0.001)
-            #        except:
-            #            continue
-            #    # try:
-            #    rtdict = dict()
-            #    rtdict = {'dias': 0,
-            #             'vd_oil': 0,
-            #             'vd_gas': 0,
-            #             'gor': np.nan,
-            #             'oil_d50': 0,
-            #             'gas_d50': 0,
-            #             'saturation': 0}
-            #   self.gui.put_nowait((timestamp, imraw, imraw, rtdict))
+                # gui data handling
+                # if self.gui is not None:
+                #    while (self.gui.qsize() > 0):
+                #        try:
+                #            self.gui.get_nowait()
+                #            time.sleep(0.001)
+                #        except:
+                #            continue
+                #    # try:
+                #    rtdict = dict()
+                #    rtdict = {'dias': 0,
+                #             'vd_oil': 0,
+                #             'vd_gas': 0,
+                #             'gor': np.nan,
+                #             'oil_d50': 0,
+                #             'gas_d50': 0,
+                #             'saturation': 0}
+                #   self.gui.put_nowait((timestamp, imraw, imraw, rtdict))
 
-        camera.queue_frame(frame)  # ask the camera for the next frame, which would evtentually call image_handle again
+            camera.queue_frame(frame)  # ask the camera for the next frame, which would evtentually call image_handle again
 
     def stream_from_camera(self, camera_config_file=None):
         '''
-        Aquire images from Silcam
-        
-        Args:
-            datapath: path from where the images are acquired.
-            writeToDisk: boolean indicating wether the acquired 
-                images have to be written to disc.
-
-        Yields:
-            timestamp: timestamp of the acquired image.
-            img: acquired image.
+        Setup streaming images from Silcam
         '''
 
         while True:
@@ -225,18 +220,21 @@ class Acquire():
                 with self.vimba.get_instance() as vimba:
                     camera = _init_camera(vimba)
 
-                    # Configure camera
-                    camera = _configure_camera(camera, camera_config_file)
+                    with camera:
+                        # Configure camera
+                        camera = _configure_camera(camera, camera_config_file)
 
-                    camera.start_streaming(handler=self.image_handler, buffer_count=10)
+                        camera.start_streaming(handler=self.image_handler, buffer_count=10)
 
             except KeyboardInterrupt:
                 logger.info('User interrupt with ctrl+c, terminating PySilCam.')
-                camera.stop_streaming()
+                with camera:
+                    camera.stop_streaming()
                 sys.exit(0)
             except:
                 logger.info('Camera error. Restarting')
-                camera.stop_streaming() # restart setup here - don't stop!
+                with camera:
+                    camera.stop_streaming() # restart setup here - don't stop!
                 continue
                 
     def _acquire_frame(self, camera, frame):
