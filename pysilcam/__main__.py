@@ -27,14 +27,6 @@ from pysilcam.fakepymba import silcam_name2time
 if not sys.warnoptions:
     warnings.simplefilter("ignore")
 
-title = r'''
- ____        ____  _ _  ____
-|  _ \ _   _/ ___|(_) |/ ___|__ _ _ __ ___
-| |_) | | | \___ \| | | |   / _` | '_ ` _ \
-|  __/| |_| |___) | | | |__| (_| | | | | | |
-|_|    \__, |____/|_|_|\____\__,_|_| |_| |_|
-       |___/
-'''
 
 
 def silcam():
@@ -156,39 +148,10 @@ def silcam_acquire(datapath, config_filename, writeToDisk=True, gui=None):
     # update path_length
     updatePathLength(settings, logger)
 
-    acq = Acquire(USE_PYMBA=True)  # ini class
-    t1 = time.time()
+    acq = Acquire(USE_PYMBA=True, datapath=datapath, writeToDisk=writeToDisk, gui=gui)  # ini class
 
-    aqgen = acq.get_generator(datapath, camera_config_file=config_filename, writeToDisk=writeToDisk)
-
-    for i, (timestamp, imraw) in enumerate(aqgen):
-        t2 = time.time()
-        aq_freq = np.round(1.0 / (t2 - t1), 1)
-        requested_freq = settings.Camera.acquisitionframerateabs
-        rest_time = (1 / requested_freq) - (1 / aq_freq)
-        rest_time = np.max([rest_time, 0.])
-        time.sleep(rest_time)
-        actual_aq_freq = 1 / (1 / aq_freq + rest_time)
-        print('Image {0} acquired at frequency {1:.1f} Hz'.format(i, actual_aq_freq))
-        t1 = time.time()
-
-        if gui is not None:
-            while (gui.qsize() > 0):
-                try:
-                    gui.get_nowait()
-                    time.sleep(0.001)
-                except:
-                    continue
-            # try:
-            rtdict = dict()
-            rtdict = {'dias': 0,
-                      'vd_oil': 0,
-                      'vd_gas': 0,
-                      'gor': np.nan,
-                      'oil_d50': 0,
-                      'gas_d50': 0,
-                      'saturation': 0}
-            gui.put_nowait((timestamp, imraw, imraw, rtdict))
+    acq.stream_from_camera(camera_config_file=config_filename)
+    input()
 
 
 # the standard processing method under active development

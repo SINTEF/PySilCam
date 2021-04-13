@@ -11,7 +11,7 @@ import sys
 logger = logging.getLogger(__name__)
 
 try:
-    from vimba import Vimba
+    from vimba import Vimba, FrameStatus
 except:
     logger.debug('VimbaPython not available. Cannot use camera')
 
@@ -105,12 +105,18 @@ class Acquire():
     '''
     Class used to acquire images from camera or disc
     '''
-    def __init__(self, USE_PYMBA=False, FAKE_PYMBA_OFFSET=0):
+    def __init__(self, USE_PYMBA=False, datapath=None, writeToDisk=False,
+                 FAKE_PYMBA_OFFSET=0, gui=None):
         if USE_PYMBA:
             self.vimba = Vimba
-            self.vimba.get_time_stamp = lambda x: pd.Timestamp.now()
             logger.info('Vimba imported')
-            self.get_generator = self.get_generator_camera
+            self.gui = gui
+
+            if datapath != None:
+                os.environ['PYSILCAM_TESTDATA'] = datapath
+
+            self.datapath = datapath
+            self.writeToDisk = writeToDisk
         else:
             fakepymba.Frame.PYSILCAM_OFFSET = FAKE_PYMBA_OFFSET
             self.pymba = fakepymba
@@ -157,8 +163,48 @@ class Acquire():
                         logger.info('  END OF FILE LIST.')
                         break
 
+    def image_handler(self, camera, frame):
+        if frame.get_status() == FrameStatus.Complete:
+            # get image
+            img = frame.as_numpy_ndarray()
 
-    def get_generator_camera(self, datapath=None, writeToDisk=False, camera_config_file=None):
+            timestamp = pd.Timestamp.now()
+            filename = os.path.join(self.datapath, timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc'))
+
+            # if write to disc
+            # write to disc
+            if self.writeToDisk:
+                with open(filename, 'wb') as fh:
+                    np.save(fh, img, allow_pickle=False)
+                    fh.flush()
+                    os.fsync(fh.filenp())
+
+
+            # previously we calculated acquisition frequency here
+
+            # gui data handling
+            # if self.gui is not None:
+            #    while (self.gui.qsize() > 0):
+            #        try:
+            #            self.gui.get_nowait()
+            #            time.sleep(0.001)
+            #        except:
+            #            continue
+            #    # try:
+            #    rtdict = dict()
+            #    rtdict = {'dias': 0,
+            #             'vd_oil': 0,
+            #             'vd_gas': 0,
+            #             'gor': np.nan,
+            #             'oil_d50': 0,
+            #             'gas_d50': 0,
+            #             'saturation': 0}
+            #   self.gui.put_nowait((timestamp, imraw, imraw, rtdict))
+
+        camera.queue_frame(frame)  # ask the camera for the next frame, which would evtentually call image_handle again
+
+
+    def stream_from_camera(self, camera_config_file=None):
         '''
         Aquire images from Silcam
         
@@ -171,14 +217,8 @@ class Acquire():
             timestamp: timestamp of the acquired image.
             img: acquired image.
         '''
-        # proposed structure for frame handler, which would run either acquisition or processing
-        if realtime:
-            self.image_handler = realtime_processing
-        elif acquire:
-            self.image_handler = acquire_only
 
-        if datapath != None:
-            os.environ['PYSILCAM_TESTDATA'] = datapath
+
 
         while True:
             try:
@@ -199,7 +239,8 @@ class Acquire():
                 sys.exit(0)
             except:
                 logger.info('Camera error. Restarting')
-                camera.stop_streaming()
+                camera.stop_streaming() # restart setup here - don't stop!
+                continue
                 
     def _acquire_frame(self, camera, frame):
         '''Aquire a single frame while streaming
