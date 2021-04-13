@@ -203,7 +203,6 @@ class Acquire():
 
         camera.queue_frame(frame)  # ask the camera for the next frame, which would evtentually call image_handle again
 
-
     def stream_from_camera(self, camera_config_file=None):
         '''
         Aquire images from Silcam
@@ -217,8 +216,6 @@ class Acquire():
             timestamp: timestamp of the acquired image.
             img: acquired image.
         '''
-
-
 
         while True:
             try:

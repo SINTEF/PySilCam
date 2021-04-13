@@ -27,7 +27,7 @@ from pysilcam.fakepymba import silcam_name2time
 if not sys.warnoptions:
     warnings.simplefilter("ignore")
 
-
+title='PySilCam'
 
 def silcam():
     '''Main entry point function to acquire/process images from the SilCam.
