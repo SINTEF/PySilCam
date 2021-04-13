@@ -57,7 +57,7 @@ def _configure_camera(camera, config_file=None):
 
     # Read the configiration values from default config file
     defaultpath = os.path.dirname(os.path.abspath(__file__))
-    defaultfile = os.path.join(defaultpath,'camera_config_defaults.ini')
+    defaultfile = os.path.join(defaultpath, 'camera_config_defaults.ini')
     config = load_camera_config(defaultfile)
 
     # Read the configiration values from users config file
@@ -73,7 +73,7 @@ def _configure_camera(camera, config_file=None):
             # try to write settings to the camera
             try:
                 getattr(camera, k).set(v)
-            except AttributeError: # if there is an element of the camera config that is not compatible, then continue to the next
+            except AttributeError:  # if there is an element of the camera config that is not compatible, then continue to the next
                 continue
         
         camera.GVSPAdjustPacketSize.run()  # adjust packet size
@@ -227,6 +227,7 @@ class Acquire():
                         camera = _configure_camera(camera, camera_config_file)
 
                         camera.start_streaming(handler=self.image_handler, buffer_count=10)
+                        input()
 
             except KeyboardInterrupt:
                 logger.info('User interrupt with ctrl+c, terminating PySilCam.')
@@ -236,7 +237,7 @@ class Acquire():
             except:
                 logger.info('Camera error. Restarting')
                 with camera:
-                    camera.stop_streaming() # restart setup here - don't stop!
+                    camera.stop_streaming()  # restart setup here - don't stop!
                 continue
                 
     def _acquire_frame(self, camera, frame):
