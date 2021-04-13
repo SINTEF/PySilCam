@@ -65,7 +65,7 @@ def _configure_camera(camera, config_file=None):
     # The rest keep the values from the defaults file
     config = load_camera_config(config_file, config)
 
-    #If a config is specified, override those values
+    # If a config is specified, override those values
     with camera:
         for k, v in config.items():
             print(k, v)
@@ -75,6 +75,8 @@ def _configure_camera(camera, config_file=None):
                 getattr(camera, k).set(v)
             except AttributeError: # if there is an element of the camera config that is not compatible, then continue to the next
                 continue
+        
+        camera.GVSPAdjustPacketSize.run()  # adjust packet size
 
     return camera
 
