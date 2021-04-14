@@ -319,8 +319,8 @@ def silctrack():
 
     Usage:
         silcam-track process <configfile> <datapath> [--offset=<offset>]
-        silcam-track post-process <tracksfile>
-        silcam-track plotting <tracksfile> <plotfilename> [--gif=<outputdir>] [<rawdatapath>] [--boxplot]
+        silcam-track post-process <tracksfile>  [--config=<configfile>]
+        silcam-track plotting <tracksfile> <plotfilename> [--gif=<outputdir>] [<rawdatapath>] [--boxplot] [--config=<configfile>]
     """
 
     args = docopt(silctrack.__doc__)
@@ -341,7 +341,11 @@ def silctrack():
 
     if args['post-process']:
         print('* Load and process')
-        settings = settings_from_h5(args['<tracksfile>'])
+        if args['--config']:
+            settings = PySilcamSettings(args['--config'])
+        else:
+            print('  Using config from h5 file.')
+            settings = settings_from_h5(args['<tracksfile>'])
 
         data, tracks = load_and_process(args['<tracksfile>'],
                                         settings.PostProcess.pix_size,
@@ -355,6 +359,12 @@ def silctrack():
             unfiltered_tracks.to_hdf(fh, 'Tracking/unfiltered_tracks', mode='r+')
 
     if args['plotting']:
+        if args['--config']:
+            settings = PySilcamSettings(args['--config'])
+        else:
+            print('  Using config from h5 file.')
+            settings = settings_from_h5(args['<tracksfile>'])
+
         settings = settings_from_h5(args['<tracksfile>'])
 
         if args['--gif']:
@@ -374,7 +384,7 @@ def silctrack():
 
             make_output_files_for_giffing(unfiltered_tracks, rawdatapath, outputdir,
                                           settings.PostProcess.pix_size,
-                                          track_length_limit=5)
+                                          track_length_limit=settings.Tracking.track_length_limit)
             print('* output files finished.')
             print('use ''convert -delay 12 -loop 0 *.png output.gif'' to make a gif')
 
