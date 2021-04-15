@@ -18,13 +18,13 @@ jobs:
       - name: Install silcam environment
         uses: conda-incubator/setup-miniconda@v2
         with:
-          activate-environment: anaconda-client-env
+          activate-environment: silcam
           environment-file: environment.yml
 
       - name: Check silcam environment
         shell: cmd /C CALL {0}
         run: >-
-          conda info && conda list
+          conda info && conda list && conda env list
 
       - name: Setup develop
         shell: cmd /C CALL {0}
