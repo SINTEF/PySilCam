@@ -24,7 +24,7 @@ jobs:
       - name: Check silcam environment
         shell: cmd /C CALL {0}
         run: >-
-          conda info && conda list
+          conda info && conda list && conda env list
 
       - name: Setup develop
         shell: cmd /C CALL {0}
