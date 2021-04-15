@@ -146,14 +146,14 @@ class Acquire():
         with self.pymba.Vimba() as vimba:
             camera = _init_camera(vimba)
 
-            #Configure camera
+            # Configure camera
             camera = _configure_camera(camera, config_file=camera_config_file)
 
-            #Prepare for image acquisition and create a frame
+            # Prepare for image acquisition and create a frame
             frame0 = camera.getFrame()
             frame0.announceFrame()
 
-            #Aquire raw images and yield to calling context
+            # Aquire raw images and yield to calling context
             while True:
                 try:
                     timestamp, img = self._acquire_frame(camera, frame0)
@@ -189,25 +189,25 @@ class Acquire():
                 # previously we calculated acquisition frequency here
 
                 # gui data handling
-                # if self.gui is not None:
-                #    while (self.gui.qsize() > 0):
-                #        try:
-                #            self.gui.get_nowait()
-                #            time.sleep(0.001)
-                #        except:
-                #            continue
-                #    # try:
-                #    rtdict = dict()
-                #    rtdict = {'dias': 0,
-                #             'vd_oil': 0,
-                #             'vd_gas': 0,
-                #             'gor': np.nan,
-                #             'oil_d50': 0,
-                #             'gas_d50': 0,
-                #             'saturation': 0}
-                #   self.gui.put_nowait((timestamp, imraw, imraw, rtdict))
+                if self.gui is not None:
+                    while (self.gui.qsize() > 0):
+                        try:
+                            self.gui.get_nowait()
+                            time.sleep(0.001)
+                        except:
+                            continue
 
-            camera.queue_frame(frame)  # ask the camera for the next frame, which would evtentually call image_handle again
+                    rtdict = dict()
+                    rtdict = {'dias': 0,
+                              'vd_oil': 0,
+                              'vd_gas': 0,
+                              'gor': np.nan,
+                              'oil_d50': 0,
+                              'gas_d50': 0,
+                              'saturation': 0}
+                    self.gui.put_nowait((timestamp, img, img, rtdict))
+
+            camera.queue_frame(frame)  # ask the camera for the next frame, which would evtentually call image_handler again
 
     def stream_from_camera(self, camera_config_file=None):
         '''
