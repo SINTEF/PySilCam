@@ -246,6 +246,8 @@ def track_process(configfile, datapath, offset=0):
     sctr.THRESHOLD = settings.Process.threshold
     sctr.ecd_tolerance = settings.Tracking.ecd_tolerance
     sctr.PIX_SIZE = settings.PostProcess.pix_size
+    sctr.search_box_size = settings.Tracking.search_box_size
+    sctr.search_box_steps = settings.Tracking.search_box_steps
 
     sctr.path = datapath
     dataset_name = os.path.split(datapath)[-1] + '-TRACKS'

@@ -30,6 +30,8 @@ class Tracker:
         self.DATAFILE = ''
         self.files = None
         self.track_length_limit = 15
+        self.search_box_size = 10  # pixels
+        self.search_box_steps = 5
 
     def initialise(self):
         print('* INITIALISE')
@@ -104,7 +106,9 @@ class Tracker:
                 X, Y, ecd, length, width, im_plot = get_vect(img1, img2,
                                                              PIX_SIZE, MIN_LENGTH, GOOD_FIT,
                                                              thresh=self.THRESHOLD,
-                                                             ecd_tolerance=self.ecd_tolerance)
+                                                             ecd_tolerance=self.ecd_tolerance,
+                                                             search_box_size=self.search_box_size,
+                                                             search_box_steps=self.search_box_steps)
             except ValueError:
                 print('  Error getting vectors')
                 continue
@@ -161,7 +165,8 @@ def imc2iml(imc, thresh=0.98):
     return iml
 
 
-def get_vect(img1, img2, PIX_SIZE, MIN_LENGTH, cross_correlation_threshold, thresh=0.98, ecd_tolerance=0):
+def get_vect(img1, img2, PIX_SIZE, MIN_LENGTH, cross_correlation_threshold,
+             thresh=0.98, ecd_tolerance=0, search_box_size=10, search_box_steps=5):
     # label image 2
     iml2 = imc2iml(img2, thresh)
     imbw_out = np.copy(iml2)
@@ -202,9 +207,9 @@ def get_vect(img1, img2, PIX_SIZE, MIN_LENGTH, cross_correlation_threshold, thre
         roi = iml[bbox[0]:bbox[2], bbox[1]:bbox[3]]  # roi of image 1
         roi = roi > 0
 
-        for search_iteration in range(5):
+        for search_iteration in range(search_box_steps):
 
-            search_box = get_search_box(bbox, img2, search_iteration)
+            search_box = get_search_box(bbox, img2, search_iteration, search_box_size)
 
             # extract the roi in which we expect to find a particle
             search_roi = iml2[search_box[0]:search_box[2], search_box[1]:search_box[3]]
@@ -239,8 +244,8 @@ def get_vect(img1, img2, PIX_SIZE, MIN_LENGTH, cross_correlation_threshold, thre
     return X, Y, ecd, length, width, imbw_out
 
 
-def get_search_box(bbox, img2, search_iteration):
-    bbexp = 10 * (search_iteration + 1)  # expansion by this many pixels in all directions
+def get_search_box(bbox, img2, search_iteration, search_box_size=10):
+    bbexp = search_box_size * (search_iteration + 1)  # expansion by this many pixels in all directions
     # establish a search box within image 2 by expanding the particle
     # bounding box from image 1
     r, c = np.shape(img2)
