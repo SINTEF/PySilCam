@@ -151,7 +151,6 @@ def silcam_acquire(datapath, config_filename, writeToDisk=True, gui=None):
     acq = Acquire(USE_PYMBA=True, datapath=datapath, writeToDisk=writeToDisk, gui=gui)  # ini class
 
     acq.stream_from_camera(camera_config_file=config_filename)
-    input()
 
 
 # the standard processing method under active development

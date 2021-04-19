@@ -11,7 +11,9 @@ import sys
 logger = logging.getLogger(__name__)
 
 try:
-    from vimba import Vimba, FrameStatus
+    from vimba import Vimba, FrameStatus, PersistType
+    # This needed for possible PixelFormat conversion:
+    # from vimba import Vimba, FrameStatus, PersistType, PixelFormat
 except:
     logger.debug('VimbaPython not available. Cannot use camera')
 
@@ -44,7 +46,9 @@ def _init_camera(vimba):
 
 
 def _configure_camera(camera, config_file=None):
-    '''Configure the camera.
+    '''Configure the camera. Default values must be in a "camera_config_defaults.XML"
+    file in the same dir as this file. Any values in 'config_file' will ovrride
+    default values.
 
     Args:
         camera       (Camera) : The camera with settings from the config
@@ -55,27 +59,30 @@ def _configure_camera(camera, config_file=None):
 
     '''
 
-    # Read the configiration values from default config file
-    defaultpath = os.path.dirname(os.path.abspath(__file__))
-    defaultfile = os.path.join(defaultpath, 'camera_config_defaults.ini')
-    config = load_camera_config(defaultfile)
-
-    # Read the configiration values from users config file
-    # The values found in this file, overrides those fro the default file
-    # The rest keep the values from the defaults file
-    config = load_camera_config(config_file, config)
-
-    # If a config is specified, override those values
+    # Why do we use this "with:"?
     with camera:
+
+        # Read the default configuration values from XML:
+        defaultpath = os.path.dirname(os.path.abspath(__file__))
+        camera.load_settings(
+            os.path.join(defaultpath, "camera_config_defaults.XML"),
+            PersistType.All)
+
+        # Read config values from the user config file.
+        # These values override those from the default file loaded above.
+        # TODO The function below probably needs rewritten as its now too complex.
+        config = load_camera_config(config_file)
+
+        # All settings from the pysilcam config ini files can now be applied.
         for k, v in config.items():
             print(k, v)
-            logger.info('{0} = {1}'.format(k,v))
+            logger.info('{0} = {1}'.format(k, v))
             # try to write settings to the camera
             try:
                 getattr(camera, k).set(v)
             except AttributeError:  # if there is an element of the camera config that is not compatible, then continue to the next
                 continue
-        
+
         camera.GVSPAdjustPacketSize.run()  # adjust packet size
 
     return camera
@@ -171,6 +178,9 @@ class Acquire():
             if frame.get_status() == FrameStatus.Complete:
                 print('get image')
                 # get image
+
+                # I FOUND THE LINE BELOW, I DON'T THINK WE NEED IT.
+                # frame.convert_pixel_format(PixelFormat.Rgb8)
                 img = frame.as_numpy_ndarray()
 
                 timestamp = pd.Timestamp.now()
@@ -227,7 +237,8 @@ class Acquire():
                         camera = _configure_camera(camera, camera_config_file)
 
                         camera.start_streaming(handler=self.image_handler, buffer_count=10)
-                        input()
+                        while True:
+                            time.sleep(10000)
 
             except KeyboardInterrupt:
                 logger.info('User interrupt with ctrl+c, terminating PySilCam.')
