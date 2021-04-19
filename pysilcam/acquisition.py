@@ -65,7 +65,7 @@ def _configure_camera(camera, config_file=None):
         # Read the default configuration values from XML:
         defaultpath = os.path.dirname(os.path.abspath(__file__))
         camera.load_settings(
-            os.path.join(defaultpath, "camera_config_defaults.XML"),
+            os.path.join(defaultpath, "camera_config_defaults.xml"),
             PersistType.All)
 
         # Read config values from the user config file.
