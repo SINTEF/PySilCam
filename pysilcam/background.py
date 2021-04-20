@@ -175,6 +175,7 @@ class Backgrounder():
     Class used to run background collection via .run() function.
     '''
     def __init__(self, av_window, bad_lighting_limit=None, real_time_stats=False):
+        print("bll:", bad_lighting_limit)
         self.av_window = av_window
         self.bad_lighting_limit = bad_lighting_limit,
         self.real_time_stats = real_time_stats
@@ -214,6 +215,7 @@ class Backgrounder():
             print(timestamp, imraw)
 
             if self.bad_lighting_limit is not None:
+                print(f"self.bad_lighting_limit is not None. {self.bad_lighting_limit}")
                 bgstack_new, imbg_new, imc = shift_and_correct(
                     bgstack, imbg, imraw, stacklength, self.real_time_stats)
 
@@ -226,6 +228,9 @@ class Backgrounder():
                 if s <= self.bad_lighting_limit:
                     bgstack = bgstack_new
                     imbg = imbg_new
+
+                    plt.imshow(imc)
+                    input()
                     # yield timestamp, imc, imraw
                 else:
                     logger.info('bad lighting, std={0}'.format(s))
