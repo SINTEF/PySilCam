@@ -223,6 +223,10 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     '''
     print(config_filename)
 
+    multiProcess = True
+    realtime = True
+    nbImages = None
+
     print('')
     # ---- SETUP ----
 
@@ -286,11 +290,12 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
             fh.root._v_attrs.pysilcam_version = str(__version__)
 
     # Initialize the image acquisition generator
-    if 'REALTIME_DISC' in os.environ.keys():
-        print('acq = Acquire(USE_PYMBA=False)')
-        aq = Acquire(USE_PYMBA=False)
-    else:
-        aq = Acquire(USE_PYMBA=realtime, FAKE_PYMBA_OFFSET=fakepymba_offset)
+    # implement later:
+    # if 'REALTIME_DISC' in os.environ.keys():
+    #    print('acq = Acquire(USE_PYMBA=False)')
+    #    aq = Acquire(USE_PYMBA=False)
+    # else:
+    aq = Acquire(USE_PYMBA=realtime, FAKE_PYMBA_OFFSET=fakepymba_offset)
     aqgen = aq.get_generator(datapath, writeToDisk=discWrite,
                              camera_config_file=config_filename)
 
@@ -333,6 +338,11 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
         # iterate on the bggen generator to obtain images
         logger.debug('Starting acquisition loop')
         t2 = time.time()
+
+        # initialise process for running collector
+
+        # start streaming
+
         for i, (timestamp, imc, imraw) in enumerate(bggen):
             t1 = np.copy(t2)
             t2 = time.time()
@@ -376,8 +386,11 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
                 gui.put_nowait((timestamp, imc, imraw, rtdict))
                 logger.debug('GUI queue updated')
 
-            if 'REALTIME_DISC' in os.environ.keys():
-                scog.realtime_summary(datafilename + '-STATS.h5', config_filename)
+            # implement later
+            # if 'REALTIME_DISC' in os.environ.keys():
+            #   scog.realtime_summary(datafilename + '-STATS.h5', config_filename)
+
+        # stuff below here only runs after processing from disc finished
 
         logger.debug('Acquisition loop completed')
         if not realtime:
