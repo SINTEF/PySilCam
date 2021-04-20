@@ -8,6 +8,8 @@ acquire() must produce a float64 np array
 '''
 import numpy as np
 import logging
+
+import os
 import matplotlib.pyplot as plt
 
 # Get module-level logger
@@ -237,9 +239,15 @@ class Backgrounder():
                 print("No bad lighting limit. Just standard stuff.")
                 bgstack, imbg, imc = shift_and_correct(
                     bgstack, imbg, imraw, stacklength, self.real_time_stats)
-                plt.imshow(imc)
-                plt.show()
-                input()
+                # plt.imshow(imc)
+                # plt.show()
+                # input()
+                filename = os.path.join("pyvimba_test", timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc'))
+                with open(filename, 'wb') as fh:
+                    np.save(fh, imc, allow_pickle=False)
+                    fh.flush()
+                    os.fsync(fh.fileno())
+
             # correct with background stack
 
             # update background stack
