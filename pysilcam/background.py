@@ -169,7 +169,41 @@ def shift_and_correct(bgstack, imbg, imraw, stacklength, real_time_stats=False):
     return bgstack, imbg, imc
 
 
-def backgrounder(av_window, acquire, bad_lighting_limit=None,
+class Backgrounder():
+    '''
+    Class used to run background collection via .run() function.
+    '''
+    def __init__(self, av_window, bad_lighting_limit=None, real_time_stats=False):
+        self.av_window = av_window
+        self.bad_lighting_limit = bad_lighting_limit,
+        self.real_time_stats = real_time_stats
+
+    def run(self, config_filename, raw_image_queue):
+        # get raw image from queue
+        # imraw = raw_image_queue.get() from queue (with waiting)
+
+        # initialise background stack
+        print("In Backgrounder.run(), woohoo!")
+
+        while True:
+            continue
+            # get raw image from queue
+
+            # correct with background stack
+
+            # update background stack
+
+            # for testing either:
+            # plt.imshow(im_corrected)
+            # input()
+            # or:
+            # write the corrected image to disc
+            # if we get here, we are happy.
+
+            # (add corrected images to a queue for processing)
+
+
+def backgrounder_OLD_VERSION(av_window, acquire, bad_lighting_limit=None,
                  real_time_stats=False):
     '''
     Generator which interacts with acquire to return a corrected image

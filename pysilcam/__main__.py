@@ -19,7 +19,7 @@ import pysilcam.oilgas as scog
 import pysilcam.silcam_classify as sccl
 from pysilcam import __version__
 from pysilcam.acquisition import Acquire
-from pysilcam.background import backgrounder
+from pysilcam.background import Backgrounder
 from pysilcam.config import PySilcamSettings, updatePathLength
 from pysilcam.process import processImage, write_stats
 from pysilcam.fakepymba import silcam_name2time
@@ -187,45 +187,25 @@ def silcam_acquire(datapath, config_filename, writeToDisk=True, gui=None):
     manager = MyManager()
     manager.start()
     raw_image_queue = manager.LifoQueue(2)  # limit queue size to two images
+    print("raw image queue initialised.")
 
-    process_name = multiprocessing.Process(target=background_function, args=(config_filename, raw_image_queue))
-    process_name.start()
+    backgrounder = Backgrounder(settings.Background.num_images,
+                                bad_lighting_limit=settings.Process.bad_lighting_limit,
+                                real_time_stats=settings.Process.real_time_stats)
+    backgrounder_process = multiprocessing.Process(target=backgrounder.run, args=(config_filename, raw_image_queue))
+    backgrounder_process.start()
+    print("backgrounder_process started.")
 
     acq = Acquire(USE_PYMBA=True, datapath=datapath, writeToDisk=False, gui=gui, raw_image_queue=raw_image_queue)  # ini class
 
     acq.stream_from_camera(camera_config_file=config_filename)
 
-    process_name.join()  # shut down subprocesses after stopping (needs checking how to do this)
-
-
-def background_function(config_filename, raw_image_queue):
-    # get raw image from queue
-    # imraw = raw_image_queue.get() from queue (with waiting)
-
-    # initialise background stack
-
-    while True:
-        # get raw image from queue
-
-        # correct with background stack
-
-        # update background stack
-
-        # for testing either:
-        # plt.imshow(im_corrected)
-        # input()
-        # or:
-        # write the corrected image to disc
-        # if we get here, we are happy.
-
-        # (add corrected images to a queue for processing)
-
+    backgrounder_process.join()  # shut down subprocesses after stopping (needs checking how to do this)
 
 
 # the standard processing method under active development
-def silcam_process(config_filename, datapath, multiProcess=True, realtime=False, discWrite=False, nbImages=None,
-                   gui=None,
-                   overwriteSTATS=True):
+def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
+                   discWrite=False, nbImages=None, gui=None, overwriteSTATS=True):
     '''Run processing of SilCam images
 
     Args:
