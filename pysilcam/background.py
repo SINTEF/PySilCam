@@ -213,7 +213,7 @@ class Backgrounder():
         while True:
             # get raw image from queue
             timestamp, imraw = raw_image_queue.get()
-            print(timestamp, imraw)
+            print(timestamp, "Image being processed")
 
             if self.bad_lighting_limit is not None:
                 bgstack_new, imbg_new, imc = shift_and_correct(

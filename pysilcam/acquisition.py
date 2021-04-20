@@ -7,6 +7,7 @@ import logging
 from pysilcam.config import load_camera_config
 import pysilcam.fakepymba as fakepymba
 import sys
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -204,11 +205,14 @@ class Acquire():
                               'oil_d50': 0,
                               'gas_d50': 0,
                               'saturation': 0}
-                    self.gui.put_nowait((timestamp, img, img, rtdict))
+                    # Prev put_nowait() !!!!!
+                    self.gui.put((timestamp, img, img, rtdict))
 
                 if self.raw_image_queue is not None:
-                    self.raw_image_queue.put_nowait((timestamp, img))
-                    print("timestamp+img added to stack")
+                    # Prev put_nowait() !!!!!
+                    print(f"timestamp+img adding to stack: {datetime.now()}")
+                    self.raw_image_queue.put((timestamp, img))
+                    print(f"timestamp+img added to stack:  {datetime.now()}")
 
             camera.queue_frame(frame)  # ask the camera for the next frame, which would evtentually call image_handler again
 
