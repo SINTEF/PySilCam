@@ -178,12 +178,36 @@ class Backgrounder():
         self.bad_lighting_limit = bad_lighting_limit,
         self.real_time_stats = real_time_stats
 
+    def ini_background(self, raw_image_queue):
+        '''
+        Create and initial background stack and average image
+
+        Args:
+        Returns:
+            bgstack (list)              : list of all images in the background stack
+            imbg (uint8)                : background image
+        '''
+        bgstack = []
+        for i in range(self.av_window):  # loop through the rest, appending to bgstack
+            print(raw_image_queue.get())
+            bgstack.append(raw_image_queue.get()[1])
+
+        imbg = np.mean(bgstack, axis=0)  # average the images in the stack
+
+        return bgstack, imbg
+
     def run(self, config_filename, raw_image_queue):
         # get raw image from queue
         # imraw = raw_image_queue.get() from queue (with waiting)
 
         # initialise background stack
-        print("In Backgrounder.run(), woohoo!")
+        print("In Backgrounder.run(), woohoo")
+        
+        # Set up initial background image stack
+        bgstack, imbg = ini_background(av_window, acquire)
+        stacklength = len(bgstack)
+
+
 
         while True:
             continue
