@@ -12,8 +12,6 @@ logger = logging.getLogger(__name__)
 
 try:
     from vimba import Vimba, FrameStatus, PersistType
-    # This needed for possible PixelFormat conversion:
-    # from vimba import Vimba, FrameStatus, PersistType, PixelFormat
 except:
     logger.debug('VimbaPython not available. Cannot use camera')
 
@@ -22,7 +20,7 @@ def _init_camera(vimba):
     '''Initialize the camera system from vimba object
     Args:
         vimba (vimba object)  :  for example Vimba.get_instance()
-        
+
     Returns:
         camera       (Camera) : The camera without settings from the config
     '''
@@ -33,7 +31,7 @@ def _init_camera(vimba):
     for cameraId in cameraIds:
         logger.debug('Camera ID: {0}'.format(cameraId))
 
-    #Check that we found a camera, if not, raise an error
+    # Check that we found a camera, if not, raise an error
     if not cameraIds:
         logger.debug('No cameras detected')
         raise RuntimeError('No cameras detected!')
@@ -56,7 +54,6 @@ def _configure_camera(camera, config_file=None):
 
     Returns:
         camera       (Camera) : The camera with settings from the config
-
     '''
 
     # Why do we use this "with:"?
@@ -106,7 +103,7 @@ def print_camera_config(camera):
     config_info = '\n'.join(['{0}: {1}'.format(a, camera.getattr(a))
                              for a, b in config_info_map])
 
-    logger.info(config_info) # TODO: Should this be printed?
+    logger.info(config_info)  # TODO: Should this be printed?
     logger.debug(config_info)
 
 
@@ -135,7 +132,7 @@ class Acquire():
     def get_generator_disc(self, datapath=None, writeToDisk=False, camera_config_file=None):
         '''
         Aquire images from disc
-        
+
         Args:
             datapath: path from where the images are acquired.
             writeToDisk: this boolean is not used in this function, but the signature has 
@@ -168,7 +165,6 @@ class Acquire():
                 except Exception:
                     frame0.img_idx += 1
                     if frame0.img_idx > len(frame0.files):
-                        #print('  END OF FILE LIST.')
                         logger.info('  END OF FILE LIST.')
                         break
 
@@ -176,25 +172,17 @@ class Acquire():
         print('image handler')
         with camera:
             if frame.get_status() == FrameStatus.Complete:
-                print('get image')
-                # get image
 
-                # I FOUND THE LINE BELOW, I DON'T THINK WE NEED IT.
-                # frame.convert_pixel_format(PixelFormat.Rgb8)
                 img = frame.as_numpy_ndarray()
 
                 timestamp = pd.Timestamp.now()
                 filename = os.path.join(self.datapath, timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc'))
-                print(filename)
 
-                # if write to disc
-                # write to disc
                 if self.writeToDisk:
                     with open(filename, 'wb') as fh:
                         np.save(fh, img, allow_pickle=False)
                         fh.flush()
                         os.fsync(fh.fileno())
-
 
                 # previously we calculated acquisition frequency here
 
@@ -250,19 +238,18 @@ class Acquire():
                 with camera:
                     camera.stop_streaming()  # restart setup here - don't stop!
                 continue
-                
+
     def _acquire_frame(self, camera, frame):
         '''Aquire a single frame while streaming
-        
+
         requires camera.start_streaming(handler=_acquire_frame, buffer_count=10)
-        
+
         '''
         print('_acquire_frame')
         if frame.get_status() == FrameStatus.Complete:
             self.timestamp = pd.Timestamp.now()
             self.image = frame.as_numpy_ndarray()
             cam.queue_frame(frame)
-
 
     def wait_for_camera(self):
         '''
@@ -275,7 +262,6 @@ class Acquire():
                     camera = _init_camera(vimba)
                 except RuntimeError:
                     msg = 'Could not connect to camera, sleeping five seconds and then retrying'
-                    print(msg) # TODO: WHy is there a print here? warning should write to sys.stderr anyway
+                    print(msg)  # TODO: Why is there a print here? warning should write to sys.stderr anyway
                     logger.warning(msg, exc_info=True)
                     time.sleep(5)
-
