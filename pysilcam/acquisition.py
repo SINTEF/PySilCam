@@ -211,7 +211,11 @@ class Acquire():
                 if self.raw_image_queue is not None:
                     # Prev put_nowait() !!!!!
                     print(f"timestamp+img adding to stack: {datetime.now()}")
-                    self.raw_image_queue.put((timestamp, img))
+                    try:
+                        self.raw_image_queue.put_nowait((timestamp, img))
+                    except:
+                        pass
+                    # self.raw_image_queue.put((timestamp, img))
                     print(f"timestamp+img added to stack:  {datetime.now()}")
 
             camera.queue_frame(frame)  # ask the camera for the next frame, which would evtentually call image_handler again
