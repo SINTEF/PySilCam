@@ -202,12 +202,10 @@ class Backgrounder():
 
         # initialise background stack
         print("In Backgrounder.run(), woohoo")
-        
+
         # Set up initial background image stack
-        bgstack, imbg = ini_background(av_window, acquire)
+        bgstack, imbg = self.ini_background(raw_image_queue)
         stacklength = len(bgstack)
-
-
 
         while True:
             continue
