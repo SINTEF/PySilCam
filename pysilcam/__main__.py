@@ -184,10 +184,10 @@ def silcam_acquire(datapath, config_filename, writeToDisk=True, gui=None):
     updatePathLength(settings, logger)
 
     # create a last in first out queue eventually to be part of the background module
-    manager = MyManager()
-    manager.start()
-    # This was previously a LifoQueue() !!!!!
-    raw_image_queue = manager.Queue(2)  # limit queue size to two images
+    # manager = MyManager()
+    # manager.start()
+    # raw_image_queue = manager.LifoQueue(2)  # limit queue size to two images
+    raw_image_queue = multiprocessing.Queue(2)
     print("raw image queue initialised.")
 
     backgrounder = Backgrounder(settings.Background.num_images,
