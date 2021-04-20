@@ -116,8 +116,7 @@ def silcam():
         silcam_process(args['<configfile>'], datapath, multiProcess=multiProcess, realtime=True,
                        discWrite=discWrite, overwriteSTATS=overwriteSTATS)
 
-
-def silcam_acquire(datapath, config_filename, writeToDisk=True, gui=None):
+def silcam_acquire_simple(datapath, config_filename, writeToDisk=True, gui=None):
     '''Aquire images from the SilCam
 
     Args:
@@ -151,6 +150,76 @@ def silcam_acquire(datapath, config_filename, writeToDisk=True, gui=None):
     acq = Acquire(USE_PYMBA=True, datapath=datapath, writeToDisk=writeToDisk, gui=gui)  # ini class
 
     acq.stream_from_camera(camera_config_file=config_filename)
+
+
+def silcam_acquire(datapath, config_filename, writeToDisk=True, gui=None):
+    '''dev for processing with VimbaPython
+
+    Args:
+       datapath              (str)          :  Path to the image storage
+       config_filename=None  (str)          :  Camera config file
+       writeToDisk=True      (Bool)         :  True will enable writing of raw data to disc
+                                               False will disable writing of raw data to disc
+       gui=None          (Class object)     :  Queue used to pass information between process thread and GUI
+                                               initialised in ProcThread within guicals.py
+    '''
+
+    # Load the configuration, create settings object
+    settings = PySilcamSettings(config_filename)
+
+    # Print configuration to screen
+    print('---- CONFIGURATION ----\n')
+    settings.config.write(sys.stdout)
+    print('-----------------------\n')
+
+    if writeToDisk:
+        # Copy config file
+        configFile2Copy = datetime.datetime.now().strftime('D%Y%m%dT%H%M%S.%f') + os.path.basename(config_filename)
+        copyfile(config_filename, os.path.join(datapath, configFile2Copy))
+
+    configure_logger(settings.General)
+    logger = logging.getLogger(__name__ + '.silcam_acquire')
+
+    # update path_length
+    updatePathLength(settings, logger)
+
+    # create a last in first out queue eventually to be part of the background module
+    manager = MyManager()
+    manager.start()
+    raw_image_queue = manager.LifoQueue(2)  # limit queue size to two images
+
+    process_name = multiprocessing.Process(target=background_function, args=(config_filename, raw_image_queue))
+    process_name.start()
+
+    acq = Acquire(USE_PYMBA=True, datapath=datapath, writeToDisk=False, gui=gui, raw_image_queue=raw_image_queue)  # ini class
+
+    acq.stream_from_camera(camera_config_file=config_filename)
+
+    process_name.join()  # shut down subprocesses after stopping (needs checking how to do this)
+
+
+def background_function(config_filename, raw_image_queue):
+    # get raw image from queue
+    # imraw = raw_image_queue.get() from queue (with waiting)
+
+    # initialise background stack
+
+    while True:
+        # get raw image from queue
+
+        # correct with background stack
+
+        # update background stack
+
+        # for testing either:
+        # plt.imshow(im_corrected)
+        # input()
+        # or:
+        # write the corrected image to disc
+        # if we get here, we are happy.
+
+        # (add corrected images to a queue for processing)
+
 
 
 # the standard processing method under active development

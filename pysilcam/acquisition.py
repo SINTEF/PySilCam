@@ -112,11 +112,12 @@ class Acquire():
     Class used to acquire images from camera or disc
     '''
     def __init__(self, USE_PYMBA=False, datapath=None, writeToDisk=False,
-                 FAKE_PYMBA_OFFSET=0, gui=None):
+                 FAKE_PYMBA_OFFSET=0, gui=None, raw_image_queue=None):
         if USE_PYMBA:
             self.vimba = Vimba
             logger.info('Vimba imported')
             self.gui = gui
+            self.raw_image_queue = raw_image_queue
 
             if datapath != None:
                 os.environ['PYSILCAM_TESTDATA'] = datapath
@@ -205,9 +206,12 @@ class Acquire():
                               'saturation': 0}
                     self.gui.put_nowait((timestamp, img, img, rtdict))
 
+                if self.raw_image_queue is not None:
+                    self.raw_image_queue.put_nowait((timestamp, img))
+
             camera.queue_frame(frame)  # ask the camera for the next frame, which would evtentually call image_handler again
 
-    def stream_from_camera(self, camera_config_file=None):
+    def stream_from_camera(self, camera_config_file=None, raw_image_queue=None):
         '''
         Setup streaming images from Silcam
         '''
