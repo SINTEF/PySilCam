@@ -8,6 +8,7 @@ acquire() must produce a float64 np array
 '''
 import numpy as np
 import logging
+import matplotlib.pyplot as plt
 
 # Get module-level logger
 logger = logging.getLogger(__name__)
@@ -177,6 +178,10 @@ class Backgrounder():
         self.av_window = av_window
         self.bad_lighting_limit = bad_lighting_limit,
         self.real_time_stats = real_time_stats
+        # These can wait to check that the fns work first.
+        # self.bgstack = []
+        # self.bgstacklength = None
+        # self.imbg = None
 
     def ini_background(self, raw_image_queue):
         '''
@@ -189,7 +194,7 @@ class Backgrounder():
         '''
         bgstack = []
         for i in range(self.av_window):  # loop through the rest, appending to bgstack
-            print(raw_image_queue.get())
+            print(raw_image_queue.get()[0])
             bgstack.append(raw_image_queue.get()[1])
 
         imbg = np.mean(bgstack, axis=0)  # average the images in the stack
@@ -197,20 +202,39 @@ class Backgrounder():
         return bgstack, imbg
 
     def run(self, config_filename, raw_image_queue):
-        # get raw image from queue
-        # imraw = raw_image_queue.get() from queue (with waiting)
 
-        # initialise background stack
         print("In Backgrounder.run(), woohoo")
-
         # Set up initial background image stack
         bgstack, imbg = self.ini_background(raw_image_queue)
         stacklength = len(bgstack)
 
         while True:
-            continue
             # get raw image from queue
+            timestamp, imraw = raw_image_queue.get()
+            print(timestamp, imraw)
 
+            if self.bad_lighting_limit is not None:
+                bgstack_new, imbg_new, imc = shift_and_correct(
+                    bgstack, imbg, imraw, stacklength, self.real_time_stats)
+
+                # basic check of image quality
+                r = imc[:, :, 0]
+                g = imc[:, :, 1]
+                b = imc[:, :, 2]
+                s = np.std([r, g, b])
+                # ignore bad images
+                if s <= self.bad_lighting_limit:
+                    bgstack = bgstack_new
+                    imbg = imbg_new
+                    # yield timestamp, imc, imraw
+                else:
+                    logger.info('bad lighting, std={0}'.format(s))
+                    print("bad lighting!!!")
+            else:
+                bgstack, imbg, imc = shift_and_correct(
+                    bgstack, imbg, imraw, stacklength, self.real_time_stats)
+                plt.imshow(imc)
+                input()
             # correct with background stack
 
             # update background stack
