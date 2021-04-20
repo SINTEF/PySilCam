@@ -231,6 +231,7 @@ class Backgrounder():
                     logger.info('bad lighting, std={0}'.format(s))
                     print("bad lighting!!!")
             else:
+                print("No bad lighting limit. Just standard stuff.")
                 bgstack, imbg, imc = shift_and_correct(
                     bgstack, imbg, imraw, stacklength, self.real_time_stats)
                 plt.imshow(imc)
