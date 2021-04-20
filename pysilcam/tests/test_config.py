@@ -34,9 +34,11 @@ def test_settings():
     assert hasattr(settings, 'NNClassify')
 
 
-def test_camera_config_parser():
+def test_camera_config_defaults():
     path = os.path.dirname(__file__)
     filename = os.path.join(path, '..', 'camera_config_defaults.xml')
+
+    assert os.path.isfile(filename)
 
     # ET expects a single root, which our file doesn't have. So append:
     with open(filename) as f:
