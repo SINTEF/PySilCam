@@ -8,6 +8,8 @@ from pysilcam.config import load_config
 import pysilcam.fakepymba as fakepymba
 import sys
 from datetime import datetime
+import multiprocessing
+import imageio
 
 logger = logging.getLogger(__name__)
 
@@ -107,28 +109,95 @@ def print_camera_config(camera):
     logger.debug(config_info)
 
 
+def silcam_load(filename):
+    #Load the raw image from disc depending on filetype
+    if filename.endswith('.silc'):
+        img0 = np.load(filename, allow_pickle=False)
+    elif filename.endswith('.silc_mono'):
+        # this is a quick fix to load mono 8 bit images
+        img_mono = np.load(filename, allow_pickle=False)
+        r, c = np.shape(img_mono)
+        img0 = np.zeros([r, c, 3], dtype=np.uint8)
+        img0[:, :, 0] = img_mono
+        img0[:, :, 1] = img_mono
+        img0[:, :, 2] = img_mono
+    else:
+        img0 = imageio.imread(filename)
+    return img0
+
+def silcam_name2time(fname):
+    timestamp = pd.to_datetime(os.path.splitext(fname)[0][1:])
+    return timestamp
+
+
 class Acquire():
     '''
     Class used to acquire images from camera or disc
     '''
     def __init__(self, USE_PYMBA=False, datapath=None, writeToDisk=False,
                  FAKE_PYMBA_OFFSET=0, gui=None, raw_image_queue=None):
+        
+        self.gui = gui
+        self.raw_image_queue = raw_image_queue
+        self.datapath = datapath
+
         if USE_PYMBA:
             self.vimba = Vimba
             logger.info('Vimba imported')
-            self.gui = gui
-            self.raw_image_queue = raw_image_queue
 
             if datapath != None:
                 os.environ['PYSILCAM_TESTDATA'] = datapath
 
-            self.datapath = datapath
             self.writeToDisk = writeToDisk
+            self.stream_images = self.stream_from_camera
         else:
-            fakepymba.Frame.PYSILCAM_OFFSET = FAKE_PYMBA_OFFSET
-            self.pymba = fakepymba
-            logger.info('using fakepymba')
-            self.get_generator = self.get_generator_disc
+            self.stream_images = self.stream_from_disc
+            self.offset = FAKE_PYMBA_OFFSET
+            logger.info('using disc loading')
+
+    def stream_from_disc(self, camera_config_file=None):
+        '''
+        simple disc loading version of stream_from_camera
+        wrapper for image_loader
+        used when USE_PYMBA=False
+        '''
+        disc_load_process = multiprocessing.Process(target=self.image_loader)
+        disc_load_process.start()
+        while True:
+            try:
+                time.sleep(10000)    
+            except KeyboardInterrupt:
+                logger.info('User interrupt with ctrl+c, terminating PySilCam.')
+                break
+
+        disc_load_process.join()
+        sys.exit(0)
+
+    def image_loader(self):
+        '''
+        loads .silc or .bmp images from disc and add them to the raw_image_queue when there is space
+        '''
+        files = [os.path.join(self.datapath, f)
+                 for f in sorted(os.listdir(self.datapath))
+                 if f.endswith('.silc')][self.offset:]
+
+        if len(files) == 0:
+            files = [os.path.join(self.datapath, f)
+                     for f in sorted(os.listdir(self.datapath))
+                     if f.startswith('D') and (f.endswith('.bmp'))][self.offset:]
+
+        for file in files:
+            print('file:', file)
+            im_raw = silcam_load(file)
+            filename = os.path.split(file)[-1]
+            timestamp = silcam_name2time(filename)
+            while True:
+                try:
+                    self.raw_image_queue.put((timestamp, im_raw), True, 0.5)
+                    break
+                except:
+                    pass
+            self.gui_update(timestamp, im_raw)
 
     def get_generator_disc(self, datapath=None, writeToDisk=False, camera_config_file=None):
         '''
@@ -181,31 +250,14 @@ class Acquire():
 
                 if self.writeToDisk:
                     with open(filename, 'wb') as fh:
-                        np.save(fh, img, allow_pickle=False)
+                        np.save(fh, img, allow_pickle = False)
                         fh.flush()
                         os.fsync(fh.fileno())
 
                 # previously we calculated acquisition frequency here
 
                 # gui data handling
-                if self.gui is not None:
-                    while (self.gui.qsize() > 0):
-                        try:
-                            self.gui.get_nowait()
-                            time.sleep(0.001)
-                        except:
-                            continue
-
-                    rtdict = dict()
-                    rtdict = {'dias': 0,
-                              'vd_oil': 0,
-                              'vd_gas': 0,
-                              'gor': np.nan,
-                              'oil_d50': 0,
-                              'gas_d50': 0,
-                              'saturation': 0}
-                    # Prev put_nowait() !!!!!
-                    self.gui.put((timestamp, img, img, rtdict))
+                self.gui_update(timestamp, img)
 
                 if self.raw_image_queue is not None:
                     # Prev put_nowait() !!!!!
@@ -219,7 +271,27 @@ class Acquire():
 
             camera.queue_frame(frame)  # ask the camera for the next frame, which would evtentually call image_handler again
 
-    def stream_from_camera(self, camera_config_file=None, raw_image_queue=None):
+    def gui_update(self, timestamp, img):
+        if self.gui is not None:
+            while (self.gui.qsize() > 0):
+                try:
+                    self.gui.get_nowait()
+                    time.sleep(0.001)
+                except:
+                    continue
+
+            rtdict = dict()
+            rtdict = {'dias': 0,
+                        'vd_oil': 0,
+                        'vd_gas': 0,
+                        'gor': np.nan,
+                        'oil_d50': 0,
+                        'gas_d50': 0,
+                        'saturation': 0}
+            # Prev put_nowait() !!!!!
+            self.gui.put((timestamp, img, img, rtdict))
+
+    def stream_from_camera(self, config_file=None):
         '''
         Setup streaming images from Silcam
         '''
@@ -234,7 +306,7 @@ class Acquire():
 
                     with camera:
                         # Configure camera
-                        camera = _configure_camera(camera, camera_config_file)
+                        camera = _configure_camera(camera, config_file)
 
                         camera.start_streaming(handler=self.image_handler, buffer_count=10)
                         while True:

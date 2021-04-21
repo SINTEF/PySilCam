@@ -149,7 +149,7 @@ def silcam_acquire_simple(datapath, config_filename, writeToDisk=True, gui=None)
 
     acq = Acquire(USE_PYMBA=True, datapath=datapath, writeToDisk=writeToDisk, gui=gui)  # ini class
 
-    acq.stream_from_camera(camera_config_file=config_filename)
+    acq.stream_images(camera_config_file=config_filename)
 
 
 def silcam_acquire(datapath, config_filename, writeToDisk=True, gui=None):
@@ -197,9 +197,9 @@ def silcam_acquire(datapath, config_filename, writeToDisk=True, gui=None):
     backgrounder_process.start()
     print("backgrounder_process started.")
 
-    acq = Acquire(USE_PYMBA=True, datapath=datapath, writeToDisk=False, gui=gui, raw_image_queue=raw_image_queue)  # ini class
+    acq = Acquire(USE_PYMBA=False, datapath=datapath, writeToDisk=False, gui=gui, raw_image_queue=raw_image_queue)  # ini class
 
-    acq.stream_from_camera(camera_config_file=config_filename)
+    acq.stream_images(camera_config_file=config_filename)
 
     backgrounder_process.join()  # shut down subprocesses after stopping (needs checking how to do this)
 
@@ -692,7 +692,7 @@ def configure_logger(settings):
 
 def update_pysilcam_offset(logger, settings, datafilename, datapath):
     '''
-    Set the PYSILCAM_OFFSET based on stats file.
+    Set the offset for image loading based on stats file.
 
     Args:
         logger          (logger object) : logger object created using configure_logger()
@@ -729,9 +729,8 @@ def update_pysilcam_offset(logger, settings, datafilename, datapath):
     if offset < 0:
         offset = 0
     offset = str(offset)
-    os.environ['PYSILCAM_OFFSET'] = offset
-    logger.info('PYSILCAM_OFFSET set to: ' + offset)
-    print('PYSILCAM_OFFSET set to: ' + offset)
+    logger.info('offset set to: ' + offset)
+    print('offset set to: ' + offset)
     offset = int(offset)
 
     return offset
