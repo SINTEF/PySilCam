@@ -68,11 +68,10 @@ def _configure_camera(camera, config_file=None):
 
         # Read config values from the user config file.
         # These values override those from the default file loaded above.
-        # TODO The function below probably needs rewritten as its now too complex.
         config = load_config(config_file)
 
         # All settings from the pysilcam config ini files can now be applied.
-        for k, v in config.Camera.items():
+        for k, v in config['Camera'].items():
             print(k, v)
             logger.info('{0} = {1}'.format(k, v))
             # try to write settings to the camera
