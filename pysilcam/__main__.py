@@ -227,7 +227,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     realtime = True
     nbImages = None
 
-    print('')
+    print()
     # ---- SETUP ----
 
     # Load the configuration, create settings object
