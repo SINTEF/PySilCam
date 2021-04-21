@@ -181,14 +181,16 @@ class Acquire():
                  for f in sorted(os.listdir(self.datapath))
                  if f.endswith('.silc')][self.offset:]
 
-        if len(self.files) == 0:
+        if len(files) == 0:
             files = [os.path.join(self.datapath, f)
                      for f in sorted(os.listdir(self.datapath))
                      if f.startswith('D') and (f.endswith('.bmp'))][self.offset:]
 
         for file in files:
+            print('file:', file)
             im_raw = silcam_load(file)
-            timestamp = silcam_name2time(file)
+            filename = os.path.split(file)[-1]
+            timestamp = silcam_name2time(filename)
             while True:
                 try:
                     self.raw_image_queue.put((timestamp, im_raw), True, 0.5)

@@ -197,7 +197,7 @@ def silcam_acquire(datapath, config_filename, writeToDisk=True, gui=None):
     backgrounder_process.start()
     print("backgrounder_process started.")
 
-    acq = Acquire(USE_PYMBA=True, datapath=datapath, writeToDisk=False, gui=gui, raw_image_queue=raw_image_queue)  # ini class
+    acq = Acquire(USE_PYMBA=False, datapath=datapath, writeToDisk=False, gui=gui, raw_image_queue=raw_image_queue)  # ini class
 
     acq.stream_images(camera_config_file=config_filename)
 
