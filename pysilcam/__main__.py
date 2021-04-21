@@ -608,9 +608,9 @@ def silcam_process_old(config_filename, datapath, multiProcess=True, realtime=Fa
                 if nbImages <= i:
                     break
 
-            image = (i, timestamp, imc)
+            proc_image_tuple = (i, timestamp, imc)
             # one single image is processed at a time
-            stats_all = processImage(nnmodel, class_labels, image, settings, logger, gui)
+            stats_all = processImage(nnmodel, class_labels, proc_image_tuple, settings, logger, gui)
 
             if stats_all is not None:  # if frame processed
                 # write the image statistics to file
@@ -669,11 +669,11 @@ def loop(config_filename, inputQueue, outputQueue, gui=None):
     print('sccl.load_model - OK.')
 
     while True:
-        task = inputQueue.get()
-        if task is None:
+        proc_image_tuple = inputQueue.get()
+        if proc_image_tuple is None:
             outputQueue.put(None)
             break
-        stats_all = processImage(nnmodel, class_labels, task, settings, logger, gui)
+        stats_all = processImage(nnmodel, class_labels, proc_image_tuple, settings, logger, gui)
 
         if stats_all is not None:
             outputQueue.put(stats_all)

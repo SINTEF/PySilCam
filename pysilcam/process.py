@@ -440,7 +440,7 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
     return stats
 
 
-def processImage(nnmodel, class_labels, image, settings, logger, gui):
+def processImage(nnmodel, class_labels, proc_image_queue, settings, logger, gui):
     '''
     Proceses an image
 
@@ -463,9 +463,9 @@ def processImage(nnmodel, class_labels, image, settings, logger, gui):
     '''
     print('processImage')
     try:
-        #i = image[0]
-        timestamp = image[0]
-        imc = image[1]
+        i = proc_image_queue[0]
+        timestamp = proc_image_queue[1]
+        imc = proc_image_queue[2]
         print('processImage: timestamp and imc recieved')
 
         # time the full acquisition and processing loop
