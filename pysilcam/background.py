@@ -130,7 +130,7 @@ class Backgrounder():
         and self.imbg are then updated.
 
         The new background is appoximated quickly by subtracting the old image and
-        adding the new image (both scaled by the stacklength).
+        adding the new image (both scaled by the bgstacklength).
         This is close to a running mean, but not quite.
 
         Args:
@@ -141,17 +141,17 @@ class Backgrounder():
         if inplace:
             imold = self.bgstack.pop(0)  # pop the oldest image from the stack,
             # subtract the old image from the average (scaled by the average window)
-            self.imbg -= (imold / self.stacklength)
+            self.imbg -= (imold / self.bgstacklength)
             # add the new image to the average (scaled by the average window)
-            self.imbg += (imnew / self.stacklength)
+            self.imbg += (imnew / self.bgstacklength)
             self.bgstack.append(imnew)  # append the new image to the stack
             return None
         else:
             bgstack_new = self.bgstack.copy()
             imbg_new = self.imbg.copy()
             imold = bgstack_new.pop(0)
-            imbg_new -= (imold / self.stacklength)
-            imbg_new += (imnew / self.stacklength)
+            imbg_new -= (imold / self.bgstacklength)
+            imbg_new += (imnew / self.bgstacklength)
             bgstack_new.append(imnew)
             return bgstack_new, imbg_new
 
