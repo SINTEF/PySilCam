@@ -113,18 +113,22 @@ class Acquire():
     '''
     def __init__(self, USE_PYMBA=False, datapath=None, writeToDisk=False,
                  FAKE_PYMBA_OFFSET=0, gui=None, raw_image_queue=None):
+        
+        self.gui = gui
+        self.raw_image_queue = raw_image_queue
+        self.datapath = datapath
+
         if USE_PYMBA:
             self.vimba = Vimba
             logger.info('Vimba imported')
-            self.gui = gui
-            self.raw_image_queue = raw_image_queue
 
             if datapath != None:
                 os.environ['PYSILCAM_TESTDATA'] = datapath
 
-            self.datapath = datapath
             self.writeToDisk = writeToDisk
         else:
+            
+            return
             fakepymba.Frame.PYSILCAM_OFFSET = FAKE_PYMBA_OFFSET
             self.pymba = fakepymba
             logger.info('using fakepymba')
