@@ -8,6 +8,7 @@ acquire() must produce a float64 np array
 '''
 import numpy as np
 import logging
+from __main__ import addToQueue
 
 import os
 import matplotlib.pyplot as plt
@@ -181,7 +182,7 @@ class Backgrounder():
         else:
             return imc, stack_data[0], stack_data[1]
 
-    def run(self, config_filename, raw_image_queue):
+    def run(self, config_filename, raw_image_queue, proc_image_queue=None):
 
         print("In Backgrounder.run(), woohoo")
         # Set up initial background image stack
@@ -205,7 +206,11 @@ class Backgrounder():
                     self.bgstack = bgstack_new
                     self.imbg = imbg_new
 
-                    # yield timestamp, imc, imraw !!!!!
+                    if proc_image_queue is not None:
+                        logger.debug('Adding image to processing queue: ' + str(timestamp))
+                        addToQueue(self.real_time_stats, proc_image_queue, 0, timestamp, imc)  # the tuple (i, timestamp, imc) is added to the inputQueue
+                        logger.debug('Processing queue updated')
+
                 else:
                     logger.info('bad lighting, std={0}'.format(s))
                     print("bad lighting!!!")
@@ -215,11 +220,15 @@ class Backgrounder():
                 # plt.imshow(imc)
                 # plt.show()
                 # input()
-                filename = os.path.join("pyvimba_test", timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc'))
-                with open(filename, 'wb') as fh:
-                    np.save(fh, imc, allow_pickle=False)
-                    fh.flush()
-                    os.fsync(fh.fileno())
+                # filename = os.path.join("pyvimba_test", timestamp.strftime('D%Y%m%dT%H%M%S.%f.silc'))
+                # with open(filename, 'wb') as fh:
+                #     np.save(fh, imc, allow_pickle=False)
+                #     fh.flush()
+                #     os.fsync(fh.fileno())
+                if proc_image_queue is not None:
+                    logger.debug('Adding image to processing queue: ' + str(timestamp))
+                    addToQueue(self.real_time_stats, proc_image_queue, 0, timestamp, imc)  # the tuple (i, timestamp, imc) is added to the inputQueue
+                    logger.debug('Processing queue updated')
 
             # correct with background stack
 
