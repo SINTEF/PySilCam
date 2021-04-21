@@ -182,7 +182,7 @@ class Backgrounder():
         else:
             return imc, stack_data[0], stack_data[1]
 
-    def run(self, config_filename, raw_image_queue, proc_image_queue=None):
+    def run(self, config_filename, raw_image_queue, proc_image_queue):
 
         print("In Backgrounder.run(), woohoo")
         # Set up initial background image stack

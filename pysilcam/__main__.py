@@ -193,7 +193,7 @@ def silcam_acquire(datapath, config_filename, writeToDisk=True, gui=None):
     backgrounder = Backgrounder(settings.Background.num_images,
                                 bad_lighting_limit=settings.Process.bad_lighting_limit,
                                 real_time_stats=settings.Process.real_time_stats)
-    backgrounder_process = multiprocessing.Process(target=backgrounder.run, args=(config_filename, raw_image_queue))
+    backgrounder_process = multiprocessing.Process(target=backgrounder.run, args=(config_filename, raw_image_queue, None))
     backgrounder_process.start()
     print("backgrounder_process started.")
 
@@ -329,7 +329,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     backgrounder = Backgrounder(settings.Background.num_images,
                                 bad_lighting_limit=settings.Process.bad_lighting_limit,
                                 real_time_stats=realtime)  # real_time_stats=settings.Process.real_time_stats)
-    backgrounder_process = multiprocessing.Process(target=backgrounder.run, args=(config_filename, raw_image_queue, proc_image_queue=inputQueue))
+    backgrounder_process = multiprocessing.Process(target=backgrounder.run, args=(config_filename, raw_image_queue, inputQueue))
     backgrounder_process.start()
     print("backgrounder_process started.")
 
