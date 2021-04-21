@@ -162,6 +162,7 @@ class Acquire():
         wrapper for image_loader
         used when USE_PYMBA=False
         '''
+        print('stream_from_disc')
         disc_load_process = multiprocessing.Process(target=self.image_loader)
         disc_load_process.start()
         while True:
@@ -178,6 +179,7 @@ class Acquire():
         '''
         loads .silc or .bmp images from disc and add them to the raw_image_queue when there is space
         '''
+        print('image_loader')
         files = [os.path.join(self.datapath, f)
                  for f in sorted(os.listdir(self.datapath))
                  if f.endswith('.silc')][self.offset:]
@@ -187,6 +189,8 @@ class Acquire():
                      for f in sorted(os.listdir(self.datapath))
                      if f.startswith('D') and (f.endswith('.bmp'))][self.offset:]
 
+        print(len(files), 'files found.')
+
         for file in files:
             print('file:', file)
             im_raw = silcam_load(file)
@@ -195,8 +199,11 @@ class Acquire():
             while True:
                 try:
                     self.raw_image_queue.put((timestamp, im_raw), True, 0.5)
+                    print('updated raw_image_queue')
                     break
                 except:
+                    print('waiting for space on raw_image_queue')
+                    time.sleep(0.5)
                     pass
             self.gui_update(timestamp, im_raw)
 

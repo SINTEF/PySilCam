@@ -339,7 +339,9 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     #    print('acq = Acquire(USE_PYMBA=False)')
     #    aq = Acquire(USE_PYMBA=False)
     # else:
-    acq = Acquire(USE_PYMBA=realtime, datapath=datapath, writeToDisk=discWrite, gui=gui)
+    acq = Acquire(USE_PYMBA=realtime, datapath=datapath, writeToDisk=discWrite,
+                  raw_image_queue=raw_image_queue, gui=gui)
+    print('acq.stream_images(config_file=config_filename)')
     acq.stream_images(config_file=config_filename)
 
     backgrounder_process.join()  # shut down subprocesses after stopping (needs checking how to do this)
@@ -655,13 +657,16 @@ def loop(config_filename, inputQueue, outputQueue, gui=None):
         gui=None (Class object) : Queue used to pass information between process thread and GUI
                                   initialised in ProcThread within guicals.py
     '''
+    print('Main processing loop, run for each image')
     settings = PySilcamSettings(config_filename)
     configure_logger(settings.General)
     logger = logging.getLogger(__name__ + '.silcam_process')
 
     # load the model for particle classification and keep it for later
+    print('load the model for particle classification and keep it for later')
     nnmodel = []
     nnmodel, class_labels = sccl.load_model(model_path=settings.NNClassify.model_path)
+    print('sccl.load_model - OK.')
 
     while True:
         task = inputQueue.get()

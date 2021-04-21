@@ -461,10 +461,12 @@ def processImage(nnmodel, class_labels, image, settings, logger, gui):
     Returns:
         stats_all (DataFrame)               :  stats dataframe containing particle statistics
     '''
+    print('processImage')
     try:
-        i = image[0]
-        timestamp = image[1]
-        imc = image[2]
+        #i = image[0]
+        timestamp = image[0]
+        imc = image[1]
+        print('processImage: timestamp and imc recieved')
 
         # time the full acquisition and processing loop
         start_time = time.time()

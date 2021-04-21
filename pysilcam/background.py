@@ -38,6 +38,7 @@ class Backgrounder():
             bgstack (list)              : list of all images in the background stack
             imbg (uint8)                : background image
         '''
+        print('ini_background(self, raw_image_queue)')
         if self.bgstack:
             print("bgstack not empty, resetting")
             self.bgstack = []
@@ -46,6 +47,7 @@ class Backgrounder():
             self.bgstack.append(raw_image_queue.get()[1])
 
         self.bgstacklength = len(self.bgstack)
+        print('self.bgstacklength:', self.bgstacklength)
         self.imbg = np.mean(self.bgstack, axis=0)  # average the images in the stack
 
     def correct_im_accurate(self, imraw):
@@ -184,9 +186,10 @@ class Backgrounder():
 
     def run(self, config_filename, raw_image_queue, proc_image_queue):
 
-        print("In Backgrounder.run(), woohoo")
+        print("self.ini_background(raw_image_queue)")
         # Set up initial background image stack
         self.ini_background(raw_image_queue)
+        print("self.ini_background(raw_image_queue) - OK")
 
         while True:
             # get raw image from queue
@@ -208,8 +211,10 @@ class Backgrounder():
 
                     if proc_image_queue is not None:
                         logger.debug('Adding image to processing queue: ' + str(timestamp))
+                        print('Adding image to processing queue: ' + str(timestamp))
                         addToQueue(self.real_time_stats, proc_image_queue, 0, timestamp, imc)  # the tuple (i, timestamp, imc) is added to the inputQueue
                         logger.debug('Processing queue updated')
+                        print('Processing queue updated')
 
                 else:
                     logger.info('bad lighting, std={0}'.format(s))
