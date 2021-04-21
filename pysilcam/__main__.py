@@ -6,8 +6,6 @@ import os
 import sys
 import time
 import warnings
-from multiprocessing.managers import BaseManager
-from queue import LifoQueue
 from shutil import copyfile
 
 import numpy as np
@@ -18,7 +16,7 @@ from docopt import docopt
 import pysilcam.oilgas as scog
 import pysilcam.silcam_classify as sccl
 from pysilcam import __version__
-from pysilcam.acquisition import Acquire
+from pysilcam.acquisition import Acquire, addToQueue, defineQueues
 from pysilcam.background import Backgrounder
 from pysilcam.config import PySilcamSettings, updatePathLength
 from pysilcam.process import processImage, write_stats
@@ -27,7 +25,8 @@ from pysilcam.fakepymba import silcam_name2time
 if not sys.warnoptions:
     warnings.simplefilter("ignore")
 
-title='PySilCam'
+title = 'PySilCam'
+
 
 def silcam():
     '''Main entry point function to acquire/process images from the SilCam.
@@ -115,6 +114,7 @@ def silcam():
             discWrite = False
         silcam_process(args['<configfile>'], datapath, multiProcess=multiProcess, realtime=True,
                        discWrite=discWrite, overwriteSTATS=overwriteSTATS)
+
 
 def silcam_acquire_simple(datapath, config_filename, writeToDisk=True, gui=None):
     '''Aquire images from the SilCam
@@ -339,7 +339,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     #    print('acq = Acquire(USE_PYMBA=False)')
     #    aq = Acquire(USE_PYMBA=False)
     # else:
-    acq = Acquire(USE_PYMBA=False, datapath=datapath, multiProcess=True, writeToDisk=writeToDisk, gui=gui)
+    acq = Acquire(USE_PYMBA=realtime, datapath=datapath, writeToDisk=discWrite, gui=gui)
     acq.stream_images(config_file=config_filename)
 
     backgrounder_process.join()  # shut down subprocesses after stopping (needs checking how to do this)
@@ -379,7 +379,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     # some images might still be waiting to be written to the csv file
     logger.debug('Running collector on left over data')
     collector(inputQueue, outputQueue, datafilename, proc_list, True,
-                settings, rts=rts)
+              settings, rts=rts)
     logger.debug('All data collected')
 
     for p in proc_list:
@@ -640,92 +640,6 @@ def silcam_process_old(config_filename, datapath, multiProcess=True, realtime=Fa
     print('PROCESSING COMPLETE.')
 
     # ---- END ----
-
-
-def addToQueue(realtime, inputQueue, i, timestamp, imc):
-    '''
-    Put a new image into the Queue.
-
-    Args:
-        realtime     (bool)     : boolean indicating wether the processing is done in realtime
-        inputQueue   ()         : queue where the images are added for processing
-                                  initilised using defineQueues()
-        i            (int)      : index of the image acquired
-        timestamp    (timestamp): timestamp of the acquired image
-        imc          (uint8)    : corrected image
-    '''
-    if realtime:
-        try:
-            inputQueue.put_nowait((i, timestamp, imc))
-        except:
-            pass
-    else:
-        while True:
-            try:
-                inputQueue.put((i, timestamp, imc), True, 0.5)
-                break
-            except:
-                pass
-
-
-def defineQueues(realtime, size):
-    '''
-    Define the input and output queues depending on wether we are in realtime mode
-
-    Args:
-        realtime: boolean indicating whether the processing is done in realtime
-        size: max size of the queue
-
-    Returns:
-        inputQueue
-        outputQueue
-    '''
-    createQueues = createLIFOQueues if realtime else createFIFOQueues
-    return createQueues(size)
-
-
-def createLIFOQueues(size):
-    '''
-    Create a LIFOQueue (Last In First Out)
-
-    Args:
-        size: max size of the queue
-
-    Returns:
-        inputQueue
-        outputQueue
-    '''
-    manager = MyManager()
-    manager.start()
-    inputQueue = manager.LifoQueue(size)
-    outputQueue = manager.LifoQueue(size)
-    return inputQueue, outputQueue
-
-
-def createFIFOQueues(size):
-    '''
-    Create a FIFOQueue (First In First Out)
-
-    Args:
-        size: max size of the queue
-
-    Returns:
-        inputQueue
-        outputQueue
-    '''
-    inputQueue = multiprocessing.Queue(size)
-    outputQueue = multiprocessing.Queue(size)
-    return inputQueue, outputQueue
-
-
-class MyManager(BaseManager):
-    '''
-    Customized manager class used to register LifoQueues
-    '''
-    pass
-
-
-MyManager.register('LifoQueue', LifoQueue)
 
 
 def loop(config_filename, inputQueue, outputQueue, gui=None):

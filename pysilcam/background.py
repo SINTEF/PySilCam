@@ -8,7 +8,7 @@ acquire() must produce a float64 np array
 '''
 import numpy as np
 import logging
-from __main__ import addToQueue
+from pysilcam.acquisition import addToQueue
 
 import os
 import matplotlib.pyplot as plt
