@@ -199,7 +199,7 @@ def silcam_acquire(datapath, config_filename, writeToDisk=True, gui=None):
 
     acq = Acquire(USE_PYMBA=False, datapath=datapath, writeToDisk=False, gui=gui, raw_image_queue=raw_image_queue)  # ini class
 
-    acq.stream_images(camera_config_file=config_filename)
+    acq.stream_images(config_file=config_filename)
 
     backgrounder_process.join()  # shut down subprocesses after stopping (needs checking how to do this)
 
