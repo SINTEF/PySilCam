@@ -155,7 +155,7 @@ class Acquire():
             self.offset = FAKE_PYMBA_OFFSET
             logger.info('using disc loading')
 
-    def stream_from_disc(self, camera_config_file=None):
+    def stream_from_disc(self, config_file=None):
         '''
         simple disc loading version of stream_from_camera
         wrapper for image_loader
@@ -165,7 +165,7 @@ class Acquire():
         disc_load_process.start()
         while True:
             try:
-                time.sleep(10000)    
+                time.sleep(10000)
             except KeyboardInterrupt:
                 logger.info('User interrupt with ctrl+c, terminating PySilCam.')
                 break
