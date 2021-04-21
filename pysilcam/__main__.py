@@ -322,7 +322,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     # t2 = time.time()
 
     # ==== Start raw_image_queue and backgrounder:
-    raw_image_queue = multiprocessing.Queue(2)
+    raw_image_queue = multiprocessing.Queue(1)
     print("raw image queue initialised.")
 
     # There is something odd here with realtime and real_time_stats.

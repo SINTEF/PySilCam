@@ -191,7 +191,8 @@ class Acquire():
 
         print(len(files), 'files found.')
 
-        for file in files:
+        for i, file in enumerate(files):
+            print(i, 'of', len(files), 'files')
             print('file:', file)
             im_raw = silcam_load(file)
             filename = os.path.split(file)[-1]
@@ -206,6 +207,17 @@ class Acquire():
                     time.sleep(0.5)
                     pass
             self.gui_update(timestamp, im_raw)
+        
+        print('end of file list')
+        while True:
+            try:
+                self.raw_image_queue.put(None, True, 0.5)
+                break
+            except:
+                print('waiting for space on raw_image_queue')
+                time.sleep(0.5)
+                pass
+        print('image_loader finished')
 
     def get_generator_disc(self, datapath=None, writeToDisk=False, camera_config_file=None):
         '''
