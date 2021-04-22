@@ -165,15 +165,18 @@ class Acquire():
         print('stream_from_disc')
         disc_load_process = multiprocessing.Process(target=self.image_loader)
         disc_load_process.start()
-        while True:
-            try:
-                time.sleep(10000)
-            except KeyboardInterrupt:
-                logger.info('User interrupt with ctrl+c, terminating PySilCam.')
-                break
+        print(f"disc_load_process started. Name: {disc_load_process.name}")
+        # while True:
+        #     try:
+        #         time.sleep(10000)
+        #     except KeyboardInterrupt:
+        #         logger.info('User interrupt with ctrl+c, terminating PySilCam.')
+        #         break
 
-        disc_load_process.join()
-        sys.exit(0)
+        # disc_load_process.join()
+        print("Exiting reading from disc threads.")
+        return disc_load_process
+        # sys.exit(0)
 
     def image_loader(self):
         '''
@@ -207,14 +210,16 @@ class Acquire():
                     time.sleep(0.5)
                     pass
             self.gui_update(timestamp, im_raw)
-        
+
         print('end of file list')
         while True:
             try:
+                print("Putting None into raw_image_queue")
                 self.raw_image_queue.put(None, True, 0.5)
+                print("None put into raw_image_queue")
                 break
             except:
-                print('waiting for space on raw_image_queue')
+                print('waiting for space to put None on raw_image_queue')
                 time.sleep(0.5)
                 pass
         print('image_loader finished')

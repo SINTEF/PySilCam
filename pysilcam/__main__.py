@@ -4,7 +4,6 @@ import logging
 import multiprocessing
 import os
 import sys
-import time
 import warnings
 from shutil import copyfile
 
@@ -16,7 +15,7 @@ from docopt import docopt
 import pysilcam.oilgas as scog
 import pysilcam.silcam_classify as sccl
 from pysilcam import __version__
-from pysilcam.acquisition import Acquire, addToQueue, defineQueues
+from pysilcam.acquisition import Acquire, defineQueues
 from pysilcam.background import Backgrounder
 from pysilcam.config import PySilcamSettings, updatePathLength
 from pysilcam.process import processImage, write_stats
@@ -292,9 +291,9 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
 
     # ---- RUN PROCESSING ----
 
-    # ==== Start proc_image_queue and processing workers (input/outputQueue):
+    # ==== Start proc_image_queues (input/outputQueue) and processing workers:
 
-    # Ignoring case where not multiprocessing:
+    # FOR NOW, Ignoring case where not multiprocessing:
     # multiProcess = multiProcess and (multiprocessing.cpu_count() > 1)
 
     print('* Commencing image acquisition and processing')
@@ -317,21 +316,22 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     collector(inputQueue, outputQueue, datafilename, proc_list, False, settings, rts=rts)
     logger.debug('Data collected')
 
+    # ==== Setup raw_image_queue and start backgrounder process:
 
-    # I think I'll ignore processing time tracking, as it's not goverened in the same way.
-    # t2 = time.time()
-
-    # ==== Start raw_image_queue and backgrounder:
+    logger.debug('Setting up raw image queue')
     raw_image_queue = multiprocessing.Queue(1)
     print("raw image queue initialised.")
 
     # There is something odd here with realtime and real_time_stats.
     backgrounder = Backgrounder(settings.Background.num_images,
+                                raw_image_queue,
+                                proc_image_queue=inputQueue,
                                 bad_lighting_limit=settings.Process.bad_lighting_limit,
                                 real_time_stats=realtime)  # real_time_stats=settings.Process.real_time_stats)
-    backgrounder_process = multiprocessing.Process(target=backgrounder.run, args=(config_filename, raw_image_queue, inputQueue))
-    backgrounder_process.start()
-    print("backgrounder_process started.")
+    bg_process = backgrounder.start_backgrounder()
+
+    # FOR NOW, I'll ignore processing time tracking, as it's not goverened in the same way.
+    # t2 = time.time()
 
     # ==== Start image acquisition and streaming to raw_image_queue
     # implement later:
@@ -342,9 +342,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     acq = Acquire(USE_PYMBA=realtime, datapath=datapath, writeToDisk=discWrite,
                   raw_image_queue=raw_image_queue, gui=gui)
     print('acq.stream_images(config_file=config_filename)')
-    acq.stream_images(config_file=config_filename)
-
-    backgrounder_process.join()  # shut down subprocesses after stopping (needs checking how to do this)
+    acq_process = acq.stream_images(config_file=config_filename)
 
     # Gui stuff?????
     # if gui is not None:
@@ -388,256 +386,10 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
         p.join()
         logger.info('%s.exitcode = %s' % (p.name, p.exitcode))
 
-    print('PROCESSING COMPLETE.')
-
-    # ---- END ----
-
-
-def silcam_process_old(config_filename, datapath, multiProcess=True, realtime=False,
-                       discWrite=False, nbImages=None, gui=None, overwriteSTATS=True):
-    '''Run processing of SilCam images
-
-    Args:
-      config_filename   (str)               :  The filename (including path) of the config.ini file
-      datapath          (str)               :  Path to the data directory
-      multiProcess=True (bool)              :  If True, multiprocessing is used
-      realtime=False    (bool)              :  If True, a faster but less accurate methods is used for segmentation and
-                                               rts stats become active
-      discWrite=False   (bool)              :  True will enable writing of raw data to disc
-                                               False will disable writing of raw data to disc
-      nbImages=None     (int)               :  Number of images to process
-      gui=None          (Class object)      :  Queue used to pass information between process thread and GUI
-                                               initialised in ProcThread within guicals.py
-    '''
-    print(config_filename)
-
-    multiProcess = True
-    realtime = True
-    nbImages = None
-
-    print()
-    # ---- SETUP ----
-
-    # Load the configuration, create settings object
-    settings = PySilcamSettings(config_filename)
-
-    # Print configuration to screen
-    print('---- CONFIGURATION ----\n')
-    settings.config.write(sys.stdout)
-    print('-----------------------\n')
-
-    # Configure logging
-    configure_logger(settings.General)
-    logger = logging.getLogger(__name__ + '.silcam_process')
-
-    logger.info('Processing path: ' + datapath)
-
-    if realtime:
-        if discWrite:
-            # copy config file into data path
-            configFile2Copy = datetime.datetime.now().strftime('D%Y%m%dT%H%M%S.%f') + os.path.basename(config_filename)
-            copyfile(config_filename, os.path.join(datapath, configFile2Copy))
-
-        # update path_length
-        updatePathLength(settings, logger)
-
-    # make datafilename autogenerated for easier batch processing
-    if not os.path.isdir(settings.General.datafile):
-        logger.info('Folder ' + settings.General.datafile + ' was not found and is created')
-        os.mkdir(settings.General.datafile)
-
-    procfoldername = os.path.split(datapath)[-1]
-    datafilename = os.path.join(settings.General.datafile, procfoldername)
-    logger.info('output stats to: ' + datafilename)
-
-    sccl.check_model(settings.NNClassify.model_path)
-
-    fakepymba_offset = 0
-    datafile_hdf = datafilename + '-STATS.h5'
-    if os.path.isfile(datafile_hdf):
-        with pd.HDFStore(datafile_hdf, 'r') as f:
-            datafile_keys = f.keys()
-        # Remove old STATS file if it exists
-        if overwriteSTATS:
-            logger.info('removing: ' + datafile_hdf)
-            print('Overwriting ' + datafile_hdf)
-            os.remove(datafile_hdf)
-        elif '/ParticleStats/stats' not in datafile_keys:
-            logger.info('Stats file present, but no data written: fakepymba_offset = 0')
-            pass
-        else:
-            # If we are starting from an existings stats file, update the
-            # PYILSCAM_OFFSET environment variable
-            fakepymba_offset = update_pysilcam_offset(logger, settings, datafilename, datapath)
-
-    # Create new HDF store and write PySilcam version and
-    # current datetime as root attribute metadata
-    if not os.path.isfile(datafile_hdf):
-        with pd.HDFStore(datafile_hdf, 'w') as fh:
-            fh.root._v_attrs.timestamp = str(datetime.datetime.now())
-            fh.root._v_attrs.pysilcam_version = str(__version__)
-
-    # Initialize the image acquisition generator
-    # implement later:
-    # if 'REALTIME_DISC' in os.environ.keys():
-    #    print('acq = Acquire(USE_PYMBA=False)')
-    #    aq = Acquire(USE_PYMBA=False)
-    # else:
-    aq = Acquire(USE_PYMBA=realtime, FAKE_PYMBA_OFFSET=fakepymba_offset)
-    aqgen = aq.get_generator(datapath, writeToDisk=discWrite,
-                             camera_config_file=config_filename)
-
-    # Get number of images to use for background correction from config
-    print('* Initializing background image handler')
-    bggen = backgrounder(settings.Background.num_images, aqgen,
-                         bad_lighting_limit=settings.Process.bad_lighting_limit,
-                         real_time_stats=settings.Process.real_time_stats)
-
-    # Create export directory if needed
-    if settings.ExportParticles.export_images:
-        if not os.path.isdir(settings.ExportParticles.outputpath):
-            logger.info('Export folder ' + settings.ExportParticles.outputpath + ' was not found and is created')
-            os.mkdir(settings.ExportParticles.outputpath)
-
-    # ---- END SETUP ----
-
-    # ---- RUN PROCESSING ----
-
-    # If only one core is available, no multiprocessing will be done
-    multiProcess = multiProcess and (multiprocessing.cpu_count() > 1)
-
-    print('* Commencing image acquisition and processing')
-
-    # initialise realtime stats class regardless of whether it is used later
-    rts = scog.rt_stats(settings)
-
-    if multiProcess:
-        proc_list = []
-        mem = psutil.virtual_memory()
-        memAvailableMb = mem.available >> 20
-        distributor_q_size = np.min([int(memAvailableMb / 2 * 1 / 15), np.copy(multiprocessing.cpu_count() * 4)])
-
-        logger.debug('setting up processing queues')
-        inputQueue, outputQueue = defineQueues(realtime, distributor_q_size)
-
-        logger.debug('setting up processing distributor')
-        distributor(inputQueue, outputQueue, config_filename, proc_list, gui)
-
-        # iterate on the bggen generator to obtain images
-        logger.debug('Starting acquisition loop')
-        t2 = time.time()
-
-        # initialise process for running collector
-
-        # start streaming
-
-        for i, (timestamp, imc, imraw) in enumerate(bggen):
-            t1 = np.copy(t2)
-            t2 = time.time()
-            print(t2 - t1, 'Acquisition loop time')
-            logger.debug('Corrected image ' + str(timestamp) +
-                         ' acquired from backgrounder')
-
-            # handle errors if the loop function fails for any reason
-            if nbImages is not None:
-                if nbImages <= i:
-                    break
-
-            logger.debug('Adding image to processing queue: ' + str(timestamp))
-            addToQueue(realtime, inputQueue, i, timestamp,
-                       imc)  # the tuple (i, timestamp, imc) is added to the inputQueue
-            logger.debug('Processing queue updated')
-
-            # write the images that are available for the moment into the csv file
-            logger.debug('Running collector')
-            collector(inputQueue, outputQueue, datafilename, proc_list, False,
-                      settings, rts=rts)
-            logger.debug('Data collected')
-
-            if gui is not None:
-                logger.debug('Putting data on GUI Queue')
-                while (gui.qsize() > 0):
-                    try:
-                        gui.get_nowait()
-                        time.sleep(0.001)
-                    except:
-                        continue
-                # try:
-                rtdict = dict()
-                rtdict = {'dias': rts.dias,
-                          'vd_oil': rts.vd_oil,
-                          'vd_gas': rts.vd_gas,
-                          'gor': rts.gor,
-                          'oil_d50': rts.oil_d50,
-                          'gas_d50': rts.gas_d50,
-                          'saturation': rts.saturation}
-                gui.put_nowait((timestamp, imc, imraw, rtdict))
-                logger.debug('GUI queue updated')
-
-            # implement later
-            # if 'REALTIME_DISC' in os.environ.keys():
-            #   scog.realtime_summary(datafilename + '-STATS.h5', config_filename)
-
-        # stuff below here only runs after processing from disc finished
-
-        logger.debug('Acquisition loop completed')
-        if not realtime:
-            logger.debug('Halting processes')
-            for p in proc_list:
-                inputQueue.put(None)
-
-        # some images might still be waiting to be written to the csv file
-        logger.debug('Running collector on left over data')
-        collector(inputQueue, outputQueue, datafilename, proc_list, True,
-                  settings, rts=rts)
-        logger.debug('All data collected')
-
-        for p in proc_list:
-            p.join()
-            logger.info('%s.exitcode = %s' % (p.name, p.exitcode))
-
-    else:  # no multiprocessing
-        # load the model for particle classification and keep it for later
-        nnmodel = []
-        nnmodel, class_labels = sccl.load_model(model_path=settings.NNClassify.model_path)
-
-        # iterate on the bggen generator to obtain images
-        for i, (timestamp, imc, imraw) in enumerate(bggen):
-            # handle errors if the loop function fails for any reason
-            if nbImages is not None:
-                if nbImages <= i:
-                    break
-
-            proc_image_tuple = (i, timestamp, imc)
-            # one single image is processed at a time
-            stats_all = processImage(nnmodel, class_labels, proc_image_tuple, settings, logger, gui)
-
-            if stats_all is not None:  # if frame processed
-                # write the image statistics to file
-                write_stats(datafilename, stats_all)
-                if 'REALTIME_DISC' in os.environ.keys():
-                    scog.realtime_summary(datafilename + '-STATS.h5', config_filename)
-
-            if gui is not None:
-                collect_rts(settings, rts, stats_all)
-                logger.debug('Putting data on GUI Queue')
-                while gui.qsize() > 0:
-                    try:
-                        gui.get_nowait()
-                        time.sleep(0.001)
-                    except:
-                        continue
-                # try:
-                rtdict = dict()
-                rtdict = {'dias': rts.dias,
-                          'vd_oil': rts.vd_oil,
-                          'vd_gas': rts.vd_gas,
-                          'gor': rts.gor,
-                          'oil_d50': rts.oil_d50,
-                          'gas_d50': rts.gas_d50,
-                          'saturation': rts.saturation}
-                gui.put_nowait((timestamp, imc, imraw, rtdict))
-                logger.debug('GUI queue updated')
+    acq_process.join()
+    logger.info('%s.exitcode = %s' % (acq_process.name, acq_process.exitcode))
+    bg_process.terminate()
+    logger.info('%s.exitcode = %s' % (bg_process.name, bg_process.exitcode))
 
     print('PROCESSING COMPLETE.')
 
@@ -671,6 +423,7 @@ def loop(config_filename, inputQueue, outputQueue, gui=None):
     while True:
         proc_image_tuple = inputQueue.get()
         if proc_image_tuple is None:
+            print("Received none from inputQueue, shutting down.")
             outputQueue.put(None)
             break
         stats_all = processImage(nnmodel, class_labels, proc_image_tuple, settings, logger, gui)
@@ -679,7 +432,6 @@ def loop(config_filename, inputQueue, outputQueue, gui=None):
             outputQueue.put(stats_all)
         else:
             logger.info('No stats found.')
-    return
 
 
 def distributor(inputQueue, outputQueue, config_filename, proc_list, gui=None):
@@ -727,6 +479,8 @@ def collector(inputQueue, outputQueue, datafilename, proc_list, testInputQueue,
         task = outputQueue.get()
 
         if task is None:
+            print("Received None from outputQueue, wrapping up")
+            print("len(proc_list)", len(proc_list))
             countProcessFinished = countProcessFinished + 1
             if len(proc_list) == 0:  # no multiprocessing
                 break

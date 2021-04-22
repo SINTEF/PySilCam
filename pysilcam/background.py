@@ -6,8 +6,10 @@ use the backgrounder function!
 
 acquire() must produce a float64 np array
 '''
-import numpy as np
+import time
 import logging
+import multiprocessing
+import numpy as np
 from pysilcam.acquisition import addToQueue
 
 import os
@@ -21,8 +23,11 @@ class Backgrounder():
     '''
     Class used to run background collection via .run() function.
     '''
-    def __init__(self, av_window, bad_lighting_limit=None, real_time_stats=False):
+    def __init__(self, av_window, raw_image_queue,
+                 proc_image_queue=None, bad_lighting_limit=None, real_time_stats=False):
         self.av_window = av_window
+        self.raw_image_queue = raw_image_queue
+        self.proc_image_queue = proc_image_queue
         self.bad_lighting_limit = bad_lighting_limit
         self.real_time_stats = real_time_stats
         self.bgstack = []
@@ -184,17 +189,38 @@ class Backgrounder():
         else:
             return imc, stack_data[0], stack_data[1]
 
-    def run(self, config_filename, raw_image_queue, proc_image_queue):
+    def start_backgrounder(self):
+        '''
+        Wrapper Function to start .run() method and return process.
+        '''
+        backgrounder_process = multiprocessing.Process(target=self.run)
+        backgrounder_process.start()
+        print(f"backgrounder_process started. Name: {backgrounder_process.name}")
+
+        return backgrounder_process
+
+    def run(self):
 
         print("self.ini_background(raw_image_queue)")
         # Set up initial background image stack
-        self.ini_background(raw_image_queue)
+        self.ini_background(self.raw_image_queue)
         print("self.ini_background(raw_image_queue) - OK")
 
         while True:
             # get raw image from queue
-            timestamp, imraw = raw_image_queue.get()
-            print(timestamp, "Image being processed")
+            task = self.raw_image_queue.get()
+            if task is not None:
+                timestamp, imraw = task[0], task[1]
+                print(timestamp, "Image being processed")
+            else:
+                while True:
+                    try:
+                        self.proc_image_queue.put(None, True, 0.5)
+                        break
+                    except:
+                        time.sleep(0.5)
+                        pass
+                break
 
             if self.bad_lighting_limit is not None:
                 imc, bgstack_new, imbg_new = self.shift_and_correct(imraw, inplace=False)
@@ -209,18 +235,14 @@ class Backgrounder():
                     self.bgstack = bgstack_new
                     self.imbg = imbg_new
 
-                    if proc_image_queue is not None:
+                    if self.proc_image_queue is not None:
                         logger.debug('Adding image to processing queue: ' + str(timestamp))
-                        print('Adding image to processing queue: ' + str(timestamp))
-                        addToQueue(self.real_time_stats, proc_image_queue, 0, timestamp, imc)  # the tuple (i, timestamp, imc) is added to the inputQueue
+                        addToQueue(self.real_time_stats, self.proc_image_queue, 0, timestamp, imc)  # the tuple (i, timestamp, imc) is added to the inputQueue
                         logger.debug('Processing queue updated')
-                        print('Processing queue updated')
 
                 else:
                     logger.info('bad lighting, std={0}'.format(s))
-                    print("bad lighting!!!")
             else:
-                print("No bad lighting limit. Just standard stuff.")
                 imc = self.shift_and_correct(imraw)
                 # plt.imshow(imc)
                 # plt.show()
@@ -230,76 +252,7 @@ class Backgrounder():
                 #     np.save(fh, imc, allow_pickle=False)
                 #     fh.flush()
                 #     os.fsync(fh.fileno())
-                if proc_image_queue is not None:
+                if self.proc_image_queue is not None:
                     logger.debug('Adding image to processing queue: ' + str(timestamp))
-                    addToQueue(self.real_time_stats, proc_image_queue, 0, timestamp, imc)  # the tuple (i, timestamp, imc) is added to the inputQueue
+                    addToQueue(self.real_time_stats, self.proc_image_queue, 0, timestamp, imc)  # the tuple (i, timestamp, imc) is added to the inputQueue
                     logger.debug('Processing queue updated')
-
-            # correct with background stack
-
-            # update background stack
-
-            # for testing either:
-            # plt.imshow(im_corrected)
-            # input()
-            # or:
-            # write the corrected image to disc
-            # if we get here, we are happy.
-
-            # (add corrected images to a queue for processing)
-
-
-def backgrounder_OLD_VERSION(av_window, acquire, bad_lighting_limit=None,
-                 real_time_stats=False):
-    '''
-    Generator which interacts with acquire to return a corrected image
-    given av_window number of frame to use in creating a moving background
-
-    Args:
-        av_window (int)               : number of images to use in creating the background
-        acquire (generator object)    : acquire generator object created by the Acquire class
-        bad_lighting_limit=None (int) : if a number is supplied it is used for throwing away raw images that have a
-                                        standard deviation in colour which exceeds the given value
-
-    Yields:
-        timestamp (timestamp)         : timestamp of when raw image was acquired 
-        imc (uint8)                   : corrected image ready for analysis or plotting
-        imraw (uint8)                 : raw image
-
-    Useage:
-      avwind = 10 # number of images used for background
-      imgen = backgrounder(avwind,acquire,bad_lighting_limit) # setup generator
-
-      n = 10 # acquire 10 images and correct them with a sliding background:
-      for i in range(n):
-          imc = next(imgen)
-          print(i)
-    '''
-
-    # Set up initial background image stack
-    bgstack, imbg = ini_background(av_window, acquire)
-    stacklength = len(bgstack)
-
-    # Aquire images, apply background correction and yield result
-    for timestamp, imraw in acquire:
-
-        if bad_lighting_limit is not None:
-            bgstack_new, imbg_new, imc = shift_and_correct(bgstack, imbg,
-                                                           imraw, stacklength, real_time_stats)
-
-            # basic check of image quality
-            r = imc[:, :, 0]
-            g = imc[:, :, 1]
-            b = imc[:, :, 2]
-            s = np.std([r, g, b])
-            # ignore bad images
-            if s <= bad_lighting_limit:
-                bgstack = bgstack_new
-                imbg = imbg_new
-                yield timestamp, imc, imraw
-            else:
-                logger.info('bad lighting, std={0}'.format(s))
-        else:
-            bgstack, imbg, imc = shift_and_correct(bgstack, imbg, imraw,
-                                                   stacklength, real_time_stats)
-            yield timestamp, imc, imraw
