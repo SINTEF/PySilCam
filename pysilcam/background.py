@@ -221,9 +221,10 @@ class Backgrounder():
                 while True:
                     try:
                         self.proc_image_queue.put(None, True, 0.5)
-                        logger.debug('set None to proc_image_queue')
+                        logger.debug('!B: set None to proc_image_queue')
                         break
-                    except:
+                    except Exception as e:
+                        logger.debug(('!B: Exception ', e))
                         time.sleep(0.5)
                         pass
                 break

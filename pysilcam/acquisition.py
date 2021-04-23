@@ -198,7 +198,7 @@ class Acquire():
 
 
         for i, file in enumerate(files):
-            string = '!acquisition ' + str(i) + ' of ' + str(len(files)) + ' files'
+            string = '!A: acquisition ' + str(i+1) + ' of ' + str(len(files)) + ' files'
             logger.debug(string)
             string = 'load from disc file:' + file
             logger.debug(string)
