@@ -192,12 +192,15 @@ class Acquire():
                      for f in sorted(os.listdir(self.datapath))
                      if f.startswith('D') and (f.endswith('.bmp'))][self.offset:]
 
-        print(len(files), 'files found.')
+        logger.info((len(files), 'files found.'))
+
+        logger.debug(('self.raw_image_queue.qsize():', self.raw_image_queue.qsize()))
+
 
         for i, file in enumerate(files):
-            string = 'acquisition    ' + str(i) + 'of' + str(len(files)) + 'files'
+            string = '!acquisition ' + str(i) + ' of ' + str(len(files)) + ' files'
             logger.debug(string)
-            string = 'acquisition    load from disc file:' + file
+            string = 'load from disc file:' + file
             logger.debug(string)
 
             im_raw = silcam_load(file)
@@ -205,28 +208,30 @@ class Acquire():
             timestamp = silcam_name2time(filename)
             while True:
                 try:
+                    logger.debug(('self.raw_image_queue.qsize():', self.raw_image_queue.qsize()))
+                    logger.debug(('im_raw to be put on raw_image_queue'))
                     self.raw_image_queue.put((timestamp, im_raw), True, 0.5)
-                    string = 'acquisition    updated raw_image_queue' + timestamp
-                    logger.debug(string)
+                    logger.debug(('updated raw_image_queue', timestamp))
                     break
-                except:
-                    logger.debug('acquisition    waiting for space on raw_image_queue')
+                except Exception as e:
+                    logger.debug(('Exception ', e))
+                    logger.debug('waiting for space on raw_image_queue')
                     time.sleep(0.5)
                     pass
             self.gui_update(timestamp, im_raw)
 
-        logger.debug('acquisition    end of file list')
+        logger.debug('end of file list')
         while True:
             try:
-                logger.debug("acquisition    Putting None into raw_image_queue")
+                logger.debug("Putting None into raw_image_queue")
                 self.raw_image_queue.put(None, True, 0.5)
-                logger.debug("acquisition    None put into raw_image_queue")
+                logger.debug("None put into raw_image_queue")
                 break
             except:
-                logger.debug('acquisition    waiting for space to put None on raw_image_queue')
+                logger.debug('waiting for space to put None on raw_image_queue')
                 time.sleep(0.5)
                 pass
-        logger.debug('acquisition    image_loader finished')
+        logger.debug('image_loader finished')
 
     def get_generator_disc(self, datapath=None, writeToDisk=False, camera_config_file=None):
         '''

@@ -379,9 +379,6 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     acq_process.join()
     logger.info('%s.exitcode = %s' % (acq_process.name, acq_process.exitcode))
 
-    print('input()')
-    input()
-
     # some images might still be waiting to be written to the csv file
     logger.debug('Running collector on left over data')
     collector(proc_image_queue, outputQueue, datafilename, proc_list, True,
@@ -496,7 +493,7 @@ def collector(proc_image_queue, outputQueue, datafilename, proc_list, testInputQ
         logger.debug('__main__  got stats_all from outputQueue')
 
         if stats_all is None:
-            logger.debug("Received None from outputQueue, wrapping up")
+            logger.debug("received None from outputQueue, wrapping up")
             logger.debug(("len(proc_list)", len(proc_list)))
             countProcessFinished = countProcessFinished + 1
             if len(proc_list) == 0:  # no multiprocessing
@@ -562,6 +559,7 @@ def configure_logger(settings):
         check_path(settings.logfile)
         logging.basicConfig(filename=settings.logfile,
                             level=getattr(logging, settings.loglevel))
+
     else:
         logging.basicConfig(level=getattr(logging, settings.loglevel))
 
