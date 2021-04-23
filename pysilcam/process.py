@@ -461,58 +461,51 @@ def processImage(nnmodel, class_labels, proc_image_queue, settings, logger, gui)
     Returns:
         stats_all (DataFrame)               :  stats dataframe containing particle statistics
     '''
-    print('processImage')
-    try:
-        i = proc_image_queue[0]
-        timestamp = proc_image_queue[1]
-        imc = proc_image_queue[2]
-        print('processImage: timestamp and imc recieved')
+    print('process  processImage')
 
-        # time the full acquisition and processing loop
-        start_time = time.time()
+    i = proc_image_queue[0]
+    timestamp = proc_image_queue[1]
+    imc = proc_image_queue[2]
+    print('process  processImage: timestamp and imc recieved')
 
-        logger.info('Processing time stamp {0}'.format(timestamp))
+    # time the full acquisition and processing loop
+    start_time = time.time()
 
-        # Calculate particle statistics
-        stats_all, imbw, saturation = statextract(imc, settings, timestamp,
-                                                  nnmodel, class_labels)
+    logger.info('Processing time stamp {0}'.format(timestamp))
 
-        # if there are not particles identified, assume zero concentration.
-        # This means that the data should indicate that a 'good' image was
-        # obtained, without any particles. Therefore fill all values with nans
-        # and add the image timestamp
-        if len(stats_all) == 0:
-            print('ZERO particles identified')
-            z = np.zeros(len(stats_all.columns)) * np.nan
-            stats_all.loc[0] = z
-            # 'export name' should not be nan because then this column of the
-            # DataFrame will contain multiple types, so label with string instead
-            # padding end of string required for HDF5 writing
-            stats_all['export name'] = 'not_exported'
+    # Calculate particle statistics
+    stats_all, imbw, saturation = statextract(imc, settings, timestamp,
+                                                nnmodel, class_labels)
 
-        # add timestamp to each row of particle statistics
-        stats_all['timestamp'] = timestamp
+    # if there are not particles identified, assume zero concentration.
+    # This means that the data should indicate that a 'good' image was
+    # obtained, without any particles. Therefore fill all values with nans
+    # and add the image timestamp
+    if len(stats_all) == 0:
+        print('process  ZERO particles identified')
+        z = np.zeros(len(stats_all.columns)) * np.nan
+        stats_all.loc[0] = z
+        # 'export name' should not be nan because then this column of the
+        # DataFrame will contain multiple types, so label with string instead
+        # padding end of string required for HDF5 writing
+        stats_all['export name'] = 'not_exported'
 
-        # add saturation to each row of particle statistics
-        stats_all['saturation'] = saturation
+    # add timestamp to each row of particle statistics
+    stats_all['timestamp'] = timestamp
 
-        # Time the particle statistics processing step
-        proc_time = time.time() - start_time
+    # add saturation to each row of particle statistics
+    stats_all['saturation'] = saturation
 
-        # Print timing information for this iteration
-        infostr = '  Image {0} processed in {1:.2f} sec ({2:.1f} Hz). '
-        infostr = infostr.format(i, proc_time, 1.0 / proc_time)
-        print(infostr)
+    # Time the particle statistics processing step
+    proc_time = time.time() - start_time
 
-        # ---- END MAIN PROCESSING LOOP ----
-        # ---- DO SOME ADMIN ----
+    # Print timing information for this iteration
+    infostr = '  Image {0} processed in {1:.2f} sec ({2:.1f} Hz). '
+    infostr = infostr.format(i, proc_time, 1.0 / proc_time)
+    print('process  ', infostr, timestamp)
 
-    except Exception as e:
-        print(e)
-        traceback.print_exc()
-        infostr = 'Failed to process frame {0}, skipping.'.format(i)
-        logger.warning(infostr, exc_info=True)
-        return None
+    # ---- END MAIN PROCESSING LOOP ----
+    # ---- DO SOME ADMIN ----
 
     return stats_all
 

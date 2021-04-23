@@ -162,7 +162,7 @@ class Acquire():
         wrapper for image_loader
         used when USE_PYMBA=False
         '''
-        print('stream_from_disc')
+        print('acquisition    stream_from_disc')
         disc_load_process = multiprocessing.Process(target=self.image_loader)
         disc_load_process.start()
         print(f"disc_load_process started. Name: {disc_load_process.name}")
@@ -174,7 +174,7 @@ class Acquire():
         #         break
 
         # disc_load_process.join()
-        print("Exiting reading from disc threads.")
+        print("acquisition    Exiting reading from disc threads.")
         return disc_load_process
         # sys.exit(0)
 
@@ -182,7 +182,7 @@ class Acquire():
         '''
         loads .silc or .bmp images from disc and add them to the raw_image_queue when there is space
         '''
-        print('image_loader')
+        print('acquisition    image_loader')
         files = [os.path.join(self.datapath, f)
                  for f in sorted(os.listdir(self.datapath))
                  if f.endswith('.silc')][self.offset:]
@@ -195,34 +195,34 @@ class Acquire():
         print(len(files), 'files found.')
 
         for i, file in enumerate(files):
-            print(i, 'of', len(files), 'files')
-            print('file:', file)
+            print('acquisition    ', i, 'of', len(files), 'files')
+            print('acquisition    load from disc file:', file)
             im_raw = silcam_load(file)
             filename = os.path.split(file)[-1]
             timestamp = silcam_name2time(filename)
             while True:
                 try:
                     self.raw_image_queue.put((timestamp, im_raw), True, 0.5)
-                    print('updated raw_image_queue')
+                    print('acquisition    updated raw_image_queue', timestamp)
                     break
                 except:
-                    print('waiting for space on raw_image_queue')
+                    print('acquisition    waiting for space on raw_image_queue')
                     time.sleep(0.5)
                     pass
             self.gui_update(timestamp, im_raw)
 
-        print('end of file list')
+        print('acquisition    end of file list')
         while True:
             try:
-                print("Putting None into raw_image_queue")
+                print("acquisition    Putting None into raw_image_queue")
                 self.raw_image_queue.put(None, True, 0.5)
-                print("None put into raw_image_queue")
+                print("acquisition    None put into raw_image_queue")
                 break
             except:
-                print('waiting for space to put None on raw_image_queue')
+                print('acquisition    waiting for space to put None on raw_image_queue')
                 time.sleep(0.5)
                 pass
-        print('image_loader finished')
+        print('acquisition    image_loader finished')
 
     def get_generator_disc(self, datapath=None, writeToDisk=False, camera_config_file=None):
         '''
@@ -264,7 +264,7 @@ class Acquire():
                         break
 
     def image_handler(self, camera, frame):
-        print('image handler')
+        print('acquisition    image handler')
         with camera:
             if frame.get_status() == FrameStatus.Complete:
 
@@ -354,7 +354,7 @@ class Acquire():
         requires camera.start_streaming(handler=_acquire_frame, buffer_count=10)
 
         '''
-        print('_acquire_frame')
+        print('acquisition    _acquire_frame')
         if frame.get_status() == FrameStatus.Complete:
             self.timestamp = pd.Timestamp.now()
             self.image = frame.as_numpy_ndarray()
