@@ -461,12 +461,12 @@ def processImage(nnmodel, class_labels, proc_image_queue, settings, logger, gui)
     Returns:
         stats_all (DataFrame)               :  stats dataframe containing particle statistics
     '''
-    print('process  processImage')
+    logger.debug('processImage')
 
     i = proc_image_queue[0]
     timestamp = proc_image_queue[1]
     imc = proc_image_queue[2]
-    print('process  processImage: timestamp and imc recieved')
+    logger.debug('process  processImage: timestamp and imc recieved')
 
     # time the full acquisition and processing loop
     start_time = time.time()
@@ -482,7 +482,7 @@ def processImage(nnmodel, class_labels, proc_image_queue, settings, logger, gui)
     # obtained, without any particles. Therefore fill all values with nans
     # and add the image timestamp
     if len(stats_all) == 0:
-        print('process  ZERO particles identified')
+        logger.info('process  ZERO particles identified')
         z = np.zeros(len(stats_all.columns)) * np.nan
         stats_all.loc[0] = z
         # 'export name' should not be nan because then this column of the
@@ -502,7 +502,7 @@ def processImage(nnmodel, class_labels, proc_image_queue, settings, logger, gui)
     # Print timing information for this iteration
     infostr = '  Image {0} processed in {1:.2f} sec ({2:.1f} Hz). '
     infostr = infostr.format(i, proc_time, 1.0 / proc_time)
-    print('process  ', infostr, timestamp)
+    logger.info(('process  ', infostr, timestamp))
 
     # ---- END MAIN PROCESSING LOOP ----
     # ---- DO SOME ADMIN ----

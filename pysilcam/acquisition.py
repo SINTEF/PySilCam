@@ -195,34 +195,38 @@ class Acquire():
         print(len(files), 'files found.')
 
         for i, file in enumerate(files):
-            print('acquisition    ', i, 'of', len(files), 'files')
-            print('acquisition    load from disc file:', file)
+            string = 'acquisition    ' + str(i) + 'of' + str(len(files)) + 'files'
+            logger.debug(string)
+            string = 'acquisition    load from disc file:' + file
+            logger.debug(string)
+
             im_raw = silcam_load(file)
             filename = os.path.split(file)[-1]
             timestamp = silcam_name2time(filename)
             while True:
                 try:
                     self.raw_image_queue.put((timestamp, im_raw), True, 0.5)
-                    print('acquisition    updated raw_image_queue', timestamp)
+                    string = 'acquisition    updated raw_image_queue' + timestamp
+                    logger.debug(string)
                     break
                 except:
-                    print('acquisition    waiting for space on raw_image_queue')
+                    logger.debug('acquisition    waiting for space on raw_image_queue')
                     time.sleep(0.5)
                     pass
             self.gui_update(timestamp, im_raw)
 
-        print('acquisition    end of file list')
+        logger.debug('acquisition    end of file list')
         while True:
             try:
-                print("acquisition    Putting None into raw_image_queue")
+                logger.debug("acquisition    Putting None into raw_image_queue")
                 self.raw_image_queue.put(None, True, 0.5)
-                print("acquisition    None put into raw_image_queue")
+                logger.debug("acquisition    None put into raw_image_queue")
                 break
             except:
-                print('acquisition    waiting for space to put None on raw_image_queue')
+                logger.debug('acquisition    waiting for space to put None on raw_image_queue')
                 time.sleep(0.5)
                 pass
-        print('acquisition    image_loader finished')
+        logger.debug('acquisition    image_loader finished')
 
     def get_generator_disc(self, datapath=None, writeToDisk=False, camera_config_file=None):
         '''
@@ -389,16 +393,20 @@ def addToQueue(realtime, inputQueue, i, timestamp, imc):
         imc          (uint8)    : corrected image
     '''
     if realtime:
+        logger.debug('addToQueue realtime')
         try:
             inputQueue.put_nowait((i, timestamp, imc))
         except:
             pass
     else:
+        logger.debug('addToQueue not-realtime')
         while True:
             try:
                 inputQueue.put((i, timestamp, imc), True, 0.5)
+                logger.debug(('addToQueue not-realtime:', timestamp))
                 break
             except:
+                logger.debug(('addToQueue not-realtime. no space for:', timestamp))
                 pass
 
 

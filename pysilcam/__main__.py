@@ -342,7 +342,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     # else:
     acq = Acquire(USE_PYMBA=realtime, datapath=datapath, writeToDisk=discWrite,
                   raw_image_queue=raw_image_queue, gui=gui)
-    print('__main__ acq.stream_images(config_file=config_filename)')
+    logger.debug('__main__ acq.stream_images(config_file=config_filename)')
     acq_process = acq.stream_images(config_file=config_filename)
 
     # Gui stuff?????
@@ -371,7 +371,9 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     #   scog.realtime_summary(datafilename + '-STATS.h5', config_filename)
 
     logger.debug('Running collector')
-    collector(proc_image_queue, outputQueue, datafilename, proc_list, False, settings, rts=rts)
+    while acq_process.is_alive():
+        collector(proc_image_queue, outputQueue, datafilename, proc_list, False, settings, rts=rts)
+        time.sleep(0.5)
     logger.debug('Data collected')
 
     acq_process.join()
@@ -414,7 +416,7 @@ def loop(config_filename, proc_image_queue, outputQueue, gui=None):
     print('__main__ Main processing loop, run for each image')
     settings = PySilcamSettings(config_filename)
     configure_logger(settings.General)
-    logger = logging.getLogger(__name__ + '.silcam_process')
+    logger = logging.getLogger(__name__ + '.loop')
 
     # load the model for particle classification and keep it for later
     print('__main__ load the model for particle classification and keep it for later')
@@ -423,16 +425,21 @@ def loop(config_filename, proc_image_queue, outputQueue, gui=None):
     print('__main__ sccl.load_model - OK.')
 
     while True:
+        logger.debug('proc_image_tuple = proc_image_queue.get()')
         proc_image_tuple = proc_image_queue.get()
+        logger.debug('proc_image_tuple = proc_image_queue.get()  OK.')
         if proc_image_tuple is None:
-            print("Received none from inputQueue, shutting down.")
+            logger.debug("Received none from inputQueue, shutting down.")
+            logger.debug('outputQueue.put(None)')
             outputQueue.put(None)
+            logger.debug('outputQueue.put(None) OK')
             break
-        # stats_all = processImage(nnmodel, class_labels, proc_image_tuple, settings, logger, gui)
-        stats_all = 1
+        stats_all = processImage(nnmodel, class_labels, proc_image_tuple, settings, logger, gui)
 
         if stats_all is not None:
+            logger.debug('outputQueue.put(stats_all)')
             outputQueue.put(stats_all)
+            logger.debug('outputQueue.put(stats_all)  OK.')
         else:
             logger.info('No stats found.')
 
@@ -479,16 +486,18 @@ def collector(proc_image_queue, outputQueue, datafilename, proc_list, testInputQ
 
     countProcessFinished = 0
 
+    logger = logging.getLogger(__name__ + '.collector')
+
     while ((outputQueue.qsize() > 0) or (testInputQueue and proc_image_queue.qsize() > 0)):
-        print('__main__ outputQueue.qsize(): ', outputQueue.qsize())
-        print('__main__  proc_image_queue.qsize():', proc_image_queue.qsize())
+        logger.debug(('__main__ outputQueue.qsize(): ', outputQueue.qsize()))
+        logger.debug(('__main__  proc_image_queue.qsize():', proc_image_queue.qsize()))
 
         stats_all = outputQueue.get()
-        print('__main__  got stats_all from outputQueue')
+        logger.debug('__main__  got stats_all from outputQueue')
 
         if stats_all is None:
-            print("Received None from outputQueue, wrapping up")
-            print("len(proc_list)", len(proc_list))
+            logger.debug("Received None from outputQueue, wrapping up")
+            logger.debug(("len(proc_list)", len(proc_list)))
             countProcessFinished = countProcessFinished + 1
             if len(proc_list) == 0:  # no multiprocessing
                 break
@@ -498,7 +507,7 @@ def collector(proc_image_queue, outputQueue, datafilename, proc_list, testInputQ
             continue
 
         write_stats(datafilename, stats_all)
-        # collect_rts(settings, rts, stats_all)
+        collect_rts(settings, rts, stats_all)
 
 
 def collect_rts(settings, rts, stats_all):

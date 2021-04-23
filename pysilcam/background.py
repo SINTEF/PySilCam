@@ -201,21 +201,23 @@ class Backgrounder():
 
     def run(self):
 
-        print("background  self.ini_background(raw_image_queue)")
+        logger.debug("background  self.ini_background(raw_image_queue)")
         # Set up initial background image stack
         self.ini_background(self.raw_image_queue)
-        print("background  self.ini_background(raw_image_queue) - OK")
+        logger.debug("background  self.ini_background(raw_image_queue) - OK")
 
         while True:
             # get raw image from queue
             task = self.raw_image_queue.get()
             if task is not None:
                 timestamp, imraw = task[0], task[1]
-                print(timestamp, "Image being processed")
+                logger.debug((timestamp, "Image got from raw_image_queue"))
             else:
+                logger.debug('got None from raw_image_queue')
                 while True:
                     try:
                         self.proc_image_queue.put(None, True, 0.5)
+                        logger.debug('set None to proc_image_queue')
                         break
                     except:
                         time.sleep(0.5)
