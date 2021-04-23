@@ -309,8 +309,6 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     memAvailableMb = mem.available >> 20
     distributor_q_size = np.min([int(memAvailableMb / 2 * 1 / 15), np.copy(multiprocessing.cpu_count() * 4)])
 
-    distributor_q_size = 1
-
     logger.debug('setting up processing queues')
     proc_image_queue, outputQueue = defineQueues(realtime, distributor_q_size)
 
@@ -457,7 +455,6 @@ def distributor(proc_image_queue, outputQueue, config_filename, proc_list, gui=N
     '''
 
     numCores = max(1, multiprocessing.cpu_count() - 2)
-    numCores = 2
 
     for nbCore in range(numCores):
         proc = multiprocessing.Process(target=loop, args=(config_filename, proc_image_queue, outputQueue, gui))
@@ -488,11 +485,11 @@ def collector(proc_image_queue, outputQueue, datafilename, proc_list, testInputQ
     logger = logging.getLogger(__name__ + '.collector')
 
     while ((outputQueue.qsize() > 0) or (testInputQueue and proc_image_queue.qsize() > 0)):
-        logger.debug(('__main__ outputQueue.qsize(): ', outputQueue.qsize()))
-        logger.debug(('__main__  proc_image_queue.qsize():', proc_image_queue.qsize()))
+        logger.debug(('outputQueue.qsize(): ', outputQueue.qsize()))
+        logger.debug(('proc_image_queue.qsize():', proc_image_queue.qsize()))
 
         stats_all = outputQueue.get()
-        logger.debug('__main__  got stats_all from outputQueue')
+        logger.debug('got stats_all from outputQueue')
 
         if stats_all is None:
             logger.debug("received None from outputQueue, wrapping up")
