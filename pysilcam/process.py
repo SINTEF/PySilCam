@@ -463,19 +463,21 @@ def processImage(nnmodel, class_labels, proc_image_queue, settings, logger, gui)
     '''
     logger.debug('processImage')
 
-    i = proc_image_queue[0]
+    image_number = proc_image_queue[0]
     timestamp = proc_image_queue[1]
     imc = proc_image_queue[2]
-    logger.debug('process  processImage: timestamp and imc recieved')
+    logger.debug('timestamp and imc recieved')
 
     # time the full acquisition and processing loop
     start_time = time.time()
 
-    logger.info('Processing time stamp {0}'.format(timestamp))
+    string = '    processing image {0} time stamp {1}'.format(image_number, timestamp)
+    logger.info(string)
+    print(string)
 
     # Calculate particle statistics
     stats_all, imbw, saturation = statextract(imc, settings, timestamp,
-                                                nnmodel, class_labels)
+                                              nnmodel, class_labels)
 
     # if there are not particles identified, assume zero concentration.
     # This means that the data should indicate that a 'good' image was
@@ -501,7 +503,7 @@ def processImage(nnmodel, class_labels, proc_image_queue, settings, logger, gui)
 
     # Print timing information for this iteration
     infostr = '  Image {0} processed in {1:.2f} sec ({2:.1f} Hz). '
-    infostr = infostr.format(i, proc_time, 1.0 / proc_time)
+    infostr = infostr.format(image_number, proc_time, 1.0 / proc_time)
     logger.info(('process  ', infostr, timestamp))
 
     # ---- END MAIN PROCESSING LOOP ----

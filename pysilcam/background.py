@@ -43,21 +43,23 @@ class Backgrounder():
             bgstack (list)              : list of all images in the background stack
             imbg (uint8)                : background image
         '''
-        print('background  ini_background(self, raw_image_queue)')
         if self.bgstack:
-            print("background  bgstack not empty, resetting")
+            logger.debug("bgstack not empty, resetting")
             self.bgstack = []
         for i in range(self.av_window):  # loop through the rest, appending to bgstack
             raw_image_data = self.raw_image_queue.get()
             logger.debug(('self.raw_image_queue.qsize()', self.raw_image_queue.qsize()))
-            timestamp = raw_image_data[0]
-            logger.debug(('adding', str(timestamp), 'to bg stack'))
-            im_raw = raw_image_data[1]
+            timestamp = raw_image_data[1]
+            logger.debug(('adding image', str(raw_image_data[0]), str(timestamp), 'to bg stack'))
+            im_raw = raw_image_data[2]
             self.bgstack.append(im_raw)
 
         self.bgstacklength = len(self.bgstack)
-        print('background  self.bgstacklength:', self.bgstacklength)
         self.imbg = np.mean(self.bgstack, axis=0)  # average the images in the stack
+
+        string = '* Background setup with ' + str(self.bgstacklength) + 'images'
+        logger.info(string)
+        print(string)
 
     def correct_im_accurate(self, imraw):
         '''
@@ -199,32 +201,32 @@ class Backgrounder():
         '''
         backgrounder_process = multiprocessing.Process(target=self.run)
         backgrounder_process.start()
-        print(f"backgrounder_process started. Name: {backgrounder_process.name}")
+        logger.debug(f"backgrounder_process started. Name: {backgrounder_process.name}")
 
         return backgrounder_process
 
     def run(self):
 
-        logger.debug("!B: self.ini_background(raw_image_queue)")
-        # Set up initial background image stack
+        logger.debug("self.ini_background(raw_image_queue)")
+        print('* Set up initial background image stack')
         self.ini_background()
-        logger.debug("!B: self.ini_background(raw_image_queue) - OK")
+        logger.debug("self.ini_background(raw_image_queue) - OK")
 
         while True:
             # get raw image from queue
             raw_image_data = self.raw_image_queue.get()
             if raw_image_data is not None:
-                timestamp, imraw = raw_image_data[0], raw_image_data[1]
-                logger.debug(('!B: ', timestamp, "Image got from raw_image_queue"))
+                image_number, timestamp, imraw = raw_image_data[0], raw_image_data[1], raw_image_data[2]
+                logger.debug((timestamp, "Image got from raw_image_queue"))
             else:
-                logger.debug('!B: got None from raw_image_queue')
+                logger.debug('got None from raw_image_queue')
                 while True:
                     try:
                         self.proc_image_queue.put(None, True, 0.5)
-                        logger.debug('!B: set None to proc_image_queue')
+                        logger.debug('set None to proc_image_queue')
                         break
                     except Exception as e:
-                        logger.debug(('!B: Exception ', e))
+                        logger.debug(('Exception ', e))
                         time.sleep(0.5)
                         pass
                 break
@@ -261,5 +263,5 @@ class Backgrounder():
                 #     os.fsync(fh.fileno())
                 if self.proc_image_queue is not None:
                     logger.debug('Adding image to processing queue: ' + str(timestamp))
-                    addToQueue(self.real_time_stats, self.proc_image_queue, 0, timestamp, imc)  # the tuple (i, timestamp, imc) is added to the inputQueue
+                    addToQueue(self.real_time_stats, self.proc_image_queue, image_number, timestamp, imc)  # the tuple (i, timestamp, imc) is added to the inputQueue
                     logger.debug('Processing queue updated')

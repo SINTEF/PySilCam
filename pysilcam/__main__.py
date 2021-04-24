@@ -309,7 +309,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     memAvailableMb = mem.available >> 20
     distributor_q_size = np.min([int(memAvailableMb / 2 * 1 / 15), np.copy(multiprocessing.cpu_count() * 4)])
 
-    logger.debug('setting up processing queues')
+    logger.info('setting up processing queues')
     proc_image_queue, outputQueue = defineQueues(realtime, distributor_q_size)
 
     logger.debug('setting up processing distributor')
@@ -319,7 +319,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
 
     logger.debug('Setting up raw image queue')
     raw_image_queue = multiprocessing.Queue(1)
-    print("raw image queue initialised.")
+    logger.debug("raw image queue initialised.")
 
     # There is something odd here with realtime and real_time_stats.
     backgrounder = Backgrounder(settings.Background.num_images,
@@ -340,7 +340,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     # else:
     acq = Acquire(USE_PYMBA=realtime, datapath=datapath, writeToDisk=discWrite,
                   raw_image_queue=raw_image_queue, gui=gui)
-    logger.debug('__main__ acq.stream_images(config_file=config_filename)')
+    logger.debug('acq.stream_images(config_file=config_filename)')
     acq_process = acq.stream_images(config_file=config_filename)
 
     # Gui stuff?????
@@ -368,31 +368,31 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     # if 'REALTIME_DISC' in os.environ.keys():
     #   scog.realtime_summary(datafilename + '-STATS.h5', config_filename)
 
-    logger.debug('!C: Running collector')
+    logger.debug('Running collector')
     while acq_process.is_alive():
         collector(proc_image_queue, outputQueue, datafilename, proc_list, False, settings, rts=rts)
         time.sleep(0.5)
-    logger.debug('!C: Data collected')
+    logger.debug('Data collected')
 
     acq_process.join()
-    logger.info('!C: acq_process.join(): %s.exitcode = %s' % (acq_process.name, acq_process.exitcode))
+    logger.info('acq_process.join(): %s.exitcode = %s' % (acq_process.name, acq_process.exitcode))
 
     # some images might still be waiting to be written to the csv file
-    logger.debug('!C: Running collector on left over data')
+    logger.debug('Running collector on left over data')
     collector(proc_image_queue, outputQueue, datafilename, proc_list, True,
               settings, rts=rts)
-    logger.debug('!C: All data collected')
+    logger.debug('All data collected')
 
-    logger.debug(('!C: proc_list:', proc_list))
+    logger.debug(('proc_list:', proc_list))
     for p in proc_list:
         p.join()
-        logger.info('!C: proc_list.join(): %s.exitcode = %s' % (p.name, p.exitcode))
-    logger.debug(('!C: proc_list joined'))
+        logger.info('proc_list.join(): %s.exitcode = %s' % (p.name, p.exitcode))
+    logger.debug(('proc_list joined'))
 
     bg_process.terminate()
-    logger.info('!C: bg_process.terminate(): %s.exitcode = %s' % (bg_process.name, bg_process.exitcode))
+    logger.info('bg_process.terminate(): %s.exitcode = %s' % (bg_process.name, bg_process.exitcode))
 
-    print('!C: PROCESSING COMPLETE.')
+    print('PROCESSING COMPLETE.')
 
     # ---- END ----
 

@@ -126,6 +126,7 @@ def silcam_load(filename):
         img0 = imageio.imread(filename)
     return img0
 
+
 def silcam_name2time(fname):
     timestamp = pd.to_datetime(os.path.splitext(fname)[0][1:])
     return timestamp
@@ -162,10 +163,10 @@ class Acquire():
         wrapper for image_loader
         used when USE_PYMBA=False
         '''
-        print('acquisition    stream_from_disc')
+        logger.info('stream_from_disc')
         disc_load_process = multiprocessing.Process(target=self.image_loader)
         disc_load_process.start()
-        print(f"disc_load_process started. Name: {disc_load_process.name}")
+        logger.debug(f"disc_load_process started. Name: {disc_load_process.name}")
         # while True:
         #     try:
         #         time.sleep(10000)
@@ -174,7 +175,7 @@ class Acquire():
         #         break
 
         # disc_load_process.join()
-        print("acquisition    Exiting reading from disc threads.")
+        logger.debug("Exiting reading from disc threads.")
         return disc_load_process
         # sys.exit(0)
 
@@ -182,7 +183,7 @@ class Acquire():
         '''
         loads .silc or .bmp images from disc and add them to the raw_image_queue when there is space
         '''
-        print('acquisition    image_loader')
+        logger.debug('image_loader')
         files = [os.path.join(self.datapath, f)
                  for f in sorted(os.listdir(self.datapath))
                  if f.endswith('.silc')][self.offset:]
@@ -192,14 +193,16 @@ class Acquire():
                      for f in sorted(os.listdir(self.datapath))
                      if f.startswith('D') and (f.endswith('.bmp'))][self.offset:]
 
-        logger.info((len(files), 'files found.'))
+        string = str(len(files)) + ' files found.'
+        logger.info(string)
+        print(string)
 
         logger.debug(('self.raw_image_queue.qsize():', self.raw_image_queue.qsize()))
 
-
-        for i, file in enumerate(files):
-            string = '!A: acquisition ' + str(i+1) + ' of ' + str(len(files)) + ' files'
-            logger.debug(string)
+        for image_number, file in enumerate(files):
+            string = '  acquisition ' + str(image_number + 1) + ' of ' + str(len(files)) + ' files'
+            logger.info(string)
+            print(string)
             string = 'load from disc file:' + file
             logger.debug(string)
 
@@ -210,7 +213,7 @@ class Acquire():
                 try:
                     logger.debug(('self.raw_image_queue.qsize():', self.raw_image_queue.qsize()))
                     logger.debug(('im_raw to be put on raw_image_queue'))
-                    self.raw_image_queue.put((timestamp, im_raw), True, 0.5)
+                    self.raw_image_queue.put((image_number, timestamp, im_raw), True, 0.5)
                     logger.debug(('updated raw_image_queue', timestamp))
                     break
                 except Exception as e:
@@ -220,7 +223,7 @@ class Acquire():
                     pass
             self.gui_update(timestamp, im_raw)
 
-        logger.debug('end of file list')
+        logger.info('end of file list')
         while True:
             try:
                 logger.debug("Putting None into raw_image_queue")
@@ -231,7 +234,7 @@ class Acquire():
                 logger.debug('waiting for space to put None on raw_image_queue')
                 time.sleep(0.5)
                 pass
-        logger.debug('image_loader finished')
+        logger.info('image_loader finished')
 
     def get_generator_disc(self, datapath=None, writeToDisk=False, camera_config_file=None):
         '''
@@ -273,7 +276,7 @@ class Acquire():
                         break
 
     def image_handler(self, camera, frame):
-        print('acquisition    image handler')
+        logger.debug('camera image handler')
         with camera:
             if frame.get_status() == FrameStatus.Complete:
 
@@ -295,13 +298,13 @@ class Acquire():
 
                 if self.raw_image_queue is not None:
                     # Prev put_nowait() !!!!!
-                    print(f"timestamp+img adding to stack: {datetime.now()}")
+                    logger.debug(f"timestamp+img adding to stack: {datetime.now()}")
                     try:
-                        self.raw_image_queue.put_nowait((timestamp, img))
+                        self.raw_image_queue.put_nowait((-1, timestamp, img))
                     except:
                         pass
                     # self.raw_image_queue.put((timestamp, img))
-                    print(f"timestamp+img added to stack:  {datetime.now()}")
+                    logger.debug(f"timestamp+img added to stack:  {datetime.now()}")
 
             camera.queue_frame(frame)  # ask the camera for the next frame, which would evtentually call image_handler again
 
