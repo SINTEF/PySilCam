@@ -484,7 +484,9 @@ def processImage(nnmodel, class_labels, proc_image_queue, settings, logger, gui)
     # obtained, without any particles. Therefore fill all values with nans
     # and add the image timestamp
     if len(stats_all) == 0:
-        logger.info('process  ZERO particles identified')
+        string = '    ZERO particles identified: image {0} time stamp {1}'.format(image_number, timestamp)
+        print(string)
+        logger.info(string)
         z = np.zeros(len(stats_all.columns)) * np.nan
         stats_all.loc[0] = z
         # 'export name' should not be nan because then this column of the
@@ -502,9 +504,10 @@ def processImage(nnmodel, class_labels, proc_image_queue, settings, logger, gui)
     proc_time = time.time() - start_time
 
     # Print timing information for this iteration
-    infostr = '  Image {0} processed in {1:.2f} sec ({2:.1f} Hz). '
+    infostr = '    image {0} processed in {1:.2f} sec ({2:.1f} Hz). '
     infostr = infostr.format(image_number, proc_time, 1.0 / proc_time)
-    logger.info(('process  ', infostr, timestamp))
+    print(infostr)
+    logger.info((infostr, timestamp))
 
     # ---- END MAIN PROCESSING LOOP ----
     # ---- DO SOME ADMIN ----
