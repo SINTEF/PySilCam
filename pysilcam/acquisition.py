@@ -142,12 +142,14 @@ class Acquire():
     Class used to acquire images from camera or disc
     '''
     def __init__(self, USE_PYMBA=False, datapath=None, writeToDisk=False,
-                 FAKE_PYMBA_OFFSET=0, gui=None, raw_image_queue=None, max_n_images=None):
+                 gui=None, raw_image_queue=None,
+                 max_n_images=None, start_image_offset=0):
         
         self.gui = gui
         self.raw_image_queue = raw_image_queue
         self.datapath = datapath
         self.max_n_images = max_n_images
+        self.start_image_offset = int(start_image_offset)
 
         if USE_PYMBA:
             self.vimba = Vimba
@@ -160,7 +162,6 @@ class Acquire():
             self.stream_images = self.stream_from_camera
         else:
             self.stream_images = self.stream_from_disc
-            self.offset = FAKE_PYMBA_OFFSET
             logger.info('using disc loading')
 
     def stream_from_disc(self, config_file=None):
@@ -192,16 +193,29 @@ class Acquire():
         logger.debug('image_loader')
         files = [os.path.join(self.datapath, f)
                  for f in sorted(os.listdir(self.datapath))
-                 if f.endswith('.silc')][self.offset:]
+                 if f.endswith('.silc')]
 
         if len(files) == 0:
             files = [os.path.join(self.datapath, f)
                      for f in sorted(os.listdir(self.datapath))
-                     if f.startswith('D') and (f.endswith('.bmp'))][self.offset:]
+                     if f.endswith('.silc_mono')]
 
-        string = str(len(files)) + ' files found.'
+        if len(files) == 0:
+            files = [os.path.join(self.datapath, f)
+                     for f in sorted(os.listdir(self.datapath))
+                     if f.startswith('D') and (f.endswith('.bmp'))]
+
+        string = '* ' + str(len(files)) + ' files found.'
         logger.info(string)
         print(string)
+
+        self.start_image_offset = max(0, min(self.start_image_offset, len(files)))
+
+        string = '  starting from image ' + str(self.start_image_offset)
+        logger.info(string)
+        print(string)
+
+        files = files[self.start_image_offset:]
 
         logger.debug(('self.raw_image_queue.qsize():', self.raw_image_queue.qsize()))
 

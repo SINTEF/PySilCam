@@ -257,7 +257,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
 
     sccl.check_model(settings.NNClassify.model_path)
 
-    fakepymba_offset = 0
+    start_image_offset = 0
     datafile_hdf = datafilename + '-STATS.h5'
     if os.path.isfile(datafile_hdf):
         with pd.HDFStore(datafile_hdf, 'r') as f:
@@ -273,7 +273,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
         else:
             # If we are starting from an existings stats file, update the
             # PYILSCAM_OFFSET environment variable
-            fakepymba_offset = update_pysilcam_offset(logger, settings, datafilename, datapath)
+            start_image_offset = update_pysilcam_offset(logger, settings, datafilename, datapath)
 
     # Create new HDF store and write PySilcam version and
     # current datetime as root attribute metadata
@@ -344,7 +344,8 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
         max_n_images = None
 
     acq = Acquire(USE_PYMBA=realtime, datapath=datapath, writeToDisk=discWrite,
-                  raw_image_queue=raw_image_queue, gui=gui, max_n_images=max_n_images)
+                  raw_image_queue=raw_image_queue, gui=gui,
+                  max_n_images=max_n_images, start_image_offset=start_image_offset)
     logger.debug('acq.stream_images(config_file=config_filename)')
     acq_process = acq.stream_images(config_file=config_filename)
 
@@ -375,7 +376,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
 
     logger.debug('Running collector')
     while acq_process.is_alive():
-        collector(proc_image_queue, outputQueue, datafilename, proc_list, False, settings, rts=rts)
+        collector(outputQueue, datafilename, proc_list, settings, rts=rts)
         time.sleep(0.5)
     logger.debug('Data collected')
     print('* Data collected. Starting final admin.')
@@ -389,8 +390,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
 
     # some images might still be waiting to be written to the csv file
     logger.debug('Running collector on left over data')
-    collector(proc_image_queue, outputQueue, datafilename, proc_list, True,
-              settings, rts=rts)
+    collector(outputQueue, datafilename, proc_list, settings, rts=rts)
     logger.debug('All data collected')
 
     logger.debug(('proc_list:', proc_list))
@@ -477,7 +477,7 @@ def distributor(proc_image_queue, outputQueue, config_filename, proc_list, gui=N
     return proc_list
 
 
-def collector(proc_image_queue, outputQueue, datafilename, proc_list, testInputQueue,
+def collector(outputQueue, datafilename, proc_list,
               settings, rts=None):
     '''
     collects all the results and write them into the stats.h5 file
@@ -498,9 +498,8 @@ def collector(proc_image_queue, outputQueue, datafilename, proc_list, testInputQ
 
     logger = logging.getLogger(__name__ + '.collector')
 
-    while ((outputQueue.qsize() > 0) or (testInputQueue and proc_image_queue.qsize() > 0)):
+    while (outputQueue.qsize() > 0):
         logger.debug(('outputQueue.qsize(): ', outputQueue.qsize()))
-        logger.debug(('proc_image_queue.qsize():', proc_image_queue.qsize()))
 
         try:
             stats_all = outputQueue.get(timeout=1) # timeout to avoid potential hang at end of processing
@@ -604,7 +603,7 @@ def update_pysilcam_offset(logger, settings, datafilename, datapath):
     print('Calculating spooling offset')
 
     files = [f for f in sorted(os.listdir(datapath))
-             if f.endswith('.silc') or f.endswith('.bmp')]
+             if f.endswith('.silc') or f.endswith('.silc_mono') or f.endswith('.bmp')]
     offsetcalc = pd.DataFrame(columns=['files', 'times'])
     offsetcalc['files'] = files
     for i, f in enumerate(files):
