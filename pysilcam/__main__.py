@@ -337,7 +337,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     #    aq = Acquire(USE_PYMBA=False)
     # else:
     acq = Acquire(USE_PYMBA=realtime, datapath=datapath, writeToDisk=discWrite,
-                  raw_image_queue=raw_image_queue, gui=gui)
+                  raw_image_queue=raw_image_queue, gui=gui, nbImages=nbImages)
     logger.debug('acq.stream_images(config_file=config_filename)')
     acq_process = acq.stream_images(config_file=config_filename)
 

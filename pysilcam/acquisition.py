@@ -137,11 +137,12 @@ class Acquire():
     Class used to acquire images from camera or disc
     '''
     def __init__(self, USE_PYMBA=False, datapath=None, writeToDisk=False,
-                 FAKE_PYMBA_OFFSET=0, gui=None, raw_image_queue=None):
+                 FAKE_PYMBA_OFFSET=0, gui=None, raw_image_queue=None, nbImages=None):
         
         self.gui = gui
         self.raw_image_queue = raw_image_queue
         self.datapath = datapath
+        self.nbImages = nbImages
 
         if USE_PYMBA:
             self.vimba = Vimba
@@ -198,6 +199,12 @@ class Acquire():
         print(string)
 
         logger.debug(('self.raw_image_queue.qsize():', self.raw_image_queue.qsize()))
+
+        if self.nbImages is not None:
+            infostr = '* Setting {0} files to stop after {1} images'.format(len(files), self.nbImages)
+            print(infostr)
+            logger.info(infostr)
+            files = files[0:self.nbImages]
 
         for image_number, file in enumerate(files):
             string = '  acquisition ' + str(image_number + 1) + ' of ' + str(len(files)) + ' files'
