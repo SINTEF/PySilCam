@@ -336,8 +336,15 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     #    print('acq = Acquire(USE_PYMBA=False)')
     #    aq = Acquire(USE_PYMBA=False)
     # else:
+
+    # to process nbImages requires that many images to be acquired after the initial background
+    if nbImages is not None:
+        max_n_images = nbImages + settings.Background.num_images
+    else:
+        max_n_images = None
+
     acq = Acquire(USE_PYMBA=realtime, datapath=datapath, writeToDisk=discWrite,
-                  raw_image_queue=raw_image_queue, gui=gui, nbImages=nbImages)
+                  raw_image_queue=raw_image_queue, gui=gui, max_n_images=max_n_images)
     logger.debug('acq.stream_images(config_file=config_filename)')
     acq_process = acq.stream_images(config_file=config_filename)
 
@@ -371,9 +378,14 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
         collector(proc_image_queue, outputQueue, datafilename, proc_list, False, settings, rts=rts)
         time.sleep(0.5)
     logger.debug('Data collected')
+    print('* Data collected. Starting final admin.')
 
-    acq_process.join()
+    acq_process.join(timeout=2) # a timeout here should be safe as acq_process.is_alive() will be False
     logger.info('acq_process.join(): %s.exitcode = %s' % (acq_process.name, acq_process.exitcode))
+    if acq_process.exitcode is None:
+        acq_process.terminate()
+        logger.info('join timeout. Terminated %s' % (acq_process.name))
+        print('join timeout. Terminated %s' % (acq_process.name))
 
     # some images might still be waiting to be written to the csv file
     logger.debug('Running collector on left over data')
@@ -383,8 +395,12 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
 
     logger.debug(('proc_list:', proc_list))
     for p in proc_list:
-        p.join()
+        p.join(timeout=2)
+        # a timeout here should be safe, as all image data should have been recieved. therefore terminate if there is a timeout
         logger.info('proc_list.join(): %s.exitcode = %s' % (p.name, p.exitcode))
+        if p.exitcode is None:
+            p.terminate()
+            logger.info('join timeout. Terminated %s' % (p.name))
     logger.debug(('proc_list joined'))
 
     bg_process.terminate()
@@ -486,7 +502,11 @@ def collector(proc_image_queue, outputQueue, datafilename, proc_list, testInputQ
         logger.debug(('outputQueue.qsize(): ', outputQueue.qsize()))
         logger.debug(('proc_image_queue.qsize():', proc_image_queue.qsize()))
 
-        stats_all = outputQueue.get()
+        try:
+            stats_all = outputQueue.get(timeout=1) # timeout to avoid potential hang at end of processing
+        except TimeoutError:
+            logger.debug('outputQueue TimeoutError')
+            continue
         logger.debug('got stats_all from outputQueue')
 
         if stats_all is None:

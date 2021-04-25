@@ -137,12 +137,12 @@ class Acquire():
     Class used to acquire images from camera or disc
     '''
     def __init__(self, USE_PYMBA=False, datapath=None, writeToDisk=False,
-                 FAKE_PYMBA_OFFSET=0, gui=None, raw_image_queue=None, nbImages=None):
+                 FAKE_PYMBA_OFFSET=0, gui=None, raw_image_queue=None, max_n_images=None):
         
         self.gui = gui
         self.raw_image_queue = raw_image_queue
         self.datapath = datapath
-        self.nbImages = nbImages
+        self.max_n_images = max_n_images
 
         if USE_PYMBA:
             self.vimba = Vimba
@@ -200,11 +200,12 @@ class Acquire():
 
         logger.debug(('self.raw_image_queue.qsize():', self.raw_image_queue.qsize()))
 
-        if self.nbImages is not None:
-            infostr = '* Setting {0} files to stop after {1} images'.format(len(files), self.nbImages)
+        if self.max_n_images is not None:
+            self.max_n_images =  min(len(files), self.max_n_images)
+            infostr = '* Setting {0} files to stop after {1} images'.format(len(files), self.max_n_images)
             print(infostr)
             logger.info(infostr)
-            files = files[0:self.nbImages]
+            files = files[0:self.max_n_images]
 
         for image_number, file in enumerate(files):
             string = '  acquisition ' + str(image_number + 1) + ' of ' + str(len(files)) + ' files'
@@ -220,7 +221,7 @@ class Acquire():
                 try:
                     logger.debug(('self.raw_image_queue.qsize():', self.raw_image_queue.qsize()))
                     logger.debug(('im_raw to be put on raw_image_queue'))
-                    self.raw_image_queue.put((image_number, timestamp, im_raw), True, 0.5)
+                    self.raw_image_queue.put((image_number + 1, timestamp, im_raw), True, 0.5)
                     logger.debug(('updated raw_image_queue', timestamp))
                     break
                 except Exception as e:
