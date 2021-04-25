@@ -323,7 +323,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
                                 raw_image_queue,
                                 proc_image_queue=proc_image_queue,
                                 bad_lighting_limit=settings.Process.bad_lighting_limit,
-                                real_time_stats=realtime)  # real_time_stats=settings.Process.real_time_stats)
+                                real_time_stats=settings.Process.real_time_stats)  # real_time_stats=settings.Process.real_time_stats)
     bg_process = backgrounder.start_backgrounder()
 
     # FOR NOW, I'll ignore processing time tracking, as it's not goverened in the same way.
