@@ -115,15 +115,20 @@ def silcam_load(filename):
     if filename.endswith('.silc'):
         img0 = np.load(filename, allow_pickle=False)
     elif filename.endswith('.silc_mono'):
-        # this is a quick fix to load mono 8 bit images
-        img_mono = np.load(filename, allow_pickle=False)
+        
+        img0 = np.load(filename, allow_pickle=False)
+    else:
+        img0 = imageio.imread(filename)
+    
+    # this is a quick fix to load mono 8 bit images
+    if len(np.shape(img0)) == 2:
+        img_mono =  img0
         r, c = np.shape(img_mono)
         img0 = np.zeros([r, c, 3], dtype=np.uint8)
         img0[:, :, 0] = img_mono
         img0[:, :, 1] = img_mono
         img0[:, :, 2] = img_mono
-    else:
-        img0 = imageio.imread(filename)
+    
     return img0
 
 
