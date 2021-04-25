@@ -57,7 +57,7 @@ class Backgrounder():
         self.bgstacklength = len(self.bgstack)
         self.imbg = np.mean(self.bgstack, axis=0)  # average the images in the stack
 
-        string = '* Background setup with ' + str(self.bgstacklength) + 'images'
+        string = '* Background setup with ' + str(self.bgstacklength) + ' images'
         logger.info(string)
         print(string)
 
