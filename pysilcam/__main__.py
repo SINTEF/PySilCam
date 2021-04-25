@@ -302,7 +302,6 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     # initialise realtime stats class regardless of whether it is used later
     rts = scog.rt_stats(settings)
 
-    proc_list = []
     mem = psutil.virtual_memory()
     memAvailableMb = mem.available >> 20
     distributor_q_size = np.min([int(memAvailableMb / 2 * 1 / 15), np.copy(multiprocessing.cpu_count() * 4)])
@@ -311,7 +310,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     proc_image_queue, outputQueue = defineQueues(realtime, distributor_q_size)
 
     logger.debug('setting up processing distributor')
-    proc_list = distributor(proc_image_queue, outputQueue, config_filename, proc_list, gui)
+    proc_list = distributor(config_filename, proc_image_queue, datafilename, rts, gui)
 
     # ==== Setup raw_image_queue and start backgrounder process:
 
@@ -374,24 +373,27 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     # if 'REALTIME_DISC' in os.environ.keys():
     #   scog.realtime_summary(datafilename + '-STATS.h5', config_filename)
 
-    logger.debug('Running collector')
-    while acq_process.is_alive():
-        collector(outputQueue, datafilename, proc_list, settings, rts=rts)
-        time.sleep(0.5)
-    logger.debug('Data collected')
-    print('* Data collected. Starting final admin.')
+    # logger.debug('Running collector')
+    # while acq_process.is_alive():
+    #     collector(outputQueue, datafilename, proc_list, settings, rts=rts)
+    #     time.sleep(0.5)
+    # logger.debug('Data collected')
+    # print('* Data collected. Starting final admin.')
 
-    acq_process.join(timeout=2) # a timeout here should be safe as acq_process.is_alive() will be False
+    # acq_process.join(timeout=2) # a timeout here should be safe as acq_process.is_alive() will be False
+    # logger.info('acq_process.join(): %s.exitcode = %s' % (acq_process.name, acq_process.exitcode))
+    # if acq_process.exitcode is None:
+    #     acq_process.terminate()
+    #     logger.info('join timeout. Terminated %s' % (acq_process.name))
+    #     print('join timeout. Terminated %s' % (acq_process.name))
+
+    acq_process.join()
     logger.info('acq_process.join(): %s.exitcode = %s' % (acq_process.name, acq_process.exitcode))
-    if acq_process.exitcode is None:
-        acq_process.terminate()
-        logger.info('join timeout. Terminated %s' % (acq_process.name))
-        print('join timeout. Terminated %s' % (acq_process.name))
 
     # some images might still be waiting to be written to the csv file
-    logger.debug('Running collector on left over data')
-    collector(outputQueue, datafilename, proc_list, settings, rts=rts)
-    logger.debug('All data collected')
+    # logger.debug('Running collector on left over data')
+    # collector(outputQueue, datafilename, proc_list, settings, rts=rts)
+    # logger.debug('All data collected')
 
     logger.debug(('proc_list:', proc_list))
     for p in proc_list:
@@ -411,7 +413,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     # ---- END ----
 
 
-def loop(config_filename, proc_image_queue, outputQueue, gui=None):
+def loop(config_filename, proc_image_queue, datafilename, rts=None, gui=None):
     '''
     Main processing loop, run for each image
 
@@ -441,21 +443,23 @@ def loop(config_filename, proc_image_queue, outputQueue, gui=None):
         if proc_image_tuple is None:
             proc_image_queue.put(None)  # put the None back on proc_image_queue so other processes can see
             logger.debug("received none from inputQueue, shutting down.")
-            logger.debug('outputQueue.put(None)')
-            outputQueue.put(None)
-            logger.debug('outputQueue.put(None) OK')
+            # logger.debug('outputQueue.put(None)')
+            # outputQueue.put(None)
+            # logger.debug('outputQueue.put(None) OK')
             break
         stats_all = processImage(nnmodel, class_labels, proc_image_tuple, settings, logger, gui)
 
         if stats_all is not None:
-            logger.debug('outputQueue.put(stats_all)')
-            outputQueue.put(stats_all)
-            logger.debug('outputQueue.put(stats_all)  OK.')
+            write_stats(datafilename, stats_all)
+            collect_rts(settings, rts, stats_all)
+            # logger.debug('outputQueue.put(stats_all)')
+            # outputQueue.put(stats_all)
+            # logger.debug('outputQueue.put(stats_all)  OK.')
         else:
             logger.info('no stats found.')
 
 
-def distributor(proc_image_queue, outputQueue, config_filename, proc_list, gui=None):
+def distributor(config_filename, proc_image_queue, datafilename, rts=None, gui=None):
     '''
     distributes the images in the input queue to the different loop processes
     Args:
@@ -470,8 +474,9 @@ def distributor(proc_image_queue, outputQueue, config_filename, proc_list, gui=N
 
     numCores = max(1, multiprocessing.cpu_count() - 2)
 
+    proc_list = []
     for nbCore in range(numCores):
-        proc = multiprocessing.Process(target=loop, args=(config_filename, proc_image_queue, outputQueue, gui))
+        proc = multiprocessing.Process(target=loop, args=(config_filename, proc_image_queue, datafilename, rts, gui))
         proc_list.append(proc)
         proc.start()
     return proc_list
@@ -502,7 +507,7 @@ def collector(outputQueue, datafilename, proc_list,
         logger.debug(('outputQueue.qsize(): ', outputQueue.qsize()))
 
         try:
-            stats_all = outputQueue.get(timeout=1) # timeout to avoid potential hang at end of processing
+            stats_all = outputQueue.get(timeout=30) # timeout to avoid potential hang at end of processing
         except TimeoutError:
             logger.debug('outputQueue TimeoutError')
             continue

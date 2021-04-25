@@ -541,7 +541,12 @@ def write_stats(
     else:
         min_itemsize = None
 
-    with pd.HDFStore(datafilename + '-STATS.h5', 'a') as fh:
-        stats_all.to_hdf(
-            fh, 'ParticleStats/stats', append=append, format='t',
-            data_columns=True, min_itemsize=min_itemsize)
+    while True:
+        try:
+            with pd.HDFStore(datafilename + '-STATS.h5', 'a') as fh:
+                stats_all.to_hdf(
+                    fh, 'ParticleStats/stats', append=append, format='t',
+                    data_columns=True, min_itemsize=min_itemsize)
+                break
+        except:
+            time.sleep(0.1)
