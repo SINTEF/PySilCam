@@ -397,12 +397,14 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
 
     logger.debug(('proc_list:', proc_list))
     for p in proc_list:
-        p.join(timeout=2)
+        p.join(timeout=40)
         # a timeout here should be safe, as all image data should have been recieved. therefore terminate if there is a timeout
         logger.info('proc_list.join(): %s.exitcode = %s' % (p.name, p.exitcode))
         if p.exitcode is None:
             p.terminate()
-            logger.info('join timeout. Terminated %s' % (p.name))
+            string = '! join timeout. Terminated %s' % (p.name)
+            logger.info(string)
+            print(string)
     logger.debug(('proc_list joined'))
 
     bg_process.terminate()
@@ -498,7 +500,7 @@ def collector(outputQueue, datafilename, proc_list,
         settings (PySilcamSettings) : Settings read from a .ini file
         rts (Class):                : Class for realtime stats
     '''
-
+    raise 'collector called'
     countProcessFinished = 0
 
     logger = logging.getLogger(__name__ + '.collector')

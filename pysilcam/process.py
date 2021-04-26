@@ -547,6 +547,7 @@ def write_stats(
                 stats_all.to_hdf(
                     fh, 'ParticleStats/stats', append=append, format='t',
                     data_columns=True, min_itemsize=min_itemsize)
-                break
+            print('    HDF file updated')
+            break
         except:
             time.sleep(0.1)
