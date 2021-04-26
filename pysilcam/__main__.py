@@ -116,7 +116,7 @@ def silcam():
                        discWrite=discWrite, overwriteSTATS=overwriteSTATS)
 
 
-def silcam_acquire_simple(datapath, config_filename, writeToDisk=True, gui=None):
+def silcam_acquire(datapath, config_filename, writeToDisk=True, gui=None):
     '''Aquire images from the SilCam
 
     Args:
@@ -150,58 +150,6 @@ def silcam_acquire_simple(datapath, config_filename, writeToDisk=True, gui=None)
     acq = Acquire(USE_PYMBA=True, datapath=datapath, writeToDisk=writeToDisk, gui=gui)  # ini class
 
     acq.stream_images(camera_config_file=config_filename)
-
-
-def silcam_acquire(datapath, config_filename, writeToDisk=True, gui=None):
-    '''dev for processing with VimbaPython
-
-    Args:
-       datapath              (str)          :  Path to the image storage
-       config_filename=None  (str)          :  Camera config file
-       writeToDisk=True      (Bool)         :  True will enable writing of raw data to disc
-                                               False will disable writing of raw data to disc
-       gui=None          (Class object)     :  Queue used to pass information between process thread and GUI
-                                               initialised in ProcThread within guicals.py
-    '''
-
-    # Load the configuration, create settings object
-    settings = PySilcamSettings(config_filename)
-
-    # Print configuration to screen
-    print('---- CONFIGURATION ----\n')
-    settings.config.write(sys.stdout)
-    print('-----------------------\n')
-
-    if writeToDisk:
-        # Copy config file
-        configFile2Copy = datetime.datetime.now().strftime('D%Y%m%dT%H%M%S.%f') + os.path.basename(config_filename)
-        copyfile(config_filename, os.path.join(datapath, configFile2Copy))
-
-    configure_logger(settings.General)
-    logger = logging.getLogger(__name__ + '.silcam_acquire')
-
-    # update path_length
-    updatePathLength(settings, logger)
-
-    # create a last in first out queue eventually to be part of the background module
-    # manager = MyManager()
-    # manager.start()
-    # raw_image_queue = manager.LifoQueue(2)  # limit queue size to two images
-    raw_image_queue = multiprocessing.Queue(2)
-    logger.info("raw image queue initialised.")
-
-    backgrounder = Backgrounder(settings.Background.num_images,
-                                bad_lighting_limit=settings.Process.bad_lighting_limit,
-                                real_time_stats=settings.Process.real_time_stats)
-    backgrounder_process = multiprocessing.Process(target=backgrounder.run, args=(config_filename, raw_image_queue, None))
-    backgrounder_process.start()
-    logger.info("backgrounder_process started.")
-
-    acq = Acquire(USE_PYMBA=False, datapath=datapath, writeToDisk=False, gui=gui, raw_image_queue=raw_image_queue)  # ini class
-
-    acq.stream_images(config_file=config_filename)
-
-    backgrounder_process.join()  # shut down subprocesses after stopping (needs checking how to do this)
 
 
 # the standard processing method under active development
@@ -294,9 +242,6 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
 
     # ==== Start proc_image_queues (input/outputQueue) and processing workers:
 
-    # FOR NOW, Ignoring case where not multiprocessing:
-    # multiProcess = multiProcess and (multiprocessing.cpu_count() > 1)
-
     print('* Commencing image acquisition and processing')
 
     # initialise realtime stats class regardless of whether it is used later
@@ -325,9 +270,6 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
                                 bad_lighting_limit=settings.Process.bad_lighting_limit,
                                 real_time_stats=settings.Process.real_time_stats)  # real_time_stats=settings.Process.real_time_stats)
     bg_process = backgrounder.start_backgrounder()
-
-    # FOR NOW, I'll ignore processing time tracking, as it's not goverened in the same way.
-    # t2 = time.time()
 
     # ==== Start image acquisition and streaming to raw_image_queue
     # implement later:
@@ -373,27 +315,8 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
     # if 'REALTIME_DISC' in os.environ.keys():
     #   scog.realtime_summary(datafilename + '-STATS.h5', config_filename)
 
-    # logger.debug('Running collector')
-    # while acq_process.is_alive():
-    #     collector(outputQueue, datafilename, proc_list, settings, rts=rts)
-    #     time.sleep(0.5)
-    # logger.debug('Data collected')
-    # print('* Data collected. Starting final admin.')
-
-    # acq_process.join(timeout=2) # a timeout here should be safe as acq_process.is_alive() will be False
-    # logger.info('acq_process.join(): %s.exitcode = %s' % (acq_process.name, acq_process.exitcode))
-    # if acq_process.exitcode is None:
-    #     acq_process.terminate()
-    #     logger.info('join timeout. Terminated %s' % (acq_process.name))
-    #     print('join timeout. Terminated %s' % (acq_process.name))
-
     acq_process.join()
     logger.info('acq_process.join(): %s.exitcode = %s' % (acq_process.name, acq_process.exitcode))
-
-    # some images might still be waiting to be written to the csv file
-    # logger.debug('Running collector on left over data')
-    # collector(outputQueue, datafilename, proc_list, settings, rts=rts)
-    # logger.debug('All data collected')
 
     logger.debug(('proc_list:', proc_list))
     for p in proc_list:
