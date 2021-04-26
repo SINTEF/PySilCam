@@ -320,7 +320,7 @@ def silcam_process(config_filename, datapath, multiProcess=True, realtime=False,
 
     logger.debug(('proc_list:', proc_list))
     for p in proc_list:
-        p.join(timeout=40)
+        p.join()
         # a timeout here should be safe, as all image data should have been recieved. therefore terminate if there is a timeout
         logger.info('proc_list.join(): %s.exitcode = %s' % (p.name, p.exitcode))
         if p.exitcode is None:
