@@ -44,7 +44,7 @@ class Tracker:
 
         # Get number of images to use for background correction from config
         print('* Initializing background image handler')
-        self.bg = Backgrounder(self.av_window, None)
+        self.bg = Backgrounder(self.av_window, None, real_time_stats=False, bad_lighting_limit=None)
 
     def generator_tracker(self, datapath=None):
         print('initialise background')
@@ -58,8 +58,7 @@ class Tracker:
         print('initialise background complete.')
         self.bg.imbg = np.mean(self.bg.bgstack, axis=0)  # average the images in the stack
 
-        self.bg.real_time_stats = False
-        for f in tqdm(self.files[self.av_window+1:]):
+        for f in tqdm(self.files[self.av_window:]):
             imraw = silcam_load(f)
             img = self.bg.shift_and_correct(imraw)
 
