@@ -247,6 +247,9 @@ def silcview(datadir):
                 elif event.key == pygame.K_q:
                     pygame.quit()
                     return
+                elif event.key == pygame.K_ESCAPE:
+                    pygame.quit()
+                    return
                 else:
                     continue
                 pygame.time.wait(10)
@@ -326,6 +329,9 @@ def silcview(datadir):
                         last_direction = direction
                         direction = 0
                     elif event.key == pygame.K_q:
+                        pygame.quit()
+                        return
+                    elif event.key == pygame.K_ESCAPE:
                         pygame.quit()
                         return
 
