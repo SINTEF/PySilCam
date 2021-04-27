@@ -238,6 +238,12 @@ def track_process(configfile, datapath, offset=0):
     '''
     settings = PySilcamSettings(configfile)
 
+    def get_attribute_with_default(obj, attrib, default):
+        if hasattr(obj, 'attrib'):
+            return getattr(obj, 'attrib')
+        else:
+            return default
+
     sctr = sctracker.Tracker()
     sctr.av_window = settings.Background.num_images
     sctr.MIN_LENGTH = settings.Tracking.min_length
@@ -246,8 +252,8 @@ def track_process(configfile, datapath, offset=0):
     sctr.THRESHOLD = settings.Process.threshold
     sctr.ecd_tolerance = settings.Tracking.ecd_tolerance
     sctr.PIX_SIZE = settings.PostProcess.pix_size
-    sctr.search_box_size = settings.Tracking.search_box_size
-    sctr.search_box_steps = settings.Tracking.search_box_steps
+    sctr.search_box_size = get_attribute_with_default(settings.Tracking, 'search_box_size', 10)
+    sctr.search_box_steps = get_attribute_with_default(settings.Tracking, 'search_box_steps', 5)
 
     sctr.path = datapath
     dataset_name = os.path.split(datapath)[-1] + '-TRACKS'
