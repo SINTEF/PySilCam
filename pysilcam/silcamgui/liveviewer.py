@@ -21,8 +21,10 @@ import warnings
 import pandas as pd
 import time
 from pysilcam.__main__ import *
-import pygame
 from skimage.io import imsave as imwrite
+
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+import pygame
 
 logger = logging.getLogger(__name__)
 

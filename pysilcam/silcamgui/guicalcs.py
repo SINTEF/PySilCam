@@ -7,11 +7,12 @@ import numpy as np
 import pysilcam.postprocess as sc_pp
 import pandas as pd
 from enum import Enum
-import pygame
 import psutil
 from tqdm import tqdm
 from pysilcam.fakepymba import silcam_load
 
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+import pygame
 import pygame.font
 
 
