@@ -1,8 +1,4 @@
-cd E:/
-#E:\Anaconda3\python.exe E:\emlynd\pysilcam-develop\pysilcam\pysilcam\silcamgui\silcamgui.py
-
-E:\Anaconda3\envs\emlynd\python.exe E:\emlynd\pysilcam-develop\pysilcam\pysilcam\silcamgui\silcamgui.py
-
+set expected_miniconda_path=%UserProfile%\Miniconda3\Scripts\activate.bat
+set silcam_env_path=%conda_path%..\..\..\envs\silcam
+call %conda_path% %silcam_env_path%
 pause
-
-#E:\Anaconda3\envs\develop_silcam\python.exe #E:\emlynd\pysilcam-develop\pysilcam\pysilcam\silcamgui\silcamgui.py 2>&1 | tee E:\emlynd\launcher_test\log.txt
