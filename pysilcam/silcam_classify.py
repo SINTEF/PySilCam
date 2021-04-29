@@ -67,6 +67,7 @@ def load_model(model_path):
         model (tf model object) : loaded tf.keras model from load_model()
     '''
     from tensorflow import keras
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
     keras.backend.clear_session()
 
     path, filename = os.path.split(model_path)
