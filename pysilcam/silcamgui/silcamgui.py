@@ -327,6 +327,8 @@ class ConfigEditor(QDialog):
 
 def main():
     app = QApplication(sys.argv)
+    # Parts of the gui use pygame, import this silently:
+    os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 
     class StartQT5(QMainWindow):
         def __init__(self, parent=None):
