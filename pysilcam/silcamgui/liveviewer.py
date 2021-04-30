@@ -21,8 +21,8 @@ import warnings
 import pandas as pd
 import time
 from pysilcam.__main__ import *
-import pygame
 from skimage.io import imsave as imwrite
+import pygame
 
 logger = logging.getLogger(__name__)
 
