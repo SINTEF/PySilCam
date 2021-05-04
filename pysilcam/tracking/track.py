@@ -239,8 +239,8 @@ def track_process(configfile, datapath, offset=0):
     settings = PySilcamSettings(configfile)
 
     def get_attribute_with_default(obj, attrib, default):
-        if hasattr(obj, 'attrib'):
-            return getattr(obj, 'attrib')
+        if hasattr(obj, attrib):
+            return getattr(obj, attrib)
         else:
             return default
 
