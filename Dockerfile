@@ -1,6 +1,6 @@
-# Use the Anaconda Docker image
-#FROM continuumio/anaconda3:5.3.0
-FROM continuumio/miniconda3
+# Use the miniforge docker image
+FROM condaforge/miniforge3:4.10.1-0
+ARG DEBIAN_FRONTEND=noninteractive
 
 # Install build tools, gcc etc
 RUN apt-get update && apt-get install -y build-essential vim htop procps x11vnc xvfb libsdl-ttf2.0-0

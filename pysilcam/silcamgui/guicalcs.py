@@ -7,12 +7,10 @@ import numpy as np
 import pysilcam.postprocess as sc_pp
 import pandas as pd
 from enum import Enum
-import pygame
 import psutil
 from tqdm import tqdm
 from pysilcam.fakepymba import silcam_load
-
-import pygame.font
+import pygame
 
 
 def count_data(datadir):
@@ -221,7 +219,7 @@ def silcview(datadir):
     while True:
         if pause:
             event = pygame.event.wait()
-            if event.type == 12:
+            if event.type in [12, pygame.QUIT]:
                 pygame.quit()
                 return
             elif event.type == pygame.KEYDOWN:
@@ -244,7 +242,7 @@ def silcview(datadir):
                 elif event.key == pygame.K_p:
                     pause = np.invert(pause)
                     direction = last_direction
-                elif event.key == pygame.K_q:
+                elif event.key in [pygame.K_q, pygame.K_ESCAPE]:
                     pygame.quit()
                     return
                 else:
@@ -305,7 +303,7 @@ def silcview(datadir):
 
         if not pause:
             for event in pygame.event.get():
-                if event.type == 12:
+                if event.type in [12, pygame.QUIT]:
                     pygame.quit()
                     return
                 if event.type == pygame.KEYDOWN:
@@ -325,7 +323,7 @@ def silcview(datadir):
                         pause = np.invert(pause)
                         last_direction = direction
                         direction = 0
-                    elif event.key == pygame.K_q:
+                    elif event.key in [pygame.K_q, pygame.K_ESCAPE]:
                         pygame.quit()
                         return
 
