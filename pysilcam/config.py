@@ -12,9 +12,10 @@ from pysilcam.pathadjust import PathLength
 
 logger = logging.getLogger(__name__)
 
+
 def load_config(filename):
     '''Load config file and validate content
-    
+
     Args:
       filename (str) : filename including path
 
@@ -25,11 +26,11 @@ def load_config(filename):
       ConfigParser  : with the file parsed
 
     '''
-    #Check that the file exists
+    # Check that the file exists
     if not os.path.exists(filename):
         raise RuntimeError('Config file not found: {0}'.format(filename))
-    
-    ##Create ConfigParser and populate from file
+
+    # Create ConfigParser and populate from file
     conf = configparser.ConfigParser()
     files_parsed = conf.read(filename)
     if filename not in files_parsed:
@@ -76,14 +77,14 @@ class PySilcamSettings:
 
 def load_camera_config(filename, config=None):
     '''Load camera config file and validate content
-    
+
     Args:
       filename (str)      : filename including path to camera config file
-      config=None  (dict) : a dictionnary to store key-values. If config does not exist, an empty dict is created
+      config=None  (dict) : a dictionary to store key-values. If config does not exist, an empty dict is created
 
     Returns:
-      dict()              : with key value pairs of camera settings  
-    
+      dict()              : with key value pairs of camera settings
+
     '''
 
     if (config == None):
