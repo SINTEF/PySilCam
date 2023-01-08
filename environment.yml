@@ -20,7 +20,7 @@ dependencies:    # These are the conda packages
     - PyQt=5.12.3
     - xarray=0.16.2
     - pip: # The following packages are installed with pip
-        - tensorflow.cpu==2.10.0
+        - tensorflow-cpu==2.10.0
         - numpy==1.23.4
         - pygame==2.0.0.dev22
         - xlrd==1.2.0
