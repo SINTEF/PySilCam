@@ -12,6 +12,7 @@ jobs:
       - name: Set up Python environment
         uses: actions/setup-python@v2
         with:
+          failIf: new
           python-version: "3.8"
       - name: flake8 Lint
         uses: py-actions/flake8@v2
