@@ -1,7 +1,5 @@
 name: flake8 Lint
 
-on: [pull_request]
-
 jobs:
   flake8-lint:
     runs-on: ubuntu-latest
