@@ -32,9 +32,9 @@ Installing
 
 If you are using windows, you need Microsoft Visual C++ Redistributable, which can be downloaded [here](https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads)
 
-Install [Anaconda Python 3.6 or later](https://www.anaconda.com/download/)
+Install [Python 3.6 or later](https://github.com/conda-forge/miniforge/#download)
 
-Anaconda Prompt may be used for the following
+A prompt such as is provided by the [miniforge installation](https://github.com/conda-forge/miniforge/#download) may be used for the following:
 
 Create a virtual environment using the environment.yml (will create an environment called silcam)
 

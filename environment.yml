@@ -20,7 +20,8 @@ dependencies:    # These are the conda packages
     - PyQt=5.12.3
     - xarray=0.16.2
     - pip: # The following packages are installed with pip
-        - tensorflow-cpu==2.3.1
+        - tensorflow-cpu==2.10.1
+        - numpy==1.23.4
         - pygame==2.0.0.dev22
         - xlrd==1.2.0
         - configparser==5.0.1
@@ -32,3 +33,4 @@ dependencies:    # These are the conda packages
         - sphinxcontrib-napoleon==0.7
         - pytest-error-for-skips==2.0.2
         - names==0.3.0
+
