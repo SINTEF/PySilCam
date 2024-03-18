@@ -440,7 +440,7 @@ def extract_particles(imc, timestamp, settings, nnmodel, class_labels, region_pr
     return stats
 
 
-def processImage(nnmodel, class_labels, image, settings, logger, gui):
+def processImage(nnmodel, class_labels, proc_image_queue, settings, logger, gui):
     '''
     Proceses an image
 
@@ -461,56 +461,56 @@ def processImage(nnmodel, class_labels, image, settings, logger, gui):
     Returns:
         stats_all (DataFrame)               :  stats dataframe containing particle statistics
     '''
-    try:
-        i = image[0]
-        timestamp = image[1]
-        imc = image[2]
+    logger.debug('processImage')
 
-        # time the full acquisition and processing loop
-        start_time = time.time()
+    image_number = proc_image_queue[0]
+    timestamp = proc_image_queue[1]
+    imc = proc_image_queue[2]
+    logger.debug('timestamp and imc recieved')
 
-        logger.info('Processing time stamp {0}'.format(timestamp))
+    # time the full acquisition and processing loop
+    start_time = time.time()
 
-        # Calculate particle statistics
-        stats_all, imbw, saturation = statextract(imc, settings, timestamp,
-                                                  nnmodel, class_labels)
+    string = '    processing image {0} time stamp {1}'.format(image_number, timestamp)
+    logger.info(string)
+    print(string)
 
-        # if there are not particles identified, assume zero concentration.
-        # This means that the data should indicate that a 'good' image was
-        # obtained, without any particles. Therefore fill all values with nans
-        # and add the image timestamp
-        if len(stats_all) == 0:
-            print('ZERO particles identified')
-            z = np.zeros(len(stats_all.columns)) * np.nan
-            stats_all.loc[0] = z
-            # 'export name' should not be nan because then this column of the
-            # DataFrame will contain multiple types, so label with string instead
-            # padding end of string required for HDF5 writing
-            stats_all['export name'] = 'not_exported'
+    # Calculate particle statistics
+    stats_all, imbw, saturation = statextract(imc, settings, timestamp,
+                                              nnmodel, class_labels)
 
-        # add timestamp to each row of particle statistics
-        stats_all['timestamp'] = timestamp
+    # if there are not particles identified, assume zero concentration.
+    # This means that the data should indicate that a 'good' image was
+    # obtained, without any particles. Therefore fill all values with nans
+    # and add the image timestamp
+    if len(stats_all) == 0:
+        string = '    ZERO particles identified: image {0} time stamp {1}'.format(image_number, timestamp)
+        print(string)
+        logger.info(string)
+        z = np.zeros(len(stats_all.columns)) * np.nan
+        stats_all.loc[0] = z
+        # 'export name' should not be nan because then this column of the
+        # DataFrame will contain multiple types, so label with string instead
+        # padding end of string required for HDF5 writing
+        stats_all['export name'] = 'not_exported'
 
-        # add saturation to each row of particle statistics
-        stats_all['saturation'] = saturation
+    # add timestamp to each row of particle statistics
+    stats_all['timestamp'] = timestamp
 
-        # Time the particle statistics processing step
-        proc_time = time.time() - start_time
+    # add saturation to each row of particle statistics
+    stats_all['saturation'] = saturation
 
-        # Print timing information for this iteration
-        infostr = '  Image {0} processed in {1:.2f} sec ({2:.1f} Hz). '
-        infostr = infostr.format(i, proc_time, 1.0 / proc_time)
-        print(infostr)
+    # Time the particle statistics processing step
+    proc_time = time.time() - start_time
 
-        # ---- END MAIN PROCESSING LOOP ----
-        # ---- DO SOME ADMIN ----
+    # Print timing information for this iteration
+    infostr = '    image {0} processed in {1:.2f} sec ({2:.1f} Hz). '
+    infostr = infostr.format(image_number, proc_time, 1.0 / proc_time)
+    print(infostr)
+    logger.info((infostr, timestamp))
 
-    except Exception as e:
-        print(e)
-        traceback.print_exc()
-        infostr = 'Failed to process frame {0}, skipping.'.format(i)
-        logger.warning(infostr, exc_info=True)
-        return None
+    # ---- END MAIN PROCESSING LOOP ----
+    # ---- DO SOME ADMIN ----
 
     return stats_all
 
@@ -541,7 +541,13 @@ def write_stats(
     else:
         min_itemsize = None
 
-    with pd.HDFStore(datafilename + '-STATS.h5', 'a') as fh:
-        stats_all.to_hdf(
-            fh, 'ParticleStats/stats', append=append, format='t',
-            data_columns=True, min_itemsize=min_itemsize)
+    while True:
+        try:
+            with pd.HDFStore(datafilename + '-STATS.h5', 'a') as fh:
+                stats_all.to_hdf(
+                    fh, 'ParticleStats/stats', append=append, format='t',
+                    data_columns=True, min_itemsize=min_itemsize)
+            print('    HDF file updated')
+            break
+        except:
+            time.sleep(0.1)

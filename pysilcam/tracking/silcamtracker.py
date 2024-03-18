@@ -6,8 +6,8 @@ from skimage.measure import regionprops
 import pandas as pd
 from tqdm import tqdm
 import pysilcam.process as scpr
-from pysilcam.background import backgrounder
-from pysilcam.fakepymba import silcam_load
+from pysilcam.background import Backgrounder
+from pysilcam.acquisition import silcam_load
 import h5py
 import names
 
@@ -46,14 +46,23 @@ class Tracker:
 
         # Get number of images to use for background correction from config
         print('* Initializing background image handler')
-        self.bggen = backgrounder(self.av_window, self.aqgen,
-                                  bad_lighting_limit=None,
-                                  real_time_stats=False)
+        self.bg = Backgrounder(self.av_window, None, real_time_stats=False, bad_lighting_limit=None)
 
     def generator_tracker(self, datapath=None):
-        for f in tqdm(self.files):
-
+        print('initialise background')
+        # create background stack without using multiprocess (skip ini_background)
+        self.bg.bgstack = []
+        for f in self.files[0:self.av_window]:
             img = silcam_load(f)
+            self.bg.bgstack.append(img)
+            
+        self.bg.bgstacklength = len(self.bg.bgstack)
+        print('initialise background complete.')
+        self.bg.imbg = np.mean(self.bg.bgstack, axis=0)  # average the images in the stack
+
+        for f in tqdm(self.files[self.av_window:]):
+            imraw = silcam_load(f)
+            img = self.bg.shift_and_correct(imraw)
 
             if np.ndim(img) == 3:
                 img = np.min(img, axis=2)
@@ -148,7 +157,7 @@ class Tracker:
 
     def load_image(self):
 
-        timestamp, imc, imraw = next(self.bggen)
+        timestamp, imc, = next(self.aqgen)
         im = imc
         if len(np.shape(im)) == 3:
             im = np.min(im, axis=2)
