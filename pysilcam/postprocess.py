@@ -572,6 +572,7 @@ def get_sample_volume(pix_size, path_length=10, imx=2048, imy=2448):
         sample_volume_litres        : the volume of the sample volume in litres
 
     '''
+    path_length += 10
     sample_volume_litres = imx * pix_size / 1000 * imy * pix_size / 1000 * path_length * 1e-6
 
     return sample_volume_litres
