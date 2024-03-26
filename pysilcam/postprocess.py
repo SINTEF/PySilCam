@@ -572,6 +572,7 @@ def get_sample_volume(pix_size, path_length=10, imx=2048, imy=2448):
         sample_volume_litres        : the volume of the sample volume in litres
 
     '''
+    path_length += 10
     sample_volume_litres = imx * pix_size / 1000 * imy * pix_size / 1000 * path_length * 1e-6
 
     return sample_volume_litres
@@ -989,10 +990,11 @@ def trim_stats(stats_file, start_time, end_time, write_new=False, stats=[]):
     path, name = os.path.split(stats_file)
 
     outname = os.path.join(path, name.replace('-STATS.h5', '')) + '-Start' + str(actual_start) + '-End' + str(
-        actual_end) + '-STATS.h5'
+        actual_end)
 
     if write_new:
-        trimmed_stats.to_csv(outname)
+        write_stats(outname, trimmed_stats, append=False)
+        #trimmed_stats.to_csv(outname)
 
     return trimmed_stats, outname
 
